@@ -3,7 +3,9 @@ import { db } from '$lib/server/db';
 import { courtAccess, courtRotation, match, tournament, player } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 
-export const load = async ({ params }) => {
+import type { PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ params, locals }) => {
 	const token = params.token;
 
 	// Get court access
@@ -65,11 +67,14 @@ export const load = async ({ params }) => {
 		},
 		matches,
 		standings,
-		isActive: access.isActive && tourney.status === 'active'
+		isActive: access.isActive && tourney.status === 'active',
+		isAuthenticated: !!locals.user
 	};
 };
 
-export const actions = {
+import type { Actions } from './$types';
+
+export const actions: Actions = {
 	saveScore: async ({ request, params }) => {
 		const token = params.token;
 		const formData = await request.formData();

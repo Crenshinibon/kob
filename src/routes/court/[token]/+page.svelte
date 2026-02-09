@@ -11,11 +11,14 @@
 			matches: any[];
 			standings: any[];
 			isActive: boolean;
+			isAuthenticated: boolean;
 		};
 	}>();
 
 	// Track which matches are being saved
 	let savingMatches = $state<Set<number>>(new Set());
+	// Track which matches are being edited (for authenticated users)
+	let editingMatches = $state<Set<number>>(new Set());
 	// Track completed matches locally for smooth transitions
 	let completedMatches = $derived<Set<number>>(
 		new Set(data.matches.filter((m: any) => m.teamAScore !== null).map((m: any) => m.id))
@@ -83,7 +86,7 @@
 
 					<h3>Match {i + 1}</h3>
 
-					{#if completedMatches.has(match.id)}
+					{#if completedMatches.has(match.id) && !editingMatches.has(match.id)}
 						<div class="completed" transition:slide>
 							<p>
 								{getPlayerName(match, 'a1')} & {getPlayerName(match, 'a2')}:
@@ -94,8 +97,17 @@
 								<strong>{matchData[match.id]?.teamBScore || match.teamBScore}</strong>
 							</p>
 							<span class="saved">✓ Saved</span>
+							{#if data.isAuthenticated}
+								<button
+									class="btn-edit"
+									onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
+								>
+									Edit
+								</button>
+							{/if}
 						</div>
 					{:else}
+						{@const isEditing = editingMatches.has(match.id)}
 						<form
 							{...saveScore
 								.for(match.id)
@@ -105,6 +117,10 @@
 										savingMatches.add(match.id);
 										await submit();
 										savingMatches.delete(match.id);
+										// Exit edit mode after successful save
+										if (isEditing) {
+											editingMatches = new Set([...editingMatches].filter((id) => id !== match.id));
+										}
 									} catch (error) {
 										console.log(error);
 									}
@@ -142,14 +158,29 @@
 								</div>
 							</div>
 
-							<button type="submit" class="btn-primary" disabled={savingMatches.has(match.id)}>
-								{#if savingMatches.has(match.id)}
-									<span class="spinner"></span>
-									Saving...
-								{:else}
-									Save Score
+							<div class="form-actions">
+								{#if isEditing}
+									<button
+										type="button"
+										class="btn-secondary"
+										onclick={() =>
+											(editingMatches = new Set(
+												[...editingMatches].filter((id) => id !== match.id)
+											))}
+										disabled={savingMatches.has(match.id)}
+									>
+										Cancel
+									</button>
 								{/if}
-							</button>
+								<button type="submit" class="btn-primary" disabled={savingMatches.has(match.id)}>
+									{#if savingMatches.has(match.id)}
+										<span class="spinner"></span>
+										{isEditing ? 'Updating...' : 'Saving...'}
+									{:else}
+										{isEditing ? 'Update Score' : 'Save Score'}
+									{/if}
+								</button>
+							</div>
 						</form>
 					{/if}
 				</div>
@@ -313,6 +344,49 @@
 		color: #28a745;
 		font-size: 0.875rem;
 		font-weight: 600;
+	}
+
+	.btn-edit {
+		background: #ffc107;
+		color: #212529;
+		padding: 0.25rem 0.5rem;
+		border: none;
+		border-radius: 4px;
+		font-size: 0.75rem;
+		cursor: pointer;
+		margin-left: 0.5rem;
+		transition: background 0.2s;
+	}
+
+	.btn-edit:hover {
+		background: #e0a800;
+	}
+
+	.btn-secondary {
+		background: #6c757d;
+		color: white;
+		padding: 0.5rem 1rem;
+		border: none;
+		border-radius: 4px;
+		font-size: 0.875rem;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.btn-secondary:hover:not(:disabled) {
+		background: #545b62;
+	}
+
+	.btn-secondary:disabled {
+		background: #ccc;
+		cursor: not-allowed;
+	}
+
+	.form-actions {
+		display: flex;
+		gap: 0.5rem;
+		justify-content: center;
+		margin-top: 0.5rem;
 	}
 
 	form {
