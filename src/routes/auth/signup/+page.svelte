@@ -35,7 +35,7 @@
 			const response = await fetch('/auth/sign-up/email', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, password })
+				body: JSON.stringify({ email, password, name: email.split('@')[0] })
 			});
 
 			if (response.ok) {
