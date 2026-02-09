@@ -5,6 +5,7 @@
 Simple mobile-optimized page. No real-time updates - refresh to see updates.
 
 ### Layout
+
 ```
 Beach Bash 2024 - Court 1, Round 2
 
@@ -13,7 +14,7 @@ Players: Alice, Bob, Carol, David
 Match 1: Alice & Bob vs Carol & David
 Score: [21] - [19] ✓
 
-Match 2: Alice & Carol vs Bob & David  
+Match 2: Alice & Carol vs Bob & David
 Team A Score: [___]
 Team B Score: [___]
 [Save]
@@ -33,6 +34,7 @@ Current Standings:
 ```
 
 ### Score Entry
+
 - Number inputs for scores
 - Validation: 0-50, no ties, winner needs 21+
 - Show error if invalid: "Winner must have 21+ points"
@@ -40,13 +42,15 @@ Current Standings:
 - On save: show "Saved" confirmation
 
 ### Closed Round
+
 If round is closed:
+
 ```
 This round is closed.
 
 Final Court 1 Standings:
 1. Alice
-2. Bob  
+2. Bob
 3. Carol
 4. David
 
@@ -65,6 +69,7 @@ Same as tournament view - just shows all courts at once. No separate detailed vi
 - Download/Print buttons
 
 No complex features:
+
 - No real-time updates
 - No token reset
 - No override UI (admin can edit directly in DB if needed)

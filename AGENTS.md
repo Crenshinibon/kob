@@ -50,6 +50,7 @@ npm run auth:schema     # Regenerate Better Auth schema
 ## Code Style Guidelines
 
 ### Formatting (Prettier)
+
 - **Use tabs** (not spaces)
 - **Single quotes** for strings
 - **No trailing commas**
@@ -57,6 +58,7 @@ npm run auth:schema     # Regenerate Better Auth schema
 - Svelte files use the svelte parser
 
 ### TypeScript Conventions
+
 - Strict mode enabled - all types must be explicit
 - Use `type` over `interface` for object types (unless extending)
 - Prefer explicit return types on exported functions
@@ -64,6 +66,7 @@ npm run auth:schema     # Regenerate Better Auth schema
 - Path aliases: `$lib` for lib, `$app/*` for SvelteKit internals, `$env/*` for env vars
 
 ### Naming Conventions
+
 - **Files**: kebab-case (e.g., `auth.schema.ts`, `page.server.ts`)
 - **Components**: PascalCase Svelte files (e.g., `UserProfile.svelte`)
 - **Variables/functions**: camelCase
@@ -72,12 +75,14 @@ npm run auth:schema     # Regenerate Better Auth schema
 - **Types/Interfaces**: PascalCase
 
 ### Import Order
+
 1. Svelte/SvelteKit imports (`$app/*`, `$lib/*`)
 2. Third-party libraries (better-auth, drizzle-orm)
 3. Local modules with relative paths
 4. Type-only imports last
 
 ### Svelte 5 Patterns
+
 - Use `$props()` for component props
 - Use `$state()` for reactive state
 - Use `$derived()` for computed values
@@ -85,24 +90,28 @@ npm run auth:schema     # Regenerate Better Auth schema
 - Use `runes` mode (enabled by default in Svelte 5)
 
 ### Error Handling
+
 - Always validate env vars at module level: `if (!env.DATABASE_URL) throw new Error('...')`
 - Use SvelteKit's `error()` and `redirect()` helpers in load functions
 - Prefer early returns over nested conditionals
 - Database operations should handle null/undefined gracefully
 
 ### Database (Drizzle)
+
 - Define tables in `src/lib/server/db/schema.ts`
 - Use SQL-like Drizzle syntax (not the query API)
 - Export schema from `src/lib/server/db/index.ts` with `drizzle(client, { schema })`
 - Migrations handled via `drizzle-kit`
 
 ### CSS/Styling
+
 - **NO CSS frameworks** (no Tailwind, shadcn/ui, etc.)
 - Write vanilla CSS in Svelte `<style>` blocks
 - Mobile-first approach (users access via smartphones on the beach)
 - Keep styles scoped to components
 
 ### Server-Side Patterns
+
 - Use `+page.server.ts` for server load functions and actions
 - Use `hooks.server.ts` for middleware (auth session handling)
 - Access auth via `event.locals.user` and `event.locals.session`
@@ -111,12 +120,14 @@ npm run auth:schema     # Regenerate Better Auth schema
 ## Project Context
 
 ### Domain Logic
+
 - **4 courts**, **16 players** (fixed for MVP)
 - Players rotate partners each round (A&B vs C&D, A&C vs B&D, A&D vs B&C)
 - Ranking by: Total Points → Point Differential → Head-to-Head → Org decision
 - Promotion/relegation between rounds
 
 ### Key Files
+
 - `src/lib/server/db/schema.ts` - Database tables
 - `src/lib/server/auth.ts` - Better Auth configuration
 - `src/lib/server/db/index.ts` - Database client export

@@ -3,6 +3,7 @@
 ## Tables
 
 ### tournament
+
 ```typescript
 {
   id: serial().primaryKey(),
@@ -16,6 +17,7 @@
 ```
 
 ### player
+
 ```typescript
 {
   id: serial().primaryKey(),
@@ -25,6 +27,7 @@
 ```
 
 ### courtRotation
+
 ```typescript
 {
   id: serial().primaryKey(),
@@ -39,6 +42,7 @@
 ```
 
 ### match
+
 ```typescript
 {
   id: serial().primaryKey(),
@@ -54,6 +58,7 @@
 ```
 
 ### courtAccess
+
 ```typescript
 {
   id: serial().primaryKey(),
