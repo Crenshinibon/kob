@@ -34,7 +34,7 @@ Current Standings:
 
 ### Score Entry
 - Number inputs for scores
-- Validation: 1-50, no ties, winner needs 21+
+- Validation: 0-50, no ties, winner needs 21+
 - Show error if invalid: "Winner must have 21+ points"
 - Save button per match
 - On save: show "Saved" confirmation
