@@ -1,15 +1,26 @@
 <script lang="ts">
+	import { slide } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 	import QRCode from 'qrcode';
+	import { saveScore } from './scores.remote';
 
-	let { data, form } = $props<{
+	let { data } = $props<{
 		data: {
 			court: any;
 			matches: any[];
 			standings: any[];
 			isActive: boolean;
 		};
-		form?: { error?: string; success?: string };
 	}>();
+
+	// Track which matches are being saved
+	let savingMatches = $state<Set<number>>(new Set());
+	// Track completed matches locally for smooth transitions
+	let completedMatches = $state<Set<number>>(
+		new Set(data.matches.filter((m: any) => m.teamAScore !== null).map((m: any) => m.id))
+	);
+	// Local match data for optimistic updates
+	let matchData = $state<Record<number, any>>({});
 
 	function getPlayerName(match: any, position: string) {
 		const names = data.court.playerNames;
@@ -28,6 +39,18 @@
 	async function generateQR(): Promise<string> {
 		const url = window.location.href;
 		return QRCode.toDataURL(url, { width: 200, margin: 2 });
+	}
+
+	function handleSubmit(matchId: number) {
+		return (e: SubmitEvent) => {
+			savingMatches.add(matchId);
+
+			// The form submission is handled automatically by the Remote Function
+			// We'll reload the page after a short delay to show updated standings
+			setTimeout(() => {
+				window.location.reload();
+			}, 500);
+		};
 	}
 </script>
 
@@ -52,55 +75,77 @@
 	</section>
 
 	{#if !data.isActive}
-		<div class="closed">
+		<div class="closed" transition:slide={{ duration: 300, easing: quintOut }}>
 			<h2>This round is closed</h2>
 			<p>Scores have been finalized.</p>
 		</div>
 	{:else}
-		{#if form?.error}
-			<div class="error">{form.error}</div>
-		{/if}
-
-		{#if form?.success}
-			<div class="success">{form.success}</div>
+		{@const issues = saveScore.fields?.allIssues() ?? []}
+		{#if issues.length > 0}
+			<div class="error" transition:slide={{ duration: 300, easing: quintOut }}>
+				{#each issues as issue}
+					<p>{issue.message}</p>
+				{/each}
+			</div>
 		{/if}
 
 		<section class="matches">
 			{#each data.matches as match, i (match.id)}
-				<div class="match">
+				<div class="match" transition:slide={{ duration: 300, easing: quintOut }}>
 					<h3>Match {i + 1}</h3>
 
-					{#if match.teamAScore !== null}
-						<div class="completed">
+					{#if completedMatches.has(match.id)}
+						<div class="completed" transition:slide={{ duration: 400, easing: quintOut }}>
 							<p>
 								{getPlayerName(match, 'a1')} & {getPlayerName(match, 'a2')}:
-								<strong>{match.teamAScore}</strong>
+								<strong>{matchData[match.id]?.teamAScore || match.teamAScore}</strong>
 							</p>
 							<p>
 								{getPlayerName(match, 'b1')} & {getPlayerName(match, 'b2')}:
-								<strong>{match.teamBScore}</strong>
+								<strong>{matchData[match.id]?.teamBScore || match.teamBScore}</strong>
 							</p>
 							<span class="saved">✓ Saved</span>
 						</div>
 					{:else}
-						<form method="POST" action="?/saveScore">
+						<form {...saveScore} onsubmit={handleSubmit(match.id)}>
 							<input type="hidden" name="matchId" value={match.id} />
 
 							<div class="teams">
 								<div class="team">
 									<p>{getPlayerName(match, 'a1')} & {getPlayerName(match, 'a2')}</p>
-									<input type="number" name="teamAScore" min="1" max="50" required />
+									<input
+										type="number"
+										name="teamAScore"
+										min="1"
+										max="50"
+										required
+										disabled={savingMatches.has(match.id)}
+									/>
 								</div>
 
 								<div class="vs">vs</div>
 
 								<div class="team">
 									<p>{getPlayerName(match, 'b1')} & {getPlayerName(match, 'b2')}</p>
-									<input type="number" name="teamBScore" min="1" max="50" required />
+									<input
+										type="number"
+										name="teamBScore"
+										min="1"
+										max="50"
+										required
+										disabled={savingMatches.has(match.id)}
+									/>
 								</div>
 							</div>
 
-							<button type="submit" class="btn-primary">Save Score</button>
+							<button type="submit" class="btn-primary" disabled={savingMatches.has(match.id)}>
+								{#if savingMatches.has(match.id)}
+									<span class="spinner"></span>
+									Saving...
+								{:else}
+									Save Score
+								{/if}
+							</button>
 						</form>
 					{/if}
 				</div>
@@ -109,7 +154,7 @@
 	{/if}
 
 	{#if data.standings.length > 0}
-		<section class="standings">
+		<section class="standings" transition:slide={{ duration: 300, easing: quintOut }}>
 			<h2>Current Standings</h2>
 			<table>
 				<thead>
@@ -122,7 +167,7 @@
 				</thead>
 				<tbody>
 					{#each data.standings as s (s.id)}
-						<tr>
+						<tr transition:slide={{ duration: 200, easing: quintOut }}>
 							<td>{s.rank}</td>
 							<td>{s.name}</td>
 							<td>{s.points}</td>
@@ -133,10 +178,6 @@
 			</table>
 		</section>
 	{/if}
-
-	<p class="refresh">
-		<button onclick={() => window.location.reload()}>Refresh page for updates</button>
-	</p>
 </main>
 
 <style>
@@ -228,12 +269,8 @@
 		margin-bottom: 1rem;
 	}
 
-	.success {
-		background: #d4edda;
-		color: #155724;
-		padding: 0.75rem;
-		border-radius: 4px;
-		margin-bottom: 1rem;
+	.error p {
+		margin: 0.25rem 0;
 	}
 
 	.matches {
@@ -247,6 +284,7 @@
 		border: 1px solid #ddd;
 		border-radius: 8px;
 		padding: 1rem;
+		background: white;
 	}
 
 	.match h3 {
@@ -255,9 +293,10 @@
 	}
 
 	.completed {
-		background: #f8f9fa;
+		background: #d4edda;
 		padding: 0.75rem;
 		border-radius: 4px;
+		border-left: 4px solid #28a745;
 	}
 
 	.completed p {
@@ -269,6 +308,7 @@
 		margin-top: 0.5rem;
 		color: #28a745;
 		font-size: 0.875rem;
+		font-weight: 600;
 	}
 
 	form {
@@ -301,11 +341,23 @@
 		text-align: center;
 		border: 1px solid #ccc;
 		border-radius: 4px;
+		transition: border-color 0.2s;
+	}
+
+	.team input:focus {
+		outline: none;
+		border-color: #0066cc;
+	}
+
+	.team input:disabled {
+		background: #f0f0f0;
+		cursor: not-allowed;
 	}
 
 	.vs {
 		font-weight: bold;
 		color: #666;
+		font-size: 0.875rem;
 	}
 
 	.btn-primary {
@@ -317,10 +369,34 @@
 		font-size: 0.875rem;
 		cursor: pointer;
 		align-self: center;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		transition: background 0.2s;
 	}
 
-	.btn-primary:hover {
+	.btn-primary:hover:not(:disabled) {
 		background: #0052a3;
+	}
+
+	.btn-primary:disabled {
+		background: #ccc;
+		cursor: not-allowed;
+	}
+
+	.spinner {
+		width: 16px;
+		height: 16px;
+		border: 2px solid #ffffff;
+		border-top-color: transparent;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	.standings {
@@ -335,6 +411,10 @@
 	table {
 		width: 100%;
 		border-collapse: collapse;
+		background: white;
+		border-radius: 8px;
+		overflow: hidden;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 	}
 
 	th,
@@ -347,23 +427,14 @@
 	th {
 		font-weight: 600;
 		font-size: 0.875rem;
+		background: #f8f9fa;
 	}
 
 	td {
 		font-size: 0.875rem;
 	}
 
-	.refresh {
-		text-align: center;
-		font-size: 0.875rem;
-	}
-
-	.refresh button {
-		background: none;
-		border: none;
-		color: #0066cc;
-		text-decoration: underline;
-		cursor: pointer;
-		font-size: inherit;
+	tr:last-child td {
+		border-bottom: none;
 	}
 </style>
