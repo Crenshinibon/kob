@@ -6,6 +6,38 @@
 
 	let playerNames = $state('');
 	let playerCount = $derived(playerNames.split('\n').filter((n) => n.trim()).length);
+	let textareaEl: HTMLTextAreaElement;
+
+	function handlePaste(e: ClipboardEvent) {
+		const pastedText = e.clipboardData?.getData('text') || '';
+
+		// Check if pasted content has commas or semicolons
+		if (pastedText.includes(',') || pastedText.includes(';')) {
+			e.preventDefault();
+
+			// Split by comma or semicolon and clean up
+			const names = pastedText
+				.split(/[,;]+/)
+				.map((n) => n.trim())
+				.filter((n) => n.length > 0);
+
+			// Join with newlines
+			const formattedNames = names.join('\n');
+
+			// Insert at cursor position or replace selection
+			const start = textareaEl.selectionStart;
+			const end = textareaEl.selectionEnd;
+			const before = playerNames.substring(0, start);
+			const after = playerNames.substring(end);
+
+			playerNames = before + formattedNames + (after ? '\n' + after : '');
+
+			// Update cursor position after the inserted text
+			setTimeout(() => {
+				textareaEl.selectionStart = textareaEl.selectionEnd = start + formattedNames.length;
+			}, 0);
+		}
+	}
 </script>
 
 <main>
@@ -43,7 +75,9 @@
 				<textarea
 					id="names"
 					name="names"
+					bind:this={textareaEl}
 					bind:value={playerNames}
+					onpaste={handlePaste}
 					rows="10"
 					placeholder="Alice&#10;Bob&#10;Carol&#10;..."
 				></textarea>

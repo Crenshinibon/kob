@@ -44,7 +44,10 @@ Form with:
 
 Text area:
 
-- Paste 16 names (one per line)
+- Enter one player name per line
+- Smart paste: When pasting text containing commas or semicolons, it automatically splits them into separate lines
+  - Example: Pasting `Alice, Bob, Carol` becomes three separate lines
+  - Example: Pasting `Alice; Bob; Carol` also works
 - Shows count: "14/16 entered"
 - Validation: Must be exactly 16 unique names
 - [Start Tournament] button (enabled at 16)
