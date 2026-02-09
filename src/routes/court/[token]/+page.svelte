@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
 	import QRCode from 'qrcode';
 
 	import { saveScore } from './scores.remote';
@@ -42,19 +41,6 @@
 		const url = window.location.href;
 		return QRCode.toDataURL(url, { width: 200, margin: 2 });
 	}
-
-	/*2026-02-09function handleSubmit(matchId: number) {
-		return (e: SubmitEvent) => {
-			savingMatches.add(matchId);
-
-			// The form submission is handled automatically by the Remote Function
-			// We'll reload the page after a short delay to show updated standings
-			setTimeout(() => {
-				window.location.reload();
-			}, 500);
-		};
-	}
-  */
 </script>
 
 <main>
@@ -78,27 +64,27 @@
 	</section>
 
 	{#if !data.isActive}
-		<div class="closed" transition:slide={{ duration: 300, easing: quintOut }}>
+		<div class="closed" transition:slide>
 			<h2>This round is closed</h2>
 			<p>Scores have been finalized.</p>
 		</div>
 	{:else}
-		{@const issues = saveScore.fields.allIssues() ?? []}
-		{#if issues.length > 0}
-			<div class="error" transition:slide={{ duration: 300, easing: quintOut }}>
-				{#each issues as issue}
-					<p>{issue.message}</p>
-				{/each}
-			</div>
-		{/if}
-
 		<section class="matches">
 			{#each data.matches as match, i (match.id)}
-				<div class="match" transition:slide={{ duration: 300, easing: quintOut }}>
+				{@const issues = saveScore.for(match.id).fields.allIssues() ?? []}
+				<div class="match" transition:slide>
+					{#if issues.length > 0}
+						<div class="error" transition:slide>
+							{#each issues as issue}
+								<p>{issue.message}</p>
+							{/each}
+						</div>
+					{/if}
+
 					<h3>Match {i + 1}</h3>
 
 					{#if completedMatches.has(match.id)}
-						<div class="completed" transition:slide={{ duration: 400, easing: quintOut }}>
+						<div class="completed" transition:slide>
 							<p>
 								{getPlayerName(match, 'a1')} & {getPlayerName(match, 'a2')}:
 								<strong>{matchData[match.id]?.teamAScore || match.teamAScore}</strong>
@@ -111,15 +97,18 @@
 						</div>
 					{:else}
 						<form
-							{...saveScore.preflight(scoreSchema).enhance(async ({ submit }) => {
-								try {
-									savingMatches.add(match.id);
-									await submit();
-									savingMatches.delete(match.id);
-								} catch (error) {
-									console.log(error);
-								}
-							})}
+							{...saveScore
+								.for(match.id)
+								.preflight(scoreSchema)
+								.enhance(async ({ submit }) => {
+									try {
+										savingMatches.add(match.id);
+										await submit();
+										savingMatches.delete(match.id);
+									} catch (error) {
+										console.log(error);
+									}
+								})}
 						>
 							<input type="hidden" name="matchId" value={match.id} />
 
@@ -169,7 +158,7 @@
 	{/if}
 
 	{#if data.standings.length > 0}
-		<section class="standings" transition:slide={{ duration: 300, easing: quintOut }}>
+		<section class="standings" transition:slide>
 			<h2>Current Standings</h2>
 			<table>
 				<thead>
@@ -182,7 +171,7 @@
 				</thead>
 				<tbody>
 					{#each data.standings as s (s.id)}
-						<tr transition:slide={{ duration: 200, easing: quintOut }}>
+						<tr transition:slide>
 							<td>{s.rank}</td>
 							<td>{s.name}</td>
 							<td>{s.points}</td>
