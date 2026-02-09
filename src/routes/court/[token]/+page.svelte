@@ -1,4 +1,6 @@
 <script lang="ts">
+	import QRCode from 'qrcode';
+
 	let { data, form } = $props<{
 		data: {
 			court: any;
@@ -22,6 +24,11 @@
 				return names[match.teamBPlayer2Id];
 		}
 	}
+
+	async function generateQR(): Promise<string> {
+		const url = window.location.href;
+		return QRCode.toDataURL(url, { width: 200, margin: 2 });
+	}
 </script>
 
 <main>
@@ -29,6 +36,20 @@
 		<h1>{data.court.tournamentName}</h1>
 		<p>Court {data.court.courtNumber}, Round {data.court.roundNumber}</p>
 	</header>
+
+	<section class="qr-section">
+		<h2>Share Court Access</h2>
+		{#await generateQR()}
+			<div class="qr-loading">Loading QR...</div>
+		{:then qrDataUrl}
+			<div class="qr-code">
+				<img src={qrDataUrl} alt="QR code for this court" />
+				<p class="qr-hint">Share this QR code with your court partners</p>
+			</div>
+		{:catch}
+			<div class="qr-error">Failed to load QR</div>
+		{/await}
+	</section>
 
 	{#if !data.isActive}
 		<div class="closed">
@@ -45,7 +66,7 @@
 		{/if}
 
 		<section class="matches">
-			{#each data.matches as match, i}
+			{#each data.matches as match, i (match.id)}
 				<div class="match">
 					<h3>Match {i + 1}</h3>
 
@@ -100,7 +121,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.standings as s}
+					{#each data.standings as s (s.playerId)}
 						<tr>
 							<td>{s.rank}</td>
 							<td>{s.name}</td>
@@ -139,11 +160,54 @@
 		color: #666;
 	}
 
+	.qr-section {
+		background: #f8f9fa;
+		border-radius: 8px;
+		padding: 1.5rem;
+		margin-bottom: 2rem;
+		text-align: center;
+	}
+
+	.qr-section h2 {
+		margin: 0 0 1rem 0;
+		font-size: 1.1rem;
+	}
+
+	.qr-code {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.qr-code img {
+		max-width: 200px;
+		height: auto;
+		border-radius: 8px;
+	}
+
+	.qr-hint {
+		margin: 0.75rem 0 0 0;
+		font-size: 0.875rem;
+		color: #666;
+	}
+
+	.qr-loading,
+	.qr-error {
+		padding: 2rem;
+		font-size: 0.875rem;
+		color: #666;
+	}
+
+	.qr-error {
+		color: #dc3545;
+	}
+
 	.closed {
 		background: #fff3cd;
 		padding: 1.5rem;
 		border-radius: 8px;
 		text-align: center;
+		margin-bottom: 2rem;
 	}
 
 	.closed h2 {
@@ -294,7 +358,12 @@
 		font-size: 0.875rem;
 	}
 
-	.refresh a {
+	.refresh button {
+		background: none;
+		border: none;
 		color: #0066cc;
+		text-decoration: underline;
+		cursor: pointer;
+		font-size: inherit;
 	}
 </style>

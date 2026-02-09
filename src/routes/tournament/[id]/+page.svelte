@@ -1,4 +1,6 @@
 <script lang="ts">
+	import QRCode from 'qrcode';
+
 	let { data } = $props<{
 		data: {
 			tournament: any;
@@ -11,6 +13,11 @@
 		const completed = matches.filter((m) => m.teamAScore !== null).length;
 		return `${completed}/3`;
 	}
+
+	async function generateQR(token: string): Promise<string> {
+		const url = `${window.location.origin}/court/${token}`;
+		return QRCode.toDataURL(url, { width: 200, margin: 2 });
+	}
 </script>
 
 <main>
@@ -21,29 +28,40 @@
 	</header>
 
 	<section class="courts">
-		{#each data.courts as court}
+		{#each data.courts as court (court.courtNumber)}
 			<div class="court-card">
 				<div class="court-header">
 					<h2>Court {court.courtNumber}</h2>
 					<span class="matches">{getMatchStatus(court.matches)} matches</span>
 				</div>
 
+				{#if court.token}
+					<div class="qr-code">
+						{#await generateQR(court.token)}
+							<div class="qr-loading">Loading QR...</div>
+						{:then qrDataUrl}
+							<img src={qrDataUrl} alt="QR code for Court {court.courtNumber}" />
+							<p class="qr-hint">Scan to enter scores</p>
+						{:catch}
+							<div class="qr-error">Failed to load QR</div>
+						{/await}
+					</div>
+				{/if}
+
 				<div class="players">
-					{#each court.players as p, i}
+					{#each court.players as p, i (p.id)}
 						<span class="player">{String.fromCharCode(65 + i)}: {p.name}</span>
 					{/each}
 				</div>
 
-				<div class="qr">
-					<a href="/court/{court.token}" target="_blank">View Court Page</a>
+				<div class="qr-link">
+					<a href="/court/{court.token}" target="_blank">Open Court Page →</a>
 				</div>
 			</div>
 		{/each}
 	</section>
 
 	<section class="actions">
-		<a href="/tournament/{data.tournament.id}/courts" class="btn-secondary">View All QR Codes</a>
-
 		{#if data.canCloseRound}
 			<form method="POST" action="?/closeRound">
 				<button type="submit" class="btn-primary">Close Round & Advance</button>
@@ -82,8 +100,8 @@
 
 	.courts {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-		gap: 1rem;
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		gap: 1.5rem;
 		margin-bottom: 2rem;
 	}
 
@@ -91,6 +109,8 @@
 		border: 1px solid #ddd;
 		border-radius: 8px;
 		padding: 1rem;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.court-header {
@@ -113,24 +133,55 @@
 		border-radius: 4px;
 	}
 
+	.qr-code {
+		text-align: center;
+		margin-bottom: 1rem;
+		padding: 0.5rem;
+		background: #f8f9fa;
+		border-radius: 8px;
+	}
+
+	.qr-code img {
+		max-width: 100%;
+		height: auto;
+	}
+
+	.qr-hint {
+		margin: 0.5rem 0 0 0;
+		font-size: 0.75rem;
+		color: #666;
+	}
+
+	.qr-loading,
+	.qr-error {
+		padding: 2rem;
+		font-size: 0.875rem;
+		color: #666;
+	}
+
+	.qr-error {
+		color: #dc3545;
+	}
+
 	.players {
 		display: flex;
 		flex-direction: column;
 		gap: 0.25rem;
 		margin-bottom: 1rem;
+		flex-grow: 1;
 	}
 
 	.player {
 		font-size: 0.875rem;
 	}
 
-	.qr a {
+	.qr-link a {
 		font-size: 0.875rem;
 		color: #0066cc;
 		text-decoration: none;
 	}
 
-	.qr a:hover {
+	.qr-link a:hover {
 		text-decoration: underline;
 	}
 
@@ -153,20 +204,6 @@
 
 	.btn-primary:hover {
 		background: #0052a3;
-	}
-
-	.btn-secondary {
-		background: #6c757d;
-		color: white;
-		padding: 0.75rem 1.5rem;
-		border: none;
-		border-radius: 4px;
-		font-size: 1rem;
-		text-decoration: none;
-	}
-
-	.btn-secondary:hover {
-		background: #5a6268;
 	}
 
 	.btn-disabled {

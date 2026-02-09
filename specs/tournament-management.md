@@ -57,18 +57,12 @@ Text area:
 - Tournament name and status
 - 4 court cards showing:
   - Court number
+  - **QR code at the top** - Players can scan to access the court page
   - Player names (A, B, C, D)
   - Matches completed (e.g., "2/3")
-  - QR code button
+  - Link to open court page
 - [Close Round] button (enabled when all matches done)
 - Progress: "Round 2 of 3"
-
-### QR Codes (`/tournament/[id]/courts`)
-
-- 4 large QR codes
-- Each labeled: "Court 1", "Court 2", etc.
-- Instructions: "Display at court for players to scan"
-- [Print] button
 
 ## Server Actions
 
