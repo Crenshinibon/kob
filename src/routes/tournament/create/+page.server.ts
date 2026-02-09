@@ -2,6 +2,13 @@ import { redirect, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { tournament } from '$lib/server/db/schema';
 
+export const load = async ({ locals }) => {
+	if (!locals.user) {
+		throw redirect(302, '/auth/login');
+	}
+	return {};
+};
+
 export const actions = {
 	create: async ({ request, locals }) => {
 		const user = locals.user;

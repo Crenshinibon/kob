@@ -12,9 +12,25 @@
 
 ### Dashboard (`/`)
 
-- List of your tournaments
-- "Create Tournament" button
-- Simple list: Name, Status, Current Round
+Shows user's tournaments organized in sections:
+
+**Active Tournaments**
+
+- All ongoing tournaments (status: active)
+- Shows round progress: "Round 2 of 3"
+
+**Finished Tournaments**
+
+- All completed tournaments (status: completed)
+
+**Archived Tournaments**
+
+- Max 5 most recent archived tournaments
+
+**Actions**
+
+- "Create Tournament" button (disabled if not logged in)
+- Click any tournament card to view/manage
 
 ### Create Tournament
 

@@ -1,20 +1,25 @@
-import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { tournament } from '$lib/server/db/schema';
 import { eq, desc } from 'drizzle-orm';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load = async ({ locals }) => {
 	const user = locals.user;
 
 	if (!user) {
-		return { user: null, tournaments: [] };
+		return { user: null, active: [], finished: [], archived: [] };
 	}
 
-	const tournaments = await db
+	// Get all tournaments for this user
+	const allTournaments = await db
 		.select()
 		.from(tournament)
 		.where(eq(tournament.orgId, user.id))
 		.orderBy(desc(tournament.createdAt));
 
-	return { user, tournaments };
+	// Split by status
+	const active = allTournaments.filter((t) => t.status === 'active');
+	const finished = allTournaments.filter((t) => t.status === 'completed');
+	const archived = allTournaments.filter((t) => t.status === 'archived').slice(0, 5);
+
+	return { user, active, finished, archived };
 };

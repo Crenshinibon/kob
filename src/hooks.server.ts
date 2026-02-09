@@ -11,7 +11,12 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 		event.locals.user = session.user;
 	}
 
-	return svelteKitHandler({ event, resolve, auth, building });
+	// Handle Better Auth API routes at /auth/*
+	if (event.url.pathname.startsWith('/auth/')) {
+		return svelteKitHandler({ event, resolve, auth, building });
+	}
+
+	return resolve(event);
 };
 
 export const handle: Handle = handleBetterAuth;

@@ -5,7 +5,7 @@ import { eq, and } from 'drizzle-orm';
 
 export const load = async ({ params, locals }) => {
 	const user = locals.user;
-	if (!user) throw redirect(302, '/demo/better-auth/login');
+	if (!user) throw redirect(302, '/auth/login');
 
 	const tournamentId = parseInt(params.id);
 	const [tourney] = await db
