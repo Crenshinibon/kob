@@ -2,7 +2,9 @@
 	import { slide } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import QRCode from 'qrcode';
+
 	import { saveScore } from './scores.remote';
+	import { scoreSchema } from './scoreSchema';
 
 	let { data } = $props<{
 		data: {
@@ -16,7 +18,7 @@
 	// Track which matches are being saved
 	let savingMatches = $state<Set<number>>(new Set());
 	// Track completed matches locally for smooth transitions
-	let completedMatches = $state<Set<number>>(
+	let completedMatches = $derived<Set<number>>(
 		new Set(data.matches.filter((m: any) => m.teamAScore !== null).map((m: any) => m.id))
 	);
 	// Local match data for optimistic updates
@@ -41,7 +43,7 @@
 		return QRCode.toDataURL(url, { width: 200, margin: 2 });
 	}
 
-	function handleSubmit(matchId: number) {
+	/*2026-02-09function handleSubmit(matchId: number) {
 		return (e: SubmitEvent) => {
 			savingMatches.add(matchId);
 
@@ -52,6 +54,7 @@
 			}, 500);
 		};
 	}
+  */
 </script>
 
 <main>
@@ -80,7 +83,7 @@
 			<p>Scores have been finalized.</p>
 		</div>
 	{:else}
-		{@const issues = saveScore.fields?.allIssues() ?? []}
+		{@const issues = saveScore.fields.allIssues() ?? []}
 		{#if issues.length > 0}
 			<div class="error" transition:slide={{ duration: 300, easing: quintOut }}>
 				{#each issues as issue}
@@ -107,7 +110,17 @@
 							<span class="saved">✓ Saved</span>
 						</div>
 					{:else}
-						<form {...saveScore} onsubmit={handleSubmit(match.id)}>
+						<form
+							{...saveScore.preflight(scoreSchema).enhance(async ({ submit }) => {
+								try {
+									savingMatches.add(match.id);
+									await submit();
+									savingMatches.delete(match.id);
+								} catch (error) {
+									console.log(error);
+								}
+							})}
+						>
 							<input type="hidden" name="matchId" value={match.id} />
 
 							<div class="teams">
@@ -120,6 +133,7 @@
 										max="50"
 										required
 										disabled={savingMatches.has(match.id)}
+										{...saveScore.fields.teamAScore}
 									/>
 								</div>
 
@@ -134,6 +148,7 @@
 										max="50"
 										required
 										disabled={savingMatches.has(match.id)}
+										{...saveScore.fields.teamBScore}
 									/>
 								</div>
 							</div>
