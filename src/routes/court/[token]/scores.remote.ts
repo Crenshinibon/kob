@@ -6,8 +6,8 @@ import { scoreSchema } from './scoreSchema';
 
 export const saveScore = form(scoreSchema, async (data) => {
 	const matchId = parseInt(data.matchId);
-	const teamAScore = parseInt(data.teamAScore);
-	const teamBScore = parseInt(data.teamBScore);
+	const teamAScore = data.teamAScore;
+	const teamBScore = data.teamBScore;
 
 	// Get match and verify it exists
 	const [matchRecord] = await db.select().from(match).where(eq(match.id, matchId));
