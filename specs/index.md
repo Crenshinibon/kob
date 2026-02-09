@@ -1,17 +1,17 @@
 # Index
 
-- **./requirements.md**: Complete functional requirements specification covering user roles, tournament setup, scoring rules, and promotion/relegation logic.
+- **./requirements.md**: Core requirements: 4 courts, 16 players, partner rotation, promotion/relegation.
 
-- **./arch.md**: High-level architectural overview of the technology stack including SvelteKit, Svelte 5, Neon PostgreSQL with Drizzle, Better Auth, and the no-CSS-framework approach.
+- **./arch.md**: Tech stack: SvelteKit, Svelte 5, Drizzle + Neon, Better Auth. No CSS frameworks.
 
-- **./auth-and-users.md**: Authentication system and user management specification covering Org (authenticated) and Player (anonymous) roles, Better Auth integration, session management, protected routes, and security considerations.
+- **./auth-and-users.md**: Simple auth: Admin login for management, anonymous access for players via court URLs.
 
-- **./database-schema.md**: Complete database design with entity relationships, table specifications for tournaments, players, court rotations, matches, and access tokens using Drizzle ORM with PostgreSQL.
+- **./database-schema.md**: Minimal schema: tournament, player, courtRotation, match, courtAccess tables.
 
-- **./tournament-management.md**: Tournament lifecycle management from creation through completion, including the multi-step setup wizard, player management, state transitions, and the Org dashboard interface.
+- **./tournament-management.md**: Simple flow: Create → Add 16 players → Start → Run rounds → Finish.
 
-- **./court-operations.md**: Court-level operations for both Org and Player interfaces, covering QR code generation, score entry, real-time updates, access tokens, and mobile-optimized player experience.
+- **./court-operations.md**: Mobile-optimized score entry. No real-time - refresh to update.
 
-- **./scoring-and-standings.md**: Complete scoring system and standings calculation algorithm, including point allocation, tiebreaker logic, final tournament rankings, and statistics tracking.
+- **./scoring-and-standings.md**: Points = your score each match. Tiebreakers: points → differential → random.
 
-- **./promotion-relegation.md**: Mathematical algorithm for moving players between rounds, including the seeding round logic, ladder system for subsequent rounds, and court reassignment implementation.
+- **./promotion-relegation.md**: Round 1 redistributes by rank. Round 2+ uses ladder system (2 up, 2 down).
