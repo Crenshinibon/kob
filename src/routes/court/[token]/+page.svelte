@@ -121,7 +121,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.standings as s (s.playerId)}
+					{#each data.standings as s (s.id)}
 						<tr>
 							<td>{s.rank}</td>
 							<td>{s.name}</td>
