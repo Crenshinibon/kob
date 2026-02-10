@@ -331,7 +331,10 @@ test.describe('Tournament Integration Tests', () => {
 		expect(draftSection).toBe(1);
 	});
 
-	test('smart paste converts comma-separated names to lines', async ({ page }) => {
+	test('smart paste converts comma-separated names to lines', async ({ page, context }) => {
+		// Grant clipboard permissions
+		await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
 		// Generate unique tournament name
 		const tournamentName = `Paste Test Tournament ${Date.now()}`;
 		testTournamentNames.push(tournamentName);
@@ -344,7 +347,9 @@ test.describe('Tournament Integration Tests', () => {
 
 		// Test comma-separated paste
 		const commaSeparated = 'Alice, Bob, Carol, David, Eve, Frank, Grace, Henry';
-		await page.fill('textarea[name="names"]', commaSeparated);
+		await page.evaluate((text) => navigator.clipboard.writeText(text), commaSeparated);
+		await page.locator('textarea[name="names"]').focus();
+		await page.keyboard.press('ControlOrMeta+V');
 
 		// Check that counter shows 8 names
 		await page.waitForSelector('text=8 names entered');
@@ -352,7 +357,9 @@ test.describe('Tournament Integration Tests', () => {
 		// Clear and test semicolon-separated
 		await page.fill('textarea[name="names"]', '');
 		const semicolonSeparated = 'Ivy; Jack; Kate; Leo; Mia; Noah; Olivia; Paul';
-		await page.fill('textarea[name="names"]', semicolonSeparated);
+		await page.evaluate((text) => navigator.clipboard.writeText(text), semicolonSeparated);
+		await page.locator('textarea[name="names"]').focus();
+		await page.keyboard.press('ControlOrMeta+V');
 
 		await page.waitForSelector('text=8 names entered');
 	});
