@@ -6,7 +6,7 @@ export const load = async ({ locals }) => {
 	const user = locals.user;
 
 	if (!user) {
-		return { user: null, active: [], finished: [], archived: [] };
+		return { user: null, active: [], draft: [], finished: [], archived: [] };
 	}
 
 	// Get all tournaments for this user
@@ -18,8 +18,9 @@ export const load = async ({ locals }) => {
 
 	// Split by status
 	const active = allTournaments.filter((t) => t.status === 'active');
+	const draft = allTournaments.filter((t) => t.status === 'draft');
 	const finished = allTournaments.filter((t) => t.status === 'completed');
 	const archived = allTournaments.filter((t) => t.status === 'archived').slice(0, 5);
 
-	return { user, active, finished, archived };
+	return { user, active, draft, finished, archived };
 };

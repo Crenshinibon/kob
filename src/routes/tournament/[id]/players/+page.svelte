@@ -6,13 +6,13 @@
 
 	let playerNames = $state('');
 	let playerCount = $derived(playerNames.split('\n').filter((n) => n.trim()).length);
-	let textareaEl: HTMLTextAreaElement;
+	let textareaEl: HTMLTextAreaElement | undefined = $state();
 
 	function handlePaste(e: ClipboardEvent) {
 		const pastedText = e.clipboardData?.getData('text') || '';
 
 		// Check if pasted content has commas or semicolons
-		if (pastedText.includes(',') || pastedText.includes(';')) {
+		if (textareaEl && (pastedText.includes(',') || pastedText.includes(';'))) {
 			e.preventDefault();
 
 			// Split by comma or semicolon and clean up
@@ -34,7 +34,8 @@
 
 			// Update cursor position after the inserted text
 			setTimeout(() => {
-				textareaEl.selectionStart = textareaEl.selectionEnd = start + formattedNames.length;
+				if (textareaEl)
+					textareaEl.selectionStart = textareaEl.selectionEnd = start + formattedNames.length;
 			}, 0);
 		}
 	}
