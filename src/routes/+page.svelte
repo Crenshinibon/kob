@@ -16,7 +16,9 @@
 				srcset="/logo-100.jpg 100w, /logo-200.jpg 200w, /logo-400.jpg 400w"
 				sizes="(max-width: 600px) 100px, 200px"
 			/>
-			<h1>KoB</h1>
+			<h1 style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px;">
+				KoB
+			</h1>
 		</div>
 		{#if data?.user}
 			<a href="/tournament/create" class="btn-primary">+ New Tournament</a>

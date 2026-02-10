@@ -25,6 +25,8 @@
 		<a href="/">← Dashboard</a>
 		<h1>{data.tournament.name}</h1>
 		<p>Round {data.tournament.currentRound} of {data.tournament.numRounds}</p>
+		<a href="/tournament/{data.tournament.id}/standings" class="standings-link">📊 View Standings</a
+		>
 	</header>
 
 	<section class="courts">
@@ -103,6 +105,22 @@
 	header p {
 		margin: var(--spacing-xs) 0 0 0;
 		color: var(--text-secondary);
+	}
+
+	.standings-link {
+		display: inline-block;
+		margin-top: var(--spacing-md);
+		padding: var(--spacing-sm) var(--spacing-md);
+		background-color: var(--accent-info);
+		color: var(--bg-primary) !important;
+		border-radius: var(--radius-sm);
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+	}
+
+	.standings-link:hover {
+		background-color: var(--accent-primary);
+		color: var(--bg-primary) !important;
 	}
 
 	.courts {
