@@ -12,21 +12,20 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Promotion and Relegation', () => {
 	test.beforeEach(async ({ page }) => {
-		// Sign up test user first
-		await page.goto('/signup');
+		// Try logging in first (most common case)
+		await page.goto('/login');
 		await page.fill('input[type="email"]', 'test@example.com');
 		await page.fill('input[type="password"]', 'password123');
-		await page.fill('input#confirmPassword', 'password123');
 		await page.click('button[type="submit"]');
 
-		// If signup succeeds, we're redirected. If user already exists, we stay on signup page
 		try {
 			await page.waitForURL('/', { timeout: 3000 });
 		} catch {
-			// User already exists, try logging in instead
-			await page.goto('/login');
+			// Login failed, try signing up
+			await page.goto('/signup');
 			await page.fill('input[type="email"]', 'test@example.com');
 			await page.fill('input[type="password"]', 'password123');
+			await page.fill('input#confirmPassword', 'password123');
 			await page.click('button[type="submit"]');
 			await page.waitForURL('/');
 		}
