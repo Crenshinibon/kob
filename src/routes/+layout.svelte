@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '$lib/assets/global.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import type { Snippet } from 'svelte';
 
@@ -34,6 +35,8 @@
 <style>
 	.app-container {
 		min-height: 100vh;
+		background-color: var(--bg-primary);
+		color: var(--text-primary);
 	}
 
 	.top-nav {
@@ -42,28 +45,29 @@
 		align-items: center;
 		gap: 1rem;
 		padding: 0.75rem 1rem;
-		background: #f8f9fa;
-		border-bottom: 1px solid #e9ecef;
+		background-color: var(--bg-nav);
+		border-bottom: 2px solid var(--border-default);
 	}
 
 	.user-email {
-		font-size: 0.875rem;
-		color: #666;
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
 	}
 
 	.btn-signout {
 		background: transparent;
-		color: #dc3545;
-		border: 1px solid #dc3545;
+		color: var(--accent-error);
+		border: 2px solid var(--accent-error);
 		padding: 0.4rem 0.75rem;
-		border-radius: 4px;
-		font-size: 0.875rem;
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: all var(--transition-base);
 	}
 
 	.btn-signout:hover {
-		background: #dc3545;
-		color: white;
+		background-color: var(--accent-error);
+		color: var(--bg-primary);
 	}
 </style>

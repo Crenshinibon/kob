@@ -66,78 +66,101 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 2rem 1rem;
+		padding: var(--spacing-xl) var(--spacing-md);
+		background-color: var(--bg-primary);
 	}
 
 	.auth-container {
 		width: 100%;
 		max-width: 400px;
+		background-color: var(--bg-card);
+		padding: var(--spacing-xl);
+		border-radius: var(--radius-lg);
+		border: 2px solid var(--border-default);
 	}
 
 	h1 {
 		text-align: center;
-		margin-bottom: 2rem;
+		margin-bottom: var(--spacing-xl);
+		color: var(--text-primary);
+		font-size: var(--font-size-2xl);
 	}
 
 	form {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
+		gap: var(--spacing-lg);
 	}
 
 	.field {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: var(--spacing-sm);
 	}
 
 	label {
-		font-weight: 500;
-		font-size: 0.875rem;
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
 	}
 
 	input {
-		padding: 0.75rem;
-		font-size: 1rem;
-		border: 1px solid #ccc;
-		border-radius: 4px;
+		padding: var(--spacing-sm) var(--spacing-md);
+		font-size: var(--font-size-base);
+		background-color: var(--bg-input);
+		color: var(--text-primary);
+		border: 2px solid var(--border-default);
+		border-radius: var(--radius-sm);
 	}
 
 	.btn-primary {
-		background: #0066cc;
-		color: white;
-		padding: 0.75rem;
-		border: none;
-		border-radius: 4px;
-		font-size: 1rem;
+		background-color: var(--accent-primary);
+		color: var(--bg-primary);
+		padding: var(--spacing-sm) var(--spacing-md);
+		border: 2px solid var(--accent-primary);
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-base);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
 		cursor: pointer;
-		margin-top: 0.5rem;
+		margin-top: var(--spacing-sm);
+		transition: all var(--transition-base);
 	}
 
 	.btn-primary:hover:not(:disabled) {
-		background: #0052a3;
+		background-color: var(--accent-primary-hover);
+		box-shadow: var(--glow-primary);
 	}
 
 	.btn-primary:disabled {
-		background: #ccc;
+		background-color: var(--bg-secondary);
+		color: var(--text-muted);
+		border-color: var(--border-default);
 		cursor: not-allowed;
 	}
 
 	.error {
-		background: #f8d7da;
-		color: #721c24;
-		padding: 0.75rem;
-		border-radius: 4px;
-		margin-bottom: 1rem;
+		background-color: rgba(255, 51, 51, 0.1);
+		color: var(--accent-error);
+		border: 2px solid var(--accent-error);
+		padding: var(--spacing-sm);
+		border-radius: var(--radius-sm);
+		margin-bottom: var(--spacing-md);
+		font-weight: 500;
 	}
 
 	.switch {
 		text-align: center;
-		margin-top: 1.5rem;
-		font-size: 0.875rem;
+		margin-top: var(--spacing-lg);
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
 	}
 
 	.switch a {
-		color: #0066cc;
+		color: var(--accent-info);
+		font-weight: 600;
 	}
 </style>

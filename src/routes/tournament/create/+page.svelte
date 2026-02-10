@@ -45,65 +45,99 @@
 	main {
 		max-width: 600px;
 		margin: 0 auto;
-		padding: 2rem 1rem;
+		padding: var(--spacing-xl) var(--spacing-md);
 	}
 
 	header {
-		margin-bottom: 2rem;
+		margin-bottom: var(--spacing-xl);
 	}
 
 	header a {
-		color: #666;
+		color: var(--text-muted);
 		text-decoration: none;
+		font-size: var(--font-size-sm);
+		transition: color var(--transition-fast);
+	}
+
+	header a:hover {
+		color: var(--text-secondary);
 	}
 
 	h1 {
-		margin: 0.5rem 0 0 0;
-		font-size: 1.5rem;
+		margin: var(--spacing-sm) 0 0 0;
+		font-size: var(--font-size-2xl);
+		color: var(--text-primary);
 	}
 
 	form {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
+		gap: var(--spacing-lg);
+		background-color: var(--bg-card);
+		padding: var(--spacing-lg);
+		border-radius: var(--radius-md);
+		border: 2px solid var(--border-default);
 	}
 
 	.field {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: var(--spacing-sm);
 	}
 
 	label {
-		font-weight: 500;
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
 	}
 
 	input,
 	select {
-		padding: 0.5rem;
-		font-size: 1rem;
-		border: 1px solid #ccc;
-		border-radius: 4px;
+		padding: var(--spacing-sm) var(--spacing-md);
+		font-size: var(--font-size-base);
+		background-color: var(--bg-input);
+		color: var(--text-primary);
+		border: 2px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		transition:
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast);
+	}
+
+	input:focus,
+	select:focus {
+		outline: none;
+		border-color: var(--border-focus);
+		box-shadow: var(--shadow-focus);
 	}
 
 	.btn-primary {
-		background: #0066cc;
-		color: white;
-		padding: 0.75rem 1.5rem;
-		border: none;
-		border-radius: 4px;
-		font-size: 1rem;
+		background-color: var(--accent-primary);
+		color: var(--bg-primary);
+		padding: var(--spacing-sm) var(--spacing-lg);
+		border: 2px solid var(--accent-primary);
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-base);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
 		cursor: pointer;
+		transition: all var(--transition-base);
 	}
 
 	.btn-primary:hover {
-		background: #0052a3;
+		background-color: var(--accent-primary-hover);
+		box-shadow: var(--glow-primary);
 	}
 
 	.error {
-		background: #f8d7da;
-		color: #721c24;
-		padding: 0.75rem;
-		border-radius: 4px;
+		background-color: rgba(255, 51, 51, 0.1);
+		color: var(--accent-error);
+		border: 2px solid var(--accent-error);
+		padding: var(--spacing-sm);
+		border-radius: var(--radius-sm);
+		font-weight: 500;
 	}
 </style>
