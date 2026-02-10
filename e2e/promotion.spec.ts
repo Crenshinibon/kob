@@ -48,7 +48,10 @@ test.describe('Promotion and Relegation', () => {
     await page.waitForURL(/\/tournament\/\d+/);
 
     // Get all 4 court URLs
-    const courtLinks = await page.locator('.qr-link a').all();
+    const courtLinksElems = await page.locator('.qr-link a').all();
+    const courtLinksProms = courtLinksElems.map((e) => e.getAttribute("href"))
+    //@ts-ignore
+    const courtLinks = (await Promise.allSettled(courtLinksProms)).map((h) => h.value)
     expect(courtLinks.length).toBe(4);
 
     // Define score tables for each court to create predictable rankings
@@ -95,7 +98,7 @@ test.describe('Promotion and Relegation', () => {
 
     // Execute score entry for each court using table-driven approach
     for (const courtData of courtScoreTables) {
-      const courtUrl = await courtLinks[courtData.courtNum - 1].getAttribute('href');
+      const courtUrl = await courtLinks[courtData.courtNum - 1];
       await page.goto(courtUrl || '');
 
       // Get all match IDs on this court
