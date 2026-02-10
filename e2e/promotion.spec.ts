@@ -11,6 +11,8 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Promotion and Relegation', () => {
+	const testTournamentNames: string[] = [];
+
 	test.beforeEach(async ({ page }) => {
 		// Try logging in first (most common case)
 		await page.goto('/login');
@@ -31,10 +33,48 @@ test.describe('Promotion and Relegation', () => {
 		}
 	});
 
+	test.afterEach(async ({ page }) => {
+		// Clean up test tournaments
+		for (const tournamentName of testTournamentNames) {
+			try {
+				await page.goto('/');
+				await page.waitForLoadState('networkidle');
+
+				// Find and click on the tournament card to go to its detail page
+				const tournamentCard = page
+					.locator(`.tournament-card:has-text("${tournamentName}")`)
+					.first();
+				if (await tournamentCard.isVisible().catch(() => false)) {
+					await tournamentCard.click();
+					await page.waitForLoadState('networkidle');
+
+					// Try to find and click a delete button if it exists
+					const deleteButton = page.locator('button:has-text("Delete")');
+					if (await deleteButton.isVisible().catch(() => false)) {
+						await deleteButton.click();
+						// Confirm deletion if there's a confirmation dialog
+						const confirmButton = page.locator('button:has-text("Confirm")');
+						if (await confirmButton.isVisible().catch(() => false)) {
+							await confirmButton.click();
+						}
+					}
+				}
+			} catch {
+				// Ignore cleanup errors
+			}
+		}
+		// Clear the array for next test
+		testTournamentNames.length = 0;
+	});
+
 	test('Round 1 to Round 2: seeding redistribution by rank', async ({ page }) => {
+		// Generate unique tournament name with timestamp and random suffix
+		const tournamentName = `Seeding Test ${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+		testTournamentNames.push(tournamentName);
+
 		// Create a 3-round tournament
 		await page.click('text=+ New Tournament');
-		await page.fill('input[name="name"]', 'Seeding Test Tournament');
+		await page.fill('input[name="name"]', tournamentName);
 		await page.selectOption('select[name="numRounds"]', '3');
 		await page.click('button[type="submit"]');
 
@@ -133,9 +173,13 @@ test.describe('Promotion and Relegation', () => {
 	});
 
 	test('close round button is disabled until all matches complete', async ({ page }) => {
+		// Generate unique tournament name with timestamp and random suffix
+		const tournamentName = `Close Round Test ${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+		testTournamentNames.push(tournamentName);
+
 		// Create tournament
 		await page.click('text=+ New Tournament');
-		await page.fill('input[name="name"]', 'Close Round Button Test');
+		await page.fill('input[name="name"]', tournamentName);
 		await page.selectOption('select[name="numRounds"]', '2');
 		await page.click('button[type="submit"]');
 
@@ -222,9 +266,13 @@ test.describe('Promotion and Relegation', () => {
 	});
 
 	test('final round completion marks tournament as completed', async ({ page }) => {
+		// Generate unique tournament name with timestamp and random suffix
+		const tournamentName = `Final Round Test ${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+		testTournamentNames.push(tournamentName);
+
 		// Create a 1-round tournament (ends after first round)
 		await page.click('text=+ New Tournament');
-		await page.fill('input[name="name"]', 'Final Round Test');
+		await page.fill('input[name="name"]', tournamentName);
 		await page.selectOption('select[name="numRounds"]', '1');
 		await page.click('button[type="submit"]');
 
@@ -282,17 +330,21 @@ test.describe('Promotion and Relegation', () => {
 
 		// Tournament should be marked as completed
 		await page.goto('/');
-		await page.waitForSelector('text=Final Round Test');
-		const statusBadge = await page.locator(
-			'.tournament-card:has-text("Final Round Test") .status.completed'
-		);
+		await page.waitForSelector(`text=${tournamentName}`);
+		const statusBadge = page
+			.locator(`.tournament-card:has-text("${tournamentName}") .status.completed`)
+			.first();
 		await expect(statusBadge).toBeVisible();
 	});
 
 	test('maintains exactly 4 players per court after redistribution', async ({ page }) => {
+		// Generate unique tournament name with timestamp and random suffix
+		const tournamentName = `Player Count Test ${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+		testTournamentNames.push(tournamentName);
+
 		// Create a 3-round tournament
 		await page.click('text=+ New Tournament');
-		await page.fill('input[name="name"]', 'Player Count Test');
+		await page.fill('input[name="name"]', tournamentName);
 		await page.selectOption('select[name="numRounds"]', '3');
 		await page.click('button[type="submit"]');
 
