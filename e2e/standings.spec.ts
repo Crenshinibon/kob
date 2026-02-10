@@ -12,12 +12,24 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Standings Calculation', () => {
 	test.beforeEach(async ({ page }) => {
-		// Login before each test
-		await page.goto('/auth/login');
+		// Sign up test user first
+		await page.goto('/signup');
 		await page.fill('input[type="email"]', 'test@example.com');
 		await page.fill('input[type="password"]', 'password123');
+		await page.fill('input#confirmPassword', 'password123');
 		await page.click('button[type="submit"]');
-		await page.waitForURL('/');
+
+		// If signup succeeds, we're redirected. If user already exists, we stay on signup page
+		try {
+			await page.waitForURL('/', { timeout: 3000 });
+		} catch {
+			// User already exists, try logging in instead
+			await page.goto('/login');
+			await page.fill('input[type="email"]', 'test@example.com');
+			await page.fill('input[type="password"]', 'password123');
+			await page.click('button[type="submit"]');
+			await page.waitForURL('/');
+		}
 	});
 
 	test('calculates correct points for all players in a match', async ({ page }) => {
@@ -43,9 +55,16 @@ test.describe('Standings Calculation', () => {
 
 		// Enter a match with scores 21-19
 		await page.goto(courtUrl || '');
-		await page.fill('input[name="teamAScore"]', '21');
-		await page.fill('input[name="teamBScore"]', '19');
-		await page.click('button:has-text("Save Score")');
+
+		// Get first match ID
+		await page.waitForSelector('[data-testid^="match-form-"]');
+		const firstMatchForm = await page.locator('[data-testid^="match-form-"]').first();
+		const testId = await firstMatchForm.getAttribute('data-testid');
+		const matchId = testId?.replace('match-form-', '');
+
+		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
+		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
+		await page.click(`[data-testid="save-score-${matchId}"]`);
 
 		// Verify standings show correct points
 		await page.waitForSelector('.standings');
@@ -75,10 +94,16 @@ test.describe('Standings Calculation', () => {
 		const courtUrl = await courtLink.getAttribute('href');
 		await page.goto(courtUrl || '');
 
+		// Get first match ID
+		await page.waitForSelector('[data-testid^="match-form-"]');
+		const firstMatchForm = await page.locator('[data-testid^="match-form-"]').first();
+		const testId = await firstMatchForm.getAttribute('data-testid');
+		const matchId = testId?.replace('match-form-', '');
+
 		// Complete all 3 matches with varying scores
-		await page.fill('input[name="teamAScore"]', '25');
-		await page.fill('input[name="teamBScore"]', '23');
-		await page.click('button:has-text("Save Score")');
+		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '25');
+		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '23');
+		await page.click(`[data-testid="save-score-${matchId}"]`);
 
 		await page.waitForTimeout(500);
 		await page.reload();
@@ -115,10 +140,16 @@ test.describe('Standings Calculation', () => {
 		const courtUrl = await courtLink.getAttribute('href');
 		await page.goto(courtUrl || '');
 
+		// Get first match ID
+		await page.waitForSelector('[data-testid^="match-form-"]');
+		const firstMatchForm = await page.locator('[data-testid^="match-form-"]').first();
+		const testId = await firstMatchForm.getAttribute('data-testid');
+		const matchId = testId?.replace('match-form-', '');
+
 		// Enter scores
-		await page.fill('input[name="teamAScore"]', '21');
-		await page.fill('input[name="teamBScore"]', '19');
-		await page.click('button:has-text("Save Score")');
+		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
+		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
+		await page.click(`[data-testid="save-score-${matchId}"]`);
 
 		await page.waitForTimeout(500);
 		await page.reload();
@@ -148,24 +179,35 @@ test.describe('Standings Calculation', () => {
 		const courtUrl = await courtLink.getAttribute('href');
 		await page.goto(courtUrl || '');
 
+		// Get all match IDs on this court
+		await page.waitForSelector('[data-testid^="match-form-"]');
+		const matchForms = await page.locator('[data-testid^="match-form-"]').all();
+		const matchIds = await Promise.all(
+			matchForms.map(async (form) => {
+				const testId = await form.getAttribute('data-testid');
+				return testId?.replace('match-form-', '');
+			})
+		);
+		expect(matchIds.length).toBe(3);
+
 		// Match 1
-		await page.fill('input[name="teamAScore"]', '21');
-		await page.fill('input[name="teamBScore"]', '19');
-		await page.click('button:has-text("Save Score")');
+		await page.fill(`[data-testid="team-a-score-${matchIds[0]}"]`, '21');
+		await page.fill(`[data-testid="team-b-score-${matchIds[0]}"]`, '19');
+		await page.click(`[data-testid="save-score-${matchIds[0]}"]`);
 		await page.waitForTimeout(500);
 		await page.reload();
 
 		// Match 2
-		await page.fill('input[name="teamAScore"]', '25');
-		await page.fill('input[name="teamBScore"]', '23');
-		await page.click('button:has-text("Save Score")');
+		await page.fill(`[data-testid="team-a-score-${matchIds[1]}"]`, '25');
+		await page.fill(`[data-testid="team-b-score-${matchIds[1]}"]`, '23');
+		await page.click(`[data-testid="save-score-${matchIds[1]}"]`);
 		await page.waitForTimeout(500);
 		await page.reload();
 
 		// Match 3
-		await page.fill('input[name="teamAScore"]', '22');
-		await page.fill('input[name="teamBScore"]', '20');
-		await page.click('button:has-text("Save Score")');
+		await page.fill(`[data-testid="team-a-score-${matchIds[2]}"]`, '22');
+		await page.fill(`[data-testid="team-b-score-${matchIds[2]}"]`, '20');
+		await page.click(`[data-testid="save-score-${matchIds[2]}"]`);
 		await page.waitForTimeout(500);
 		await page.reload();
 
@@ -198,10 +240,16 @@ test.describe('Standings Calculation', () => {
 		const courtUrl = await courtLink.getAttribute('href');
 		await page.goto(courtUrl || '');
 
+		// Get first match ID
+		await page.waitForSelector('[data-testid^="match-form-"]');
+		const firstMatchForm = await page.locator('[data-testid^="match-form-"]').first();
+		const testId = await firstMatchForm.getAttribute('data-testid');
+		const matchId = testId?.replace('match-form-', '');
+
 		// Try score without reaching 21
-		await page.fill('input[name="teamAScore"]', '20');
-		await page.fill('input[name="teamBScore"]', '18');
-		await page.click('button:has-text("Save Score")');
+		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '20');
+		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '18');
+		await page.click(`[data-testid="save-score-${matchId}"]`);
 
 		// Should show error
 		await page.waitForSelector('.error');
@@ -209,18 +257,18 @@ test.describe('Standings Calculation', () => {
 		expect(errorText).toContain('21');
 
 		// Try tied score
-		await page.fill('input[name="teamAScore"]', '21');
-		await page.fill('input[name="teamBScore"]', '21');
-		await page.click('button:has-text("Save Score")');
+		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
+		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '21');
+		await page.click(`[data-testid="save-score-${matchId}"]`);
 
 		await page.waitForSelector('.error');
 		const errorText2 = await page.locator('.error').textContent();
 		expect(errorText2?.toLowerCase()).toContain('tie');
 
 		// Try winning by only 1 point
-		await page.fill('input[name="teamAScore"]', '21');
-		await page.fill('input[name="teamBScore"]', '20');
-		await page.click('button:has-text("Save Score")');
+		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
+		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '20');
+		await page.click(`[data-testid="save-score-${matchId}"]`);
 
 		await page.waitForSelector('.error');
 		const errorText3 = await page.locator('.error').textContent();

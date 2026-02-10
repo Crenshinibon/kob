@@ -12,11 +12,24 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Tournament Integration Tests', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto('/auth/login');
+		// Sign up test user first
+		await page.goto('/signup');
 		await page.fill('input[type="email"]', 'test@example.com');
 		await page.fill('input[type="password"]', 'password123');
+		await page.fill('input#confirmPassword', 'password123');
 		await page.click('button[type="submit"]');
-		await page.waitForURL('/');
+
+		// If signup succeeds, we're redirected. If user already exists, we stay on signup page
+		try {
+			await page.waitForURL('/', { timeout: 3000 });
+		} catch {
+			// User already exists, try logging in instead
+			await page.goto('/login');
+			await page.fill('input[type="email"]', 'test@example.com');
+			await page.fill('input[type="password"]', 'password123');
+			await page.click('button[type="submit"]');
+			await page.waitForURL('/');
+		}
 	});
 
 	test('complete 2-round tournament with score entry', async ({ page }) => {
@@ -69,6 +82,17 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForSelector('.qr-section img');
 			await page.waitForSelector('text=Share Court Access');
 
+			// Get all match IDs on this court
+			await page.waitForSelector('[data-testid^="match-form-"]');
+			const matchForms = await page.locator('[data-testid^="match-form-"]').all();
+			const matchIds = await Promise.all(
+				matchForms.map(async (form) => {
+					const testId = await form.getAttribute('data-testid');
+					return testId?.replace('match-form-', '');
+				})
+			);
+			expect(matchIds.length).toBe(3);
+
 			// Complete all 3 matches with realistic scores
 			const scores = [
 				{ a: 21, b: 19 },
@@ -77,12 +101,18 @@ test.describe('Tournament Integration Tests', () => {
 			];
 
 			for (let matchIdx = 0; matchIdx < 3; matchIdx++) {
-				await page.fill('input[name="teamAScore"]', String(scores[matchIdx].a));
-				await page.fill('input[name="teamBScore"]', String(scores[matchIdx].b));
-				await page.click('button:has-text("Save Score")');
+				await page.fill(
+					`[data-testid="team-a-score-${matchIds[matchIdx]}"]`,
+					String(scores[matchIdx].a)
+				);
+				await page.fill(
+					`[data-testid="team-b-score-${matchIds[matchIdx]}"]`,
+					String(scores[matchIdx].b)
+				);
+				await page.click(`[data-testid="save-score-${matchIds[matchIdx]}"]`);
 
 				// Wait for success message
-				await page.waitForSelector('.success');
+				await page.waitForSelector('.saved');
 
 				if (matchIdx < 2) {
 					await page.waitForTimeout(300);
@@ -113,10 +143,21 @@ test.describe('Tournament Integration Tests', () => {
 			const courtUrl = await courtLink.getAttribute('href');
 			await page.goto(courtUrl || '');
 
+			// Get all match IDs on this court
+			await page.waitForSelector('[data-testid^="match-form-"]');
+			const matchForms = await page.locator('[data-testid^="match-form-"]').all();
+			const matchIds = await Promise.all(
+				matchForms.map(async (form) => {
+					const testId = await form.getAttribute('data-testid');
+					return testId?.replace('match-form-', '');
+				})
+			);
+			expect(matchIds.length).toBe(3);
+
 			for (let i = 0; i < 3; i++) {
-				await page.fill('input[name="teamAScore"]', '21');
-				await page.fill('input[name="teamBScore"]', '19');
-				await page.click('button:has-text("Save Score")');
+				await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');
+				await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '19');
+				await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
 				await page.waitForTimeout(300);
 				if (i < 2) await page.reload();
 			}
@@ -164,18 +205,29 @@ test.describe('Tournament Integration Tests', () => {
 		// Access court page without authentication
 		await publicPage.goto(courtUrl || '');
 
+		// Get all match IDs on this court
+		await publicPage.waitForSelector('[data-testid^="match-form-"]');
+		const matchForms = await publicPage.locator('[data-testid^="match-form-"]').all();
+		const matchIds = await Promise.all(
+			matchForms.map(async (form) => {
+				const testId = await form.getAttribute('data-testid');
+				return testId?.replace('match-form-', '');
+			})
+		);
+		expect(matchIds.length).toBeGreaterThan(0);
+
 		// Should be able to view and enter scores
-		await publicPage.waitForSelector('input[name="teamAScore"]');
-		await publicPage.waitForSelector('input[name="teamBScore"]');
-		await publicPage.waitForSelector('button:has-text("Save Score")');
+		await publicPage.waitForSelector(`[data-testid="team-a-score-${matchIds[0]}"]`);
+		await publicPage.waitForSelector(`[data-testid="team-b-score-${matchIds[0]}"]`);
+		await publicPage.waitForSelector(`[data-testid="save-score-${matchIds[0]}"]`);
 
 		// Can enter scores
-		await publicPage.fill('input[name="teamAScore"]', '21');
-		await publicPage.fill('input[name="teamBScore"]', '19');
-		await publicPage.click('button:has-text("Save Score")');
+		await publicPage.fill(`[data-testid="team-a-score-${matchIds[0]}"]`, '21');
+		await publicPage.fill(`[data-testid="team-b-score-${matchIds[0]}"]`, '19');
+		await publicPage.click(`[data-testid="save-score-${matchIds[0]}"]`);
 
 		// Should see success
-		await publicPage.waitForSelector('.success');
+		await publicPage.waitForSelector('.saved');
 
 		await publicContext!.close();
 	});
@@ -185,6 +237,7 @@ test.describe('Tournament Integration Tests', () => {
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', 'Active Tournament');
 		await page.click('button[type="submit"]');
+
 		await page.waitForURL(/\/tournament\/\d+\/players/);
 		const players1 = Array.from({ length: 16 }, (_, i) => `A${i + 1}`);
 		await page.fill('textarea[name="names"]', players1.join('\n'));
@@ -212,6 +265,14 @@ test.describe('Tournament Integration Tests', () => {
 			)
 			.count();
 		expect(activeSection).toBe(1);
+
+		// Verify draft tournament appears in draft section
+		const draftSection = await page
+			.locator(
+				'h2:has-text("Draft Tournaments") + .tournament-list .tournament-card:has-text("Draft Tournament")'
+			)
+			.count();
+		expect(draftSection).toBe(1);
 	});
 
 	test('smart paste converts comma-separated names to lines', async ({ page }) => {

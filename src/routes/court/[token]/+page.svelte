@@ -109,6 +109,7 @@
 					{:else}
 						{@const isEditing = editingMatches.has(match.id)}
 						<form
+							data-testid="match-form-{match.id}"
 							{...saveScore
 								.for(match.id)
 								.preflight(scoreSchema)
@@ -132,6 +133,7 @@
 								<div class="team">
 									<p>{getPlayerName(match, 'a1')} & {getPlayerName(match, 'a2')}</p>
 									<input
+										data-testid="team-a-score-{match.id}"
 										type="number"
 										name="teamAScore"
 										min="1"
@@ -147,6 +149,7 @@
 								<div class="team">
 									<p>{getPlayerName(match, 'b1')} & {getPlayerName(match, 'b2')}</p>
 									<input
+										data-testid="team-b-score-{match.id}"
 										type="number"
 										name="teamBScore"
 										min="1"
@@ -172,7 +175,12 @@
 										Cancel
 									</button>
 								{/if}
-								<button type="submit" class="btn-primary" disabled={savingMatches.has(match.id)}>
+								<button
+									data-testid="save-score-{match.id}"
+									type="submit"
+									class="btn-primary"
+									disabled={savingMatches.has(match.id)}
+								>
 									{#if savingMatches.has(match.id)}
 										<span class="spinner"></span>
 										{isEditing ? 'Updating...' : 'Saving...'}
