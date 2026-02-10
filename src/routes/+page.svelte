@@ -8,7 +8,16 @@
 
 <main>
 	<header>
-		<h1>KoB Tracker</h1>
+		<div class="logo-section">
+			<img
+				src="/logo-200.jpg"
+				alt="King of the Beach"
+				class="logo"
+				srcset="/logo-100.jpg 100w, /logo-200.jpg 200w, /logo-400.jpg 400w"
+				sizes="(max-width: 600px) 100px, 200px"
+			/>
+			<h1>KoB</h1>
+		</div>
 		{#if data?.user}
 			<a href="/tournament/create" class="btn-primary">+ New Tournament</a>
 		{:else}
@@ -106,10 +115,26 @@
 		margin-bottom: var(--spacing-xl);
 	}
 
+	.logo-section {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+	}
+
+	.logo {
+		width: 60px;
+		height: auto;
+		border-radius: var(--radius-sm);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+		object-fit: cover;
+	}
+
 	h1 {
 		margin: 0;
 		font-size: var(--font-size-2xl);
 		color: var(--text-primary);
+		font-weight: 800;
+		letter-spacing: -1px;
 	}
 
 	.btn-primary {

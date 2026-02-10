@@ -217,6 +217,16 @@ CSS file located at `/static/global.css` and imported in `src/app.html`:
 - Better caching behavior
 - Consistent with SvelteKit static file conventions
 
+### Logo
+
+- **File**: `/static/logo.jpg` (original high-res version)
+- **Optimized versions**:
+  - `logo-100.jpg` (100px width, ~7KB)
+  - `logo-200.jpg` (200px width, ~20KB) - used on landing page
+  - `logo-400.jpg` (400px width, ~60KB)
+- **Format**: Web-friendly JPG with srcset for responsive loading
+- **Styling**: 60px width, border-radius, box-shadow for dark theme integration
+
 ### Toggle Mechanism
 
 - Default to dark theme (no light theme needed)
