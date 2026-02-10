@@ -22,8 +22,10 @@ Simple auth system using Better Auth. Email and password only (no name field). P
 
 **Auth Pages**:
 
-- `/auth/login` - Login form (email + password)
-- `/auth/signup` - Signup form (email + password, min 10 chars)
+- `/login` - Login form (email + password)
+- `/signup` - Signup form (email + password, min 10 chars)
+
+Note: Auth pages are at root level, not under `/auth/` namespace, to avoid conflicts with Better Auth API routes.
 
 **Better Auth API** (handled automatically):
 
@@ -31,9 +33,9 @@ Simple auth system using Better Auth. Email and password only (no name field). P
 - `/auth/sign-up/email` - Signup endpoint
 - `/auth/sign-out` - Logout endpoint
 
-**Protected Routes** (redirect to `/auth/login` if not authenticated):
+**Protected Routes** (redirect to `/login` if not authenticated):
 
-- `/` - Dashboard (shows active, finished, archived tournaments)
+- `/` - Dashboard (shows active, draft, finished, archived tournaments)
 - `/tournament/create` - Create tournament
 - `/tournament/[id]/*` - Tournament management
 
@@ -43,13 +45,13 @@ Simple auth system using Better Auth. Email and password only (no name field). P
 
 ## Flow
 
-1. User visits `/auth/signup`
+1. User visits `/signup`
 2. Enters email and password (min 10 characters)
 3. Submits form → POST to `/auth/sign-up/email`
 4. On success, redirects to `/` (dashboard)
-5. Dashboard shows: Active tournaments, Finished tournaments, Archived (max 5)
+5. Dashboard shows: Active tournaments, Draft tournaments, Finished tournaments, Archived (max 5)
 
-Same flow for login at `/auth/login`.
+Same flow for login at `/login`.
 
 ## Implementation
 

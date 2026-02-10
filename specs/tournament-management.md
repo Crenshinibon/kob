@@ -19,6 +19,11 @@ Shows user's tournaments organized in sections:
 - All ongoing tournaments (status: active)
 - Shows round progress: "Round 2 of 3"
 
+**Draft Tournaments**
+
+- Tournaments created but not yet started (status: draft)
+- Shows planned number of rounds
+
 **Finished Tournaments**
 
 - All completed tournaments (status: completed)

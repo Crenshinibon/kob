@@ -15,3 +15,5 @@
 - **./scoring-and-standings.md**: Points = your score each match. Tiebreakers: points → differential → random.
 
 - **./promotion-relegation.md**: Round 1 redistributes by rank. Round 2+ uses ladder system (2 up, 2 down).
+
+- **./gotchas.md**: Development lessons, common issues, and workarounds encountered during implementation and testing.
