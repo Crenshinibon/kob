@@ -437,24 +437,27 @@
 	}
 
 	.team input {
-		width: 70px;
+		width: 80px;
 		padding: var(--spacing-sm);
 		font-size: var(--font-size-xl);
 		font-weight: 700;
 		text-align: center;
 		background-color: var(--bg-input);
-		color: var(--text-primary);
-		border: 2px solid var(--border-default);
+		color: var(--text-input);
+		border: var(--border-thickness) solid var(--border-strong);
 		border-radius: var(--radius-sm);
+		min-height: 60px;
 		transition:
 			border-color var(--transition-fast),
-			box-shadow var(--transition-fast);
+			box-shadow var(--transition-fast),
+			transform var(--transition-fast);
 	}
 
 	.team input:focus {
 		outline: none;
 		border-color: var(--accent-info);
 		box-shadow: var(--shadow-focus);
+		transform: scale(1.05);
 	}
 
 	.team input:disabled {

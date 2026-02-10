@@ -207,17 +207,19 @@
 		padding: var(--spacing-sm);
 		font-size: var(--font-size-base);
 		background-color: var(--bg-input);
-		color: var(--text-primary);
-		border: 2px solid var(--border-default);
+		color: var(--text-input);
+		border: var(--border-thickness) solid var(--border-strong);
 		border-radius: var(--radius-sm);
 		font-family: inherit;
 		min-height: 150px;
 		resize: vertical;
+		font-weight: 500;
 	}
 
 	textarea:focus {
 		outline: none;
 		border-color: var(--border-focus);
+		transform: scale(1.02);
 		box-shadow: var(--shadow-focus);
 	}
 

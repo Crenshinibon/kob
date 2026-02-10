@@ -1,6 +1,4 @@
 <script lang="ts">
-	import '$lib/assets/global.css';
-	import favicon from '$lib/assets/favicon.svg';
 	import type { Snippet } from 'svelte';
 
 	let {
@@ -16,10 +14,6 @@
 		window.location.href = '/';
 	}
 </script>
-
-<svelte:head>
-	<link rel="icon" href={favicon} />
-</svelte:head>
 
 <div class="app-container">
 	{#if data?.user}

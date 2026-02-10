@@ -3,17 +3,18 @@
 :root {
 	/* Background Colors */
 	--bg-primary: #0a0a0a;
-	--bg-secondary: #141414;
-	--bg-card: #1a1a1a;
-	--bg-input: #0f0f0f;
-	--bg-hover: #252525;
+	--bg-secondary: #1a1a1a;
+	--bg-card: #222222;
+	--bg-input: #ffffff;
+	--bg-hover: #2a2a2a;
 	--bg-nav: #1a1a1a;
 
 	/* Text Colors */
 	--text-primary: #ffffff;
-	--text-secondary: #e0e0e0;
-	--text-muted: #a0a0a0;
+	--text-secondary: #e8e8e8;
+	--text-muted: #b0b0b0;
 	--text-placeholder: #666666;
+	--text-input: #000000;
 
 	/* Accent Colors - High Visibility for Sunlight */
 	--accent-primary: #ff6b35;
@@ -23,29 +24,31 @@
 	--accent-error: #ff3333;
 	--accent-error-hover: #ff5555;
 	--accent-warning: #ffcc00;
-	--accent-info: #00ccff;
+	--accent-info: #00d9ff;
 
-	/* Border Colors */
-	--border-default: #404040;
-	--border-focus: #00ccff;
+	/* Border Colors - More Prominent for Sunlight */
+	--border-default: #808080;
+	--border-strong: #a0a0a0;
+	--border-focus: #00d9ff;
 	--border-success: #00ff41;
 	--border-error: #ff3333;
 	--border-warning: #ffcc00;
+	--border-thickness: 3px;
 
 	/* Status Badge Colors */
 	--status-active-bg: #00ff41;
-	--status-active-text: #0a0a0a;
+	--status-active-text: #000000;
 	--status-draft-bg: #ffcc00;
-	--status-draft-text: #0a0a0a;
-	--status-completed-bg: #00ccff;
-	--status-completed-text: #0a0a0a;
-	--status-archived-bg: #666666;
+	--status-draft-text: #000000;
+	--status-completed-bg: #00d9ff;
+	--status-completed-text: #000000;
+	--status-archived-bg: #808080;
 	--status-archived-text: #ffffff;
 
 	/* Shadow/Glow Effects */
-	--shadow-focus: 0 0 0 3px rgba(0, 204, 255, 0.3);
-	--glow-primary: 0 0 15px rgba(255, 107, 53, 0.5);
-	--glow-success: 0 0 10px rgba(0, 255, 65, 0.3);
+	--shadow-focus: 0 0 0 4px rgba(0, 217, 255, 0.4);
+	--glow-primary: 0 0 20px rgba(255, 107, 53, 0.6);
+	--glow-success: 0 0 15px rgba(0, 255, 65, 0.4);
 
 	/* Typography */
 	--font-family:
@@ -131,21 +134,28 @@ a:hover {
 	text-decoration: underline;
 }
 
-/* Form Elements */
+/* Form Elements - Bright White Background for Sunlight Visibility */
 input,
 textarea,
 select {
 	font-family: inherit;
 	font-size: var(--font-size-base);
 	background-color: var(--bg-input);
-	color: var(--text-primary);
-	border: 2px solid var(--border-default);
+	color: var(--text-input);
+	border: var(--border-thickness) solid var(--border-strong);
 	border-radius: var(--radius-sm);
 	padding: var(--spacing-sm) var(--spacing-md);
-	caret-color: var(--accent-info);
+	caret-color: var(--accent-primary);
+	font-weight: 500;
 	transition:
 		border-color var(--transition-fast),
-		box-shadow var(--transition-fast);
+		box-shadow var(--transition-fast),
+		transform var(--transition-fast);
+}
+
+/* Larger inputs for easier touch on mobile */
+input {
+	min-height: 48px;
 }
 
 input:focus,
@@ -154,31 +164,37 @@ select:focus {
 	outline: none;
 	border-color: var(--border-focus);
 	box-shadow: var(--shadow-focus);
+	transform: scale(1.02);
 }
 
 input::placeholder,
 textarea::placeholder {
 	color: var(--text-placeholder);
+	font-weight: 400;
 }
 
 input:disabled,
 textarea:disabled,
 select:disabled {
-	background-color: var(--bg-secondary);
-	color: var(--text-muted);
+	background-color: #e0e0e0;
+	color: #808080;
 	cursor: not-allowed;
+	border-color: var(--border-default);
 }
 
 /* Buttons */
 button {
 	font-family: inherit;
 	font-size: var(--font-size-base);
-	font-weight: 600;
+	font-weight: 700;
 	cursor: pointer;
-	border: none;
+	border: var(--border-thickness) solid transparent;
 	border-radius: var(--radius-sm);
 	padding: var(--spacing-sm) var(--spacing-md);
 	transition: all var(--transition-base);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	min-height: 44px;
 }
 
 button:disabled {
@@ -247,29 +263,31 @@ button:disabled {
 	color: var(--status-archived-text);
 }
 
-/* Error/Success Messages */
+/* Error/Success Messages - More Prominent Borders */
 .error {
-	background-color: rgba(255, 51, 51, 0.1);
+	background-color: rgba(255, 51, 51, 0.15);
 	color: var(--accent-error);
-	border: 2px solid var(--accent-error);
+	border: var(--border-thickness) solid var(--accent-error);
 	border-radius: var(--radius-sm);
 	padding: var(--spacing-sm);
 	margin-bottom: var(--spacing-md);
+	font-weight: 600;
 }
 
 .success {
-	background-color: rgba(0, 255, 65, 0.1);
+	background-color: rgba(0, 255, 65, 0.15);
 	color: var(--accent-success);
-	border: 2px solid var(--accent-success);
+	border: var(--border-thickness) solid var(--accent-success);
 	border-radius: var(--radius-sm);
 	padding: var(--spacing-sm);
 	margin-bottom: var(--spacing-md);
+	font-weight: 700;
 }
 
-/* Cards */
+/* Cards - Thicker Borders */
 .card {
 	background-color: var(--bg-card);
-	border: 2px solid var(--border-default);
+	border: var(--border-thickness) solid var(--border-strong);
 	border-radius: var(--radius-md);
 	padding: var(--spacing-md);
 }
@@ -290,14 +308,14 @@ button:disabled {
 
 /* High Contrast Focus States */
 :focus-visible {
-	outline: 3px solid var(--accent-info);
-	outline-offset: 2px;
+	outline: 4px solid var(--accent-info);
+	outline-offset: 3px;
 }
 
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
-	width: 8px;
-	height: 8px;
+	width: 10px;
+	height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -305,8 +323,9 @@ button:disabled {
 }
 
 ::-webkit-scrollbar-thumb {
-	background: var(--border-default);
-	border-radius: 4px;
+	background: var(--border-strong);
+	border-radius: 5px;
+	border: 2px solid var(--bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb:hover {

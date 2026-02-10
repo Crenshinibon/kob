@@ -29,30 +29,32 @@ Special high-contrast dark theme optimized for bright sunlight conditions. Essen
 ### Backgrounds
 
 - **Primary Background**: `#0a0a0a` (near black)
-- **Secondary Background**: `#141414` (dark gray)
-- **Card Background**: `#1a1a1a` (slightly lighter)
-- **Input Background**: `#0f0f0f` (very dark)
+- **Secondary Background**: `#1a1a1a` (dark gray)
+- **Card Background**: `#222222` (slightly lighter)
+- **Input Background**: `#ffffff` (pure white) - **Critical for sunlight visibility**
 
 ### Text Colors
 
 - **Primary Text**: `#ffffff` (pure white) - Contrast ratio: 21:1
-- **Secondary Text**: `#e0e0e0` (light gray) - Contrast ratio: 17:1
-- **Muted Text**: `#a0a0a0` (medium gray) - Contrast ratio: 10:1
+- **Secondary Text**: `#e8e8e8` (light gray) - Contrast ratio: 17:1
+- **Muted Text**: `#b0b0b0` (medium gray) - Contrast ratio: 10:1
+- **Input Text**: `#000000` (pure black) - **On white inputs**
 
 ### Accent Colors (High Visibility)
 
 - **Success/Green**: `#00ff41` (bright neon green)
 - **Error/Red**: `#ff3333` (bright red)
 - **Warning/Yellow**: `#ffcc00` (bright yellow)
-- **Info/Blue**: `#00ccff` (bright cyan)
+- **Info/Blue**: `#00d9ff` (bright cyan)
 - **Primary Action**: `#ff6b35` (bright orange)
 
 ### Borders & Highlights
 
-- **Default Border**: `2px solid #404040`
-- **Focus Border**: `3px solid #00ccff` (cyan glow)
-- **Success Border**: `2px solid #00ff41`
-- **Error Border**: `2px solid #ff3333`
+- **Default Border**: `3px solid #808080` (prominent in sunlight)
+- **Strong Border**: `3px solid #a0a0a0` (for cards and key elements)
+- **Focus Border**: `4px solid #00d9ff` with glow effect
+- **Success Border**: `3px solid #00ff41`
+- **Error Border**: `3px solid #ff3333`
 
 ## Component Styles
 
@@ -84,14 +86,14 @@ Special high-contrast dark theme optimized for bright sunlight conditions. Essen
 
 ```css
 .card {
-	background: #1a1a1a;
-	border: 2px solid #404040;
+	background: #222222;
+	border: 3px solid #a0a0a0; /* Prominent borders */
 	border-radius: 8px;
 }
 
 .card-active {
 	border-color: #00ff41;
-	box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+	box-shadow: 0 0 15px rgba(0, 255, 65, 0.4);
 }
 
 .card-draft {
@@ -99,21 +101,28 @@ Special high-contrast dark theme optimized for bright sunlight conditions. Essen
 }
 ```
 
-### Inputs
+### Inputs - Bright White Backgrounds for Sunlight
 
 ```css
 input,
 textarea {
-	background: #0f0f0f;
-	color: #ffffff;
-	border: 2px solid #505050;
-	caret-color: #00ccff;
+	background: #ffffff; /* Pure white for maximum contrast */
+	color: #000000; /* Black text for readability */
+	border: 3px solid #808080; /* Prominent borders */
+	caret-color: #ff6b35; /* Orange cursor for visibility */
+	font-weight: 500;
+	min-height: 48px; /* Larger touch targets */
 }
 
 input:focus {
-	border-color: #00ccff;
-	box-shadow: 0 0 0 3px rgba(0, 204, 255, 0.3);
+	border-color: #00d9ff;
+	box-shadow: 0 0 0 4px rgba(0, 217, 255, 0.4);
+	transform: scale(1.02); /* Slight scale for focus indication */
 	outline: none;
+}
+
+input::placeholder {
+	color: #666666; /* Dark gray for visibility on white */
 }
 ```
 
@@ -176,18 +185,37 @@ font-family:
 ```css
 :root {
 	--bg-primary: #0a0a0a;
-	--bg-secondary: #141414;
-	--bg-card: #1a1a1a;
+	--bg-secondary: #1a1a1a;
+	--bg-card: #222222;
+	--bg-input: #ffffff; /* Bright white for inputs */
 	--text-primary: #ffffff;
-	--text-secondary: #e0e0e0;
+	--text-secondary: #e8e8e8;
+	--text-input: #000000; /* Black for input text */
 	--accent-success: #00ff41;
 	--accent-error: #ff3333;
 	--accent-warning: #ffcc00;
-	--accent-info: #00ccff;
+	--accent-info: #00d9ff;
 	--accent-primary: #ff6b35;
-	--border-default: #404040;
+	--border-default: #808080;
+	--border-strong: #a0a0a0;
+	--border-thickness: 3px;
 }
 ```
+
+### File Location
+
+CSS file located at `/static/global.css` and imported in `src/app.html`:
+
+```html
+<link rel="stylesheet" href="/global.css" />
+```
+
+**Note**: Global CSS is imported via `app.html` (static file) rather than in JavaScript/Svelte components. This ensures:
+
+- Faster initial load (no JS import needed)
+- CSS is loaded before any content renders
+- Better caching behavior
+- Consistent with SvelteKit static file conventions
 
 ### Toggle Mechanism
 

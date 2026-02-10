@@ -98,9 +98,11 @@
 		padding: var(--spacing-sm) var(--spacing-md);
 		font-size: var(--font-size-base);
 		background-color: var(--bg-input);
-		color: var(--text-primary);
-		border: 2px solid var(--border-default);
+		color: var(--text-input);
+		border: var(--border-thickness) solid var(--border-strong);
 		border-radius: var(--radius-sm);
+		min-height: 48px;
+		font-weight: 500;
 		transition:
 			border-color var(--transition-fast),
 			box-shadow var(--transition-fast);
@@ -111,6 +113,7 @@
 		outline: none;
 		border-color: var(--border-focus);
 		box-shadow: var(--shadow-focus);
+		transform: scale(1.02);
 	}
 
 	.btn-primary {
