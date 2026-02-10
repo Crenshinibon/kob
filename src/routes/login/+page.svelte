@@ -1,48 +1,26 @@
 <script lang="ts">
 	let email = $state('');
 	let password = $state('');
-	let confirmPassword = $state('');
 	let error = $state('');
 	let loading = $state(false);
-
-	function validatePassword(pass: string): string | null {
-		if (pass.length < 10) {
-			return 'Password must be at least 10 characters';
-		}
-		return null;
-	}
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
 		error = '';
-
-		// Validate password
-		const passError = validatePassword(password);
-		if (passError) {
-			error = passError;
-			return;
-		}
-
-		// Check passwords match
-		if (password !== confirmPassword) {
-			error = 'Passwords do not match';
-			return;
-		}
-
 		loading = true;
 
 		try {
-			const response = await fetch('/auth/sign-up/email', {
+			const response = await fetch('/auth/sign-in/email', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, password, name: email.split('@')[0] })
+				body: JSON.stringify({ email, password })
 			});
 
 			if (response.ok) {
 				window.location.href = '/';
 			} else {
 				const data = await response.json();
-				error = data.message || 'Signup failed';
+				error = data.message || 'Login failed';
 			}
 		} catch (e) {
 			error = 'Network error. Please try again.';
@@ -54,7 +32,7 @@
 
 <main>
 	<div class="auth-container">
-		<h1>Sign Up</h1>
+		<h1>Log In</h1>
 
 		{#if error}
 			<div class="error">{error}</div>
@@ -67,22 +45,17 @@
 			</div>
 
 			<div class="field">
-				<label for="password">Password (min 10 characters)</label>
-				<input type="password" id="password" bind:value={password} required minlength="10" />
-			</div>
-
-			<div class="field">
-				<label for="confirmPassword">Confirm Password</label>
-				<input type="password" id="confirmPassword" bind:value={confirmPassword} required />
+				<label for="password">Password</label>
+				<input type="password" id="password" bind:value={password} required />
 			</div>
 
 			<button type="submit" class="btn-primary" disabled={loading}>
-				{loading ? 'Creating account...' : 'Sign Up'}
+				{loading ? 'Logging in...' : 'Log In'}
 			</button>
 		</form>
 
 		<p class="switch">
-			Already have an account? <a href="/auth/login">Log in</a>
+			Don't have an account? <a href="/signup">Sign up</a>
 		</p>
 	</div>
 </main>

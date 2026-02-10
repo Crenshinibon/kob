@@ -6,7 +6,7 @@ import crypto from 'crypto';
 
 export const load = async ({ params, locals }) => {
 	const user = locals.user;
-	if (!user) throw redirect(302, '/auth/login');
+	if (!user) throw redirect(302, '/login');
 
 	const tournamentId = parseInt(params.id);
 	const [tourney] = await db

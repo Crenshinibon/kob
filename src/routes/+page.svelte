@@ -11,13 +11,13 @@
 		{#if data?.user}
 			<a href="/tournament/create" class="btn-primary">+ New Tournament</a>
 		{:else}
-			<a href="/auth/login" class="btn-primary btn-disabled">+ New Tournament</a>
+			<a href="/login" class="btn-primary btn-disabled">+ New Tournament</a>
 		{/if}
 	</header>
 
 	{#if !data?.user}
 		<section class="login-prompt">
-			<p>Please <a href="/auth/login">log in</a> to manage tournaments.</p>
+			<p>Please <a href="/login">log in</a> to manage tournaments.</p>
 		</section>
 	{:else}
 		<!-- Active Tournaments -->

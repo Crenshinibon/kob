@@ -4,7 +4,7 @@ import { tournament } from '$lib/server/db/schema';
 
 export const load = async ({ locals }) => {
 	if (!locals.user) {
-		throw redirect(302, '/auth/login');
+		throw redirect(302, '/login');
 	}
 	return {};
 };
