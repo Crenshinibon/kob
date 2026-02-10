@@ -17,3 +17,9 @@
 - **./promotion-relegation.md**: Round 1 redistributes by rank. Round 2+ uses ladder system (2 up, 2 down).
 
 - **./gotchas.md**: Development lessons, common issues, and workarounds encountered during implementation and testing.
+
+- **./dark-theme.md**: High-contrast dark theme optimized for outdoor visibility in bright sunlight. Color palettes, component styles, and accessibility guidelines.
+
+- **./total-standings.md**: Cumulative standings across all rounds for winner announcement and prize distribution. Includes podium view and achievement categories.
+
+- **./pluggable-formats.md**: Extensible architecture for supporting multiple tournament formats (King of the Beach, King of the Court, Fixed Teams, etc.) with different player counts, court configurations, and promotion/relegation strategies.
