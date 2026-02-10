@@ -6,6 +6,7 @@
 			tournament: any;
 			courts: any[];
 			canCloseRound: boolean;
+			isFinalRound: boolean;
 		};
 	}>();
 
@@ -66,7 +67,9 @@
 	<section class="actions">
 		{#if data.canCloseRound}
 			<form method="POST" action="?/closeRound">
-				<button type="submit" class="btn-primary">Close Round & Advance</button>
+				<button type="submit" class="btn-primary">
+					{data.isFinalRound ? 'Finalize Tournament' : 'Close Round & Advance'}
+				</button>
 			</form>
 		{:else}
 			<button disabled class="btn-primary btn-disabled">Waiting for all scores...</button>

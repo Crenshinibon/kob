@@ -1,36 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 
-	let {
-		data
-	}: {
-		data: {
-			tournament: {
-				id: number;
-				name: string;
-				status: string;
-				currentRound: number;
-				numRounds: number;
-			};
-			standings: Array<{
-				playerId: number;
-				playerName: string;
-				totalPoints: number;
-				totalDiff: number;
-				roundsPlayed: number;
-				matchesPlayed: number;
-				overallRank: number;
-				roundHistory: Array<{
-					round: number;
-					court: number;
-					rankOnCourt: number;
-					points: number;
-					diff: number;
-				}>;
-			}>;
-			players: Array<{ id: number; name: string }>;
-		};
-	} = $props();
+	let { data }: { data: PageData } = $props();
 
 	const tournament = $derived(data.tournament);
 	const standings = $derived(data.standings);
@@ -54,6 +25,34 @@
 		const mean = arr.reduce((sum, val) => sum + val, 0) / arr.length;
 		return arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / arr.length;
 	}
+
+	type PageData = {
+		tournament: {
+			id: number;
+			name: string;
+			status: string;
+			currentRound: number;
+			numRounds: number;
+		};
+		standings: Array<{
+			playerId: number;
+			playerName: string;
+			totalPoints: number;
+			totalDiff: number;
+			roundsPlayed: number;
+			matchesPlayed: number;
+			overallRank: number;
+			roundHistory: Array<{
+				round: number;
+				court: number;
+				rankOnCourt: number;
+				points: number;
+				diff: number;
+			}>;
+			currentRoundPoints: number;
+			currentRoundDiff: number;
+		}>;
+	};
 </script>
 
 <main>

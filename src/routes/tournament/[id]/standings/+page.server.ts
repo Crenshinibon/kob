@@ -25,7 +25,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.from(courtRotation)
 		.where(eq(courtRotation.tournamentId, tournamentId));
 
-	// Calculate total standings
+	// Calculate standings for the CURRENT round only (not cumulative)
+	// Court rankings determine overall ranking ranges:
+	// - Court 1: ranks 1-4, Court 2: ranks 5-8, Court 3: ranks 9-12, Court 4: ranks 13-16
 	const playerStats: Record<
 		number,
 		{
@@ -42,6 +44,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				points: number;
 				diff: number;
 			}>;
+			currentRoundPoints: number;
+			currentRoundDiff: number;
 		}
 	> = {};
 
@@ -54,11 +58,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			totalDiff: 0,
 			roundsPlayed: 0,
 			matchesPlayed: 0,
-			roundHistory: []
+			roundHistory: [],
+			currentRoundPoints: 0,
+			currentRoundDiff: 0
 		};
 	});
 
-	// Process each round
+	// Process each round to build history
 	for (let roundNum = 1; roundNum <= (tourney.currentRound || 1); roundNum++) {
 		const roundRotations = rotations.filter((r) => r.roundNumber === roundNum);
 
@@ -93,17 +99,40 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 						points: standing.points,
 						diff: standing.diff
 					});
+
+					// Track current round performance for ranking
+					if (roundNum === tourney.currentRound) {
+						stats.currentRoundPoints = standing.points;
+						stats.currentRoundDiff = standing.diff;
+					}
 				}
 			});
 		}
 	}
 
-	// Sort by total points, then differential
+	// Rank players based on CURRENT ROUND performance only
+	// Court determines rank range: C1=1-4, C2=5-8, C3=9-12, C4=13-16
 	const standings = Object.values(playerStats)
 		.filter((s) => s.roundsPlayed > 0)
 		.sort((a, b) => {
-			if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-			return b.totalDiff - a.totalDiff;
+			// Get last round history for both players
+			const aLastRound = a.roundHistory[a.roundHistory.length - 1];
+			const bLastRound = b.roundHistory[b.roundHistory.length - 1];
+
+			if (!aLastRound || !bLastRound) return 0;
+
+			// First sort by court number (lower court = better overall rank)
+			if (aLastRound.court !== bLastRound.court) {
+				return aLastRound.court - bLastRound.court;
+			}
+
+			// Same court: sort by current round points (descending)
+			if (b.currentRoundPoints !== a.currentRoundPoints) {
+				return b.currentRoundPoints - a.currentRoundPoints;
+			}
+
+			// Tiebreaker: current round differential
+			return b.currentRoundDiff - a.currentRoundDiff;
 		})
 		.map((s, i) => ({ ...s, overallRank: i + 1 }));
 

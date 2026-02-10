@@ -55,8 +55,9 @@ export const load = async ({ params, locals }) => {
 	// Check if all matches are complete
 	const allMatches = courts.flatMap((c) => c.matches);
 	const canCloseRound = allMatches.length === 12 && allMatches.every((m) => m.teamAScore !== null);
+	const isFinalRound = currentRound >= tourney.numRounds;
 
-	return { tournament: tourney, courts, canCloseRound };
+	return { tournament: tourney, courts, canCloseRound, isFinalRound };
 };
 
 export const actions = {
@@ -78,11 +79,13 @@ export const actions = {
 		const currentRound = tourney.currentRound || 1;
 
 		if (currentRound >= tourney.numRounds) {
-			// Final round - mark as completed
+			// Final round - mark as completed and redirect to standings
 			await db
 				.update(tournament)
 				.set({ status: 'completed' })
 				.where(eq(tournament.id, tournamentId));
+
+			throw redirect(303, `/tournament/${tournamentId}/standings`);
 		} else {
 			// Get current round data with matches
 			const rotations = await db
