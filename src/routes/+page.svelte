@@ -103,6 +103,24 @@
 	{/if}
 </main>
 
+<footer class="imprint">
+	<details>
+		<summary>Imprint / Legal Notice</summary>
+		<div class="imprint-content">
+			<p><strong>ACCOMADE - Dirk Porsche</strong></p>
+			<p>Sollbrüggenstr. 14<br />47800 Krefeld<br />Germany</p>
+			<p>
+				<a href="mailto:dirk@accoma.de">dirk@accoma.de</a><br />
+				<a href="tel:+4916095085331">+49 160 95085331</a>
+			</p>
+			<p class="legal-note">
+				This website is operated in accordance with EU Digital Services Act (DSA) requirements. The
+				imprint provides legally required information about the service provider.
+			</p>
+		</div>
+	</details>
+</footer>
+
 <style>
 	main {
 		max-width: 800px;
@@ -251,5 +269,61 @@
 		margin: var(--spacing-sm) 0 0 0;
 		font-size: var(--font-size-sm);
 		color: var(--text-secondary);
+	}
+
+	/* Imprint / Legal Notice */
+	.imprint {
+		max-width: 800px;
+		margin: var(--spacing-xl) auto 0;
+		padding: 0 var(--spacing-md);
+		border-top: 1px solid var(--border-default);
+		padding-top: var(--spacing-lg);
+	}
+
+	.imprint details {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+	}
+
+	.imprint summary {
+		cursor: pointer;
+		padding: var(--spacing-sm) 0;
+		font-weight: 600;
+		list-style: none;
+		color: var(--text-secondary);
+	}
+
+	.imprint summary:hover {
+		color: var(--text-primary);
+	}
+
+	.imprint summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.imprint-content {
+		padding: var(--spacing-md) 0;
+		line-height: 1.6;
+	}
+
+	.imprint-content p {
+		margin: 0 0 var(--spacing-sm) 0;
+	}
+
+	.imprint-content a {
+		color: var(--accent-info);
+		text-decoration: none;
+	}
+
+	.imprint-content a:hover {
+		text-decoration: underline;
+	}
+
+	.legal-note {
+		font-size: var(--font-size-xs);
+		margin-top: var(--spacing-md);
+		padding-top: var(--spacing-sm);
+		border-top: 1px solid var(--border-default);
+		font-style: italic;
 	}
 </style>
