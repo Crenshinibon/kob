@@ -153,11 +153,6 @@ select {
 		transform var(--transition-fast);
 }
 
-/* Larger inputs for easier touch on mobile */
-input {
-	min-height: 48px;
-}
-
 input:focus,
 textarea:focus,
 select:focus {

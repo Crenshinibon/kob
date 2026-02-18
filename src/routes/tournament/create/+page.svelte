@@ -7,7 +7,6 @@
 	let numRounds = $state(3);
 
 	const fixedRounds = $derived(playerCount === 16 ? 3 : 4);
-	const courtCount = $derived(playerCount / 4);
 </script>
 
 <main>
@@ -29,7 +28,7 @@
 				name="name"
 				bind:value={name}
 				required
-				placeholder="Beach Bash 2024"
+				placeholder="King Of the Beach 2026"
 			/>
 		</div>
 
@@ -37,17 +36,21 @@
 			<span class="label">Format</span>
 			<div class="radio-group">
 				<label class="radio-label">
-					<input type="radio" name="formatType" value="random-seed" bind:group={formatType} />
+					<div class="radio-wrapper">
+						<input type="radio" name="formatType" value="random-seed" bind:group={formatType} />
+					</div>
 					<span class="radio-content">
-						<strong>Random Seed</strong>
-						<small>Random or manual seeding, ladder redistribution</small>
+						<strong>Random</strong>
+						<small>First round random placement, then ladder system with flexible rounds</small>
 					</span>
 				</label>
 				<label class="radio-label">
-					<input type="radio" name="formatType" value="preseed" bind:group={formatType} />
+					<div class="radio-wrapper">
+						<input type="radio" name="formatType" value="preseed" bind:group={formatType} />
+					</div>
 					<span class="radio-content">
-						<strong>Preseed</strong>
-						<small>Points-based seeding, tiered redistribution</small>
+						<strong>Pre-Seed</strong>
+						<small>Seeding based on WVV points, fixed rounds like single elimination</small>
 					</span>
 				</label>
 			</div>
@@ -57,17 +60,19 @@
 			<span class="label">Players</span>
 			<div class="radio-group">
 				<label class="radio-label">
-					<input type="radio" name="playerCount" value="16" bind:group={playerCount} />
+					<div class="radio-wrapper">
+						<input type="radio" name="playerCount" value="16" bind:group={playerCount} />
+					</div>
 					<span class="radio-content">
 						<strong>16 players</strong>
-						<small>{courtCount} courts</small>
 					</span>
 				</label>
 				<label class="radio-label">
-					<input type="radio" name="playerCount" value="32" bind:group={playerCount} />
+					<div class="radio-wrapper">
+						<input type="radio" name="playerCount" value="32" bind:group={playerCount} />
+					</div>
 					<span class="radio-content">
 						<strong>32 players</strong>
-						<small>{courtCount} courts</small>
 					</span>
 				</label>
 			</div>
@@ -121,7 +126,6 @@
 		font-size: var(--font-size-2xl);
 		color: var(--text-primary);
 	}
-
 	form {
 		display: flex;
 		flex-direction: column;
@@ -149,13 +153,13 @@
 
 	input[type='text'],
 	select {
+		min-height: 48px;
 		padding: var(--spacing-sm) var(--spacing-md);
 		font-size: var(--font-size-base);
 		background-color: var(--bg-input);
 		color: var(--text-input);
 		border: var(--border-thickness) solid var(--border-strong);
 		border-radius: var(--radius-sm);
-		min-height: 48px;
 		font-weight: 500;
 		transition:
 			border-color var(--transition-fast),
@@ -178,7 +182,7 @@
 
 	.radio-label {
 		display: flex;
-		align-items: flex-start;
+		align-items: stretch;
 		gap: var(--spacing-sm);
 		padding: var(--spacing-sm) var(--spacing-md);
 		background-color: var(--bg-input);
@@ -188,16 +192,23 @@
 		transition: all var(--transition-fast);
 	}
 
+	.radio-wrapper {
+		display: flex;
+		align-self: stretch;
+		justify-content: center;
+		align-items: center;
+	}
 	.radio-label:hover {
 		border-color: var(--border-focus);
 	}
 
 	.radio-label input[type='radio'] {
-		margin-top: 4px;
+		height: 18px;
+		width: 18px;
 		accent-color: var(--accent-primary);
 	}
 
-	.radio-label input[type='radio']:checked + .radio-content {
+	.radio-label input[type='radio']:checked {
 		color: var(--accent-primary);
 	}
 
@@ -214,6 +225,10 @@
 
 	.radio-content strong {
 		font-weight: 600;
+		color: var(--bg-primary);
+	}
+
+	.radio-label:has(input:checked) .radio-content strong {
 		color: var(--text-primary);
 	}
 
