@@ -95,7 +95,7 @@
 						bind:value={playerNames}
 						onpaste={handlePaste}
 						rows="10"
-						placeholder="Alice 1250&#10;Bob 1180&#10;Carol Chen 1150&#10;..."
+						placeholder="Alice 1250..."
 					></textarea>
 					<p class="count">{playerCount} names entered</p>
 					<p class="hint">Format: Player Name Points (e.g., "Alice 1250" or "Carol Chen 1150")</p>
@@ -108,7 +108,7 @@
 						bind:value={playerNames}
 						onpaste={handlePaste}
 						rows="10"
-						placeholder="Alice&#10;Bob&#10;Carol&#10;..."
+						placeholder="Alice&#10;..."
 					></textarea>
 					<p class="count">{playerCount} names entered</p>
 				{/if}
