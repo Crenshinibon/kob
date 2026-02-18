@@ -6,32 +6,14 @@ A 32-player, 8-court tournament format with seeded initial placement and tiered 
 
 ## Format Types
 
-| Format | Players | Courts | Seeding | Redistribution |
-|--------|---------|--------|---------|----------------|
-| Random Seed | 16 | 4 | Random or manual | Ladder (2 up/2 down) |
-| Random Seed | 32 | 8 | Random or manual | Ladder (2 up/2 down) |
-| Preseed | 16 | 4 | Points-based | Tiered binary |
-| Preseed | 32 | 8 | Points-based | Tiered binary |
+| Format | Players | Courts | Rounds | Seeding | Redistribution |
+|--------|---------|--------|--------|---------|----------------|
+| Random Seed | 16 | 4 | Configurable | Random or manual | Ladder (2 up/2 down) |
+| Random Seed | 32 | 8 | Configurable | Random or manual | Ladder (2 up/2 down) |
+| Preseed | 16 | 4 | **3 (fixed)** | Points-based | Tiered binary |
+| Preseed | 32 | 8 | **4 (fixed)** | Points-based | Tiered binary |
 
-## Virtual Courts Concept
-
-Courts in this system are "virtual" - logical groupings of 4 players. Physical implementation uses half the court count:
-
-- **32 players / 8 virtual courts = 4 physical courts**
-- **16 players / 4 virtual courts = 2 physical courts**
-
-Players rotate between playing and breaks:
-- Round 1: Courts 1-4 play, Courts 5-8 have break
-- Round 1 (continued): Courts 5-8 play, Courts 1-4 have break
-
-This ensures all players get rest between matches by design.
-
-### Scheduling Example (32 players)
-
-```
-Time Slot 1: Virtual Courts 1, 2, 3, 4 play (16 players active, 16 on break)
-Time Slot 2: Virtual Courts 5, 6, 7, 8 play (16 players active, 16 on break)
-```
+**Note**: Preseed tournaments have a fixed number of rounds (3 for 16 players, 4 for 32 players) - this is not configurable.
 
 ## Preseed Format Structure (32 Players)
 
@@ -282,7 +264,7 @@ Court 8: 4th places from C5, C6, C7, C8
 
 ## Preseed Format Structure (16 Players)
 
-Similar logic but with 4 courts:
+3 rounds, 4 courts - same logic as 32-player but scaled down:
 
 ### Initial Seeding
 
@@ -295,22 +277,23 @@ Court 4: Seed 4, Seed 8, Seed 12, Seed 16
 
 ### Round 1 → Round 2
 
+**ALL 1st-2nd from ALL 4 courts → Winner Courts 1-2 (8 players)**
+**ALL 3rd-4th from ALL 4 courts → Loser Courts 3-4 (8 players)**
+
 ```
-Court 1: 1st from C1, 1st from C2 → Places 1-4 (after round 3)
-Court 2: 2nd from C1, 2nd from C2 → Places 5-8
-Court 3: 3rd from C1, 3rd from C2 → Places 9-12
-Court 4: 4th from C1, 4th from C2 → Places 13-16
-(Same pattern from C3, C4)
+Court 1: 1st places from C1, C2, C3, C4
+Court 2: 2nd places from C1, C2, C3, C4
+Court 3: 3rd places from C1, C2, C3, C4
+Court 4: 4th places from C1, C2, C3, C4
 ```
 
 ### Round 2 → Round 3
 
-Final placement courts:
 ```
-Court 1: 1st/2nd from C1-C2 top tier
-Court 2: 3rd/4th from C1-C2
-Court 3: 1st/2nd from C3-C4
-Court 4: 3rd/4th from C3-C4
+Court 1: 1st-2nd from C1, C2 → Places 1-4
+Court 2: 3rd-4th from C1, C2 → Places 5-8
+Court 3: 1st-2nd from C3, C4 → Places 9-12
+Court 4: 3rd-4th from C3, C4 → Places 13-16
 ```
 
 ## Random Seed Format (16 or 32 Players)
@@ -335,10 +318,9 @@ The existing format with ladder redistribution:
   name: text().notNull(),
   status: text().notNull().default('draft'),
   currentRound: integer().default(0),
-  numRounds: integer().notNull().default(3),
+  numRounds: integer().notNull().default(3),       // Only configurable for random-seed
   formatType: text().notNull().default('random-seed'), // 'random-seed' | 'preseed'
-  playerCount: integer().notNull().default(16),        // 16 or 32
-  physicalCourts: integer().notNull().default(4),     // virtual courts / 2
+  playerCount: integer().notNull().default(16),    // 16 or 32
   createdAt: timestamp().defaultNow()
 }
 
@@ -361,15 +343,6 @@ The existing format with ladder redistribution:
   player2Id: integer().notNull(),
   player3Id: integer().notNull(),
   player4Id: integer().notNull()
-}
-
-// scheduleSlot (new) - for virtual court scheduling
-{
-  id: serial().primaryKey(),
-  tournamentId: integer().notNull(),
-  roundNumber: integer().notNull(),
-  slotNumber: integer().notNull(),      // 1 or 2 (first/second half of round)
-  courtNumbers: integer[].notNull(),    // Which courts play in this slot
 }
 ```
 
@@ -482,33 +455,6 @@ function redistributeLadder(
 }
 ```
 
-## Virtual Court Scheduling
-
-```typescript
-function generateSchedule(
-  tournamentId: number,
-  roundNumber: number,
-  courtCount: number
-): ScheduleSlot[] {
-  const physicalCourts = courtCount / 2;
-  
-  return [
-    {
-      tournamentId,
-      roundNumber,
-      slotNumber: 1,
-      courtNumbers: Array.from({ length: physicalCourts }, (_, i) => i + 1)
-    },
-    {
-      tournamentId,
-      roundNumber,
-      slotNumber: 2,
-      courtNumbers: Array.from({ length: physicalCourts }, (_, i) => i + physicalCourts + 1)
-    }
-  ];
-}
-```
-
 ## UI Mockup: Tournament Creation
 
 ```
@@ -521,10 +467,11 @@ Format:
   ● Preseed (points-based seeding, tiered redistribution)
 
 Players:
-  ○ 16 players (4 courts / 2 physical)
-  ● 32 players (8 courts / 4 physical)
+  ○ 16 players (4 courts)
+  ● 32 players (8 courts)
 
-Number of Rounds: [4]
+Number of Rounds: [4]           (Only shown for Random Seed format)
+                                 Preseed: "3 rounds (fixed)" or "4 rounds (fixed)"
 
 [Continue →]
 ```
@@ -554,31 +501,12 @@ Seeding Preview:
 [Start Tournament]
 ```
 
-## UI Mockup: Schedule View
-
-```
-Round 1 Schedule
-
-Slot 1 (Courts 1-4 active, Courts 5-8 on break):
-  Court 1: Alice, Ivan, Quinn, Yuki
-  Court 2: Bob, Julia, Rosa, Zach
-  Court 3: Carol, Kevin, Sam, Amy
-  Court 4: David, Leo, Tina, Ben
-
-Slot 2 (Courts 5-8 active, Courts 1-4 on break):
-  Court 5: Emma, Mike, Uma, Chris
-  Court 6: Frank, Nancy, Victor, Diana
-  Court 7: Grace, Oscar, Wendy, Eric
-  Court 8: Henry, Paula, Xavier, Fiona
-```
-
 ## Implementation Plan
 
 ### Phase 1: Database & Types
-1. Add `formatType`, `playerCount`, `physicalCourts` to tournament schema
+1. Add `formatType`, `playerCount` to tournament schema
 2. Add `seedPoints`, `seedRank` to player schema
-3. Create `scheduleSlot` table
-4. Update TypeScript types
+3. Update TypeScript types
 
 ### Phase 2: Seeding System
 1. Create seeding input UI (name + points)
@@ -592,23 +520,17 @@ Slot 2 (Courts 5-8 active, Courts 1-4 on break):
 3. Refactor existing logic into `LadderRedistribution` (for random-seed)
 4. Support both 16 and 32 player variants
 
-### Phase 4: Scheduling
-1. Generate schedule slots for virtual courts
-2. Display schedule view showing active/break courts
-3. Update court view to show current slot status
-
-### Phase 5: UI Updates
+### Phase 4: UI Updates
 1. Format selection at tournament creation
 2. Conditional seeding input (required for preseed)
-3. Schedule visualization
+3. Hide rounds config for preseed (show fixed value)
 4. Final standings by placement
 
-### Phase 6: Testing
+### Phase 5: Testing
 1. Unit tests for seeding algorithm (16 and 32 players)
 2. Unit tests for preseed redistribution (all transitions)
 3. Unit tests for ladder redistribution (16 and 32 players)
-4. Schedule generation tests
-5. Full tournament simulation tests
+4. Full tournament simulation tests
 
 ## Acceptance Criteria
 
@@ -616,11 +538,11 @@ Slot 2 (Courts 5-8 active, Courts 1-4 on break):
 - [ ] Can select player count: 16 or 32
 - [ ] Random Seed works without points (existing behavior)
 - [ ] Preseed requires points input for all players
+- [ ] Preseed tournaments show fixed round count (3 for 16 players, 4 for 32 players)
+- [ ] Random Seed tournaments allow configuring round count
 - [ ] Seeding distributes players in snake pattern
 - [ ] Preseed redistribution works for all rounds (32 players)
 - [ ] Preseed redistribution works for all rounds (16 players)
 - [ ] Ladder redistribution works for 32 players (extended from 16)
-- [ ] Virtual courts generate correct schedule slots
-- [ ] Schedule view shows which courts play when
 - [ ] Final standings display correct placements
 - [ ] Court access tokens generated for all courts
