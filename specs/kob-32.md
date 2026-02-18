@@ -1,26 +1,43 @@
-# 32-Player Elimination King of the Beach Format
+# 32-Player Preseed King of the Beach Format
 
 ## Overview
 
-A 32-player, 8-court tournament format with seeded initial placement and binary elimination-style redistribution across 4 rounds. This format prioritizes initial seeding and creates a clear hierarchy through progressive court consolidation.
+A 32-player, 8-court tournament format with seeded initial placement and tiered redistribution across 4 rounds. All players play the same number of matches - the seeding and redistribution determines final placement, not elimination.
 
-## Key Differences from Standard Format
+## Format Types
 
-| Aspect | Standard (16 players) | 32-Player Elimination |
-|--------|----------------------|----------------------|
-| Players | 16 | 32 |
-| Courts | 4 | 8 |
-| Rounds | 3 | 4 |
-| Matches per player | 9 | 12 |
-| Redistribution | Ladder (2 up/2 down) | Binary elimination |
-| Seeding | Random or manual | Points-based (required) |
-| Recovery | Players can climb back | No recovery path |
+| Format | Players | Courts | Seeding | Redistribution |
+|--------|---------|--------|---------|----------------|
+| Random Seed | 16 | 4 | Random or manual | Ladder (2 up/2 down) |
+| Random Seed | 32 | 8 | Random or manual | Ladder (2 up/2 down) |
+| Preseed | 16 | 4 | Points-based | Tiered binary |
+| Preseed | 32 | 8 | Points-based | Tiered binary |
 
-## Tournament Structure
+## Virtual Courts Concept
 
-### Initial Seeding (Before Round 1)
+Courts in this system are "virtual" - logical groupings of 4 players. Physical implementation uses half the court count:
 
-Players must be seeded based on current points/ranking. The seeding follows a "snake" pattern:
+- **32 players / 8 virtual courts = 4 physical courts**
+- **16 players / 4 virtual courts = 2 physical courts**
+
+Players rotate between playing and breaks:
+- Round 1: Courts 1-4 play, Courts 5-8 have break
+- Round 1 (continued): Courts 5-8 play, Courts 1-4 have break
+
+This ensures all players get rest between matches by design.
+
+### Scheduling Example (32 players)
+
+```
+Time Slot 1: Virtual Courts 1, 2, 3, 4 play (16 players active, 16 on break)
+Time Slot 2: Virtual Courts 5, 6, 7, 8 play (16 players active, 16 on break)
+```
+
+## Preseed Format Structure (32 Players)
+
+### Initial Seeding
+
+Players must be seeded based on current points/ranking. The seeding follows a "snake" pattern to distribute strength evenly:
 
 ```
 Court 1:  Seed 1,  Seed 9,  Seed 17, Seed 25
@@ -34,7 +51,7 @@ Court 8:  Seed 8,  Seed 16, Seed 24, Seed 32
 ```
 
 **Seeding Logic**:
-- Top 8 seeds get position 1 on each court (advantageous as they face weaker opponents in first rotation)
+- Top 8 seeds get position 1 on each court
 - Seeds 9-16 get position 2
 - Seeds 17-24 get position 3
 - Seeds 25-32 get position 4
@@ -44,26 +61,25 @@ Court 8:  Seed 8,  Seed 16, Seed 24, Seed 32
 After Round 1, courts are divided into "Winner Courts" (1-4) and "Loser Courts" (5-8):
 
 ```
-Winner Courts (1-4): All 1st and 2nd place finishers from all 8 courts
-Loser Courts (5-8):  All 3rd and 4th place finishers from all 8 courts
+Winner Courts (1-4): All 1st and 2nd place finishers (16 players)
+Loser Courts (5-8):  All 3rd and 4th place finishers (16 players)
 ```
 
 **Assignment Logic**:
-- Courts 1-4 receive 1st/2nd from Courts 1-4 (8 players) + 1st/2nd from Courts 5-8 (8 players) = 16 players, 4 per court
-- Courts 5-8 receive 3rd/4th from Courts 1-4 (8 players) + 3rd/4th from Courts 5-8 (8 players) = 16 players, 4 per court
-
 ```
-New Court 1: 1st from C1-C2, 1st from C5-C6
-New Court 2: 2nd from C1-C2, 2nd from C5-C6
-New Court 3: 1st from C3-C4, 1st from C7-C8
-New Court 4: 2nd from C3-C4, 2nd from C7-C8
-New Court 5: 3rd from C1-C2, 3rd from C5-C6
-New Court 6: 4th from C1-C2, 4th from C5-C6
-New Court 7: 3rd from C3-C4, 3rd from C7-C8
-New Court 8: 4th from C3-C4, 4th from C7-C8
+Court 1: 1st from C1, 1st from C2, 1st from C5, 1st from C6
+Court 2: 2nd from C1, 2nd from C2, 2nd from C5, 2nd from C6
+Court 3: 1st from C3, 1st from C4, 1st from C7, 1st from C8
+Court 4: 2nd from C3, 2nd from C4, 2nd from C7, 2nd from C8
+Court 5: 3rd from C1, 3rd from C2, 3rd from C5, 3rd from C6
+Court 6: 4th from C1, 4th from C2, 4th from C5, 4th from C6
+Court 7: 3rd from C3, 3rd from C4, 3rd from C7, 3rd from C8
+Court 8: 4th from C3, 4th from C4, 4th from C7, 4th from C8
 ```
 
 ### Round 2 → Round 3 (Tier Consolidation)
+
+Players consolidate further within their tier:
 
 ```
 Courts 1-2: 1st/2nd from Courts 1-4 (top 8 of winners)
@@ -74,310 +90,385 @@ Courts 7-8: 3rd/4th from Courts 5-8 (bottom 8 of losers)
 
 **Assignment Logic**:
 ```
-New Court 1: 1st from C1-C2
-New Court 2: 2nd from C1-C2
-New Court 3: 1st from C3-C4
-New Court 4: 2nd from C3-C4
-New Court 5: 3rd from C1-C2
-New Court 6: 4th from C1-C2
-New Court 7: 3rd from C3-C4
-New Court 8: 4th from C3-C4
-(Repeat pattern for Courts 5-8 source)
+Court 1: 1st from C1, 1st from C2
+Court 2: 2nd from C1, 2nd from C2
+Court 3: 3rd from C1, 3rd from C2
+Court 4: 4th from C1, 4th from C2
+Court 5: 1st from C3, 1st from C4
+Court 6: 2nd from C3, 2nd from C4
+Court 7: 3rd from C3, 3rd from C4
+Court 8: 4th from C3, 4th from C4
 ```
 
-Wait - this needs more thought. Let me recalculate...
-
-Actually, after Round 2 we have 16 players in Courts 1-4 and 16 in Courts 5-8. Each court has 4 players.
-
-Round 2 → Round 3:
-- From Courts 1-4: Top 2 stay in Courts 1-2, Bottom 2 go to Courts 3-4
-- From Courts 5-8: Top 2 go to Courts 5-6, Bottom 2 go to Courts 7-8
-
-```
-New Court 1: 1st from C1, 1st from C2
-New Court 2: 2nd from C1, 2nd from C2
-New Court 3: 3rd from C1, 3rd from C2
-New Court 4: 4th from C1, 4th from C2
-New Court 5: 1st from C3, 1st from C4
-New Court 6: 2nd from C3, 2nd from C4
-New Court 7: 3rd from C3, 3rd from C4
-New Court 8: 4th from C3, 4th from C4
-+ same pattern from Courts 5-8
-```
+(Note: This is one possible assignment - see visualization for exact flow)
 
 ### Round 3 → Round 4 (Final Placement)
 
 ```
-Court 1: 1st/2nd from Courts 1-2 → Compete for places 1-4
-Court 2: 3rd/4th from Courts 1-2 → Compete for places 5-8
-Court 3: 1st/2nd from Courts 3-4 → Compete for places 9-12
-Court 4: 3rd/4th from Courts 3-4 → Compete for places 13-16
-Court 5: 1st/2nd from Courts 5-6 → Compete for places 17-20
-Court 6: 3rd/4th from Courts 5-6 → Compete for places 21-24
-Court 7: 1st/2nd from Courts 7-8 → Compete for places 25-28
-Court 8: 3rd/4th from Courts 7-8 → Compete for places 29-32
+Court 1: 1st/2nd from Courts 1-2 → Places 1-4
+Court 2: 3rd/4th from Courts 1-2 → Places 5-8
+Court 3: 1st/2nd from Courts 3-4 → Places 9-12
+Court 4: 3rd/4th from Courts 3-4 → Places 13-16
+Court 5: 1st/2nd from Courts 5-6 → Places 17-20
+Court 6: 3rd/4th from Courts 5-6 → Places 21-24
+Court 7: 1st/2nd from Courts 7-8 → Places 25-28
+Court 8: 3rd/4th from Courts 7-8 → Places 29-32
 ```
 
 ### Final Standings
 
-After Round 4, final placements are determined by court standing:
+| Court | 1st Place | 2nd Place | 3rd Place | 4th Place |
+|-------|-----------|-----------|-----------|-----------|
+| 1 | #1 | #2 | #3 | #4 |
+| 2 | #5 | #6 | #7 | #8 |
+| 3 | #9 | #10 | #11 | #12 |
+| 4 | #13 | #14 | #15 | #16 |
+| 5 | #17 | #18 | #19 | #20 |
+| 6 | #21 | #22 | #23 | #24 |
+| 7 | #25 | #26 | #27 | #28 |
+| 8 | #29 | #30 | #31 | #32 |
 
-| Court | Final Place |
-|-------|-------------|
-| Court 1 | 1st: #1, 2nd: #2, 3rd: #3, 4th: #4 |
-| Court 2 | 1st: #5, 2nd: #6, 3rd: #7, 4th: #8 |
-| Court 3 | 1st: #9, 2nd: #10, 3rd: #11, 4th: #12 |
-| Court 4 | 1st: #13, 2nd: #14, 3rd: #15, 4th: #16 |
-| Court 5 | 1st: #17, 2nd: #18, 3rd: #19, 4th: #20 |
-| Court 6 | 1st: #21, 2nd: #22, 3rd: #23, 4th: #24 |
-| Court 7 | 1st: #25, 2nd: #26, 3rd: #27, 4th: #28 |
-| Court 8 | 1st: #29, 2nd: #30, 3rd: #31, 4th: #32 |
+## Preseed Format Structure (16 Players)
 
-## Identified Issues & Concerns
+Similar logic but with 4 courts:
 
-### 1. Physical Demands
-- **4 rounds × 3 matches = 12 matches per player**
-- Standard beach volleyball tournaments often have 6-8 matches max
-- Consider: Reduce to 2 matches per court, or 3 rounds instead of 4
+### Initial Seeding
 
-### 2. No Recovery Path
-- Unlike ladder system, a strong player who has one bad round is "trapped"
-- Seed 1 could finish 3rd in Round 1 and never recover to top court
-- **Mitigation**: Consider hybrid approach where lowest court uses ladder
-
-### 3. Initial Seeding Critical
-- With binary elimination, seeding quality determines tournament fairness
-- Bad seed = permanently stuck in lower courts
-- Requires accurate/verified point system before tournament
-
-### 4. Complexity
-- Redistribution logic is more complex than ladder
-- Players may not understand why they moved to specific court
-- Need clear visual explanation of bracket structure
-
-### 5. Court Assignment Ambiguity
-- When 8 players need to go to 2 courts, how to decide which court?
-- Proposal: Maintain seed order within tier groups
-
-### 6. Time Requirements
-- 8 courts × 3 matches × ~20 min = ~8 hours of play minimum
-- With 4 rounds = potentially 2-day tournament
-
-## Alternative: 3-Round Version
-
-If 4 rounds is too demanding, consider 3-round variant:
+```
+Court 1: Seed 1, Seed 5, Seed 9,  Seed 13
+Court 2: Seed 2, Seed 6, Seed 10, Seed 14
+Court 3: Seed 3, Seed 7, Seed 11, Seed 15
+Court 4: Seed 4, Seed 8, Seed 12, Seed 16
+```
 
 ### Round 1 → Round 2
+
 ```
-Courts 1-4: 1st/2nd from ALL courts (16 players)
-Courts 5-8: 3rd/4th from ALL courts (16 players)
+Court 1: 1st from C1, 1st from C2 → Places 1-4 (after round 3)
+Court 2: 2nd from C1, 2nd from C2 → Places 5-8
+Court 3: 3rd from C1, 3rd from C2 → Places 9-12
+Court 4: 4th from C1, 4th from C2 → Places 13-16
+(Same pattern from C3, C4)
 ```
 
-### Round 2 → Round 3 (Final)
+### Round 2 → Round 3
+
+Final placement courts:
 ```
-Court 1: 1st from C1-C2 → Places 1-4
-Court 2: 2nd from C1-C2 → Places 5-8
-Court 3: 1st from C3-C4 → Places 9-12
-Court 4: 2nd from C3-C4 → Places 13-16
-Court 5: 3rd/4th from C1-C2 + 1st from C5-C6 → Places 17-20
-...etc
+Court 1: 1st/2nd from C1-C2 top tier
+Court 2: 3rd/4th from C1-C2
+Court 3: 1st/2nd from C3-C4
+Court 4: 3rd/4th from C3-C4
 ```
 
-This reduces to 9 matches per player (more standard).
+## Random Seed Format (16 or 32 Players)
+
+The existing format with ladder redistribution:
+
+### Initial Seeding
+- Random assignment, or manual placement by organizer
+- No points required
+
+### Redistribution
+- **Round 1 → Round 2**: Vertical seeding (all 1st places to Court 1, etc.)
+- **Round 2+**: Ladder (2 up, 2 down between adjacent courts)
 
 ## Database Schema Extensions
 
 ```typescript
-// tournament table addition
+// tournament table
 {
-  formatType: text().default('standard'), // 'standard' | 'kob32-elimination'
-  formatConfig: jsonb().default({}),      // format-specific settings
+  id: serial().primaryKey(),
+  orgId: text().notNull(),
+  name: text().notNull(),
+  status: text().notNull().default('draft'),
+  currentRound: integer().default(0),
+  numRounds: integer().notNull().default(3),
+  formatType: text().notNull().default('random-seed'), // 'random-seed' | 'preseed'
+  playerCount: integer().notNull().default(16),        // 16 or 32
+  physicalCourts: integer().notNull().default(4),     // virtual courts / 2
+  createdAt: timestamp().defaultNow()
 }
 
-// player table addition (for 32-player format)
+// player table
 {
-  seedPoints: integer(),    // Points used for seeding
-  seedRank: integer(),      // Calculated seed position (1-32)
+  id: serial().primaryKey(),
+  tournamentId: integer().notNull(),
+  name: text().notNull(),
+  seedPoints: integer(),    // Required for preseed format
+  seedRank: integer(),      // Calculated seed position
 }
 
-// courtRotation - no changes needed, just more rows (8 courts instead of 4)
-
-// New: bracket tracking
+// courtRotation - same schema, just more rows for 8 courts
 {
   id: serial().primaryKey(),
   tournamentId: integer().notNull(),
   roundNumber: integer().notNull(),
-  tierGroup: text().notNull(),     // 'winner' | 'loser' | 'final'
-  sourceCourts: integer[],         // Which courts feed into this court
-  destinationCourts: integer[],    // Where players go after this round
+  courtNumber: integer().notNull(), // 1-4 (16 players) or 1-8 (32 players)
+  player1Id: integer().notNull(),
+  player2Id: integer().notNull(),
+  player3Id: integer().notNull(),
+  player4Id: integer().notNull()
+}
+
+// scheduleSlot (new) - for virtual court scheduling
+{
+  id: serial().primaryKey(),
+  tournamentId: integer().notNull(),
+  roundNumber: integer().notNull(),
+  slotNumber: integer().notNull(),      // 1 or 2 (first/second half of round)
+  courtNumbers: integer[].notNull(),    // Which courts play in this slot
 }
 ```
 
-## Implementation Plan
+## Redistribution Algorithms
 
-### Phase 1: Seeding System
-1. Create player input UI with points field
-2. Implement seed calculation and ranking
-3. Add validation for exactly 32 players with points
-4. Test seeding algorithm with various point distributions
-
-### Phase 2: Redistribution Engine
-1. Create `RedistributionStrategy` interface implementation
-2. Implement `EliminationRedistribution` class
-3. Handle all 3 redistribution transitions:
-   - Round 1 → Round 2 (Winner/Loser split)
-   - Round 2 → Round 3 (Tier consolidation)
-   - Round 3 → Round 4 (Final placement)
-
-### Phase 3: Court Generation
-1. Modify court rotation to support 8 courts
-2. Update match generation for 8-court layout
-3. Generate 8 access tokens (QR codes)
-
-### Phase 4: UI Updates
-1. Create format selection at tournament creation
-2. Add seeding input interface (paste with points)
-3. Visual bracket/tier display showing progression
-4. Final standings by court with placement numbers
-
-### Phase 5: Testing
-1. Unit tests for seeding algorithm
-2. Unit tests for each redistribution transition
-3. Full tournament simulation tests
-4. Edge case testing (ties, identical points, etc.)
-
-## Redistribution Algorithm
+### Preseed Redistribution (32 Players)
 
 ```typescript
-function redistributeKO32(
+function redistributePreseed32(
   courtResults: CourtResult[],
   currentRound: number
 ): CourtAssignment[] {
   
   if (currentRound === 1) {
     // Round 1 → Round 2: Winner/Loser split
-    const winners: Player[] = [];
-    const losers: Player[] = [];
-    
-    for (const court of courtResults) {
-      winners.push(court.standings[0], court.standings[1]);
-      losers.push(court.standings[2], court.standings[3]);
-    }
-    
-    // Sort by original seed for fair distribution
-    winners.sort((a, b) => a.seedRank - b.seedRank);
-    losers.sort((a, b) => a.seedRank - b.seedRank);
-    
-    return [
-      { court: 1, players: [winners[0], winners[2], winners[4], winners[6]] },
-      { court: 2, players: [winners[1], winners[3], winners[5], winners[7]] },
-      { court: 3, players: [winners[8], winners[10], winners[12], winners[14]] },
-      { court: 4, players: [winners[9], winners[11], winners[13], winners[15]] },
-      { court: 5, players: [losers[0], losers[2], losers[4], losers[6]] },
-      { court: 6, players: [losers[1], losers[3], losers[5], losers[7]] },
-      { court: 7, players: [losers[8], losers[10], losers[12], losers[14]] },
-      { court: 8, players: [losers[9], losers[11], losers[13], losers[15]] },
-    ];
+    return redistributeRound1To2(courtResults);
   }
   
   if (currentRound === 2) {
-    // Round 2 → Round 3: Tier consolidation within winner/loser groups
-    // Courts 1-4 are winner courts, 5-8 are loser courts
-    return consolidateTiers(courtResults);
+    // Round 2 → Round 3: Tier consolidation
+    return redistributeRound2To3(courtResults);
   }
   
   if (currentRound === 3) {
-    // Round 3 → Round 4: Final placement consolidation
-    return finalConsolidation(courtResults);
+    // Round 3 → Round 4: Final placement
+    return redistributeRound3To4(courtResults);
   }
   
   return [];
 }
 
-function consolidateTiers(courtResults: CourtResult[]): CourtAssignment[] {
-  const winnerCourts = courtResults.filter(c => c.courtNumber <= 4);
-  const loserCourts = courtResults.filter(c => c.courtNumber > 4);
+function redistributeRound1To2(results: CourtResult[]): CourtAssignment[] {
+  const byPosition = { 1: [], 2: [], 3: [], 4: [] };
   
-  // Process winner courts (1-4) → (1-4 still, but consolidated)
-  // Process loser courts (5-8) → (5-8 still, but consolidated)
-  // ... implementation details
-}
-
-function finalConsolidation(courtResults: CourtResult[]): CourtAssignment[] {
-  // Round 3 → Round 4: Final court placement
-  // Court 1 = top 2 from Courts 1-2
-  // Court 2 = bottom 2 from Courts 1-2
-  // etc.
+  for (const court of results.sort((a, b) => a.courtNumber - b.courtNumber)) {
+    byPosition[1].push(court.standings[0]);
+    byPosition[2].push(court.standings[1]);
+    byPosition[3].push(court.standings[2]);
+    byPosition[4].push(court.standings[3]);
+  }
+  
+  return [
+    { court: 1, players: [byPosition[1][0], byPosition[1][1], byPosition[1][4], byPosition[1][5]] },
+    { court: 2, players: [byPosition[2][0], byPosition[2][1], byPosition[2][4], byPosition[2][5]] },
+    { court: 3, players: [byPosition[1][2], byPosition[1][3], byPosition[1][6], byPosition[1][7]] },
+    { court: 4, players: [byPosition[2][2], byPosition[2][3], byPosition[2][6], byPosition[2][7]] },
+    { court: 5, players: [byPosition[3][0], byPosition[3][1], byPosition[3][4], byPosition[3][5]] },
+    { court: 6, players: [byPosition[4][0], byPosition[4][1], byPosition[4][4], byPosition[4][5]] },
+    { court: 7, players: [byPosition[3][2], byPosition[3][3], byPosition[3][6], byPosition[3][7]] },
+    { court: 8, players: [byPosition[4][2], byPosition[4][3], byPosition[4][6], byPosition[4][7]] },
+  ];
 }
 ```
 
-## UI Mockup: Seeding Input
+### Random Seed Redistribution (Ladder)
+
+```typescript
+function redistributeLadder(
+  courtResults: CourtResult[],
+  isFirstRound: boolean,
+  courtCount: number
+): CourtAssignment[] {
+  
+  if (isFirstRound) {
+    // Vertical seeding: all 1st places to Court 1, etc.
+    const byRank: Record<number, Player[]> = {};
+    for (let i = 1; i <= 4; i++) byRank[i] = [];
+    
+    for (const court of courtResults) {
+      for (let i = 0; i < 4; i++) {
+        byRank[i + 1].push(court.standings[i]);
+      }
+    }
+    
+    return Array.from({ length: courtCount }, (_, i) => ({
+      court: i + 1,
+      players: byRank[i + 1]
+    }));
+  }
+  
+  // Ladder: 2 up, 2 down
+  const sorted = courtResults.sort((a, b) => a.courtNumber - b.courtNumber);
+  
+  return sorted.map((court, idx) => {
+    const assignments: Player[] = [];
+    
+    // Keep middle players (positions vary by court position)
+    if (idx === 0) {
+      // Top court: keep 1st/2nd, get 1st/2nd from court below
+      assignments.push(
+        ...court.standings.slice(0, 2),
+        ...sorted[1].standings.slice(0, 2)
+      );
+    } else if (idx === courtCount - 1) {
+      // Bottom court: keep 3rd/4th, get 3rd/4th from court above
+      assignments.push(
+        ...sorted[idx - 1].standings.slice(2, 4),
+        ...court.standings.slice(2, 4)
+      );
+    } else {
+      // Middle courts: get from above and below
+      assignments.push(
+        ...sorted[idx - 1].standings.slice(2, 4),
+        ...sorted[idx + 1].standings.slice(0, 2)
+      );
+    }
+    
+    return { court: idx + 1, players: assignments };
+  });
+}
+```
+
+## Virtual Court Scheduling
+
+```typescript
+function generateSchedule(
+  tournamentId: number,
+  roundNumber: number,
+  courtCount: number
+): ScheduleSlot[] {
+  const physicalCourts = courtCount / 2;
+  
+  return [
+    {
+      tournamentId,
+      roundNumber,
+      slotNumber: 1,
+      courtNumbers: Array.from({ length: physicalCourts }, (_, i) => i + 1)
+    },
+    {
+      tournamentId,
+      roundNumber,
+      slotNumber: 2,
+      courtNumbers: Array.from({ length: physicalCourts }, (_, i) => i + physicalCourts + 1)
+    }
+  ];
+}
+```
+
+## UI Mockup: Tournament Creation
 
 ```
-32-Player Tournament Setup
+Create Tournament
 
-Enter players with their current points (one per line):
-Format: Player Name, Points
+Name: [Beach Bash 2024]
+
+Format:
+  ○ Random Seed (existing format, ladder redistribution)
+  ● Preseed (points-based seeding, tiered redistribution)
+
+Players:
+  ○ 16 players (4 courts / 2 physical)
+  ● 32 players (8 courts / 4 physical)
+
+Number of Rounds: [4]
+
+[Continue →]
+```
+
+## UI Mockup: Player Seeding (Preseed Format)
+
+```
+Player Seeding - Preseed Format
+
+Enter players with their current points:
+(Format: Name, Points - one per line, 32 required)
 
 Alice Anderson, 1250
 Bob Brown, 1180
 Carol Chen, 1150
 ...
-[32 lines required]
 
-[Validate] [Import from CSV]
+[Validate Count] [Import CSV]
 
 Seeding Preview:
-Seed 1:  Alice Anderson (1250 pts) → Court 1, Position 1
-Seed 2:  Bob Brown (1180 pts) → Court 2, Position 1
-...
-Seed 32: Zoe Zhang (450 pts) → Court 8, Position 4
+┌─────────────────────────────────────────────┐
+│ Court 1: Alice (1), Ivan (9), Quinn (17), Yuki (25)
+│ Court 2: Bob (2), Julia (10), Rosa (18), Zach (26)
+│ ...
+└─────────────────────────────────────────────┘
 
 [Start Tournament]
 ```
 
-## UI Mockup: Bracket Visualization
+## UI Mockup: Schedule View
 
 ```
-Round 1          Round 2          Round 3          Round 4 (Final)
-                                             
-[C1] ───┐
-[C2] ───┼── [C1-C2] ──┬── [C1] ─────── Places 1-4
-[C5] ───┤             │
-[C6] ───┘             └── [C2] ─────── Places 5-8
-                                
-[C3] ───┐
-[C4] ───┼── [C3-C4] ──┬── [C3] ─────── Places 9-12
-[C7] ───┤             │
-[C8] ───┘             └── [C4] ─────── Places 13-16
-                      │
-                      ├── [C5] ─────── Places 17-20
-                      │
-                      ├── [C6] ─────── Places 21-24
-                      │
-                      ├── [C7] ─────── Places 25-28
-                      │
-                      └── [C8] ─────── Places 29-32
+Round 1 Schedule
+
+Slot 1 (Courts 1-4 active, Courts 5-8 on break):
+  Court 1: Alice, Ivan, Quinn, Yuki
+  Court 2: Bob, Julia, Rosa, Zach
+  Court 3: Carol, Kevin, Sam, Amy
+  Court 4: David, Leo, Tina, Ben
+
+Slot 2 (Courts 5-8 active, Courts 1-4 on break):
+  Court 5: Emma, Mike, Uma, Chris
+  Court 6: Frank, Nancy, Victor, Diana
+  Court 7: Grace, Oscar, Wendy, Eric
+  Court 8: Henry, Paula, Xavier, Fiona
 ```
 
-## Recommendation
+## Implementation Plan
 
-Consider the **3-round variant** as the primary implementation:
-- 9 matches per player (same as standard format)
-- Still provides elimination-style progression
-- More feasible for single-day tournaments
-- Less physically demanding
+### Phase 1: Database & Types
+1. Add `formatType`, `playerCount`, `physicalCourts` to tournament schema
+2. Add `seedPoints`, `seedRank` to player schema
+3. Create `scheduleSlot` table
+4. Update TypeScript types
 
-The 4-round version could be offered as an "Extended Tournament" option for 2-day events.
+### Phase 2: Seeding System
+1. Create seeding input UI (name + points)
+2. Implement seed calculation and ranking
+3. Implement snake-pattern court distribution
+4. Validation for exact player count with points
+
+### Phase 3: Redistribution Engine
+1. Create `RedistributionStrategy` interface
+2. Implement `PreseedRedistribution` (for preseed format)
+3. Refactor existing logic into `LadderRedistribution` (for random-seed)
+4. Support both 16 and 32 player variants
+
+### Phase 4: Scheduling
+1. Generate schedule slots for virtual courts
+2. Display schedule view showing active/break courts
+3. Update court view to show current slot status
+
+### Phase 5: UI Updates
+1. Format selection at tournament creation
+2. Conditional seeding input (required for preseed)
+3. Schedule visualization
+4. Final standings by placement
+
+### Phase 6: Testing
+1. Unit tests for seeding algorithm (16 and 32 players)
+2. Unit tests for preseed redistribution (all transitions)
+3. Unit tests for ladder redistribution (16 and 32 players)
+4. Schedule generation tests
+5. Full tournament simulation tests
 
 ## Acceptance Criteria
 
-- [ ] Can create tournament with 32 players
-- [ ] Must enter points for seeding (validation: exactly 32 players with points)
-- [ ] Initial seeding distributes players correctly (snake pattern)
-- [ ] Round 1 → Round 2 redistribution works (winner/loser split)
-- [ ] Round 2 → Round 3 redistribution works (tier consolidation)
-- [ ] Round 3 → Round 4 redistribution works (final placement)
-- [ ] Final standings display correct placements (1-32)
-- [ ] Visual bracket/tier display shows progression path
-- [ ] All 8 court access tokens generated correctly
+- [ ] Can select format type: Random Seed or Preseed
+- [ ] Can select player count: 16 or 32
+- [ ] Random Seed works without points (existing behavior)
+- [ ] Preseed requires points input for all players
+- [ ] Seeding distributes players in snake pattern
+- [ ] Preseed redistribution works for all rounds (32 players)
+- [ ] Preseed redistribution works for all rounds (16 players)
+- [ ] Ladder redistribution works for 32 players (extended from 16)
+- [ ] Virtual courts generate correct schedule slots
+- [ ] Schedule view shows which courts play when
+- [ ] Final standings display correct placements
+- [ ] Court access tokens generated for all courts
