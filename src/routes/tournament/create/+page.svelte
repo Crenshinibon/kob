@@ -6,7 +6,7 @@
 	let playerCount = $state<16 | 32>(16);
 	let numRounds = $state(3);
 
-	const fixedRounds = $derived(playerCount === 16 ? 3 : 4);
+	const fixedRounds = $derived(Number(playerCount) === 16 ? 3 : 4);
 </script>
 
 <main>
