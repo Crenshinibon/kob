@@ -34,11 +34,10 @@ function parsePreseedInput(text: string): PlayerWithPoints[] {
 	const result: PlayerWithPoints[] = [];
 
 	for (const line of lines) {
-		const commaIndex = line.lastIndexOf(',');
-		if (commaIndex > 0) {
-			const name = line.slice(0, commaIndex).trim();
-			const pointsStr = line.slice(commaIndex + 1).trim();
-			const points = parseInt(pointsStr, 10);
+		const match = line.match(/^(.+?)\s+(\d+)$/);
+		if (match) {
+			const name = match[1].trim();
+			const points = parseInt(match[2], 10);
 			if (name && !isNaN(points)) {
 				result.push({ name, seedPoints: points });
 				continue;

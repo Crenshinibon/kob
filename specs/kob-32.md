@@ -310,8 +310,27 @@ The existing format with ladder redistribution:
 
 ### Redistribution
 
-- **Round 1 → Round 2**: Vertical seeding (all 1st places to Court 1, etc.)
+#### 16 Players (4 Courts)
+
+- **Round 1 → Round 2**: Vertical seeding (all 1st places to Court 1, all 2nd places to Court 2, etc.)
 - **Round 2+**: Ladder (2 up, 2 down between adjacent courts)
+
+#### 32 Players (8 Courts)
+
+- **Round 1 → Round 2**: Points-based vertical seeding
+  - All 8 first places are sorted by total points (tie-breaker: point differential → random)
+  - Top 4 first places → Court 1, Bottom 4 first places → Court 2
+  - All 8 second places are sorted by total points
+  - Top 4 second places → Court 3, Bottom 4 second places → Court 4
+  - All 8 third places are sorted by total points
+  - Top 4 third places → Court 5, Bottom 4 third places → Court 6
+  - All 8 fourth places are sorted by total points
+  - Top 4 fourth places → Court 7, Bottom 4 fourth places → Court 8
+- **Round 2+**: Ladder (2 up, 2 down between adjacent courts)
+
+**Why points-based sorting for 32 players?**
+
+With 16 players, 4 first places fit exactly into one court. With 32 players, 8 first places must be split between two courts. The top court (Court 1) should contain the strongest first-place finishers, determined by their actual points earned in Round 1, not by which original court they happened to be assigned to.
 
 ## Database Schema Extensions
 
@@ -479,24 +498,35 @@ Number of Rounds: [4]           (Only shown for Random Seed format)
 Player Seeding - Preseed Format
 
 Enter players with their current points:
-(Format: Name, Points - one per line, 32 required)
+(Format: Name followed by points - one per line, 32 required)
 
-Alice Anderson, 1250
-Bob Brown, 1180
-Carol Chen, 1150
+Nicholas Borchart  142
+Ben Mester         42
+Markus Effinger    34
+Fabio Bahrs        30
 ...
 
 [Validate Count] [Import CSV]
 
 Seeding Preview:
 ┌─────────────────────────────────────────────┐
-│ Court 1: Alice (1), Ivan (9), Quinn (17), Yuki (25)
-│ Court 2: Bob (2), Julia (10), Rosa (18), Zach (26)
+│ Court 1: Nicholas (1), Fabio (9), ...
+│ Court 2: Ben (2), ...
 │ ...
 └─────────────────────────────────────────────┘
 
 [Start Tournament]
 ```
+
+### Input Format
+
+The preseed input parser accepts flexible formats:
+
+- **Name followed by points** (whitespace-separated): `Nicholas Borchart 142`
+- **Tab-separated**: `Nicholas Borchart\t142`
+- **Multiple spaces**: `Nicholas Borchart    142`
+
+The parser extracts the name (all non-numeric characters) and points (final numeric value) from each line.
 
 ## Implementation Plan
 
