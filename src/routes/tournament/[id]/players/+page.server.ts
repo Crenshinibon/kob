@@ -4,6 +4,11 @@ import { tournament, player, courtRotation, match, courtAccess } from '$lib/serv
 import { eq, and } from 'drizzle-orm';
 import crypto from 'crypto';
 
+type PlayerWithPoints = {
+	name: string;
+	seedPoints: number | null;
+};
+
 export const load = async ({ params, locals }) => {
 	const user = locals.user;
 	if (!user) throw redirect(302, '/login');
@@ -21,6 +26,46 @@ export const load = async ({ params, locals }) => {
 	return { tournament: tourney, players };
 };
 
+function parsePreseedInput(text: string): PlayerWithPoints[] {
+	const lines = text
+		.split('\n')
+		.map((l) => l.trim())
+		.filter((l) => l.length > 0);
+	const result: PlayerWithPoints[] = [];
+
+	for (const line of lines) {
+		const commaIndex = line.lastIndexOf(',');
+		if (commaIndex > 0) {
+			const name = line.slice(0, commaIndex).trim();
+			const pointsStr = line.slice(commaIndex + 1).trim();
+			const points = parseInt(pointsStr, 10);
+			if (name && !isNaN(points)) {
+				result.push({ name, seedPoints: points });
+				continue;
+			}
+		}
+		result.push({ name: line, seedPoints: null });
+	}
+
+	return result;
+}
+
+function snakeDistribute<T>(items: T[], courtCount: number): T[][] {
+	const courts: T[][] = Array.from({ length: courtCount }, () => []);
+	const playersPerCourt = 4;
+
+	for (let pos = 0; pos < playersPerCourt; pos++) {
+		for (let court = 0; court < courtCount; court++) {
+			const index = pos * courtCount + court;
+			if (index < items.length) {
+				courts[court].push(items[index]);
+			}
+		}
+	}
+
+	return courts;
+}
+
 export const actions = {
 	addPlayers: async ({ request, params, locals }) => {
 		const user = locals.user;
@@ -30,47 +75,84 @@ export const actions = {
 		const formData = await request.formData();
 		const namesText = formData.get('names')?.toString() || '';
 
-		const names = namesText
-			.split('\n')
-			.map((n) => n.trim())
-			.filter((n) => n.length > 0);
+		const [tourney] = await db
+			.select()
+			.from(tournament)
+			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
 
-		if (names.length === 0) {
-			return { error: 'Please enter at least one player name' };
+		if (!tourney) throw error(404, 'Tournament not found');
+
+		const maxPlayers = tourney.playerCount;
+		const isPreseed = tourney.formatType === 'preseed';
+
+		let playersToAdd: { name: string; seedPoints: number | null; seedRank: number | null }[];
+
+		if (isPreseed) {
+			const parsed = parsePreseedInput(namesText);
+			if (parsed.length === 0) {
+				return { error: 'Please enter at least one player (Name, Points)' };
+			}
+
+			const withoutPoints = parsed.filter((p) => p.seedPoints === null);
+			if (withoutPoints.length > 0) {
+				return {
+					error: `Preseed format requires points for all players. Missing points for: ${withoutPoints.map((p) => p.name).join(', ')}`
+				};
+			}
+
+			playersToAdd = parsed.map((p) => ({
+				name: p.name,
+				seedPoints: p.seedPoints,
+				seedRank: null
+			}));
+		} else {
+			const names = namesText
+				.split('\n')
+				.map((n) => n.trim())
+				.filter((n) => n.length > 0);
+
+			if (names.length === 0) {
+				return { error: 'Please enter at least one player name' };
+			}
+
+			playersToAdd = names.map((name) => ({
+				name,
+				seedPoints: null,
+				seedRank: null
+			}));
 		}
 
-		// Check existing players
 		const existingPlayers = await db
 			.select()
 			.from(player)
 			.where(eq(player.tournamentId, tournamentId));
 
-		const remainingSlots = 16 - existingPlayers.length;
+		const remainingSlots = maxPlayers - existingPlayers.length;
 
-		if (names.length > remainingSlots) {
+		if (playersToAdd.length > remainingSlots) {
 			return {
-				error: `Only ${remainingSlots} slots remaining. You entered ${names.length} names.`
+				error: `Only ${remainingSlots} slots remaining. You entered ${playersToAdd.length} players.`
 			};
 		}
 
-		// Check for duplicates
 		const existingNames = new Set(existingPlayers.map((p) => p.name.toLowerCase()));
-		const newNames = names.filter((n) => !existingNames.has(n.toLowerCase()));
+		const newPlayers = playersToAdd.filter((p) => !existingNames.has(p.name.toLowerCase()));
 
-		if (newNames.length === 0) {
+		if (newPlayers.length === 0) {
 			return { error: 'All entered names are already in the tournament' };
 		}
 
-		// Insert new players
-		for (const name of newNames) {
+		for (const p of newPlayers) {
 			await db.insert(player).values({
 				tournamentId,
-				name
+				name: p.name,
+				seedPoints: p.seedPoints,
+				seedRank: p.seedRank
 			});
 		}
 
 		return {
-			success: `Added ${newNames.length} player${newNames.length === 1 ? '' : 's'}. ${existingPlayers.length + newNames.length}/16 total.`
+			success: `Added ${newPlayers.length} player${newPlayers.length === 1 ? '' : 's'}. ${existingPlayers.length + newPlayers.length}/${maxPlayers} total.`
 		};
 	},
 
@@ -80,19 +162,46 @@ export const actions = {
 
 		const tournamentId = parseInt(params.id);
 
-		// Get all players
-		const players = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
+		const [tourney] = await db
+			.select()
+			.from(tournament)
+			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
 
-		if (players.length !== 16) {
-			return { error: `Need exactly 16 players. Currently have ${players.length}.` };
+		if (!tourney) throw error(404, 'Tournament not found');
+
+		const maxPlayers = tourney.playerCount;
+		const courtCount = maxPlayers / 4;
+		const isPreseed = tourney.formatType === 'preseed';
+
+		const allPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
+
+		if (allPlayers.length !== maxPlayers) {
+			return { error: `Need exactly ${maxPlayers} players. Currently have ${allPlayers.length}.` };
 		}
 
-		// Shuffle players for initial assignment
-		const shuffled = [...players].sort(() => Math.random() - 0.5);
+		let courtAssignments: (typeof allPlayers)[];
 
-		// Create court rotations for round 1
-		for (let courtNum = 1; courtNum <= 4; courtNum++) {
-			const courtPlayers = shuffled.slice((courtNum - 1) * 4, courtNum * 4);
+		if (isPreseed) {
+			const sorted = [...allPlayers].sort((a, b) => (b.seedPoints ?? 0) - (a.seedPoints ?? 0));
+
+			for (let i = 0; i < sorted.length; i++) {
+				await db
+					.update(player)
+					.set({ seedRank: i + 1 })
+					.where(eq(player.id, sorted[i].id));
+			}
+
+			courtAssignments = snakeDistribute(sorted, courtCount);
+		} else {
+			const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
+			courtAssignments = [];
+			for (let i = 0; i < courtCount; i++) {
+				courtAssignments.push(shuffled.slice(i * 4, (i + 1) * 4));
+			}
+		}
+
+		for (let courtNum = 1; courtNum <= courtCount; courtNum++) {
+			const courtPlayers = courtAssignments[courtNum - 1];
 
 			const [rotation] = await db
 				.insert(courtRotation)
@@ -107,13 +216,11 @@ export const actions = {
 				})
 				.returning();
 
-			// Create 3 matches for this court
 			const p1 = courtPlayers[0].id;
 			const p2 = courtPlayers[1].id;
 			const p3 = courtPlayers[2].id;
 			const p4 = courtPlayers[3].id;
 
-			// Match 1: P1 & P2 vs P3 & P4
 			await db.insert(match).values({
 				courtRotationId: rotation.id,
 				matchNumber: 1,
@@ -123,7 +230,6 @@ export const actions = {
 				teamBPlayer2Id: p4
 			});
 
-			// Match 2: P1 & P3 vs P2 & P4
 			await db.insert(match).values({
 				courtRotationId: rotation.id,
 				matchNumber: 2,
@@ -133,7 +239,6 @@ export const actions = {
 				teamBPlayer2Id: p4
 			});
 
-			// Match 3: P1 & P4 vs P2 & P3
 			await db.insert(match).values({
 				courtRotationId: rotation.id,
 				matchNumber: 3,
@@ -143,7 +248,6 @@ export const actions = {
 				teamBPlayer2Id: p3
 			});
 
-			// Generate access token
 			const token = crypto.randomBytes(16).toString('hex');
 			await db.insert(courtAccess).values({
 				courtRotationId: rotation.id,
@@ -152,7 +256,6 @@ export const actions = {
 			});
 		}
 
-		// Update tournament status
 		await db
 			.update(tournament)
 			.set({ status: 'active', currentRound: 1 })

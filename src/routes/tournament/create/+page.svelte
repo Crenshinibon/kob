@@ -2,7 +2,12 @@
 	let { form } = $props<{ form?: { error?: string } }>();
 
 	let name = $state('');
+	let formatType = $state<'random-seed' | 'preseed'>('random-seed');
+	let playerCount = $state<16 | 32>(16);
 	let numRounds = $state(3);
+
+	const fixedRounds = $derived(playerCount === 16 ? 3 : 4);
+	const courtCount = $derived(playerCount / 4);
 </script>
 
 <main>
@@ -29,13 +34,61 @@
 		</div>
 
 		<div class="field">
-			<label for="numRounds">Number of Rounds</label>
-			<select id="numRounds" name="numRounds" bind:value={numRounds}>
-				{#each [1, 2, 3, 4, 5] as n}
-					<option value={n}>{n}</option>
-				{/each}
-			</select>
+			<span class="label">Format</span>
+			<div class="radio-group">
+				<label class="radio-label">
+					<input type="radio" name="formatType" value="random-seed" bind:group={formatType} />
+					<span class="radio-content">
+						<strong>Random Seed</strong>
+						<small>Random or manual seeding, ladder redistribution</small>
+					</span>
+				</label>
+				<label class="radio-label">
+					<input type="radio" name="formatType" value="preseed" bind:group={formatType} />
+					<span class="radio-content">
+						<strong>Preseed</strong>
+						<small>Points-based seeding, tiered redistribution</small>
+					</span>
+				</label>
+			</div>
 		</div>
+
+		<div class="field">
+			<span class="label">Players</span>
+			<div class="radio-group">
+				<label class="radio-label">
+					<input type="radio" name="playerCount" value="16" bind:group={playerCount} />
+					<span class="radio-content">
+						<strong>16 players</strong>
+						<small>{courtCount} courts</small>
+					</span>
+				</label>
+				<label class="radio-label">
+					<input type="radio" name="playerCount" value="32" bind:group={playerCount} />
+					<span class="radio-content">
+						<strong>32 players</strong>
+						<small>{courtCount} courts</small>
+					</span>
+				</label>
+			</div>
+		</div>
+
+		{#if formatType === 'random-seed'}
+			<div class="field">
+				<label for="numRounds">Number of Rounds</label>
+				<select id="numRounds" name="numRounds" bind:value={numRounds}>
+					{#each [1, 2, 3, 4, 5] as n}
+						<option value={n}>{n}</option>
+					{/each}
+				</select>
+			</div>
+		{:else}
+			<div class="field">
+				<span class="label">Number of Rounds</span>
+				<div class="info-box">{fixedRounds} rounds (fixed)</div>
+				<input type="hidden" name="numRounds" value={fixedRounds} />
+			</div>
+		{/if}
 
 		<button type="submit" class="btn-primary">Create Tournament</button>
 	</form>
@@ -85,7 +138,8 @@
 		gap: var(--spacing-sm);
 	}
 
-	label {
+	label,
+	.label {
 		font-weight: 600;
 		font-size: var(--font-size-sm);
 		color: var(--text-secondary);
@@ -93,7 +147,7 @@
 		letter-spacing: 0.5px;
 	}
 
-	input,
+	input[type='text'],
 	select {
 		padding: var(--spacing-sm) var(--spacing-md);
 		font-size: var(--font-size-base);
@@ -108,12 +162,73 @@
 			box-shadow var(--transition-fast);
 	}
 
-	input:focus,
+	input[type='text']:focus,
 	select:focus {
 		outline: none;
 		border-color: var(--border-focus);
 		box-shadow: var(--shadow-focus);
 		transform: scale(1.02);
+	}
+
+	.radio-group {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+	}
+
+	.radio-label {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-sm) var(--spacing-md);
+		background-color: var(--bg-input);
+		border: var(--border-thickness) solid var(--border-strong);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.radio-label:hover {
+		border-color: var(--border-focus);
+	}
+
+	.radio-label input[type='radio'] {
+		margin-top: 4px;
+		accent-color: var(--accent-primary);
+	}
+
+	.radio-label input[type='radio']:checked + .radio-content {
+		color: var(--accent-primary);
+	}
+
+	.radio-label:has(input:checked) {
+		border-color: var(--accent-primary);
+		background-color: rgba(255, 187, 0, 0.1);
+	}
+
+	.radio-content {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.radio-content strong {
+		font-weight: 600;
+		color: var(--text-primary);
+	}
+
+	.radio-content small {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+	}
+
+	.info-box {
+		padding: var(--spacing-sm) var(--spacing-md);
+		background-color: var(--bg-input);
+		color: var(--text-muted);
+		border: var(--border-thickness) solid var(--border-default);
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-base);
 	}
 
 	.btn-primary {

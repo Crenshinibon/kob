@@ -8,6 +8,13 @@
       "when": 1770647447568,
       "tag": "0000_freezing_killraven",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1771437490519,
+      "tag": "0001_fine_maximus",
+      "breakpoints": true
     }
   ]
 }

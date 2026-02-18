@@ -7,13 +7,17 @@ export const tournament = pgTable('tournament', {
 	status: text('status').notNull().default('draft'),
 	currentRound: integer('current_round').default(0),
 	numRounds: integer('num_rounds').notNull().default(3),
+	formatType: text('format_type').notNull().default('random-seed'),
+	playerCount: integer('player_count').notNull().default(16),
 	createdAt: timestamp('created_at').defaultNow()
 });
 
 export const player = pgTable('player', {
 	id: serial('id').primaryKey(),
 	tournamentId: integer('tournament_id').notNull(),
-	name: text('name').notNull()
+	name: text('name').notNull(),
+	seedPoints: integer('seed_points'),
+	seedRank: integer('seed_rank')
 });
 
 export const courtRotation = pgTable('court_rotation', {

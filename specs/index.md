@@ -23,3 +23,5 @@
 - **./total-standings.md**: Cumulative standings across all rounds for winner announcement and prize distribution. Includes podium view and achievement categories.
 
 - **./pluggable-formats.md**: Extensible architecture for supporting multiple tournament formats (King of the Beach, King of the Court, Fixed Teams, etc.) with different player counts, court configurations, and promotion/relegation strategies.
+
+- **./kob-32.md**: 32-player Preseed format with points-based seeding and tiered redistribution. Supports both Random Seed (existing ladder format) and Preseed (points-based) formats for 16 and 32 players.

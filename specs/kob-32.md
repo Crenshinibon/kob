@@ -6,12 +6,12 @@ A 32-player, 8-court tournament format with seeded initial placement and tiered 
 
 ## Format Types
 
-| Format | Players | Courts | Rounds | Seeding | Redistribution |
-|--------|---------|--------|--------|---------|----------------|
-| Random Seed | 16 | 4 | Configurable | Random or manual | Ladder (2 up/2 down) |
-| Random Seed | 32 | 8 | Configurable | Random or manual | Ladder (2 up/2 down) |
-| Preseed | 16 | 4 | **3 (fixed)** | Points-based | Tiered binary |
-| Preseed | 32 | 8 | **4 (fixed)** | Points-based | Tiered binary |
+| Format      | Players | Courts | Rounds        | Seeding          | Redistribution       |
+| ----------- | ------- | ------ | ------------- | ---------------- | -------------------- |
+| Random Seed | 16      | 4      | Configurable  | Random or manual | Ladder (2 up/2 down) |
+| Random Seed | 32      | 8      | Configurable  | Random or manual | Ladder (2 up/2 down) |
+| Preseed     | 16      | 4      | **3 (fixed)** | Points-based     | Tiered binary        |
+| Preseed     | 32      | 8      | **4 (fixed)** | Points-based     | Tiered binary        |
 
 **Note**: Preseed tournaments have a fixed number of rounds (3 for 16 players, 4 for 32 players) - this is not configurable.
 
@@ -33,6 +33,7 @@ Court 8:  Seed 8,  Seed 16, Seed 24, Seed 32
 ```
 
 **Seeding Logic**:
+
 - Top 8 seeds get position 1 on each court
 - Seeds 9-16 get position 2
 - Seeds 17-24 get position 3
@@ -206,6 +207,7 @@ Round 1 Results:                          Round 2 Assignment:
 ```
 
 **Within Winner Courts (C1-C4):**
+
 ```
 Court 1: 1st places from C1, C2, C3, C4
 Court 2: 1st places from C5, C6, C7, C8
@@ -214,6 +216,7 @@ Court 4: 2nd places from C5, C6, C7, C8
 ```
 
 **Within Loser Courts (C5-C8):**
+
 ```
 Court 5: 3rd places from C1, C2, C3, C4
 Court 6: 3rd places from C5, C6, C7, C8
@@ -252,15 +255,15 @@ Court 8: 4th places from C5, C6, C7, C8
 ### Final Standings
 
 | Court | 1st Place | 2nd Place | 3rd Place | 4th Place |
-|-------|-----------|-----------|-----------|-----------|
-| 1 | #1 | #2 | #3 | #4 |
-| 2 | #5 | #6 | #7 | #8 |
-| 3 | #9 | #10 | #11 | #12 |
-| 4 | #13 | #14 | #15 | #16 |
-| 5 | #17 | #18 | #19 | #20 |
-| 6 | #21 | #22 | #23 | #24 |
-| 7 | #25 | #26 | #27 | #28 |
-| 8 | #29 | #30 | #31 | #32 |
+| ----- | --------- | --------- | --------- | --------- |
+| 1     | #1        | #2        | #3        | #4        |
+| 2     | #5        | #6        | #7        | #8        |
+| 3     | #9        | #10       | #11       | #12       |
+| 4     | #13       | #14       | #15       | #16       |
+| 5     | #17       | #18       | #19       | #20       |
+| 6     | #21       | #22       | #23       | #24       |
+| 7     | #25       | #26       | #27       | #28       |
+| 8     | #29       | #30       | #31       | #32       |
 
 ## Preseed Format Structure (16 Players)
 
@@ -301,10 +304,12 @@ Court 4: 3rd-4th from C3, C4 → Places 13-16
 The existing format with ladder redistribution:
 
 ### Initial Seeding
+
 - Random assignment, or manual placement by organizer
 - No points required
 
 ### Redistribution
+
 - **Round 1 → Round 2**: Vertical seeding (all 1st places to Court 1, etc.)
 - **Round 2+**: Ladder (2 up, 2 down between adjacent courts)
 
@@ -352,48 +357,47 @@ The existing format with ladder redistribution:
 
 ```typescript
 function redistributePreseed32(
-  courtResults: CourtResult[],
-  currentRound: number
+	courtResults: CourtResult[],
+	currentRound: number
 ): CourtAssignment[] {
-  
-  if (currentRound === 1) {
-    // Round 1 → Round 2: Winner/Loser split
-    return redistributeRound1To2(courtResults);
-  }
-  
-  if (currentRound === 2) {
-    // Round 2 → Round 3: Tier consolidation
-    return redistributeRound2To3(courtResults);
-  }
-  
-  if (currentRound === 3) {
-    // Round 3 → Round 4: Final placement
-    return redistributeRound3To4(courtResults);
-  }
-  
-  return [];
+	if (currentRound === 1) {
+		// Round 1 → Round 2: Winner/Loser split
+		return redistributeRound1To2(courtResults);
+	}
+
+	if (currentRound === 2) {
+		// Round 2 → Round 3: Tier consolidation
+		return redistributeRound2To3(courtResults);
+	}
+
+	if (currentRound === 3) {
+		// Round 3 → Round 4: Final placement
+		return redistributeRound3To4(courtResults);
+	}
+
+	return [];
 }
 
 function redistributeRound1To2(results: CourtResult[]): CourtAssignment[] {
-  const byPosition = { 1: [], 2: [], 3: [], 4: [] };
-  
-  for (const court of results.sort((a, b) => a.courtNumber - b.courtNumber)) {
-    byPosition[1].push(court.standings[0]);
-    byPosition[2].push(court.standings[1]);
-    byPosition[3].push(court.standings[2]);
-    byPosition[4].push(court.standings[3]);
-  }
-  
-  return [
-    { court: 1, players: [byPosition[1][0], byPosition[1][1], byPosition[1][4], byPosition[1][5]] },
-    { court: 2, players: [byPosition[2][0], byPosition[2][1], byPosition[2][4], byPosition[2][5]] },
-    { court: 3, players: [byPosition[1][2], byPosition[1][3], byPosition[1][6], byPosition[1][7]] },
-    { court: 4, players: [byPosition[2][2], byPosition[2][3], byPosition[2][6], byPosition[2][7]] },
-    { court: 5, players: [byPosition[3][0], byPosition[3][1], byPosition[3][4], byPosition[3][5]] },
-    { court: 6, players: [byPosition[4][0], byPosition[4][1], byPosition[4][4], byPosition[4][5]] },
-    { court: 7, players: [byPosition[3][2], byPosition[3][3], byPosition[3][6], byPosition[3][7]] },
-    { court: 8, players: [byPosition[4][2], byPosition[4][3], byPosition[4][6], byPosition[4][7]] },
-  ];
+	const byPosition = { 1: [], 2: [], 3: [], 4: [] };
+
+	for (const court of results.sort((a, b) => a.courtNumber - b.courtNumber)) {
+		byPosition[1].push(court.standings[0]);
+		byPosition[2].push(court.standings[1]);
+		byPosition[3].push(court.standings[2]);
+		byPosition[4].push(court.standings[3]);
+	}
+
+	return [
+		{ court: 1, players: [byPosition[1][0], byPosition[1][1], byPosition[1][4], byPosition[1][5]] },
+		{ court: 2, players: [byPosition[2][0], byPosition[2][1], byPosition[2][4], byPosition[2][5]] },
+		{ court: 3, players: [byPosition[1][2], byPosition[1][3], byPosition[1][6], byPosition[1][7]] },
+		{ court: 4, players: [byPosition[2][2], byPosition[2][3], byPosition[2][6], byPosition[2][7]] },
+		{ court: 5, players: [byPosition[3][0], byPosition[3][1], byPosition[3][4], byPosition[3][5]] },
+		{ court: 6, players: [byPosition[4][0], byPosition[4][1], byPosition[4][4], byPosition[4][5]] },
+		{ court: 7, players: [byPosition[3][2], byPosition[3][3], byPosition[3][6], byPosition[3][7]] },
+		{ court: 8, players: [byPosition[4][2], byPosition[4][3], byPosition[4][6], byPosition[4][7]] }
+	];
 }
 ```
 
@@ -401,57 +405,50 @@ function redistributeRound1To2(results: CourtResult[]): CourtAssignment[] {
 
 ```typescript
 function redistributeLadder(
-  courtResults: CourtResult[],
-  isFirstRound: boolean,
-  courtCount: number
+	courtResults: CourtResult[],
+	isFirstRound: boolean,
+	courtCount: number
 ): CourtAssignment[] {
-  
-  if (isFirstRound) {
-    // Vertical seeding: all 1st places to Court 1, etc.
-    const byRank: Record<number, Player[]> = {};
-    for (let i = 1; i <= 4; i++) byRank[i] = [];
-    
-    for (const court of courtResults) {
-      for (let i = 0; i < 4; i++) {
-        byRank[i + 1].push(court.standings[i]);
-      }
-    }
-    
-    return Array.from({ length: courtCount }, (_, i) => ({
-      court: i + 1,
-      players: byRank[i + 1]
-    }));
-  }
-  
-  // Ladder: 2 up, 2 down
-  const sorted = courtResults.sort((a, b) => a.courtNumber - b.courtNumber);
-  
-  return sorted.map((court, idx) => {
-    const assignments: Player[] = [];
-    
-    // Keep middle players (positions vary by court position)
-    if (idx === 0) {
-      // Top court: keep 1st/2nd, get 1st/2nd from court below
-      assignments.push(
-        ...court.standings.slice(0, 2),
-        ...sorted[1].standings.slice(0, 2)
-      );
-    } else if (idx === courtCount - 1) {
-      // Bottom court: keep 3rd/4th, get 3rd/4th from court above
-      assignments.push(
-        ...sorted[idx - 1].standings.slice(2, 4),
-        ...court.standings.slice(2, 4)
-      );
-    } else {
-      // Middle courts: get from above and below
-      assignments.push(
-        ...sorted[idx - 1].standings.slice(2, 4),
-        ...sorted[idx + 1].standings.slice(0, 2)
-      );
-    }
-    
-    return { court: idx + 1, players: assignments };
-  });
+	if (isFirstRound) {
+		// Vertical seeding: all 1st places to Court 1, etc.
+		const byRank: Record<number, Player[]> = {};
+		for (let i = 1; i <= 4; i++) byRank[i] = [];
+
+		for (const court of courtResults) {
+			for (let i = 0; i < 4; i++) {
+				byRank[i + 1].push(court.standings[i]);
+			}
+		}
+
+		return Array.from({ length: courtCount }, (_, i) => ({
+			court: i + 1,
+			players: byRank[i + 1]
+		}));
+	}
+
+	// Ladder: 2 up, 2 down
+	const sorted = courtResults.sort((a, b) => a.courtNumber - b.courtNumber);
+
+	return sorted.map((court, idx) => {
+		const assignments: Player[] = [];
+
+		// Keep middle players (positions vary by court position)
+		if (idx === 0) {
+			// Top court: keep 1st/2nd, get 1st/2nd from court below
+			assignments.push(...court.standings.slice(0, 2), ...sorted[1].standings.slice(0, 2));
+		} else if (idx === courtCount - 1) {
+			// Bottom court: keep 3rd/4th, get 3rd/4th from court above
+			assignments.push(...sorted[idx - 1].standings.slice(2, 4), ...court.standings.slice(2, 4));
+		} else {
+			// Middle courts: get from above and below
+			assignments.push(
+				...sorted[idx - 1].standings.slice(2, 4),
+				...sorted[idx + 1].standings.slice(0, 2)
+			);
+		}
+
+		return { court: idx + 1, players: assignments };
+	});
 }
 ```
 
@@ -504,29 +501,34 @@ Seeding Preview:
 ## Implementation Plan
 
 ### Phase 1: Database & Types
+
 1. Add `formatType`, `playerCount` to tournament schema
 2. Add `seedPoints`, `seedRank` to player schema
 3. Update TypeScript types
 
 ### Phase 2: Seeding System
+
 1. Create seeding input UI (name + points)
 2. Implement seed calculation and ranking
 3. Implement snake-pattern court distribution
 4. Validation for exact player count with points
 
 ### Phase 3: Redistribution Engine
+
 1. Create `RedistributionStrategy` interface
 2. Implement `PreseedRedistribution` (for preseed format)
 3. Refactor existing logic into `LadderRedistribution` (for random-seed)
 4. Support both 16 and 32 player variants
 
 ### Phase 4: UI Updates
+
 1. Format selection at tournament creation
 2. Conditional seeding input (required for preseed)
 3. Hide rounds config for preseed (show fixed value)
 4. Final standings by placement
 
 ### Phase 5: Testing
+
 1. Unit tests for seeding algorithm (16 and 32 players)
 2. Unit tests for preseed redistribution (all transitions)
 3. Unit tests for ladder redistribution (16 and 32 players)

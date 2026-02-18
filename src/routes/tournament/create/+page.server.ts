@@ -19,14 +19,28 @@ export const actions = {
 
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString().trim();
-		const numRounds = parseInt(formData.get('numRounds')?.toString() || '3');
+		const formatType = formData.get('formatType')?.toString() || 'random-seed';
+		const playerCount = parseInt(formData.get('playerCount')?.toString() || '16');
+		let numRounds = parseInt(formData.get('numRounds')?.toString() || '3');
 
 		if (!name) {
 			return { error: 'Tournament name is required' };
 		}
 
-		if (numRounds < 1 || numRounds > 10) {
-			return { error: 'Number of rounds must be 1-10' };
+		if (formatType !== 'random-seed' && formatType !== 'preseed') {
+			return { error: 'Invalid format type' };
+		}
+
+		if (playerCount !== 16 && playerCount !== 32) {
+			return { error: 'Player count must be 16 or 32' };
+		}
+
+		if (formatType === 'preseed') {
+			numRounds = playerCount === 16 ? 3 : 4;
+		} else {
+			if (numRounds < 1 || numRounds > 10) {
+				return { error: 'Number of rounds must be 1-10' };
+			}
 		}
 
 		const [newTournament] = await db
@@ -35,6 +49,8 @@ export const actions = {
 				orgId: user.id,
 				name,
 				numRounds,
+				formatType,
+				playerCount,
 				status: 'draft',
 				currentRound: 0
 			})

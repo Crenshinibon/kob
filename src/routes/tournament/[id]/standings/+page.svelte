@@ -430,6 +430,26 @@
 		color: var(--bg-primary);
 	}
 
+	.court-badge.court-5 {
+		background-color: #8b5cf6;
+		color: var(--bg-primary);
+	}
+
+	.court-badge.court-6 {
+		background-color: #ec4899;
+		color: var(--bg-primary);
+	}
+
+	.court-badge.court-7 {
+		background-color: #f97316;
+		color: var(--bg-primary);
+	}
+
+	.court-badge.court-8 {
+		background-color: #6b7280;
+		color: var(--bg-primary);
+	}
+
 	.rank-badge {
 		font-weight: 600;
 	}

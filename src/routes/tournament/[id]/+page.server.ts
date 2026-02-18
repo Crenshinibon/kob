@@ -16,8 +16,8 @@ export const load = async ({ params, locals }) => {
 
 	if (!tourney) throw error(404, 'Tournament not found');
 
-	// Get courts for current round
 	const currentRound = tourney.currentRound || 1;
+	const courtCount = tourney.playerCount / 4;
 	const rotations = await db
 		.select()
 		.from(courtRotation)
@@ -52,12 +52,13 @@ export const load = async ({ params, locals }) => {
 		});
 	}
 
-	// Check if all matches are complete
 	const allMatches = courts.flatMap((c) => c.matches);
-	const canCloseRound = allMatches.length === 12 && allMatches.every((m) => m.teamAScore !== null);
+	const expectedMatches = courtCount * 3;
+	const canCloseRound =
+		allMatches.length === expectedMatches && allMatches.every((m) => m.teamAScore !== null);
 	const isFinalRound = currentRound >= tourney.numRounds;
 
-	return { tournament: tourney, courts, canCloseRound, isFinalRound };
+	return { tournament: tourney, courts, canCloseRound, isFinalRound, courtCount };
 };
 
 export const actions = {
@@ -67,7 +68,6 @@ export const actions = {
 
 		const tournamentId = parseInt(params.id);
 
-		// Get tournament
 		const [tourney] = await db
 			.select()
 			.from(tournament)
@@ -77,9 +77,10 @@ export const actions = {
 		if (tourney.status !== 'active') throw error(400, 'Tournament not active');
 
 		const currentRound = tourney.currentRound || 1;
+		const courtCount = tourney.playerCount / 4;
+		const isPreseed = tourney.formatType === 'preseed';
 
 		if (currentRound >= tourney.numRounds) {
-			// Final round - mark as completed and redirect to standings
 			await db
 				.update(tournament)
 				.set({ status: 'completed' })
@@ -87,7 +88,6 @@ export const actions = {
 
 			throw redirect(303, `/tournament/${tournamentId}/standings`);
 		} else {
-			// Get current round data with matches
 			const rotations = await db
 				.select()
 				.from(courtRotation)
@@ -98,7 +98,6 @@ export const actions = {
 					)
 				);
 
-			// Get all matches with scores for standings calculation
 			const courtResults = [];
 			for (const rotation of rotations) {
 				const matches = await db.select().from(match).where(eq(match.courtRotationId, rotation.id));
@@ -118,11 +117,14 @@ export const actions = {
 				});
 			}
 
-			// Determine next round assignments
 			const nextRound = currentRound + 1;
-			const assignments = redistributePlayers(courtResults, currentRound === 1);
+			const assignments = redistributePlayers(
+				courtResults,
+				currentRound === 1,
+				courtCount,
+				isPreseed
+			);
 
-			// Create new court rotations and matches for next round
 			for (const assignment of assignments) {
 				const [rotation] = await db
 					.insert(courtRotation)
@@ -142,7 +144,6 @@ export const actions = {
 				const p3 = assignment.playerIds[2];
 				const p4 = assignment.playerIds[3];
 
-				// Create 3 matches for this court
 				await db.insert(match).values({
 					courtRotationId: rotation.id,
 					matchNumber: 1,
@@ -170,7 +171,6 @@ export const actions = {
 					teamBPlayer2Id: p3
 				});
 
-				// Generate new access token
 				const token = crypto.randomBytes(16).toString('hex');
 				await db.insert(courtAccess).values({
 					courtRotationId: rotation.id,
@@ -179,7 +179,6 @@ export const actions = {
 				});
 			}
 
-			// Deactivate old tokens
 			for (const rotation of rotations) {
 				await db
 					.update(courtAccess)
@@ -187,7 +186,6 @@ export const actions = {
 					.where(eq(courtAccess.courtRotationId, rotation.id));
 			}
 
-			// Update tournament to next round
 			await db
 				.update(tournament)
 				.set({ currentRound: nextRound })
@@ -198,7 +196,16 @@ export const actions = {
 	}
 };
 
-function calculateCourtStandings(matches: any[], playerIds: number[]) {
+interface MatchData {
+	teamAScore: number | null;
+	teamBScore: number | null;
+	teamAPlayer1Id: number;
+	teamAPlayer2Id: number;
+	teamBPlayer1Id: number;
+	teamBPlayer2Id: number;
+}
+
+function calculateCourtStandings(matches: MatchData[], playerIds: number[]) {
 	const stats: Record<number, { playerId: number; points: number; for: number; against: number }> =
 		{};
 
@@ -236,56 +243,228 @@ function calculateCourtStandings(matches: any[], playerIds: number[]) {
 		.map((s, i) => ({ ...s, rank: i + 1 }));
 }
 
-function redistributePlayers(courtResults: any[], isFirstRound: boolean) {
-	if (isFirstRound) {
-		// Round 1 -> Round 2: Vertical redistribution by rank
-		const byRank: { [rank: number]: number[] } = { 1: [], 2: [], 3: [], 4: [] };
+function redistributePlayers(
+	courtResults: { courtNumber: number; standings: { playerId: number; rank: number }[] }[],
+	isFirstRound: boolean,
+	courtCount: number,
+	isPreseed: boolean
+) {
+	if (isPreseed) {
+		return redistributePreseed(courtResults, isFirstRound, courtCount);
+	} else {
+		return redistributeLadder(courtResults, isFirstRound, courtCount);
+	}
+}
 
-		for (const court of courtResults) {
+function redistributePreseed(
+	courtResults: { courtNumber: number; standings: { playerId: number; rank: number }[] }[],
+	isFirstRound: boolean,
+	courtCount: number
+) {
+	if (courtCount === 8) {
+		return redistributePreseed32(courtResults, isFirstRound);
+	} else {
+		return redistributePreseed16(courtResults, isFirstRound);
+	}
+}
+
+function redistributePreseed32(
+	courtResults: { courtNumber: number; standings: { playerId: number; rank: number }[] }[],
+	isFirstRound: boolean
+) {
+	const sorted = courtResults.sort((a, b) => a.courtNumber - b.courtNumber);
+
+	if (isFirstRound) {
+		const byPosition: { [pos: number]: number[] } = { 1: [], 2: [], 3: [], 4: [] };
+		for (const court of sorted) {
+			byPosition[1].push(court.standings[0].playerId);
+			byPosition[2].push(court.standings[1].playerId);
+			byPosition[3].push(court.standings[2].playerId);
+			byPosition[4].push(court.standings[3].playerId);
+		}
+
+		return [
+			{
+				courtNumber: 1,
+				playerIds: [byPosition[1][0], byPosition[1][1], byPosition[1][4], byPosition[1][5]]
+			},
+			{
+				courtNumber: 2,
+				playerIds: [byPosition[1][2], byPosition[1][3], byPosition[1][6], byPosition[1][7]]
+			},
+			{
+				courtNumber: 3,
+				playerIds: [byPosition[2][0], byPosition[2][1], byPosition[2][4], byPosition[2][5]]
+			},
+			{
+				courtNumber: 4,
+				playerIds: [byPosition[2][2], byPosition[2][3], byPosition[2][6], byPosition[2][7]]
+			},
+			{
+				courtNumber: 5,
+				playerIds: [byPosition[3][0], byPosition[3][1], byPosition[3][4], byPosition[3][5]]
+			},
+			{
+				courtNumber: 6,
+				playerIds: [byPosition[3][2], byPosition[3][3], byPosition[3][6], byPosition[3][7]]
+			},
+			{
+				courtNumber: 7,
+				playerIds: [byPosition[4][0], byPosition[4][1], byPosition[4][4], byPosition[4][5]]
+			},
+			{
+				courtNumber: 8,
+				playerIds: [byPosition[4][2], byPosition[4][3], byPosition[4][6], byPosition[4][7]]
+			}
+		];
+	}
+
+	const isRound2 = sorted.length === 8 && sorted.every((c) => c.standings.length === 4);
+
+	if (isRound2) {
+		return [
+			{ courtNumber: 1, playerIds: [...getTop2(sorted[0]), ...getTop2(sorted[1])] },
+			{ courtNumber: 2, playerIds: [...getBottom2(sorted[0]), ...getBottom2(sorted[1])] },
+			{ courtNumber: 3, playerIds: [...getTop2(sorted[2]), ...getTop2(sorted[3])] },
+			{ courtNumber: 4, playerIds: [...getBottom2(sorted[2]), ...getBottom2(sorted[3])] },
+			{ courtNumber: 5, playerIds: [...getTop2(sorted[4]), ...getTop2(sorted[5])] },
+			{ courtNumber: 6, playerIds: [...getBottom2(sorted[4]), ...getBottom2(sorted[5])] },
+			{ courtNumber: 7, playerIds: [...getTop2(sorted[6]), ...getTop2(sorted[7])] },
+			{ courtNumber: 8, playerIds: [...getBottom2(sorted[6]), ...getBottom2(sorted[7])] }
+		];
+	}
+
+	return [
+		{ courtNumber: 1, playerIds: [...getTop2(sorted[0]), ...getTop2(sorted[1])] },
+		{ courtNumber: 2, playerIds: [...getBottom2(sorted[0]), ...getBottom2(sorted[1])] },
+		{ courtNumber: 3, playerIds: [...getTop2(sorted[2]), ...getTop2(sorted[3])] },
+		{ courtNumber: 4, playerIds: [...getBottom2(sorted[2]), ...getBottom2(sorted[3])] },
+		{ courtNumber: 5, playerIds: [...getTop2(sorted[4]), ...getTop2(sorted[5])] },
+		{ courtNumber: 6, playerIds: [...getBottom2(sorted[4]), ...getBottom2(sorted[5])] },
+		{ courtNumber: 7, playerIds: [...getTop2(sorted[6]), ...getTop2(sorted[7])] },
+		{ courtNumber: 8, playerIds: [...getBottom2(sorted[6]), ...getBottom2(sorted[7])] }
+	];
+}
+
+function redistributePreseed16(
+	courtResults: { courtNumber: number; standings: { playerId: number; rank: number }[] }[],
+	isFirstRound: boolean
+) {
+	const sorted = courtResults.sort((a, b) => a.courtNumber - b.courtNumber);
+
+	if (isFirstRound) {
+		const byPosition: { [pos: number]: number[] } = { 1: [], 2: [], 3: [], 4: [] };
+		for (const court of sorted) {
+			byPosition[1].push(court.standings[0].playerId);
+			byPosition[2].push(court.standings[1].playerId);
+			byPosition[3].push(court.standings[2].playerId);
+			byPosition[4].push(court.standings[3].playerId);
+		}
+
+		return [
+			{ courtNumber: 1, playerIds: byPosition[1] },
+			{ courtNumber: 2, playerIds: byPosition[2] },
+			{ courtNumber: 3, playerIds: byPosition[3] },
+			{ courtNumber: 4, playerIds: byPosition[4] }
+		];
+	}
+
+	return [
+		{ courtNumber: 1, playerIds: [...getTop2(sorted[0]), ...getTop2(sorted[1])] },
+		{ courtNumber: 2, playerIds: [...getBottom2(sorted[0]), ...getBottom2(sorted[1])] },
+		{ courtNumber: 3, playerIds: [...getTop2(sorted[2]), ...getTop2(sorted[3])] },
+		{ courtNumber: 4, playerIds: [...getBottom2(sorted[2]), ...getBottom2(sorted[3])] }
+	];
+}
+
+function redistributeLadder(
+	courtResults: { courtNumber: number; standings: { playerId: number; rank: number }[] }[],
+	isFirstRound: boolean,
+	courtCount: number
+) {
+	const sorted = courtResults.sort((a, b) => a.courtNumber - b.courtNumber);
+
+	if (isFirstRound) {
+		const byRank: { [rank: number]: number[] } = {};
+		for (let i = 1; i <= 4; i++) byRank[i] = [];
+
+		for (const court of sorted) {
 			for (const standing of court.standings) {
 				byRank[standing.rank].push(standing.playerId);
 			}
 		}
 
-		return [
-			{ courtNumber: 1, playerIds: byRank[1] },
-			{ courtNumber: 2, playerIds: byRank[2] },
-			{ courtNumber: 3, playerIds: byRank[3] },
-			{ courtNumber: 4, playerIds: byRank[4] }
-		];
-	} else {
-		// Round 2+: Ladder system
-		const courts = courtResults.sort((a, b) => a.courtNumber - b.courtNumber);
+		return Array.from({ length: courtCount }, (_, i) => ({
+			courtNumber: i + 1,
+			playerIds: byRank[i + 1]
+		}));
+	}
 
+	if (courtCount === 4) {
 		return [
 			{
 				courtNumber: 1,
 				playerIds: [
-					...courts[0].standings.slice(0, 2).map((s: any) => s.playerId),
-					...courts[1].standings.slice(0, 2).map((s: any) => s.playerId)
+					...sorted[0].standings.slice(0, 2).map((s) => s.playerId),
+					...sorted[1].standings.slice(0, 2).map((s) => s.playerId)
 				]
 			},
 			{
 				courtNumber: 2,
 				playerIds: [
-					...courts[0].standings.slice(2, 4).map((s: any) => s.playerId),
-					...courts[2].standings.slice(0, 2).map((s: any) => s.playerId)
+					...sorted[0].standings.slice(2, 4).map((s) => s.playerId),
+					...sorted[2].standings.slice(0, 2).map((s) => s.playerId)
 				]
 			},
 			{
 				courtNumber: 3,
 				playerIds: [
-					...courts[1].standings.slice(2, 4).map((s: any) => s.playerId),
-					...courts[3].standings.slice(0, 2).map((s: any) => s.playerId)
+					...sorted[1].standings.slice(2, 4).map((s) => s.playerId),
+					...sorted[3].standings.slice(0, 2).map((s) => s.playerId)
 				]
 			},
 			{
 				courtNumber: 4,
 				playerIds: [
-					...courts[2].standings.slice(2, 4).map((s: any) => s.playerId),
-					...courts[3].standings.slice(2, 4).map((s: any) => s.playerId)
+					...sorted[2].standings.slice(2, 4).map((s) => s.playerId),
+					...sorted[3].standings.slice(2, 4).map((s) => s.playerId)
 				]
 			}
 		];
 	}
+
+	const assignments: { courtNumber: number; playerIds: number[] }[] = [];
+
+	for (let i = 0; i < courtCount; i++) {
+		const playerIds = (() => {
+			if (i === 0) {
+				return [
+					...sorted[i].standings.slice(0, 2).map((s) => s.playerId),
+					...sorted[i + 1].standings.slice(0, 2).map((s) => s.playerId)
+				];
+			} else if (i === courtCount - 1) {
+				return [
+					...sorted[i - 1].standings.slice(2, 4).map((s) => s.playerId),
+					...sorted[i].standings.slice(2, 4).map((s) => s.playerId)
+				];
+			} else {
+				return [
+					...sorted[i - 1].standings.slice(2, 4).map((s) => s.playerId),
+					...sorted[i + 1].standings.slice(0, 2).map((s) => s.playerId)
+				];
+			}
+		})();
+
+		assignments.push({ courtNumber: i + 1, playerIds });
+	}
+
+	return assignments;
+}
+
+function getTop2(court: { standings: { playerId: number; rank: number }[] }): number[] {
+	return court.standings.slice(0, 2).map((s) => s.playerId);
+}
+
+function getBottom2(court: { standings: { playerId: number; rank: number }[] }): number[] {
+	return court.standings.slice(2, 4).map((s) => s.playerId);
 }

@@ -7,6 +7,7 @@
 			courts: any[];
 			canCloseRound: boolean;
 			isFinalRound: boolean;
+			courtCount: number;
 		};
 	}>();
 
@@ -19,6 +20,8 @@
 		const url = `${window.location.origin}/court/${token}`;
 		return QRCode.toDataURL(url, { width: 200, margin: 2 });
 	}
+
+	const gridClass = $derived(data.courtCount > 4 ? 'courts courts-8' : 'courts');
 </script>
 
 <main>
@@ -30,7 +33,7 @@
 		>
 	</header>
 
-	<section class="courts">
+	<section class={gridClass}>
 		{#each data.courts as court (court.courtNumber)}
 			<div class="court-card">
 				<div class="court-header">
@@ -131,6 +134,28 @@
 		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 		gap: var(--spacing-lg);
 		margin-bottom: var(--spacing-xl);
+	}
+
+	.courts-8 {
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: var(--spacing-md);
+	}
+
+	.courts-8 .court-card {
+		padding: var(--spacing-sm);
+	}
+
+	.courts-8 .qr-code {
+		margin-bottom: var(--spacing-sm);
+		padding: var(--spacing-xs);
+	}
+
+	.courts-8 .qr-code img {
+		max-width: 150px;
+	}
+
+	.courts-8 .players {
+		margin-bottom: var(--spacing-sm);
 	}
 
 	.court-card {

@@ -8,23 +8,23 @@
 	let playerCount = $derived(playerNames.split('\n').filter((n) => n.trim()).length);
 	let textareaEl: HTMLTextAreaElement | undefined = $state();
 
+	const maxPlayers = $derived(data.tournament.playerCount);
+	const isPreseed = $derived(data.tournament.formatType === 'preseed');
+	const playersReady = $derived(data.players.length >= maxPlayers);
+
 	function handlePaste(e: ClipboardEvent) {
 		const pastedText = e.clipboardData?.getData('text') || '';
 
-		// Check if pasted content has commas or semicolons
 		if (textareaEl && (pastedText.includes(',') || pastedText.includes(';'))) {
 			e.preventDefault();
 
-			// Split by comma or semicolon and clean up
 			const names = pastedText
 				.split(/[,;]+/)
 				.map((n) => n.trim())
 				.filter((n) => n.length > 0);
 
-			// Join with newlines
 			const formattedNames = names.join('\n');
 
-			// Insert at cursor position or replace selection
 			const start = textareaEl.selectionStart;
 			const end = textareaEl.selectionEnd;
 			const before = playerNames.substring(0, start);
@@ -32,7 +32,6 @@
 
 			playerNames = before + formattedNames + (after ? '\n' + after : '');
 
-			// Update cursor position after the inserted text
 			setTimeout(() => {
 				if (textareaEl)
 					textareaEl.selectionStart = textareaEl.selectionEnd = start + formattedNames.length;
@@ -45,7 +44,13 @@
 	<header>
 		<a href="/">← Back</a>
 		<h1>{data.tournament.name}</h1>
-		<p>Add 16 players to start the tournament</p>
+		<p>
+			{#if isPreseed}
+				Preseed format • Add {maxPlayers} players with points
+			{:else}
+				Random seed format • Add {maxPlayers} players
+			{/if}
+		</p>
 	</header>
 
 	{#if form?.error}
@@ -57,11 +62,18 @@
 	{/if}
 
 	<section class="current-players">
-		<h2>Current Players ({data.players.length}/16)</h2>
+		<h2>Current Players ({data.players.length}/{maxPlayers})</h2>
 		{#if data.players.length > 0}
 			<ul>
-				{#each data.players as player}
-					<li>{player.name}</li>
+				{#each data.players as p, i}
+					<li>
+						{#if isPreseed}
+							<span class="seed">{p.seedPoints ?? '-'} pts</span>
+							{p.name}
+						{:else}
+							{p.name}
+						{/if}
+					</li>
 				{/each}
 			</ul>
 		{:else}
@@ -69,27 +81,42 @@
 		{/if}
 	</section>
 
-	{#if data.players.length < 16}
+	{#if !playersReady}
 		<form method="POST" action="?/addPlayers">
 			<div class="field">
-				<label for="names">Player Names (one per line)</label>
-				<textarea
-					id="names"
-					name="names"
-					bind:this={textareaEl}
-					bind:value={playerNames}
-					onpaste={handlePaste}
-					rows="10"
-					placeholder="Alice&#10;Bob&#10;Carol&#10;..."
-				></textarea>
-				<p class="count">{playerCount} names entered</p>
+				{#if isPreseed}
+					<label for="names">Player Names with Points (Name, Points - one per line)</label>
+					<textarea
+						id="names"
+						name="names"
+						bind:this={textareaEl}
+						bind:value={playerNames}
+						onpaste={handlePaste}
+						rows="10"
+						placeholder="Alice, 1250&#10;Bob, 1180&#10;Carol, 1150&#10;..."
+					></textarea>
+					<p class="count">{playerCount} names entered</p>
+					<p class="hint">Format: Player Name, Points (e.g., Alice, 1250)</p>
+				{:else}
+					<label for="names">Player Names (one per line)</label>
+					<textarea
+						id="names"
+						name="names"
+						bind:this={textareaEl}
+						bind:value={playerNames}
+						onpaste={handlePaste}
+						rows="10"
+						placeholder="Alice&#10;Bob&#10;Carol&#10;..."
+					></textarea>
+					<p class="count">{playerCount} names entered</p>
+				{/if}
 			</div>
 
 			<button type="submit" class="btn-primary">Add Players</button>
 		</form>
 	{:else}
 		<div class="ready">
-			<p>✓ All 16 players added!</p>
+			<p>✓ All {maxPlayers} players added!</p>
 			<form method="POST" action="?/start">
 				<button type="submit" class="btn-primary btn-large">Start Tournament</button>
 			</form>
@@ -172,6 +199,20 @@
 
 	.current-players li {
 		margin: var(--spacing-xs) 0;
+		display: flex;
+		gap: var(--spacing-sm);
+		align-items: center;
+	}
+
+	.seed {
+		background-color: var(--bg-input);
+		padding: 2px var(--spacing-sm);
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-sm);
+		color: var(--accent-primary);
+		font-weight: 600;
+		min-width: 70px;
+		text-align: right;
 	}
 
 	.empty {
@@ -228,6 +269,13 @@
 		font-size: var(--font-size-sm);
 		color: var(--text-muted);
 		font-weight: 600;
+	}
+
+	.hint {
+		margin: var(--spacing-xs) 0 0 0;
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		font-style: italic;
 	}
 
 	.btn-primary {
