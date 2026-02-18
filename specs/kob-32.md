@@ -56,64 +56,216 @@ Court 8:  Seed 8,  Seed 16, Seed 24, Seed 32
 - Seeds 17-24 get position 3
 - Seeds 25-32 get position 4
 
+## Bracket Visualization
+
+### Player Pool for 1st Place
+
+```
+Round 1: 32 players competing for #1
+    ↓ (16 players eliminated from #1 contention)
+Round 2: 16 players competing for #1
+    ↓ (8 players eliminated from #1 contention)
+Round 3: 8 players competing for #1
+    ↓ (4 players eliminated from #1 contention)
+Round 4: 4 players competing for #1 → Winner determined!
+```
+
+### Round-by-Round Flow (32 Players, 8 Courts)
+
+```
+ROUND 1 - 32 players, 8 courts, all can still reach #1
+
+  Court 1    Court 2    Court 3    Court 4    Court 5    Court 6    Court 7    Court 8
+  ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐
+  │ 1st  │   │ 1st  │   │ 1st  │   │ 1st  │   │ 1st  │   │ 1st  │   │ 1st  │   │ 1st  │
+  │ 2nd  │   │ 2nd  │   │ 2nd  │   │ 2nd  │   │ 2nd  │   │ 2nd  │   │ 2nd  │   │ 2nd  │
+  │ 3rd  │   │ 3rd  │   │ 3rd  │   │ 3rd  │   │ 3rd  │   │ 3rd  │   │ 3rd  │   │ 3rd  │
+  │ 4th  │   │ 4th  │   │ 4th  │   │ 4th  │   │ 4th  │   │ 4th  │   │ 4th  │   │ 4th  │
+  └──────┘   └──────┘   └──────┘   └──────┘   └──────┘   └──────┘   └──────┘   └──────┘
+      │         │         │         │         │         │         │         │
+      └─────────┴─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘
+                              │                        │
+                    ALL 1st-2nd (16)          ALL 3rd-4th (16)
+                          │                          │
+                          ▼                          ▼
+                   Winner Courts               Loser Courts
+                     C1-C4                       C5-C8
+
+
+ROUND 2 - 32 players, 8 courts, 16 can still reach #1 (only Winner Court players)
+
+  ┌─────────────────────WINNER COURTS─────────────────────┐
+  │  Court 1    Court 2    Court 3    Court 4             │
+  │  ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐            │
+  │  │ 1st* │   │ 1st* │   │ 2nd* │   │ 2nd* │            │
+  │  │ 1st* │   │ 1st* │   │ 2nd* │   │ 2nd* │            │
+  │  │ 1st* │   │ 1st* │   │ 2nd* │   │ 2nd* │            │
+  │  │ 1st* │   │ 1st* │   │ 2nd* │   │ 2nd* │            │
+  │  └──────┘   └──────┘   └──────┘   └──────┘            │
+  │  from C1   from C5   from C1    from C5              │
+  │  - C4      - C8      - C4       - C8                 │
+  │   (8)       (8)       (8)        (8)                  │
+  └───────────────────────────────────────────────────────┘
+         │                   │
+    1st-2nd → C1,C2     3rd-4th → C3,C4
+
+  ┌─────────────────────LOSER COURTS──────────────────────┐
+  │  Court 5    Court 6    Court 7    Court 8             │
+  │  ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐            │
+  │  │ 3rd  │   │ 3rd  │   │ 4th  │   │ 4th  │            │
+  │  │ 3rd  │   │ 3rd  │   │ 4th  │   │ 4th  │            │
+  │  │ 3rd  │   │ 3rd  │   │ 4th  │   │ 4th  │            │
+  │  │ 3rd  │   │ 3rd  │   │ 4th  │   │ 4th  │            │
+  │  └──────┘   └──────┘   └──────┘   └──────┘            │
+  │  from C1   from C5   from C1    from C5              │
+  │  - C4      - C8      - C4       - C8                 │
+  └───────────────────────────────────────────────────────┘
+         │                   │
+    1st-2nd → C5,C6     3rd-4th → C7,C8
+
+  * = still competing for #1 (Winner Courts only)
+
+
+ROUND 3 - 32 players, 8 courts, 8 can still reach #1 (1st-2nd from C1-C2 only)
+
+  Court 1    Court 2    Court 3    Court 4    Court 5    Court 6    Court 7    Court 8
+  ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐
+  │ 1st* │   │ 1st* │   │ 1st  │   │ 1st  │   │ 1st  │   │ 1st  │   │ 1st  │   │ 1st  │
+  │ 2nd* │   │ 2nd* │   │ 2nd  │   │ 2nd  │   │ 2nd  │   │ 2nd  │   │ 2nd  │   │ 2nd  │
+  │ 3rd  │   │ 3rd  │   │ 3rd  │   │ 3rd  │   │ 3rd  │   │ 3rd  │   │ 3rd  │   │ 3rd  │
+  │ 4th  │   │ 4th  │   │ 4th  │   │ 4th  │   │ 4th  │   │ 4th  │   │ 4th  │   │ 4th  │
+  └──────┘   └──────┘   └──────┘   └──────┘   └──────┘   └──────┘   └──────┘   └──────┘
+   1st-2nd   3rd-4th    1st-2nd   3rd-4th    1st-2nd   3rd-4th    1st-2nd   3rd-4th
+   from C1   from C1    from C2   from C2    from C3   from C3    from C4   from C4
+   + C2      + C2       + C1      + C1       + C4      + C4       + C3      + C3
+
+    * = still competing for #1 (only Courts 1-2)
+
+
+ROUND 4 (FINAL) - 32 players, 8 courts, 4 can still reach #1 (Court 1 only)
+
+  Court 1    Court 2    Court 3    Court 4    Court 5    Court 6    Court 7    Court 8
+  ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐
+  │ #1*  │   │ #5   │   │ #9   │   │ #13  │   │ #17  │   │ #21  │   │ #25  │   │ #29  │
+  │ #2*  │   │ #6   │   │ #10  │   │ #14  │   │ #18  │   │ #22  │   │ #26  │   │ #30  │
+  │ #3*  │   │ #7   │   │ #11  │   │ #15  │   │ #19  │   │ #23  │   │ #27  │   │ #31  │
+  │ #4*  │   │ #8   │   │ #12  │   │ #16  │   │ #20  │   │ #24  │   │ #28  │   │ #32  │
+  └──────┘   └──────┘   └──────┘   └──────┘   └──────┘   └──────┘   └──────┘   └──────┘
+  1st-2nd   3rd-4th    1st-2nd   3rd-4th    1st-2nd   3rd-4th    1st-2nd   3rd-4th
+  from C1   from C1    from C2   from C2    from C3   from C3    from C4   from C4
+  + C2      + C2       + C1      + C1       + C4      + C4       + C3      + C3
+
+    * = Final 4 competing for #1
+    Court 1: Places 1-4   |  Court 5: Places 17-20
+    Court 2: Places 5-8   |  Court 6: Places 21-24
+    Court 3: Places 9-12  |  Court 7: Places 25-28
+    Court 4: Places 13-16 |  Court 8: Places 29-32
+```
+
+### Simplified View: #1 Contender Pool
+
+```
+                        Round 1
+                      ┌─────────┐
+                      │ 32 can  │
+                      │ win #1  │
+                      └────┬────┘
+                           │ ALL 1st-2nd from ALL courts → Winner Courts (C1-C4)
+                           │ ALL 3rd-4th from ALL courts → Loser Courts (C5-C8)
+                           ▼
+                        Round 2
+                  ┌─────────────────┐
+                  │ 16 can win #1   │
+                  │ (Courts 1-4)    │
+                  └────────┬────────┘
+                           │ 1st-2nd from C1-C2 → C1 (top 8)
+                           │ 3rd-4th from C1-C2 → C2
+                           │ 1st-2nd from C3-C4 → C3
+                           │ 3rd-4th from C3-C4 → C4
+                           ▼
+                        Round 3
+                  ┌─────────────────┐
+                  │ 8 can win #1    │
+                  │ (Courts 1-2)    │
+                  └────────┬────────┘
+                           │ 1st-2nd from C1-C2 → C1 (final 4)
+                           │ 3rd-4th from C1-C2 → C2
+                           ▼
+                        Round 4 (Final)
+                  ┌─────────────────┐
+                  │ 4 can win #1    │
+                  │ (Court 1 only)  │
+                  └────────┬────────┘
+                           │ 1st = #1, 2nd = #2, 3rd = #3, 4th = #4
+                           ▼
+                      ┌─────────┐
+                      │ WINNER! │
+                      └─────────┘
+```
+
 ### Round 1 → Round 2 (Winner/Loser Split)
 
-After Round 1, courts are divided into "Winner Courts" (1-4) and "Loser Courts" (5-8):
+**ALL 1st-2nd from ALL 8 courts → Winner Courts 1-4 (16 players)**
+**ALL 3rd-4th from ALL 8 courts → Loser Courts 5-8 (16 players)**
 
 ```
-Winner Courts (1-4): All 1st and 2nd place finishers (16 players)
-Loser Courts (5-8):  All 3rd and 4th place finishers (16 players)
+Round 1 Results:                          Round 2 Assignment:
+┌─────────────────────────────────┐       ┌─────────────────────────────────┐
+│ Courts 1-8, each with:          │       │ WINNER COURTS (C1-C4):          │
+│   1st place × 8 = 8 players ────┼──┐    │   All 1st places from C1-C8     │
+│   2nd place × 8 = 8 players ────┼──┼──► │   All 2nd places from C1-C8     │
+│   3rd place × 8 = 8 players ────┼──┐    │   = 16 players, 4 per court     │
+│   4th place × 8 = 8 players ────┼──┤    ├─────────────────────────────────┤
+└─────────────────────────────────┘  │    │ LOSER COURTS (C5-C8):           │                                     │
+                                     └───►│   All 3rd places from C1-C8     │
+                                          │   All 4th places from C1-C8     │
+                                          │   = 16 players, 4 per court     │
+                                          └─────────────────────────────────┘
 ```
 
-**Assignment Logic**:
+**Within Winner Courts (C1-C4):**
 ```
-Court 1: 1st from C1, 1st from C2, 1st from C5, 1st from C6
-Court 2: 2nd from C1, 2nd from C2, 2nd from C5, 2nd from C6
-Court 3: 1st from C3, 1st from C4, 1st from C7, 1st from C8
-Court 4: 2nd from C3, 2nd from C4, 2nd from C7, 2nd from C8
-Court 5: 3rd from C1, 3rd from C2, 3rd from C5, 3rd from C6
-Court 6: 4th from C1, 4th from C2, 4th from C5, 4th from C6
-Court 7: 3rd from C3, 3rd from C4, 3rd from C7, 3rd from C8
-Court 8: 4th from C3, 4th from C4, 4th from C7, 4th from C8
+Court 1: 1st places from C1, C2, C3, C4
+Court 2: 1st places from C5, C6, C7, C8
+Court 3: 2nd places from C1, C2, C3, C4
+Court 4: 2nd places from C5, C6, C7, C8
 ```
 
-### Round 2 → Round 3 (Tier Consolidation)
-
-Players consolidate further within their tier:
-
+**Within Loser Courts (C5-C8):**
 ```
-Courts 1-2: 1st/2nd from Courts 1-4 (top 8 of winners)
-Courts 3-4: 3rd/4th from Courts 1-4 (bottom 8 of winners)
-Courts 5-6: 1st/2nd from Courts 5-8 (top 8 of losers)
-Courts 7-8: 3rd/4th from Courts 5-8 (bottom 8 of losers)
+Court 5: 3rd places from C1, C2, C3, C4
+Court 6: 3rd places from C5, C6, C7, C8
+Court 7: 4th places from C1, C2, C3, C4
+Court 8: 4th places from C5, C6, C7, C8
 ```
 
-**Assignment Logic**:
-```
-Court 1: 1st from C1, 1st from C2
-Court 2: 2nd from C1, 2nd from C2
-Court 3: 3rd from C1, 3rd from C2
-Court 4: 4th from C1, 4th from C2
-Court 5: 1st from C3, 1st from C4
-Court 6: 2nd from C3, 2nd from C4
-Court 7: 3rd from C3, 3rd from C4
-Court 8: 4th from C3, 4th from C4
-```
+**Key Insight**: After Round 1, players from ALL courts are pooled together by their finish position, then distributed to winner/loser courts. A 1st place finish on Court 8 has the same advancement as 1st on Court 1.
 
-(Note: This is one possible assignment - see visualization for exact flow)
+### Redistribution Summary
 
-### Round 3 → Round 4 (Final Placement)
+**Round 1 → Round 2** (Pool ALL players by finish position):
+| Finish | All From | Go To |
+|--------|----------|-------|
+| ALL 1st places | Courts 1-8 | Courts 1-2 (4 each) |
+| ALL 2nd places | Courts 1-8 | Courts 3-4 (4 each) |
+| ALL 3rd places | Courts 1-8 | Courts 5-6 (4 each) |
+| ALL 4th places | Courts 1-8 | Courts 7-8 (4 each) |
 
-```
-Court 1: 1st/2nd from Courts 1-2 → Places 1-4
-Court 2: 3rd/4th from Courts 1-2 → Places 5-8
-Court 3: 1st/2nd from Courts 3-4 → Places 9-12
-Court 4: 3rd/4th from Courts 3-4 → Places 13-16
-Court 5: 1st/2nd from Courts 5-6 → Places 17-20
-Court 6: 3rd/4th from Courts 5-6 → Places 21-24
-Court 7: 1st/2nd from Courts 7-8 → Places 25-28
-Court 8: 3rd/4th from Courts 7-8 → Places 29-32
-```
+**Round 2 → Round 3** (Within tier groups):
+| Source | 1st-2nd Go To | 3rd-4th Go To |
+|--------|---------------|---------------|
+| Courts 1-2 | C1, C2 | C3, C4 |
+| Courts 3-4 | C5, C6 | C7, C8 |
+| Courts 5-6 | C1, C2 | C3, C4 |
+| Courts 7-8 | C5, C6 | C7, C8 |
+
+**Round 3 → Round 4** (Final placement):
+| Source | 1st-2nd Go To | 3rd-4th Go To |
+|--------|---------------|---------------|
+| Courts 1-2 | C1 (Places 1-4) | C2 (Places 5-8) |
+| Courts 3-4 | C3 (Places 9-12) | C4 (Places 13-16) |
+| Courts 5-6 | C5 (Places 17-20) | C6 (Places 21-24) |
+| Courts 7-8 | C7 (Places 25-28) | C8 (Places 29-32) |
 
 ### Final Standings
 
