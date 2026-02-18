@@ -108,7 +108,7 @@
 						bind:value={playerNames}
 						onpaste={handlePaste}
 						rows="10"
-						placeholder="Alice&#10;..."
+						placeholder="Alice..."
 					></textarea>
 					<p class="count">{playerCount} names entered</p>
 				{/if}
