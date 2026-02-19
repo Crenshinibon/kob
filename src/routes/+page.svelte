@@ -17,7 +17,7 @@
 				sizes="(max-width: 600px) 100px, 200px"
 			/>
 			<h1 style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px;">
-				KoB
+				KOB
 			</h1>
 		</div>
 		{#if data?.user}
