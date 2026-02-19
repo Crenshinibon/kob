@@ -114,16 +114,16 @@
 								.for(match.id)
 								.preflight(scoreSchema)
 								.enhance(async ({ submit }) => {
+									savingMatches = new Set([...savingMatches, match.id]);
 									try {
-										savingMatches.add(match.id);
 										await submit();
-										savingMatches.delete(match.id);
-										// Exit edit mode after successful save
 										if (isEditing) {
 											editingMatches = new Set([...editingMatches].filter((id) => id !== match.id));
 										}
 									} catch (error) {
 										console.log(error);
+									} finally {
+										savingMatches = new Set([...savingMatches].filter((id) => id !== match.id));
 									}
 								})}
 						>
@@ -494,6 +494,10 @@
 	.btn-primary:hover:not(:disabled) {
 		background-color: var(--accent-primary-hover);
 		box-shadow: var(--glow-primary);
+	}
+
+	.btn-primary:active:not(:disabled) {
+		transform: scale(0.95);
 	}
 
 	.btn-primary:disabled {

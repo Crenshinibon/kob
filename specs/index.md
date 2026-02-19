@@ -29,3 +29,5 @@
 - **./testing-gaps.md**: Testing gaps, missing unit tests, E2E test coverage issues, and potential bugs identified before going live. Includes pre-launch checklist for the new 32-player and preseed format features.
 
 - **./production-readiness-progress.md**: Progress log of critical fixes made for production readiness.
+
+- **./score-saving-ux.md**: Score saving UX improvements - immediate feedback for mobile users, reactivity fixes, and future enhancement options.
