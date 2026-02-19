@@ -74,9 +74,11 @@
 	{:else}
 		<section class="matches">
 			{#each data.matches as match, i (match.id)}
-				{@const issues = saveScore.for(match.id).fields.allIssues() ?? []}
+				{@const scoreForm = saveScore.for(match.id)}
+				{@const issues = scoreForm.fields.allIssues() ?? []}
+				{@const isSaving = savingMatches.has(match.id)}
 				<div class="match" transition:slide>
-					{#if issues.length > 0}
+					{#if issues.length > 0 && !isSaving}
 						<div class="error" transition:slide>
 							{#each issues as issue}
 								<p>{issue.message}</p>
@@ -110,22 +112,19 @@
 						{@const isEditing = editingMatches.has(match.id)}
 						<form
 							data-testid="match-form-{match.id}"
-							{...saveScore
-								.for(match.id)
-								.preflight(scoreSchema)
-								.enhance(async ({ submit }) => {
-									savingMatches = new Set([...savingMatches, match.id]);
-									try {
-										await submit();
-										if (isEditing) {
-											editingMatches = new Set([...editingMatches].filter((id) => id !== match.id));
-										}
-									} catch (error) {
-										console.log(error);
-									} finally {
-										savingMatches = new Set([...savingMatches].filter((id) => id !== match.id));
+							{...scoreForm.preflight(scoreSchema).enhance(async ({ submit }) => {
+								savingMatches = new Set([...savingMatches, match.id]);
+								try {
+									await submit();
+									if (isEditing) {
+										editingMatches = new Set([...editingMatches].filter((id) => id !== match.id));
 									}
-								})}
+								} catch (error) {
+									console.log(error);
+								} finally {
+									savingMatches = new Set([...savingMatches].filter((id) => id !== match.id));
+								}
+							})}
 						>
 							<input type="hidden" name="matchId" value={match.id} />
 
@@ -140,7 +139,7 @@
 										max="50"
 										required
 										disabled={savingMatches.has(match.id)}
-										{...saveScore.fields.teamAScore}
+										{...scoreForm.fields.teamAScore}
 									/>
 								</div>
 
@@ -156,7 +155,7 @@
 										max="50"
 										required
 										disabled={savingMatches.has(match.id)}
-										{...saveScore.fields.teamBScore}
+										{...scoreForm.fields.teamBScore}
 									/>
 								</div>
 							</div>
