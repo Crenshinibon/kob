@@ -2,29 +2,55 @@
 
 This document tracks untested areas, missing tests, and bugs identified before going live with the new 32-player and preseed format features.
 
-## Critical: Missing Unit Tests
+## Resolved Issues ✅
 
-All core business logic lacks unit test coverage. These functions should have dedicated unit tests:
+### 1. `redistributePreseed32()` Implementation - FIXED
 
-### Redistribution Algorithms
+**Location**: `src/lib/server/tournament-logic.ts`
 
-- `redistributePlayers()` - Main dispatcher
-- `redistributePreseed32()` - 32-player preseed redistribution
-- `redistributePreseed16()` - 16-player preseed redistribution
-- `redistributeLadder()` - Random-seed ladder system (16 and 32 players)
-- `getTop2()`, `getBottom2()` - Helper functions
+The redistribution logic has been corrected to properly handle each round transition:
 
-### Scoring & Standings
+- **Round 1 → Round 2**: Winner/loser split - ALL 1st/2nd places to Courts 1-4, ALL 3rd/4th places to Courts 5-8
+- **Round 2 → Round 3**: Tier consolidation - Top/bottom 2 from each court pair
+- **Round 3 → Round 4**: Final placement determination
+
+### 2. Non-Deterministic Tiebreaker - FIXED
+
+**Location**: `src/lib/server/tournament-logic.ts`, `src/routes/tournament/[id]/standings/+page.server.ts`, `src/routes/court/[token]/+page.server.ts`
+
+The `Math.random() - 0.5` tiebreaker has been replaced with a deterministic approach using player ID comparison:
+
+```typescript
+return a.playerId - b.playerId;
+```
+
+This ensures consistent results across runs and prevents flaky tests.
+
+### 3. Delete Tournament Action - FIXED
+
+**Location**: `src/routes/tournament/[id]/+page.server.ts`
+
+Added `deleteTournament` server action that:
+
+- Verifies user authorization
+- Cascades deletion through all related tables (match, courtAccess, courtRotation, player)
+- Removes the tournament record
+
+### 4. Unit Tests Added
+
+**Location**: `src/lib/server/tournament-logic.test.ts`
+
+Added comprehensive unit tests for:
 
 - `calculateCourtStandings()` - Points calculation and ranking
-- Score validation rules (min 21, win by 2, no ties)
+- `redistributePreseed16()` - 16-player preseed redistribution
+- `redistributePreseed32()` - 32-player preseed redistribution (all rounds)
+- `redistributeLadder()` - Random-seed ladder redistribution (16 and 32 players)
+- `getTop2()`, `getBottom2()` - Helper functions
 
-### Tournament Setup
+Run with: `npm run test:unit`
 
-- `snakeDistribute()` - Preseed court assignment
-- `parsePreseedInput()` - Name + points parsing
-
-## E2E Test Gaps
+## Remaining E2E Test Gaps
 
 ### 32-Player Tournament
 
@@ -34,7 +60,8 @@ All core business logic lacks unit test coverage. These functions should have de
 
 ### Preseed Format
 
-- **Preseed redistribution is not tested at all**
+- **Preseed redistribution is not tested in E2E tests**
+- Need E2E test for preseed format (16 and 32 players)
 - Round 1→2 redistribution (winner/loser split)
 - Round 2→3 redistribution (tier consolidation)
 - Round 3→4 redistribution (final placement)
@@ -47,98 +74,9 @@ All core business logic lacks unit test coverage. These functions should have de
 - Round-by-round breakdown not tested
 - Achievement categories not tested
 
-### Delete Tournament
-
-- E2E tests attempt to delete tournaments via `button:has-text("Delete")`
-- **No `deleteTournament` action exists** in `+page.server.ts`
-- Tests silently fail cleanup
-
-## Potential Bugs
-
-### 1. `redistributePreseed32()` Incomplete Implementation
-
-**Location**: `src/routes/tournament/[id]/+page.server.ts:325-349`
-
-The Round 2 case (line 325-338) and the fallback case (line 340-349) return identical logic:
-
-```typescript
-// Round 2 case
-if (isRound2) {
-	return [
-		{ courtNumber: 1, playerIds: [...getTop2(sorted[0]), ...getTop2(sorted[1])] }
-		// ... same pattern
-	];
-}
-
-// Fallback - IDENTICAL to above
-return [
-	{ courtNumber: 1, playerIds: [...getTop2(sorted[0]), ...getTop2(sorted[1])] }
-	// ... same pattern
-];
-```
-
-But per `kob-32.md` spec, each round transition has different rules:
-
-- Round 2→3: Different grouping pattern
-- Round 3→4: Final placement to determine ranks 1-32
-
-**Action**: Verify against spec and implement correct logic for each transition.
-
-### 2. Non-Deterministic Tiebreaker
-
-**Location**: Multiple files use `Math.random() - 0.5` for tiebreaking
-
-```typescript
-return Math.random() - 0.5;
-```
-
-**Issues**:
-
-- Results change between runs
-- Flaky E2E tests
-- Unfair if same players tie repeatedly
-
-**Fix**: Use deterministic tiebreaker:
-
-```typescript
-// Option 1: Player ID comparison
-return a.playerId - b.playerId;
-
-// Option 2: Seeded random based on player IDs
-const seed = a.playerId + b.playerId;
-// Use seeded PRNG
-```
-
-### 3. Final Standings Logic Mismatch
-
-**Location**: `src/routes/tournament/[id]/standings/+page.server.ts`
-
-Current implementation ranks by current round court + points. But per `requirements.md`:
-
-> Final Standings are determined by **Final Court Position**, not total aggregate points.
->
-> - 1st Place: Winner of Court 1
-> - 2nd Place: 2nd Place of Court 1
-> - ...
-> - 16th Place: 4th Place of Court 4
-
-**Action**: Verify this matches expected behavior for completed tournaments.
-
 ## Missing Features
 
-### 1. Delete Tournament Action
-
-Tests reference a delete button that doesn't exist:
-
-```typescript
-// E2E test attempts this:
-const deleteButton = page.locator('button:has-text("Delete")');
-await deleteButton.click();
-```
-
-**Action**: Add `deleteTournament` action to tournament page, or remove delete expectations from tests.
-
-### 2. Preseed Points Validation
+### Preseed Points Validation
 
 When starting a preseed tournament, the system should validate:
 
@@ -149,23 +87,23 @@ When starting a preseed tournament, the system should validate:
 
 ## Pre-Launch Checklist
 
-### Must Fix
+### Completed ✅
 
-- [ ] Add `deleteTournament` server action or update tests
-- [ ] Verify `redistributePreseed32()` matches spec for all round transitions
-- [ ] Add unit tests for redistribution algorithms
-- [ ] Replace `Math.random()` tiebreaker with deterministic approach
+- [x] Add `deleteTournament` server action
+- [x] Fix `redistributePreseed32()` to match spec for all round transitions
+- [x] Add unit tests for redistribution algorithms
+- [x] Replace `Math.random()` tiebreaker with deterministic approach
+- [x] Add unit tests for scoring/standings calculations
 
 ### Should Fix
 
 - [ ] Add E2E test for 32-player tournament completing all rounds
 - [ ] Add E2E test for preseed format (16 and 32 players)
 - [ ] Add E2E test for standings page
-- [ ] Add unit tests for scoring/standings calculations
+- [ ] Add validation for preseed points at tournament start
 
 ### Nice to Have
 
-- [ ] Add validation for preseed points at tournament start
 - [ ] Add integration tests for full tournament flows
 - [ ] Add performance tests for 32-player tournaments
 
@@ -178,6 +116,15 @@ e2e/
 ├── promotion.spec.ts    # 16-player redistribution only
 ├── standings.spec.ts    # Court-level standings only
 └── tournament.spec.ts   # 16-player integration tests
+
+src/lib/server/
+└── tournament-logic.test.ts  # Unit tests for redistribution and scoring
 ```
 
-**Missing**: No `redistribution.spec.ts` for 32-player or preseed formats.
+**Missing**: No `redistribution.spec.ts` for 32-player or preseed E2E tests.
+
+## New Files Added
+
+- `src/lib/server/tournament-logic.ts` - Extracted pure functions for tournament logic
+- `src/lib/server/tournament-logic.test.ts` - Unit tests for tournament logic
+- `vitest.config.ts` - Vitest configuration for unit tests

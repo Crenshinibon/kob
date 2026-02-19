@@ -21,6 +21,12 @@
 		return QRCode.toDataURL(url, { width: 200, margin: 2 });
 	}
 
+	function confirmDelete(e: Event) {
+		if (!confirm('Delete this tournament? This cannot be undone.')) {
+			e.preventDefault();
+		}
+	}
+
 	const gridClass = $derived(data.courtCount > 4 ? 'courts courts-8' : 'courts');
 </script>
 
@@ -76,6 +82,12 @@
 			</form>
 		{:else}
 			<button disabled class="btn-primary btn-disabled">Waiting for all scores...</button>
+		{/if}
+
+		{#if data.tournament.status === 'draft'}
+			<form method="POST" action="?/deleteTournament" class="delete-form">
+				<button type="submit" class="btn-danger" onclick={confirmDelete}>Delete</button>
+			</form>
 		{/if}
 	</section>
 </main>
@@ -288,5 +300,28 @@
 		border-color: var(--border-default);
 		cursor: not-allowed;
 		box-shadow: none;
+	}
+
+	.btn-danger {
+		background-color: var(--accent-error);
+		color: var(--bg-primary);
+		padding: var(--spacing-sm) var(--spacing-lg);
+		border: 2px solid var(--accent-error);
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-base);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		cursor: pointer;
+		transition: all var(--transition-base);
+	}
+
+	.btn-danger:hover {
+		background-color: #cc2929;
+		box-shadow: 0 0 20px rgba(255, 51, 51, 0.4);
+	}
+
+	.delete-form {
+		margin-left: auto;
 	}
 </style>

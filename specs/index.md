@@ -27,3 +27,5 @@
 - **./kob-32.md**: 32-player Preseed format with points-based seeding and tiered redistribution. Supports both Random Seed (existing ladder format) and Preseed (points-based) formats for 16 and 32 players.
 
 - **./testing-gaps.md**: Testing gaps, missing unit tests, E2E test coverage issues, and potential bugs identified before going live. Includes pre-launch checklist for the new 32-player and preseed format features.
+
+- **./production-readiness-progress.md**: Progress log of critical fixes made for production readiness.

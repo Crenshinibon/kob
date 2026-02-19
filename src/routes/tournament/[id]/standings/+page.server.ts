@@ -181,7 +181,7 @@ function calculateCourtStandings(matches: Match[], playerIds: number[]) {
 		.sort((a, b) => {
 			if (b.points !== a.points) return b.points - a.points;
 			if (b.diff !== a.diff) return b.diff - a.diff;
-			return Math.random() - 0.5;
+			return a.playerId - b.playerId;
 		})
 		.map((s, i) => ({ ...s, rank: i + 1 }));
 }
