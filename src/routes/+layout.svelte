@@ -28,23 +28,36 @@
 	</main>
 
 	<footer class="site-footer">
-		<script
-			type="text/javascript"
-			src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
-			data-name="bmc-button"
-			data-slug="accomade"
-			data-color="#FFDD00"
-			data-emoji="☕"
-			data-font="Cookie"
-			data-text="Buy me a coffee"
-			data-outline-color="#000000"
-			data-font-color="#000000"
-			data-coffee-color="#ffffff"
-		></script>
+		<a
+			href="https://buymeacoffee.com/accomade"
+			target="_blank"
+			rel="noopener noreferrer nofollow"
+			class="bmc-button"
+		>
+			☕ Buy Me A Coffee
+		</a>
 	</footer>
 </div>
 
 <style>
+	.bmc-button {
+		min-width: 180px;
+		color: #000000 !important;
+		background-color: #ffdd00 !important;
+		height: 30px;
+		border-radius: 12px;
+		font-size: 16px;
+		font-weight: Normal;
+		border: none;
+		padding: 0px 12px;
+		line-height: 22px;
+		text-decoration: none !important;
+		display: inline-flex !important;
+		align-items: center;
+		-webkit-box-sizing: border-box !important;
+		box-sizing: border-box !important;
+	}
+
 	.app-container {
 		min-height: 100vh;
 		background-color: var(--bg-primary);
