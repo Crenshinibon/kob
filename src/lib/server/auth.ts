@@ -19,9 +19,5 @@ export const auth = betterAuth({
       enabled: false
     }
   },
-  trustedOrigins: [
-    "https://kob.accoma.de",
-    "https://kob-theta.vercel.app",
-  ],
   plugins: [sveltekitCookies(getRequestEvent)]
 });
