@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import CookieNotice from '$lib/components/CookieNotice.svelte';
 
 	let {
 		children,
@@ -38,6 +39,8 @@
 		</a>
 	</footer>
 </div>
+
+<CookieNotice />
 
 <style>
 	.bmc-button {
