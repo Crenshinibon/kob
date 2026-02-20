@@ -109,21 +109,4 @@
 		border-top: 1px solid var(--border-default);
 		background-color: var(--bg-secondary);
 	}
-
-	.support-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		color: var(--text-muted);
-		text-decoration: none;
-		font-size: var(--font-size-sm);
-		padding: var(--spacing-xs) var(--spacing-sm);
-		border-radius: var(--radius-sm);
-		transition: all var(--transition-base);
-	}
-
-	.support-link:hover {
-		color: var(--accent-warning);
-		background-color: rgba(255, 204, 0, 0.1);
-	}
 </style>
