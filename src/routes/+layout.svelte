@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
 	import CookieNotice from '$lib/components/CookieNotice.svelte';
+	import type { Snippet } from 'svelte';
 
 	let {
 		children,
