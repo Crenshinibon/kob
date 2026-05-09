@@ -1,4 +1,4 @@
-# Database Schema (Minimal)
+# Database Schema
 
 ## Tables
 
@@ -71,5 +71,9 @@
   isActive: boolean().default(true)
 }
 ```
+
+### auth schema (Better Auth)
+
+Handled automatically by Better Auth CLI. See `src/lib/server/db/auth.schema.ts`.
 
 That's it. No audit logs, no complex user tables (Better Auth handles that), no statistics tables.

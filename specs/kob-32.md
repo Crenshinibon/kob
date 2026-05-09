@@ -318,7 +318,7 @@ The existing format with ladder redistribution:
 #### 32 Players (8 Courts)
 
 - **Round 1 → Round 2**: Points-based vertical seeding
-  - All 8 first places are sorted by total points (tie-breaker: point differential → random)
+  - All 8 first places are sorted by total points (tie-breaker: point differential → playerId)
   - Top 4 first places → Court 1, Bottom 4 first places → Court 2
   - All 8 second places are sorted by total points
   - Top 4 second places → Court 3, Bottom 4 second places → Court 4
@@ -372,6 +372,8 @@ With 16 players, 4 first places fit exactly into one court. With 32 players, 8 f
 
 ## Redistribution Algorithms
 
+Pure functions extracted to `src/lib/server/tournament-logic.ts` with comprehensive unit tests.
+
 ### Preseed Redistribution (32 Players)
 
 ```typescript
@@ -396,28 +398,6 @@ function redistributePreseed32(
 
 	return [];
 }
-
-function redistributeRound1To2(results: CourtResult[]): CourtAssignment[] {
-	const byPosition = { 1: [], 2: [], 3: [], 4: [] };
-
-	for (const court of results.sort((a, b) => a.courtNumber - b.courtNumber)) {
-		byPosition[1].push(court.standings[0]);
-		byPosition[2].push(court.standings[1]);
-		byPosition[3].push(court.standings[2]);
-		byPosition[4].push(court.standings[3]);
-	}
-
-	return [
-		{ court: 1, players: [byPosition[1][0], byPosition[1][1], byPosition[1][4], byPosition[1][5]] },
-		{ court: 2, players: [byPosition[2][0], byPosition[2][1], byPosition[2][4], byPosition[2][5]] },
-		{ court: 3, players: [byPosition[1][2], byPosition[1][3], byPosition[1][6], byPosition[1][7]] },
-		{ court: 4, players: [byPosition[2][2], byPosition[2][3], byPosition[2][6], byPosition[2][7]] },
-		{ court: 5, players: [byPosition[3][0], byPosition[3][1], byPosition[3][4], byPosition[3][5]] },
-		{ court: 6, players: [byPosition[4][0], byPosition[4][1], byPosition[4][4], byPosition[4][5]] },
-		{ court: 7, players: [byPosition[3][2], byPosition[3][3], byPosition[3][6], byPosition[3][7]] },
-		{ court: 8, players: [byPosition[4][2], byPosition[4][3], byPosition[4][6], byPosition[4][7]] }
-	];
-}
 ```
 
 ### Random Seed Redistribution (Ladder)
@@ -430,151 +410,50 @@ function redistributeLadder(
 ): CourtAssignment[] {
 	if (isFirstRound) {
 		// Vertical seeding: all 1st places to Court 1, etc.
-		const byRank: Record<number, Player[]> = {};
-		for (let i = 1; i <= 4; i++) byRank[i] = [];
-
-		for (const court of courtResults) {
-			for (let i = 0; i < 4; i++) {
-				byRank[i + 1].push(court.standings[i]);
-			}
-		}
-
-		return Array.from({ length: courtCount }, (_, i) => ({
-			court: i + 1,
-			players: byRank[i + 1]
-		}));
+		// For 32p, sort by points within each rank
 	}
 
 	// Ladder: 2 up, 2 down
-	const sorted = courtResults.sort((a, b) => a.courtNumber - b.courtNumber);
-
-	return sorted.map((court, idx) => {
-		const assignments: Player[] = [];
-
-		// Keep middle players (positions vary by court position)
-		if (idx === 0) {
-			// Top court: keep 1st/2nd, get 1st/2nd from court below
-			assignments.push(...court.standings.slice(0, 2), ...sorted[1].standings.slice(0, 2));
-		} else if (idx === courtCount - 1) {
-			// Bottom court: keep 3rd/4th, get 3rd/4th from court above
-			assignments.push(...sorted[idx - 1].standings.slice(2, 4), ...court.standings.slice(2, 4));
-		} else {
-			// Middle courts: get from above and below
-			assignments.push(
-				...sorted[idx - 1].standings.slice(2, 4),
-				...sorted[idx + 1].standings.slice(0, 2)
-			);
-		}
-
-		return { court: idx + 1, players: assignments };
-	});
+	// Same for both 16 and 32 players
 }
 ```
 
-## UI Mockup: Tournament Creation
+## UI: Tournament Creation
 
-```
-Create Tournament
+Format and player count selection with conditional round configuration.
 
-Name: [Beach Bash 2024]
+## UI: Player Seeding (Preseed Format)
 
-Format:
-  ○ Random Seed (existing format, ladder redistribution)
-  ● Preseed (points-based seeding, tiered redistribution)
-
-Players:
-  ○ 16 players (4 courts)
-  ● 32 players (8 courts)
-
-Number of Rounds: [4]           (Only shown for Random Seed format)
-                                 Preseed: "3 rounds (fixed)" or "4 rounds (fixed)"
-
-[Continue →]
-```
-
-## UI Mockup: Player Seeding (Preseed Format)
-
-```
-Player Seeding - Preseed Format
-
-Enter players with their current points:
-(Format: Name followed by points - one per line, 32 required)
-
-Nicholas Borchart  142
-Ben Mester         42
-Markus Effinger    34
-Fabio Bahrs        30
-...
-
-[Validate Count] [Import CSV]
-
-Seeding Preview:
-┌─────────────────────────────────────────────┐
-│ Court 1: Nicholas (1), Fabio (9), ...
-│ Court 2: Ben (2), ...
-│ ...
-└─────────────────────────────────────────────┘
-
-[Start Tournament]
-```
-
-### Input Format
-
-The preseed input parser accepts flexible formats:
+Flexible input parser accepts:
 
 - **Name followed by points** (whitespace-separated): `Nicholas Borchart 142`
 - **Tab-separated**: `Nicholas Borchart\t142`
 - **Multiple spaces**: `Nicholas Borchart    142`
 
-The parser extracts the name (all non-numeric characters) and points (final numeric value) from each line.
+## Implementation Status
 
-## Implementation Plan
+### Completed ✅
 
-### Phase 1: Database & Types
-
-1. Add `formatType`, `playerCount` to tournament schema
-2. Add `seedPoints`, `seedRank` to player schema
-3. Update TypeScript types
-
-### Phase 2: Seeding System
-
-1. Create seeding input UI (name + points)
-2. Implement seed calculation and ranking
-3. Implement snake-pattern court distribution
-4. Validation for exact player count with points
-
-### Phase 3: Redistribution Engine
-
-1. Create `RedistributionStrategy` interface
-2. Implement `PreseedRedistribution` (for preseed format)
-3. Refactor existing logic into `LadderRedistribution` (for random-seed)
-4. Support both 16 and 32 player variants
-
-### Phase 4: UI Updates
-
-1. Format selection at tournament creation
-2. Conditional seeding input (required for preseed)
-3. Hide rounds config for preseed (show fixed value)
-4. Final standings by placement
-
-### Phase 5: Testing
-
-1. Unit tests for seeding algorithm (16 and 32 players)
-2. Unit tests for preseed redistribution (all transitions)
-3. Unit tests for ladder redistribution (16 and 32 players)
-4. Full tournament simulation tests
+1. Database schema extensions (formatType, playerCount, seedPoints, seedRank)
+2. Tournament creation with format/player count selection
+3. Preseed input parser with flexible formats
+4. Snake-pattern court distribution for preseed
+5. Preseed redistribution for 16 and 32 players (all rounds)
+6. Random-seed ladder redistribution for 16 and 32 players
+7. Points-based sorting for 32-player Round 1→2 vertical seeding
+8. Unit tests for all redistribution algorithms
 
 ## Acceptance Criteria
 
-- [ ] Can select format type: Random Seed or Preseed
-- [ ] Can select player count: 16 or 32
-- [ ] Random Seed works without points (existing behavior)
-- [ ] Preseed requires points input for all players
-- [ ] Preseed tournaments show fixed round count (3 for 16 players, 4 for 32 players)
-- [ ] Random Seed tournaments allow configuring round count
-- [ ] Seeding distributes players in snake pattern
-- [ ] Preseed redistribution works for all rounds (32 players)
-- [ ] Preseed redistribution works for all rounds (16 players)
-- [ ] Ladder redistribution works for 32 players (extended from 16)
-- [ ] Final standings display correct placements
-- [ ] Court access tokens generated for all courts
+- [x] Can select format type: Random Seed or Preseed
+- [x] Can select player count: 16 or 32
+- [x] Random Seed works without points (existing behavior)
+- [x] Preseed requires points input for all players
+- [x] Preseed tournaments show fixed round count (3 for 16 players, 4 for 32 players)
+- [x] Random Seed tournaments allow configuring round count
+- [x] Seeding distributes players in snake pattern
+- [x] Preseed redistribution works for all rounds (32 players)
+- [x] Preseed redistribution works for all rounds (16 players)
+- [x] Ladder redistribution works for 32 players (extended from 16)
+- [x] Final standings display correct placements
+- [x] Court access tokens generated for all courts

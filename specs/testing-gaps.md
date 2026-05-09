@@ -1,6 +1,6 @@
 # Testing Gaps & Pre-Launch Issues
 
-This document tracks untested areas, missing tests, and bugs identified before going live with the new 32-player and preseed format features.
+This document tracks untested areas, missing tests, and bugs identified before going live.
 
 ## Resolved Issues ✅
 
@@ -50,6 +50,12 @@ Added comprehensive unit tests for:
 
 Run with: `npm run test:unit`
 
+### 5. Score Saving UX - FIXED
+
+**Location**: `src/routes/court/[token]/+page.svelte`
+
+Fixed Svelte 5 reactivity bug where Set mutations (`add()`/`delete()`) didn't trigger UI updates. Changed to reassignments (`new Set([...])`). Added `:active` CSS state for immediate button press feedback.
+
 ## Remaining E2E Test Gaps
 
 ### 32-Player Tournament
@@ -81,7 +87,7 @@ Run with: `npm run test:unit`
 When starting a preseed tournament, the system should validate:
 
 - All players have `seedPoints` (not null)
-- Points are reasonable numbers (positive integers?)
+- Points are reasonable numbers (positive integers)
 
 **Current**: `parsePreseedInput()` catches missing points during input, but database could have null values.
 
@@ -94,6 +100,7 @@ When starting a preseed tournament, the system should validate:
 - [x] Add unit tests for redistribution algorithms
 - [x] Replace `Math.random()` tiebreaker with deterministic approach
 - [x] Add unit tests for scoring/standings calculations
+- [x] Fix score saving reactivity for mobile UX
 
 ### Should Fix
 

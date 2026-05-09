@@ -1,4 +1,4 @@
-# Scoring & Standings (Simple)
+# Scoring & Standings
 
 ## Point System
 
@@ -19,7 +19,7 @@ Tiebreaker order:
 
 1. Total points (higher wins)
 2. Point differential (higher wins)
-3. Random (if still tied)
+3. Player ID (deterministic - ensures consistent results across runs)
 
 ## Code
 
@@ -68,7 +68,7 @@ function calculateStandings(matches) {
 		.sort((a, b) => {
 			if (b.points !== a.points) return b.points - a.points;
 			if (b.diff !== a.diff) return b.diff - a.diff;
-			return Math.random() - 0.5;
+			return a.playerId - b.playerId;
 		})
 		.map((s, i) => ({ ...s, rank: i + 1 }));
 }
@@ -87,6 +87,17 @@ Winner is determined by final court position (not total points):
 ...
 16th: 4th place Court 4
 ```
+
+## Total Standings Page
+
+`/tournament/[id]/standings` provides:
+
+- **Podium view** with medals for top 3 finishers (shown when tournament is completed or at Round 2+)
+- **Complete rankings table** with total points, point differential, and round-by-round breakdown
+- **Achievement categories** (shown for completed tournaments):
+  - Most Improved: Biggest point jump from Round 1 to final
+  - Consistent Performer: Lowest variance in court rankings
+  - Court Champion: Player who spent most rounds on Court 1
 
 ## Display
 

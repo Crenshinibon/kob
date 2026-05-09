@@ -1,6 +1,6 @@
 # Agent Instructions for KoB Tracker
 
-This is a **King of the Beach (KoB) Tracker** - a mobile-first SvelteKit web application for managing beach volleyball tournaments with 4 courts and 16 players.
+This is a **King of the Beach (KoB) Tracker** - a mobile-first SvelteKit web application for managing beach volleyball tournaments.
 
 ## Build/Lint/Test Commands
 
@@ -14,9 +14,10 @@ npm run preview         # Preview production build
 npm run check           # Run svelte-check once
 npm run check:watch     # Run svelte-check in watch mode
 
-# Testing (Playwright E2E)
-npm run test            # Run all E2E tests
-npm run test:e2e        # Same as above
+# Testing
+npm run test            # Run unit tests + E2E tests
+npm run test:unit       # Run Vitest unit tests only
+npm run test:e2e        # Run Playwright E2E tests only
 npx playwright test e2e/demo.test.ts              # Run single test file
 npx playwright test --grep "home page"            # Run tests matching pattern
 npx playwright test --headed                      # Run with visible browser
@@ -44,7 +45,7 @@ npm run auth:schema     # Regenerate Better Auth schema
 - **Language**: TypeScript (strict mode enabled)
 - **Database**: Neon PostgreSQL with Drizzle ORM
 - **Auth**: Better Auth with email/password
-- **Testing**: Playwright (E2E only)
+- **Testing**: Vitest (unit) + Playwright (E2E)
 - **Build**: Vite
 
 ## Code Style Guidelines
@@ -88,6 +89,7 @@ npm run auth:schema     # Regenerate Better Auth schema
 - Use `$derived()` for computed values
 - Use `$effect()` for side effects (sparingly)
 - Use `runes` mode (enabled by default in Svelte 5)
+- **Important**: Set mutations (`add()`/`delete()`) on `$state` Sets do NOT trigger reactivity. Always reassign: `savingMatches = new Set([...savingMatches, match.id])`
 
 ### Error Handling
 
@@ -109,6 +111,7 @@ npm run auth:schema     # Regenerate Better Auth schema
 - Write vanilla CSS in Svelte `<style>` blocks
 - Mobile-first approach (users access via smartphones on the beach)
 - Keep styles scoped to components
+- Global CSS variables in `/static/global.css`
 
 ### Server-Side Patterns
 
@@ -121,18 +124,23 @@ npm run auth:schema     # Regenerate Better Auth schema
 
 ### Domain Logic
 
-- **4 courts**, **16 players** (fixed for MVP)
+- **4 courts** (16 players) or **8 courts** (32 players)
+- **2 formats**: Random Seed (flexible rounds, ladder redistribution) and Preseed (fixed rounds, tiered binary redistribution)
 - Players rotate partners each round (A&B vs C&D, A&C vs B&D, A&D vs B&C)
-- Ranking by: Total Points → Point Differential → Head-to-Head → Org decision
-- Promotion/relegation between rounds
+- Ranking by: Total Points → Point Differential → Player ID (deterministic)
+- Random Seed redistribution: Round 1→2 vertical seeding, Round 2+ ladder (2 up, 2 down)
+- Preseed redistribution: Tiered binary split based on court finish position
+- Winner determined by final court position, not total points
 
 ### Key Files
 
 - `src/lib/server/db/schema.ts` - Database tables
-- `src/lib/server/auth.ts` - Better Auth configuration
 - `src/lib/server/db/index.ts` - Database client export
+- `src/lib/server/auth.ts` - Better Auth configuration
+- `src/lib/server/tournament-logic.ts` - Pure functions for redistribution and scoring (unit tested)
 - `src/hooks.server.ts` - Auth session middleware
 - `src/app.d.ts` - App-wide type declarations
+- `/static/global.css` - Global CSS variables (dark theme)
 
 ## Svelte MCP Server
 
