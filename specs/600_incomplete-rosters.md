@@ -128,7 +128,7 @@ Preseed relies on repeated binary splitting. Each split divides courts into a "w
 
 - **8 courts (32 players)**: Already implemented. 4 rounds.
 
-- **6 courts (24 players)**: Does NOT work for preseed. After the first binary split (3 winner + 3 loser courts), the second split would need to divide 3 courts into 1.5 + 1.5 — impossible.
+- **6 courts (24 players)**: Does NOT work for preseed. After the first binary split (3 winner + 3 loser courts), the second split would need to divide 3 courts into 1.5 + 1.5 — impossible, but see option E, for workaround.
 
 ### Timing Impact
 
@@ -176,7 +176,7 @@ For counts where pure 4-player courts leave 1-3 leftovers, mix in 3-player court
   3. B+C vs A
 - **Scoring**: Standard rally points. Team of 2 gets team score each; single player gets their score.
 - **Standard volleyball rules** — no modifications. Single player simply uses all 3 team touches themselves.
-- **Timing**: Still 3 matches, same ~45-60 min per round.
+- **Timing**: Still 3 matches, same ~45-60 min per round. But might be slightly faster, because single person should almost certainly loose with a distance.
 
 ### Redistribution Challenge
 
@@ -206,6 +206,8 @@ The hard part: **How do you compare 1st place on a 3-player court vs 1st place o
 
 - **Medium**. The 3-player format is inherently different (2v1). Some players may perceive it as easier or harder. Rank comparison across court sizes is imperfect.
 
+Here it also makes a difference going from round 1 to 2 and the subsequent ladder redistribution. We should also elaborate different strategies here.
+
 ---
 
 ## Option C: Rotating Sit-Outs
@@ -224,7 +226,7 @@ For any non-multiple-of-4 count, have some players sit out each round.
 
 **Option 1: Zero points**
 - Simple. Sitting out = no points that round.
-- Problem: Punishes players for a structural issue. Total standings become meaningless.
+- Problem: Punishes players for a structural issue. Total standings become meaningless. This is not an issue, since players don't carry there points over to the next round. Make this clear on every occasion.
 
 **Option 2: Average points**
 - Sitting player gets the average points of all players who played that round.
@@ -238,6 +240,7 @@ For any non-multiple-of-4 count, have some players sit out each round.
 - The sit-out player is replaced by a ghost who always scores 0.
 - The 3 real players on that court play a modified format.
 - Problem: Not a real KoB format anymore.
+- That doesn't make sense at all, with that we are back to 3 player courts
 
 ### Timing Impact
 
@@ -255,7 +258,7 @@ The user mentioned this idea: put 5 or 6 players on a court and run parallel 2v2
 
 ### How It Works
 
-- 5 players on a court: Run two simultaneous 2v2 matches (using half the court each) with 1 player sitting out.
+- 5 players on a court: Run two simultaneous 2v2 matches (using half the court each) with 1 player sitting out. No you misunderstood the 2 games in parallel. Each ball is played by 4 players. One is waiting. 3 players are fixed and one is rotating in for the second game. Say you have P1 to P5. P1 and P2 play on one side against P3 + P4 and P3 and P5 on the other side. P4 and P5 shuffle in/out every ball count their game and who is serving next.
 - Rotate so everyone sits out once.
 - **Match schedule for 5 players (A, B, C, D, E)**:
   - Game 1: A+B vs C+D (E sits)
@@ -266,6 +269,7 @@ The user mentioned this idea: put 5 or 6 players on a court and run parallel 2v2
   - But that is **5 games**, not 3. Timing is ~1.67x longer.
 
 - 6 players on a court: Even more complex scheduling. More games, more sit-outs.
+- An option could be to restrict the format to 3 games, like the other courts and we don't play each combination of players ... maybe.
 
 ### Timing Impact
 
@@ -319,6 +323,8 @@ For preseed with non-power-of-2 court counts, progressively eliminate the bottom
 - Round 4-6: Standard 16-player preseed (3 rounds).
 - **Total rounds**: 6.
 
+The issue here is that we get a really big number of rounds! So I think we should eliminate more that just the worst 4 players, but think of it differently. We keep the top 16 players in the race and eliminate the remainder. Like it would be standard preseed.
+
 ### Timing Impact
 
 - **Same per round** (~45-60 min). But total tournament duration increases because more rounds are needed.
@@ -330,7 +336,8 @@ For preseed with non-power-of-2 court counts, progressively eliminate the bottom
 ### Competitive Integrity
 
 - **High** for players who survive. Every round matters — players fight to avoid elimination.
-- **Low** for eliminated players. They paid the same fee but get fewer matches.
+- **Low** for eliminated players. They paid the same fee but get fewer matches. This is not true ... the bottom courts continue to play out all places.
+
 - **Fairness concern**: A player who finishes 4th on a strong court might have more points than a 3rd-place finisher on a weak court, but elimination is by court rank first. This is defensible — court rank reflects relative performance.
 
 ### Comparison with Random Seed
