@@ -2,16 +2,27 @@
 
 ## Problem Statement
 
-The KoB Tracker currently supports **16 players (4 courts)** and **32 players (8 courts)** perfectly. In practice, tournament registrations rarely hit these exact numbers. We need a strategy for every count between 17 and 31 that:
+The KoB Tracker currently supports **16 players (4 courts)** and **32 players (8 courts)** perfectly. In practice, tournament registrations rarely hit these exact numbers. We need a strategy for every count between **8 and 31** that:
 
 1. **Maximizes playtime** — Players paid to play; sitting out feels like a rip-off.
 2. **Preserves competitive integrity** — Winning must still be meaningful; the redistribution system must feel fair.
 3. **Maintains timing** — A round should not take significantly longer because of edge-case handling.
 
+**Cancellation threshold**: Below 8 players, cancel the tournament. KoB needs at least 2 courts (8 players) for the partner rotation and redistribution logic to function.
+
 ## Analysis by Player Count
 
 | Players | Courts (4-player) | Remainder | Category |
 |---------|-------------------|-----------|----------|
+| 8       | 2                 | 0         | Clean multiple |
+| 9       | 2                 | +1        | 1 leftover |
+| 10      | 2                 | +2        | 2 leftovers |
+| 11      | 2                 | +3        | 3 leftovers |
+| 12      | 3                 | 0         | Clean multiple |
+| 13      | 3                 | +1        | 1 leftover |
+| 14      | 3                 | +2        | 2 leftovers |
+| 15      | 3                 | +3        | 3 leftovers |
+| 16      | 4                 | 0         | Clean multiple (standard) |
 | 17      | 4                 | +1        | 1 leftover |
 | 18      | 4                 | +2        | 2 leftovers |
 | 19      | 4                 | +3        | 3 leftovers |
@@ -28,47 +39,96 @@ The KoB Tracker currently supports **16 players (4 courts)** and **32 players (8
 | 30      | 7                 | +2        | 2 leftovers |
 | 31      | 7                 | +3        | 3 leftovers |
 
-The problem splits into two distinct buckets:
+The problem splits into three buckets:
 
-- **Clean multiples of 4 (20, 24, 28)**: Need redistribution logic for odd/even court counts (5, 6, 7).
+- **Clean multiples of 4 (8, 12, 16, 20, 24, 28)**: No sit-outs needed. Just need redistribution logic for different court counts.
 - **1-3 leftovers (all others)**: Need a strategy for the extra players.
+- **Below 8**: Cancel the tournament.
 
 ---
 
-## Option A: Adjust Court Count (For 20, 24, 28 Players)
+## How Vertical Seeding Actually Works
 
-The simplest case. Just run 5, 6, or 7 courts of 4 players each. No format changes, no sit-outs, no timing issues.
+After Round 1 with N courts, we have exactly N first places, N second places, N third places, and N fourth places. For vertical seeding (Round 1 to 2), we fill courts by cascading down the ranks:
 
-### Redistribution Adjustments
+**Start with rank 1. Fill each court to 4 players. When a court has fewer than 4 of the current rank, take the remainder from the next rank (best by points/diff). Continue until all players are placed.**
 
-**Random Seed Format**
+### Examples
 
-- **Round 1 → Round 2 (Vertical seeding)**:
-  - With 5 courts: 5 first places → C1 gets top 4, bottom 1 + top 3 second places → C2, etc. This mixes ranks on some courts.
-  - With 6 courts: 6 first places → top 4 to C1, bottom 2 + top 2 second places → C2. Still mixes.
-  - With 7 courts: Similar mixing pattern.
-  - **Verdict**: Acceptable. The goal of Round 1→2 is to sort by strength. Mixing adjacent ranks (1st + 2nd) on the same court is defensible.
+**2 courts (8 players)** — clean:
+- C1: 2 first places + 2 second places = 4
+- C2: 2 third places + 2 fourth places = 4
+
+**3 courts (12 players)** — clean:
+- C1: 3 first places + 1 best second place = 4
+- C2: 2 remaining second places + 2 best third places = 4
+- C3: 1 remaining third place + 3 fourth places = 4
+
+**5 courts (20 players)** — clean:
+- C1: 4 first places = 4
+- C2: 1 remaining first place + 3 best second places = 4
+- C3: 2 remaining second places + 2 best third places = 4
+- C4: 3 remaining third places + 1 best fourth place = 4
+- C5: 4 remaining fourth places = 4
+
+**6 courts (24 players)** — clean:
+- C1: 4 first places = 4
+- C2: 2 remaining first places + 2 best second places = 4
+- C3: 4 remaining second places = 4
+- C4: 4 third places = 4
+- C5: 2 remaining third places + 2 best fourth places = 4
+- C6: 4 remaining fourth places = 4
+
+**7 courts (28 players)** — clean:
+- C1: 4 first places = 4
+- C2: 3 remaining first places + 1 best second place = 4
+- C3: 4 best second places = 4
+- C4: 2 remaining second places + 2 best third places = 4
+- C5: 4 best third places = 4
+- C6: 1 remaining third place + 3 best fourth places = 4
+- C7: 4 remaining fourth places = 4
+
+**Key insight**: Vertical seeding works cleanly for ANY court count. The pattern is a natural cascade where overflow from one rank flows into the next court, sorted by performance (points/diff).
+
+---
+
+## Option A: Adjust Court Count (Clean Multiples of 4)
+
+The simplest case. Just run 2, 3, 5, 6, or 7 courts of 4 players each. No format changes, no sit-outs, no timing issues.
+
+### Redistribution Adjustments — Random Seed Format
+
+- **Round 1 to Round 2 (Vertical seeding)**: Works cleanly for any court count. See examples above.
 
 - **Round 2+ (Ladder)**:
-  - Works perfectly for any court count ≥ 2.
+  - Works for any court count >= 2.
   - 2 up, 2 down between adjacent courts.
   - Top court keeps top 2 + gets top 2 from court below.
   - Bottom court keeps bottom 2 + gets bottom 2 from court above.
+  - Middle courts: get bottom 2 from above + top 2 from below.
 
-**Preseed Format**
+### Redistribution Adjustments — Preseed Format
 
-- **6 courts (24 players)**: Cleanest extension.
-  - Round 1→2: Split into Winner Courts 1-3 (1st-2nd places) and Loser Courts 4-6 (3rd-4th places).
-  - Round 2→3: Final placement. Courts 1-2 → places 1-8, Courts 3-4 → places 9-16, Courts 5-6 → places 17-24.
-  - **Verdict**: Elegant. Natural extension of the 4-court logic.
+Preseed relies on repeated binary splitting. Each split divides courts into a "winner" group and a "loser" group. This requires the court count to be a power of 2 at each split stage:
 
-- **5 courts (20 players)**:
-  - Round 1→2: 1st places → C1 (5 players, keep top 4), 2nd places → C2 (bottom 1 from 1st + top 3 from 2nd), etc. Messy mixing.
-  - **Verdict**: Doable but mixes ranks more aggressively.
+| Courts | Splits Possible | Rounds | Preseed Works? |
+|--------|----------------|--------|----------------|
+| 2      | 1 (2 to 1+1)   | 2      | Yes |
+| 3      | 0              | —      | No |
+| 4      | 2 (4 to 2+2, then 2 to 1+1) | 3 | Yes |
+| 5-7    | 0              | —      | No |
+| 8      | 3 (8 to 4+4, 4 to 2+2, 2 to 1+1) | 4 | Yes |
 
-- **7 courts (28 players)**:
-  - Round 1→2: Similar to 5 courts but flipped. 7 first places → C1 gets top 4, C2 gets bottom 3 + top 1 from 2nd places. Messy.
-  - **Verdict**: Doable but not elegant.
+- **2 courts (8 players)**: Clean.
+  - Round 1 to 2: Winner Court 1 (1st-2nd from both courts = 4 players), Loser Court 2 (3rd-4th from both = 4 players).
+  - Round 2: Final placement. C1 = places 1-4, C2 = places 5-8.
+  - **Verdict**: Works perfectly. A mini-KoB.
+
+- **4 courts (16 players)**: Already implemented. 3 rounds.
+
+- **8 courts (32 players)**: Already implemented. 4 rounds.
+
+- **6 courts (24 players)**: Does NOT work for preseed. After the first binary split (3 winner + 3 loser courts), the second split would need to divide 3 courts into 1.5 + 1.5 — impossible.
 
 ### Timing Impact
 
@@ -100,6 +160,12 @@ For counts where pure 4-player courts leave 1-3 leftovers, mix in 3-player court
 | 19      | 4 (16 players) | 1 (3 players)   | 5            |
 | 18      | 3 (12 players) | 2 (6 players)   | 5            |
 | 17      | 2 (8 players)  | 3 (9 players)   | 5            |
+| 15      | 3 (12 players) | 1 (3 players)   | 4            |
+| 14      | 2 (8 players)  | 2 (6 players)   | 4            |
+| 13      | 2 (8 players)  | 1 (3 players)   | 3            |
+| 11      | 2 (8 players)  | 1 (3 players)   | 3            |
+| 10      | 1 (4 players)  | 2 (6 players)   | 3            |
+| 9       | 1 (4 players)  | 1 (3 players)   | 2            |
 
 ### 3-Player Court Format
 
@@ -129,7 +195,7 @@ The hard part: **How do you compare 1st place on a 3-player court vs 1st place o
 2. **Separate ladders**: 3-player courts have their own promotion/relegation; 4-player courts have theirs. Players never switch between court sizes.
    - **Verdict**: Simple but creates two parallel tournaments. Players on 3-player courts can never win the overall tournament.
 
-3. **Accept the asymmetry**: Just group by raw rank. 1st place (any court) → top group, 2nd place → next group, etc. 4th places from 4-player courts fill the bottom.
+3. **Accept the asymmetry**: Just group by raw rank. 1st place (any court) goes to top group, 2nd place to next group, etc. 4th places from 4-player courts fill the bottom.
    - **Verdict**: Imperfect but practical. Players understand "I finished 1st on my court."
 
 ### Timing Impact
@@ -138,7 +204,7 @@ The hard part: **How do you compare 1st place on a 3-player court vs 1st place o
 
 ### Competitive Integrity
 
-- **Medium**. The 3-player format is inherently different (2v1). Some players may perceive it as easier/harder. Rank comparison across court sizes is imperfect.
+- **Medium**. The 3-player format is inherently different (2v1). Some players may perceive it as easier or harder. Rank comparison across court sizes is imperfect.
 
 ---
 
@@ -148,9 +214,10 @@ For any non-multiple-of-4 count, have some players sit out each round.
 
 ### How It Works
 
-- If you have 31 players with 8 courts of 4: 1 player sits out each round.
-- If you have 30 players with 8 courts of 4: 2 players sit out each round.
-- If you have 29 players with 8 courts of 4: 3 players sit out each round.
+- 31 players with 8 courts of 4: 1 player sits out each round.
+- 30 players with 8 courts of 4: 2 players sit out each round.
+- 15 players with 4 courts of 4: 1 player sits out each round.
+- 9 players with 2 courts of 4: 1 player sits out each round.
 - The sit-outs rotate fairly (everyone sits out the same number of times over the tournament).
 
 ### Points for Sit-Outs
@@ -164,15 +231,11 @@ For any non-multiple-of-4 count, have some players sit out each round.
 - Problem: Artificial. A player could sit out and get more points than if they played.
 
 **Option 3: No points, but winner by final court position**
-- Since KoB winner is determined by final court position (not total points), sit-outs don't affect winning.
-- Problem: Sit-outs affect Round 1→2 seeding. A player who sits out Round 1 gets no points, so they get seeded to a lower court in Round 2.
+- Since KoB winner is determined by final court position (not total points), sit-outs do not affect winning.
+- Problem: Sit-outs affect Round 1 to 2 seeding. A player who sits out Round 1 gets no points, so they get seeded to a lower court in Round 2.
 
-**Option 4: Rotating sit-outs only in Round 2+**
-- Round 1: Everyone plays. Use smaller court sizes or accept that some courts have fewer players (impossible with 4-player format).
-- Actually this doesn't work for Round 1.
-
-**Option 5: "Ghost" player**
-- The sit-out player is replaced by a "ghost" who always scores 0.
+**Option 4: Ghost player**
+- The sit-out player is replaced by a ghost who always scores 0.
 - The 3 real players on that court play a modified format.
 - Problem: Not a real KoB format anymore.
 
@@ -182,32 +245,11 @@ For any non-multiple-of-4 count, have some players sit out each round.
 
 ### Competitive Integrity
 
-- **Low to Medium**. Players paid to play; sitting out feels unfair. Round 1→2 seeding is distorted for sitters.
+- **Low to Medium**. Players paid to play; sitting out feels unfair. Round 1 to 2 seeding is distorted for sitters.
 
 ---
 
-## Option D: King of the Court Challenge (For 1-2 Leftovers)
-
-A hybrid format where the "leftover" players participate in a parallel "King of the Court" challenge while the main KoB tournament runs.
-
-### How It Works
-
-**For 1 leftover:**
-- Main tournament: 16 or 28 players on standard courts.
-- The 1 leftover becomes the "King" on a challenge court.
-- Other players (from the main tournament, rotating) challenge the King in 1v1 or 2v2 matches.
-- **Problem**: The leftover player is not part of the main tournament. They can't win.
-
-**For 2 leftovers:**
-- Main tournament: 16 or 28 players.
-- The 2 leftovers play each other or challenge rotating players.
-- **Problem**: Same as above.
-
-**Verdict**: This is really a separate side activity. Doesn't solve the core problem of integrating all players into one tournament.
-
----
-
-## Option E: 5-Player Court (Parallel Games)
+## Option D: 5-Player Court (Parallel Games)
 
 The user mentioned this idea: put 5 or 6 players on a court and run parallel 2v2 games.
 
@@ -221,13 +263,13 @@ The user mentioned this idea: put 5 or 6 players on a court and run parallel 2v2
   - Game 3: A+D vs C+E (B sits)
   - Game 4: A+E vs B+C (D sits) — wait, D already sat.
   - Actually with 5 players, C(5,2)=10 unique pairs. Each match uses 2 pairs = 4 players. Over 5 games, each player sits once and plays 4 times.
-  - But that's **5 games**, not 3. Timing is ~1.67× longer.
+  - But that is **5 games**, not 3. Timing is ~1.67x longer.
 
 - 6 players on a court: Even more complex scheduling. More games, more sit-outs.
 
 ### Timing Impact
 
-- **Significant**. 5-player court needs 5 games (vs 3 for 4-player). That's **~67% longer** per round.
+- **Significant**. 5-player court needs 5 games (vs 3 for 4-player). That is **~67% longer** per round.
 - For a tournament with multiple rounds, this compounds.
 
 ### Competitive Integrity
@@ -236,14 +278,79 @@ The user mentioned this idea: put 5 or 6 players on a court and run parallel 2v2
 
 ---
 
+## Option E: Progressive Elimination (Preseed Only)
+
+For preseed with non-power-of-2 court counts, progressively eliminate the bottom 4 players each round (one court's worth) until the remaining player count reaches a power of 2 (8, 16, or 32). Then run standard preseed for the remaining rounds.
+
+### How It Works
+
+**Elimination rule**: After each round, sort all players by court finish rank, then total points, then point diff, then playerId. Eliminate the bottom 4 players.
+
+**Examples**:
+
+**12 players (3 courts)**:
+- Round 1: 3 courts (12 players). Play standard 3 matches per court.
+- After Round 1: Eliminate 3 fourth places + worst 3rd place = 4 players. Remaining: 8 players.
+- Round 2: Redistribute to 2 courts (8 players) — Winner Court (top 4) and Loser Court (bottom 4).
+- Round 3: Play on 2 courts. Final placement: Winner Court = places 1-4, Loser Court = places 5-8.
+- **Total rounds**: 3.
+
+**20 players (5 courts)**:
+- Round 1: 5 courts (20 players).
+- After Round 1: Eliminate bottom 4 players. Remaining: 16 players.
+- Round 2-4: Standard 16-player preseed (3 rounds).
+- **Total rounds**: 4.
+
+**24 players (6 courts)**:
+- Round 1: 6 courts (24 players).
+- After Round 1: Eliminate bottom 4. Remaining: 20 players.
+- Round 2: 5 courts (20 players).
+- After Round 2: Eliminate bottom 4. Remaining: 16 players.
+- Round 3-5: Standard 16-player preseed (3 rounds).
+- **Total rounds**: 5.
+
+**28 players (7 courts)**:
+- Round 1: 7 courts (28 players).
+- After Round 1: Eliminate bottom 4. Remaining: 24 players.
+- Round 2: 6 courts (24 players).
+- After Round 2: Eliminate bottom 4. Remaining: 20 players.
+- Round 3: 5 courts (20 players).
+- After Round 3: Eliminate bottom 4. Remaining: 16 players.
+- Round 4-6: Standard 16-player preseed (3 rounds).
+- **Total rounds**: 6.
+
+### Timing Impact
+
+- **Same per round** (~45-60 min). But total tournament duration increases because more rounds are needed.
+- 12p: 3 rounds (same as standard 16p preseed).
+- 20p: 4 rounds (1 more than standard 16p).
+- 24p: 5 rounds (2 more than standard 16p).
+- 28p: 6 rounds (3 more than standard 16p).
+
+### Competitive Integrity
+
+- **High** for players who survive. Every round matters — players fight to avoid elimination.
+- **Low** for eliminated players. They paid the same fee but get fewer matches.
+- **Fairness concern**: A player who finishes 4th on a strong court might have more points than a 3rd-place finisher on a weak court, but elimination is by court rank first. This is defensible — court rank reflects relative performance.
+
+### Comparison with Random Seed
+
+| Players | Random Seed (Rounds) | Preseed + Elimination (Rounds) |
+|---------|---------------------|--------------------------------|
+| 12      | 2-5 (configurable)  | 3 (fixed)                      |
+| 20      | 2-5 (configurable)  | 4 (fixed)                      |
+| 24      | 2-5 (configurable)  | 5 (fixed)                      |
+| 28      | 2-5 (configurable)  | 6 (fixed)                      |
+
+---
+
 ## Timing Comparison Summary
 
 | Approach | Round Time | Setup Complexity | Player Satisfaction |
 |----------|-----------|------------------|---------------------|
-| Adjust court count (20/24/28) | ~45-60 min | Low | High |
+| Adjust court count (8/12/20/24/28) | ~45-60 min | Low | High |
 | Mixed 4p + 3p courts | ~45-60 min | Medium | Medium-High |
 | Rotating sit-outs | ~45-60 min | Low | Low-Medium |
-| King of the Court side | Variable | High | Low (for leftovers) |
 | 5p parallel games | ~75-100 min | High | Medium |
 
 ---
@@ -252,37 +359,80 @@ The user mentioned this idea: put 5 or 6 players on a court and run parallel 2v2
 
 ### Preseed Format
 
-Preseed requires a fixed structure with clean redistribution. Not all counts work well.
+Preseed requires repeated binary splitting, which only works when the court count is a power of 2.
 
-| Players | Recommendation | Courts | Notes |
-|---------|---------------|--------|-------|
-| 16 | Standard preseed | 4 | Already implemented |
-| 17-19 | **Sit-outs on 4 courts** OR **drop to 16** | 4 | Preseed structure breaks with odd court counts |
-| 20 | **5-court preseed** (stretch) OR **drop to 16** | 5 | Round 1→2 mixes ranks aggressively |
-| 21-23 | **Sit-outs on 6 courts** OR **drop to 20** (if 5-court supported) | 6 | |
-| 24 | **6-court preseed** | 6 | Clean extension! Recommended |
-| 25-27 | **Sit-outs on 6 courts** OR **drop to 24** | 6 | |
-| 28 | **7-court preseed** (stretch) | 7 | Round 1→2 is messy |
-| 29-31 | **Sit-outs on 8 courts** OR **drop to 28** (if 7-court supported) | 8 | |
-| 32 | Standard preseed | 8 | Already implemented |
+| Players | Courts | Preseed Offered? | Recommendation |
+|---------|--------|------------------|----------------|
+| 8       | 2      | Yes              | Standard 2-round mini-tournament |
+| 9-15    | —      | No               | Below 16, use Random Seed only |
+| 16      | 4      | Yes              | Standard (already implemented) |
+| 17-19   | —      | No               | Use Random Seed only |
+| 20      | 5      | Yes (elimination)| 4 rounds: eliminate 4p after R1, then standard 16p preseed |
+| 21-23   | —      | No               | Use Random Seed only |
+| 24      | 6      | Yes (elimination)| 5 rounds: eliminate 4p after R1 and R2, then standard 16p preseed |
+| 25-27   | —      | No               | Use Random Seed only |
+| 28      | 7      | Yes (elimination)| 6 rounds: eliminate 4p after R1/R2/R3, then standard 16p preseed |
+| 29-31   | —      | No               | Use Random Seed only |
+| 32      | 8      | Yes              | Standard (already implemented) |
 
-**Key insight**: For preseed, the clean counts are 16 (4 courts), 24 (6 courts), and 32 (8 courts). These are all even court counts where the winner/loser split works cleanly. Odd court counts (5, 7) break the binary split logic.
+**Key insight**: Preseed works cleanly for 8, 16, and 32 players only (power-of-2 court counts). For non-power-of-2 counts, Option E (progressive elimination) makes preseed work for any count >= 8.
 
 ### Random Seed Format
 
-Random seed is more flexible because the ladder system works for any court count.
+Random seed is flexible because vertical seeding and the ladder system work for any court count.
 
-| Players | Recommendation | Courts | Notes |
-|---------|---------------|--------|-------|
-| 16 | Standard | 4 | Already implemented |
-| 17-19 | **Mixed 4p + 3p** OR **sit-outs** | 4+3p | 3p courts work well for 3 leftovers |
-| 20 | **5-court random seed** | 5 | Ladder works; Round 1→2 mixes ranks |
-| 21-23 | **Mixed 4p + 3p** OR **sit-outs on 6 courts** | 6 | |
-| 24 | **6-court random seed** | 6 | Ladder works perfectly |
-| 25-27 | **Mixed 4p + 3p** OR **sit-outs on 6 courts** | 6 | |
-| 28 | **7-court random seed** | 7 | Ladder works; Round 1→2 mixes ranks |
-| 29-31 | **Mixed 4p + 3p** OR **sit-outs on 8 courts** | 8 | |
-| 32 | Standard | 8 | Already implemented |
+| Players | Courts | Recommendation |
+|---------|--------|----------------|
+| 8       | 2      | Clean — 2-court ladder |
+| 9       | 2+3p   | Mixed: 1x4p + 1x3p |
+| 10      | 2+3p   | Mixed: 1x4p + 2x3p OR drop to 8 |
+| 11      | 2+3p   | Mixed: 2x4p + 1x3p |
+| 12      | 3      | Clean — 3-court ladder |
+| 13      | 3+3p   | Mixed: 2x4p + 1x3p |
+| 14      | 3+3p   | Mixed: 2x4p + 2x3p OR drop to 12 |
+| 15      | 3+3p   | Mixed: 3x4p + 1x3p |
+| 16      | 4      | Standard |
+| 17-19   | 4+3p   | Mixed on 4-5 courts OR sit-outs |
+| 20      | 5      | Clean — 5-court ladder |
+| 21-23   | 5+3p   | Mixed on 5-6 courts OR sit-outs |
+| 24      | 6      | Clean — 6-court ladder (RECOMMENDED) |
+| 25-27   | 6+3p   | Mixed on 6-7 courts OR sit-outs |
+| 28      | 7      | Clean — 7-court ladder |
+| 29-31   | 7+3p   | Mixed on 7-8 courts OR sit-outs |
+| 32      | 8      | Standard |
+
+---
+
+## The 8-Player Mini Tournament
+
+**8 players (2 courts) is surprisingly viable.**
+
+- **Random Seed**: 2 courts, ladder redistribution.
+  - Round 1 to 2: C1 gets 2 firsts + 2 seconds. C2 gets 2 thirds + 2 fourths. Clean.
+  - Round 2+: C1 keeps top 2 + gets top 2 from C2. C2 gets bottom 2 from C1 + keeps bottom 2.
+  - Configurable rounds (2-5).
+- **Preseed**: 2 rounds fixed.
+  - Round 1 to 2: Winner Court 1 (1st-2nd from both = 4 players), Loser Court 2 (3rd-4th from both = 4 players).
+  - Round 2: Final placement. C1 = places 1-4, C2 = places 5-8.
+- **Timing**: Same as standard (~45-60 min per round).
+- **Competitive integrity**: High. Clean redistribution, no edge cases.
+
+---
+
+## The 12-Player Option
+
+**12 players (3 courts) is clean for Random Seed.**
+
+- **Random Seed**: 3 courts, ladder redistribution.
+  - Round 1 to 2: Vertical seeding cascades cleanly:
+    - C1: 3 firsts + 1 best second
+    - C2: 2 seconds + 2 best thirds
+    - C3: 1 third + 3 fourths
+  - Round 2+: Ladder with 2 up / 2 down between adjacent courts.
+  - Configurable rounds (2-5).
+- **Preseed**: Not available. 3 courts is not a power of 2. Binary split is impossible.
+- **Timing**: Same as standard.
+- **Competitive integrity**: High for Random Seed.
 
 ---
 
@@ -291,59 +441,39 @@ Random seed is more flexible because the ladder system works for any court count
 **24 players (6 courts) is the most important non-standard count to support.**
 
 Why:
-1. It's a realistic turnout (between 16 and 32).
-2. It's a clean multiple of 4 — no sit-outs, no mixed courts.
-3. 6 courts is an even number, so preseed redistribution works elegantly.
-4. The ladder system works for any court count, so random seed is trivial.
+1. It is a realistic turnout (between 16 and 32).
+2. It is a clean multiple of 4 — no sit-outs, no mixed courts.
+3. Random seed ladder works perfectly.
+4. **Preseed does NOT work** — 6 courts is not a power of 2. The binary split breaks after Round 1.
 
 **Implementation for 24 players:**
-- Random Seed: Extend ladder logic to 6 courts. Round 1→2: group by rank, split top 4/bottom 2 for each rank group across adjacent courts.
-- Preseed: 3 rounds fixed. Round 1→2: Winner Courts 1-3 (1st-2nd), Loser Courts 4-6 (3rd-4th). Round 2→3: Final placement by court pairs.
+- Random Seed: Extend ladder logic to 6 courts. Vertical seeding cascades cleanly (see examples above).
 
 ---
 
-## The 29-31 Player Problem
+## The 9-15 Player Problem
 
-These are the hardest because they're close to 32 but just short.
+These are the most constrained because:
+- Only 2-3 courts available (small venue).
+- Preseed is not available (not power-of-2 court counts).
+- Mixed courts create redistribution complexity.
 
-**Best approach: Mixed 4-player + 3-player courts.**
+**Best approach for 9-11 (2 courts base):**
+- 9 = 1x4p + 1x3p. After Round 1: redistribute to 2x4p + 1 sits out. Or stay mixed.
+- 10 = 1x4p + 2x3p. After Round 1: redistribute to 2x4p + 2 sit out. Or stay mixed.
+- 11 = 2x4p + 1x3p. After Round 1: redistribute to 3x4p — but only 11 players. One court will have 3 players again.
 
-- 31 = 7×4 + 1×3 (8 courts total)
-- 30 = 6×4 + 2×3 (8 courts total)
-- 29 = 5×4 + 3×3 (8 courts total)
+**Best approach for 13-15 (3 courts base):**
+- 13 = 2x4p + 1x3p. After Round 1: 3x4p + 1 sits out. Or stay mixed.
+- 14 = 2x4p + 2x3p. After Round 1: 3x4p + 2 sit out. Or stay mixed.
+- 15 = 3x4p + 1x3p. After Round 1: 4x4p — but only 15 players. One court gets 3 again.
 
-**Why this beats sit-outs:**
-- Everyone plays every round. No one sits out.
-- 3-player courts take the same time as 4-player courts.
-- Players get 3 matches per round regardless of court size.
+**Key realization**: With mixed courts, the remainder follows you across rounds. You either accept permanent mixed courts, or you use rotating sit-outs to fill 4-player courts.
 
-**The redistribution challenge** (and a practical solution):
-- Group all 1st places (from both 4p and 3p courts) → top courts.
-- Group all 2nd places → next courts.
-- Group all 3rd places → next courts.
-- Group all 4th places (from 4p courts only) → bottom courts.
-- For 31 players on 8 courts: 7 first places + 1 first place = 8 first places. Split: top 4 → C1, bottom 4 → C2.
-- 7 second places + 1 second place = 8 second places. Split: top 4 → C3, bottom 4 → C4.
-- 7 third places + 1 third place = 8 third places. Split: top 4 → C5, bottom 4 → C6.
-- 7 fourth places (from 4p courts only) = 7 fourth places. Hmm, we need 8 for two courts. We could take the bottom 4 third places and bottom 4 fourth places and mix them for C7/C8.
-
-Actually, wait. With 31 players on 7×4 + 1×3 courts:
-- After Round 1: 7 courts with 1st-4th + 1 court with 1st-3rd.
-- Total: 8 first places, 8 second places, 8 third places, 7 fourth places.
-- For redistribution to 8 courts of 4: we need 32 players... but we only have 31. We need to add a "ghost" or accept that one court has 3 players in Round 2 as well.
-
-Hmm, this reveals a deeper problem: **If we start with mixed court sizes, we either stay mixed forever or we need to add/remove players between rounds.**
-
-**Alternative for 29-31: Sit-outs with the goal of reaching 32.**
-- 31 players: Find 1 substitute/walk-up to reach 32.
-- 30 players: Find 2 substitutes.
-- 29 players: Find 3 substitutes.
-- **Verdict**: In practice, this might be the easiest solution for tournament organizers. But it's not a software solution.
-
-**Alternative for 29-31: Reduce to 28 (7 courts).**
-- Draw lots or use seed points to select 28 players.
-- The remaining 1-3 players become "alternates" who fill in if someone drops out.
-- **Verdict**: Simple, preserves format integrity. But someone is disappointed.
+**Practical recommendation for 9-15:**
+1. **Mixed courts for the whole tournament** — everyone plays every round, no sit-outs. Accept the redistribution asymmetry.
+2. **Reduce to nearest clean multiple** (8 or 12) — draw lots or use seed points to select. Remaining players become alternates.
+3. **Rotating sit-outs** — fill 4-player courts, rotate who sits. Simple but frustrating.
 
 ---
 
@@ -352,60 +482,207 @@ Hmm, this reveals a deeper problem: **If we start with mixed court sizes, we eit
 ```
 How many players registered?
 │
-├─ 16 → Standard 4-court tournament
+├─ < 8 -> CANCEL TOURNAMENT
 │
-├─ 17-19 → Option 1: Drop to 16 (draw lots)
-│         → Option 2: Mixed 4p + 3p courts
-│         → Option 3: Rotating sit-outs on 4 courts
+├─ 8 -> Standard 2-court tournament (Random or Preseed)
 │
-├─ 20 → Option 1: 5-court tournament (stretch implementation)
-│     → Option 2: Drop to 16
+├─ 9-11 -> Option 1: Mixed 4p + 3p courts
+│         -> Option 2: Drop to 8 (draw lots)
+│         -> Option 3: Rotating sit-outs on 2-3 courts
 │
-├─ 21-23 → Option 1: Mixed 4p + 3p on 6 courts
-│        → Option 2: Rotating sit-outs on 6 courts
-│        → Option 3: Drop to 20 (if supported) or 16
+├─ 12 -> Standard 3-court tournament (Random Seed only)
 │
-├─ 24 → 6-court tournament (RECOMMENDED — clean extension)
+├─ 13-15 -> Option 1: Mixed 4p + 3p courts
+│        -> Option 2: Drop to 12 (draw lots)
+│        -> Option 3: Rotating sit-outs on 3-4 courts
 │
-├─ 25-27 → Option 1: Mixed 4p + 3p on 6 courts
-│        → Option 2: Rotating sit-outs on 6 courts
-│        → Option 3: Drop to 24
+├─ 16 -> Standard 4-court tournament
 │
-├─ 28 → Option 1: 7-court tournament (stretch)
-│     → Option 2: Drop to 24
+├─ 17-19 -> Option 1: Mixed 4p + 3p on 4-5 courts
+│        -> Option 2: Rotating sit-outs on 4 courts
+│        -> Option 3: Drop to 16 (draw lots)
 │
-├─ 29-31 → Option 1: Mixed 4p + 3p on 8 courts
-│        → Option 2: Rotating sit-outs on 8 courts
-│        → Option 3: Find substitutes to reach 32
-│        → Option 4: Drop to 28 (if supported) or 24
+├─ 20 -> Standard 5-court tournament (Random Seed only)
 │
-└─ 32 → Standard 8-court tournament
+├─ 21-23 -> Option 1: Mixed 4p + 3p on 5-6 courts
+│        -> Option 2: Rotating sit-outs on 5-6 courts
+│        -> Option 3: Drop to 20 (if supported) or 16
+│
+├─ 24 -> Standard 6-court tournament (Random Seed only)
+│
+├─ 25-27 -> Option 1: Mixed 4p + 3p on 6-7 courts
+│        -> Option 2: Rotating sit-outs on 6 courts
+│        -> Option 3: Drop to 24
+│
+├─ 28 -> Standard 7-court tournament (Random Seed only)
+│
+├─ 29-31 -> Option 1: Mixed 4p + 3p on 7-8 courts
+│        -> Option 2: Rotating sit-outs on 7-8 courts
+│        -> Option 3: Find substitutes to reach 32
+│        -> Option 4: Drop to 28 (if supported) or 24
+│
+└─ 32 -> Standard 8-court tournament
 ```
+
+---
+
+## Unit Testing Strategy
+
+All redistribution, seeding, and tiebreaking logic must be unit-tested with Vitest before touching the UI. Table-driven tests covering edge cases are the right approach.
+
+### Test Architecture
+
+Pure functions in `src/lib/server/tournament-logic.ts` should handle all redistribution. Each function takes `CourtResult[]` + config and returns `CourtAssignment[]`. No DB, no Svelte, no HTTP — just data transformations.
+
+### Table: Vertical Seeding (Random Seed, Round 1 to 2)
+
+For each court count N, given N courts with known standings, verify the cascade produces the correct court assignments.
+
+| Test Name | Courts | Input Standings | Expected C1 | Expected C2 | Expected C3 | Expected C4 | Expected C5 | Expected C6 | Expected C7 |
+|-----------|--------|-----------------|-------------|-------------|-------------|-------------|-------------|-------------|-------------|
+| `vertical-2courts` | 2 | C1: [P1, P2, P3, P4], C2: [P5, P6, P7, P8] | P1, P2, P5, P6 | P3, P4, P7, P8 | — | — | — | — | — |
+| `vertical-3courts` | 3 | C1: [P1, P2, P3, P4], C2: [P5, P6, P7, P8], C3: [P9, P10, P11, P12] | P1, P2, P3, P5 | P4, P6, P7, P9 | P8, P10, P11, P12 | — | — | — | — |
+| `vertical-5courts` | 5 | 5 courts with distinct player IDs | First 4 firsts | 1st + 3 best 2nds | 2nds + 2 best 3rds | 3rds + 1 best 4th | 4 fourths | — | — |
+| `vertical-6courts` | 6 | 6 courts with distinct player IDs | First 4 firsts | 2 firsts + 2 best 2nds | 4 remaining 2nds | 4 thirds | 2 thirds + 2 best 4ths | 4 remaining 4ths | — |
+| `vertical-7courts` | 7 | 7 courts with distinct player IDs | First 4 firsts | 3 firsts + 1 best 2nd | 4 best 2nds | 2 2nds + 2 best 3rds | 4 best 3rds | 1 3rd + 3 best 4ths | 4 remaining 4ths |
+
+**Tiebreaker tests within vertical seeding**:
+
+| Test Name | Description |
+|-----------|-------------|
+| `vertical-tiebreaker-points` | Two second-place finishers with different points — higher points gets promoted to higher court |
+| `vertical-tiebreaker-diff` | Two second-place finishers with same points but different diff — higher diff gets promoted |
+| `vertical-tiebreaker-playerid` | Two second-place finishers with same points and diff — lower playerId wins (deterministic) |
+
+### Table: Ladder Redistribution (Random Seed, Round 2+)
+
+For each court count N, verify the 2-up/2-down ladder works for top, middle, and bottom courts.
+
+| Test Name | Courts | Focus | Assertion |
+|-----------|--------|-------|-----------|
+| `ladder-2courts-top` | 2 | C1 | Keeps top 2 + gets top 2 from C2 |
+| `ladder-2courts-bottom` | 2 | C2 | Keeps bottom 2 + gets bottom 2 from C1 |
+| `ladder-3courts-top` | 3 | C1 | Keeps top 2 + gets top 2 from C2 |
+| `ladder-3courts-middle` | 3 | C2 | Gets bottom 2 from C1 + top 2 from C3 |
+| `ladder-3courts-bottom` | 3 | C3 | Keeps bottom 2 + gets bottom 2 from C2 |
+| `ladder-5courts-middle` | 5 | C3 | Gets bottom 2 from C2 + top 2 from C4 |
+| `ladder-7courts-bottom` | 7 | C7 | Keeps bottom 2 + gets bottom 2 from C6 |
+
+### Table: Preseed Binary Splits
+
+For power-of-2 court counts, verify the winner/loser split at each round transition.
+
+| Test Name | Courts | Round | Split | Verification |
+|-----------|--------|-------|-------|--------------|
+| `preseed-2courts-r1` | 2 | 1 to 2 | Winner: 1st-2nd (4p), Loser: 3rd-4th (4p) | All 1st-2nd on C1, all 3rd-4th on C2 |
+| `preseed-4courts-r1` | 4 | 1 to 2 | Winner: C1-C2 (1st-2nd), Loser: C3-C4 (3rd-4th) | C1: 4 best 1sts, C2: 2 remaining 1sts + 2 best 2nds, C3: 4 remaining 2nds, C4: 4 3rds + 4 4ths... wait |
+
+Actually, for 4-court preseed Round 1 to 2:
+- Winner Courts (C1-C2): all 1st places (4) + all 2nd places (4) = 8 players
+  - C1: 4 best 1st places
+  - C2: 4 remaining 2nd places? No, 4 firsts all go to C1. Then 4 seconds go to C2.
+- Loser Courts (C3-C4): all 3rd places (4) + all 4th places (4) = 8 players
+  - C3: 4 third places
+  - C4: 4 fourth places
+
+For 8-court preseed Round 1 to 2:
+- Winner Courts (C1-C4): all 1st (8) + all 2nd (8) = 16 players
+  - C1: 4 best 1sts
+  - C2: 4 remaining 1sts
+  - C3: 4 best 2nds
+  - C4: 4 remaining 2nds
+- Loser Courts (C5-C8): all 3rd (8) + all 4th (8) = 16 players
+  - C5: 4 best 3rds
+  - C6: 4 remaining 3rds
+  - C7: 4 best 4ths
+  - C8: 4 remaining 4ths
+
+| Test Name | Courts | Round | Verification |
+|-----------|--------|-------|--------------|
+| `preseed-2courts-r1-split` | 2 | 1 to 2 | C1 has all 1st-2nd (4p), C2 has all 3rd-4th (4p) |
+| `preseed-4courts-r1-split` | 4 | 1 to 2 | Winner C1: 4 1sts; Winner C2: 4 2nds; Loser C3: 4 3rds; Loser C4: 4 4ths |
+| `preseed-4courts-r2-split` | 4 | 2 to 3 | C1: 1st-2nd from old C1+C2 (places 1-4); C2: 3rd-4th from old C1+C2 (places 5-8); C3: 1st-2nd from old C3+C4 (places 9-12); C4: 3rd-4th from old C3+C4 (places 13-16) |
+| `preseed-8courts-r1-split` | 8 | 1 to 2 | Winner C1-C2: 8 1sts split by points; Winner C3-C4: 8 2nds split by points; Loser C5-C6: 8 3rds split by points; Loser C7-C8: 8 4ths split by points |
+| `preseed-8courts-r2-split` | 8 | 2 to 3 | Within Winner group (C1-C4): 1sts from C1-C2 to C1, 2nds to C2, 1sts from C3-C4 to C3, 2nds to C4. Within Loser group (C5-C8): 1sts from C5-C6 to C5, 2nds to C6, 1sts from C7-C8 to C7, 2nds to C8 |
+| `preseed-8courts-r3-split` | 8 | 3 to 4 | C1: places 1-4; C2: places 5-8; C3: places 9-12; C4: places 13-16; C5: places 17-20; C6: places 21-24; C7: places 25-28; C8: places 29-32 |
+
+### Table: Progressive Elimination
+
+For non-power-of-2 court counts, verify the bottom 4 players are eliminated each round until reaching a power of 2.
+
+| Test Name | Start Players | Start Courts | Eliminate After R1 | Remaining | After R2 | After R3 | Final Preseed Format |
+|-----------|---------------|--------------|---------------------|-----------|----------|----------|---------------------|
+| `eliminate-12p` | 12 | 3 | 4p (3 fourths + worst 3rd) | 8p (2 courts) | Standard 8p preseed R2 | Final placement | — |
+| `eliminate-20p` | 20 | 5 | 4p (bottom 4 by rank/points/diff/id) | 16p (4 courts) | Standard 16p preseed R2 | Standard 16p preseed R3 | Final placement |
+| `eliminate-24p` | 24 | 6 | 4p | 20p (5 courts) | Eliminate 4p | 16p (4 courts) | Standard 16p preseed |
+| `eliminate-28p` | 28 | 7 | 4p | 24p (6 courts) | Eliminate 4p | 20p (5 courts) | Eliminate 4p -> 16p |
+
+**Elimination boundary tests**:
+
+| Test Name | Description |
+|-----------|-------------|
+| `eliminate-4th-vs-3rd` | A 4th-place finisher with high points vs a 3rd-place finisher with low points — 3rd place always survives over 4th place regardless of points |
+| `eliminate-tiebreaker-points` | Two 3rd-place finishers tied on rank — higher points survives |
+| `eliminate-tiebreaker-diff` | Two 3rd-place finishers tied on rank and points — higher diff survives |
+| `eliminate-tiebreaker-id` | Two 3rd-place finishers tied on rank, points, diff — lower playerId survives (deterministic) |
+
+### Table: Mixed Court Sizes (3p + 4p)
+
+| Test Name | 4p Courts | 3p Courts | Total Players | Test Focus |
+|-----------|-----------|-----------|---------------|------------|
+| `mixed-9p` | 1 | 1 | 9 | Redistribution: 2 firsts (one from each court size) + best 2 third places? Actually need to think about this more carefully. |
+
+Actually, mixed court redistribution is complex. Let me define the tests more carefully:
+
+For mixed courts, the redistribution groups are formed by collecting all finishers of the same rank across ALL courts (both 3p and 4p), then distributing them using the vertical seeding cascade. The difference is that 3p courts produce 3 finishers (1st, 2nd, 3rd) while 4p courts produce 4 finishers (1st, 2nd, 3rd, 4th).
+
+For example, 9 players = 1x4p + 1x3p = 2 courts:
+- After Round 1: 2 firsts, 2 seconds, 2 thirds, 1 fourth (from 4p court only)
+- Vertical seeding to 2 courts of 4... but we only have 9 players, not 8. We'd need to add a sit-out or accept 1 court of 5.
+
+Actually, with mixed courts, the total player count determines the next round's court configuration. If we start with 9 and stay mixed:
+- After Round 1: still 9 players. Could be 1x4p + 1x3p again, or 2x4p + 1 sit-out.
+
+This is getting complicated. Let me focus the tests on the simpler cases first and leave mixed courts for Phase 3.
+
+### Table: Standings Calculation + Tiebreaking
+
+These tests verify `calculateCourtStandings()` works correctly for all edge cases.
+
+| Test Name | Players | Matches | Scenario | Expected Rank 1 | Expected Rank 4 |
+|-----------|---------|---------|----------|-----------------|-----------------|
+| `standings-basic` | 4 | 3 | All scores entered, clear winner | Highest total points | Lowest total points |
+| `standings-tie-points` | 4 | 3 | Two players same points, different diff | Higher diff wins | — |
+| `standings-tie-points-diff` | 4 | 3 | Two players same points AND same diff | Lower playerId wins | — |
+| `standings-all-tied` | 4 | 3 | All 4 players same points and diff | Sorted by playerId ascending | — |
+| `standings-missing-scores` | 4 | 2 | Only 2 of 3 matches have scores | Unscored match contributes 0 to all stats | — |
+| `standings-3player` | 3 | 3 | 3-player court (A+B vs C, etc.) | Highest total points | Lowest total points |
 
 ---
 
 ## Implementation Priority
 
-### Phase 1: Support 24 Players (6 Courts)
+### Phase 1: Support 8 and 24 Players
 
-**Why first**: Cleanest non-standard count. No sit-outs, no mixed courts, no timing issues.
+**Why first**: Cleanest non-standard counts. No sit-outs, no mixed courts, no timing issues.
 
-**Random Seed**:
-- Extend `redistributeLadder()` to handle 6 courts.
-- Round 1→2: Vertical seeding with 6 courts (mix adjacent ranks on boundary courts).
-- UI: Show 6 court cards.
+- **8 players (2 courts)**:
+  - Random Seed: Ladder works perfectly. Vertical seeding is clean (2 firsts + 2 seconds on C1, 2 thirds + 2 fourths on C2).
+  - Preseed: 2 rounds fixed. Binary split works cleanly.
+  - UI: Show 2 court cards.
 
-**Preseed**:
-- Extend `redistributePreseed()` for 6 courts.
-- 3 rounds fixed. Round 1→2: Winner Courts 1-3, Loser Courts 4-6.
-- Round 2→3: Final placement.
+- **24 players (6 courts)**:
+  - Random Seed: Extend ladder logic to 6 courts. Vertical seeding cascades cleanly.
+  - Preseed: Not available. 6 courts is not a power of 2.
+  - UI: Show 6 court cards.
 
-### Phase 2: Support 20 and 28 Players (5 and 7 Courts)
+### Phase 2: Support 12, 20, and 28 Players
 
-**Why second**: Still clean multiples of 4, but odd court counts make preseed redistribution messier.
+**Why second**: Still clean multiples of 4, but preseed is not available (not power-of-2 court counts).
 
-**Random Seed**: Ladder works. Round 1→2 needs careful rank mixing.
-**Preseed**: Binary split doesn't work cleanly with odd court counts. May need to accept rank mixing.
+- **12 players (3 courts)**: Random Seed only.
+- **20 players (5 courts)**: Random Seed only.
+- **28 players (7 courts)**: Random Seed only.
 
 ### Phase 3: Mixed 4-Player + 3-Player Courts
 
@@ -423,8 +700,8 @@ How many players registered?
 
 ## Open Questions
 
-1. **Should the system auto-suggest the best configuration** when the user enters a player count? Or should the user manually choose?
-2. **For preseed with odd court counts**, is rank mixing acceptable? Or should we restrict preseed to even court counts only (4, 6, 8)?
-3. **For 3-player courts**, should the single player serve from the same position? Any rule modifications?
-4. **Should sit-out players get points?** If so, how many?
-5. **Can we recruit "ghost" players** (organizers, volunteers) to fill spots and reach a multiple of 4?
+1. Should the system auto-suggest the best configuration when the user enters a player count? Or should the user manually choose?
+2. For preseed with odd court counts, is rank mixing acceptable? Or should we restrict preseed to power-of-2 court counts only (2, 4, 8)?
+3. For 3-player courts, should the single player serve from the same position? Any rule modifications?
+4. Should sit-out players get points? If so, how many?
+5. Can we recruit ghost players (organizers, volunteers) to fill spots and reach a multiple of 4?

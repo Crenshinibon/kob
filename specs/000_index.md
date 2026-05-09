@@ -32,4 +32,4 @@
 
 - **[500_production-readiness-progress.md](./500_production-readiness-progress.md)**: Progress log of critical fixes made for production readiness.
 
-- **[600_incomplete-rosters.md](./600_incomplete-rosters.md)**: Strategies for handling player counts between 17-31: adjusted court counts, mixed 3p/4p courts, rotating sit-outs, and timing analysis.
+- **[600_incomplete-rosters.md](./600_incomplete-rosters.md)**: Strategies for handling player counts between 8-31: adjusted court counts, mixed 3p/4p courts, rotating sit-outs, preseed restrictions, and timing analysis. Below 8: cancel.
