@@ -93,7 +93,7 @@ src/routes/tournament/[id]/standings/+page.server.ts  # Fixed tiebreaker
 src/routes/court/[token]/+page.server.ts    # Fixed tiebreaker
 vitest.config.ts                            # NEW - Vitest config
 package.json                                # Added test:unit script
-specs/testing-gaps.md                       # Updated with progress
+specs/400_testing-gaps.md                   # Updated with progress
 ```
 
 ### Verification

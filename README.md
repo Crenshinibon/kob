@@ -124,15 +124,16 @@ bun run auth:schema     # Regenerate Better Auth schema
 
 Detailed specifications are in the [`specs/`](./specs/) directory:
 
-- [`requirements.md`](./specs/requirements.md) - Core requirements and features
-- [`arch.md`](./specs/arch.md) - Architecture and tech decisions
-- [`database-schema.md`](./specs/database-schema.md) - Database design
-- [`tournament-management.md`](./specs/tournament-management.md) - Tournament flow
-- [`scoring-and-standings.md`](./specs/scoring-and-standings.md) - Scoring logic
-- [`promotion-relegation.md`](./specs/promotion-relegation.md) - Redistribution system
-- [`kob-32.md`](./specs/kob-32.md) - 32-player and Preseed format details
-- [`dark-theme.md`](./specs/dark-theme.md) - UI/UX guidelines
-- [`testing-gaps.md`](./specs/testing-gaps.md) - Testing status and checklist
+- [`010_requirements.md`](./specs/010_requirements.md) - Core requirements and features
+- [`020_arch.md`](./specs/020_arch.md) - Architecture and tech decisions
+- [`040_database-schema.md`](./specs/040_database-schema.md) - Database design
+- [`050_tournament-management.md`](./specs/050_tournament-management.md) - Tournament flow
+- [`070_scoring-and-standings.md`](./specs/070_scoring-and-standings.md) - Scoring logic
+- [`080_promotion-relegation.md`](./specs/080_promotion-relegation.md) - Redistribution system
+- [`200_kob-32.md`](./specs/200_kob-32.md) - 32-player and Preseed format details
+- [`100_dark-theme.md`](./specs/100_dark-theme.md) - UI/UX guidelines
+- [`400_testing-gaps.md`](./specs/400_testing-gaps.md) - Testing status and checklist
+- [`600_incomplete-rosters.md`](./specs/600_incomplete-rosters.md) - Handling non-standard player counts
 
 ## License
 
