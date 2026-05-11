@@ -79,18 +79,8 @@ The organizer chooses a scoring mode when creating the tournament:
 - **4 games per round** — 2 runs × 2 parallel games
 - **One full court**, continuous play, rotating pair swaps after every point
 - **Setup**: Fixed team on side X, two pairs rotate on side Y
-- **Game count**: Fixed team plays 4, rotating pairs play 2 each (role randomized across rounds)
+- **Game count**: Some players play 3, others play 2 (role randomized across rounds)
 - **Ranking**: Average points per game (normalized), then total points, then diff, then playerId
-- **Override**: Organizer can set custom point target (default: 15)
-
-#### 6-Player Courts (Rotating Players)
-
-- **Inferred from 4p rules**: If 4p uses 21 points, 6p uses 15 points
-- **4 games per round** (not 3)
-- **One full court**, no split — rotating player system
-- **Setup**: 2 fixed players (team), 2 pairs rotating every point
-- **Games**: 1+2 vs 3+4, 1+2 vs 5+6, repeat = 4 games
-- **Pairing randomization**: Roles (fixed/rotating) are randomized each round
 - **Override**: Organizer can set custom point target (default: 15)
 
 ### Rule Inference Table
@@ -162,25 +152,15 @@ Where:
 
 #### Example Calculations
 
-**Standard 4p court (21pt single set)**:
-- 3 matches × 1 game × (21 × 1.5 rallies × 35s + 21 × 1.5 × 8s) + 3 × 3min between matches
-- = 3 × (31.5 rallies × 43s) + 9min
-- = 3 × 22.5min + 9min
-- = 67.5 + 9 ≈ 77 min... that seems high.
+#### Court Duration Defaults
 
-Let me recalibrate with real-world data:
-- A 21-point set typically takes 15-20 minutes
-- 3 matches = 45-60 minutes
-- **Default: 45 minutes** for a standard 4p court
-
-**5p court (15pt parallel)**:
-- 4 matches × 1 game × ~12 min each = 48 min
-- But parallel: 2 games at once, so effective = 24 min + overhead
-- **Default: 40 minutes** (parallel format is faster per game but has rotation overhead)
-
-**3p court (21pt)**:
-- 3 matches, faster rallies (2v1 advantage)
-- **Default: 35 minutes**
+| Court Type | Default Duration | Notes |
+|------------|-----------------|-------|
+| 4p (21pt single set) | 45 min | 3 games, ~15 min each |
+| 4p (15pt best-of-3) | 55 min | Up to 9 games |
+| 3p (21pt) | 35 min | 3 games, faster rallies (2v1) |
+| 5p (15pt parallel) | 40 min | 4 games, rotation overhead |
+| 6p (15pt parallel) | 40 min | 4 games, rotation overhead |
 
 ### Virtual Court Scheduling
 
