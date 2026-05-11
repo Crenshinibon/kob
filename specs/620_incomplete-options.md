@@ -204,7 +204,7 @@ See detailed description below.
 
 ## 5/6-Player Court (Parallel Games, Rotating Every Point)
 
-For 1-2 leftover players: one full court with two parallel game tracks running simultaneously. The rotating player swaps after every point, and each swap feeds into a separate game score. Roles rotate between the two runs within each round.
+For 1-2 leftover players: one full court with two parallel game tracks running simultaneously. The rotating player swaps after every point, and each swap feeds into a separate game score. Roles rotate between the two runs within each round. **Serving rotation**: The rotating player maintains correct serving order relative to the fixed players — the same standard volleyball serve-rotation rules apply as in regular 2v2 games.
 
 ### How It Works
 

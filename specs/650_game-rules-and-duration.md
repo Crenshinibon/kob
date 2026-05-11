@@ -84,13 +84,13 @@ The organizer chooses a scoring mode when creating the tournament:
 
 | 4p Rule | 3p Court | 5p Court | 6p Court |
 |---------|----------|----------|----------|
-| Single set to 21 | Single set to 21 | Single set to 15 | Single set to 15 |
+| Single set to 21 | Single set to 21 | 1 set to 15 (default) or configurable | 1 set to 15 (default) or configurable |
 | Best-of-3 to 15 | Best-of-3 to 15 | Single set to 15 | Single set to 15 |
 | Win by 2 | Win by 2 | Win by 2 | Win by 2 |
 | 3 games/round | 3 games/round | 4 parallel games/round | 4 parallel games/round |
 | Ranking: total pts | Ranking: total pts | Ranking: avg pts/round | Ranking: avg pts/round |
 
-**Rationale for 5p/6p defaults**: Two parallel game tracks (15pt each), interleaved by rotating players every point, done in 2 runs = 4 games total. Not truly parallel — approximately same duration as a single game + 10% overhead for player switches. Ranking by average points per round normalizes for unequal game counts.
+**Rationale for 5p/6p defaults**: Two parallel game tracks (15pt each), interleaved by rotating players every point, done in 2 runs = 4 games total. Not truly parallel — approximately same duration as a single game + 10% overhead for player switches. Because players play different numbers of games (3 or 4 in 5-player; 2 or 3 in 6-player), ranking uses **average points per round** to normalize performance. Ties are broken by total points (more data = advantage), then differential, then playerId. For 3-player courts, all players play the same number of games, so standard total-points ranking applies.
 
 ---
 
@@ -247,25 +247,11 @@ pointsToWin: integer('points_to_win').default(21)
 winBy: integer('win_by').default(2)
 setsToWin: integer('sets_to_win').default(1)
 pointsToWinSet2: integer('points_to_win_set_2').default(15)
-```
-
-### Court-Specific Overrides (Optional)
-
-For advanced organizers who want different rules per court size:
-
-```typescript
-// New table: courtRuleOverride
-{
-  id: serial('id').primaryKey(),
-  tournamentId: integer('tournament_id').notNull(),
-  courtSize: integer('court_size').notNull(),  // 3, 5, or 6
-  pointsToWin: integer('points_to_win'),
-  matchesPerRound: integer('matches_per_round'),
-  // null = use inferred default
-}
+schedulingMode: text('scheduling_mode').default('batch')  // 'batch' | 'rolling'
 ```
 
 ---
+
 
 ## Decisions (Previously Open Questions)
 

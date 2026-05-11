@@ -53,14 +53,14 @@ After removing a player, recalculate:
 ```
 Before: 24 players → 6×4p = 6 courts
 After removing 1: 23 players → 5×4p + 1×3p = 6 courts
-After removing 2: 22 players → 5×4p + 1×2p? No — 2p not valid
+After removing 2: 22 players → 4×4p + 2 leftover → 4×4p + 1×6p
 ```
 
 **2-player courts are not valid.** If only 2 players remain, they join a 6-player court (with the 4 worst players from other courts). Minimum court size is 3 (2v1 format), but 6-player court is preferred for 2 remaining players.
 
 So for 22 players:
-- 5×4p = 20 players + 2 leftover
-- Default: 1×6p court (2 leftover + 4 worst from other courts)
+- 4×4p = 16 players + 2 leftover → 1×6p court (2 leftover + 4 worst from other courts)
+- Total: 4×4p + 1×6p = 5 courts
 
 ### Step 2: Apply Normal Redistribution
 
@@ -84,8 +84,8 @@ The tournament continues with the new court configuration. Remaining rounds stil
 ### Multiple Retirements in One Round
 
 If 2+ players retire at once, apply the same logic:
-- 24 → 22 players: 5×4p + 2 leftover → 5×4p + 1×6p (Option D)
-- 24 → 21 players: 5×4p + 1 leftover → 5×4p + 1×5p (Option D)
+- 24 → 22 players: 4×4p + 2 leftover → 4×4p + 1×6p
+- 24 → 21 players: 5×4p + 1 leftover → 5×4p + 1×5p
 - 24 → 20 players: 5×4p (clean)
 
 ### Retirement Drops Below 8 Players
@@ -245,7 +245,7 @@ function calculateRetiredStanding(
   currentRound: number,
   format: 'preseed' | 'random-seed',
   bracketRange: { min: number, max: number },  // for preseed
-  courtSize: number  // 3, 4, 5, or 6
+  courtSizesByCourt: number[]  // array of court sizes indexed by court number (1-based)
 ): number {
   if (format === 'preseed') {
     // Worst place in current bracket
@@ -260,13 +260,14 @@ function calculateRetiredStanding(
     // For the last court: worst position = courtSize (3, 5, or 6)
     // But we use 4 * (worstCourt - 1) + worst position on that court
     const courtsBefore = worstCourt - 1;
-    const worstPositionOnCourt = (worstCourt === totalCourts && courtSize !== 4) ? courtSize : 4;
+    const destCourtSize = courtSizesByCourt[worstCourt - 1];  // 0-indexed array
+    const worstPositionOnCourt = destCourtSize;  // worst position = last place on that court
     return courtsBefore * 4 + worstPositionOnCourt;
   }
 }
 ```
 
-**Non-standard court rule**: The non-standard court (3p/5p/6p) is always the last court. Final standing = position on that court + 4 × (number of courts before it).
+**Non-standard court rule**: The non-standard court (3p/5p/6p) is always the last court. Final standing = position on the destination court + 4 × (number of courts before it). The destination court size (not the player's original court size) determines the worst possible position.
 
 **Example**: 6 courts (5 standard + 1 non-standard 6p at bottom)
 - Court 1: places 1-4

@@ -72,8 +72,8 @@ The lowest court is always the "odd one" — one non-standard court at the botto
 | Leftovers | Bottom Court | Format |
 |-----------|-------------|--------|
 | 0 | None (all standard) | All 4-player courts |
-| 1 | 5-player court | Parallel games (see Option D in `620`) |
-| 2 | 6-player court | Parallel games (see Option D in `620`) |
+| 1 | 5-player court | Parallel games (see `620`) |
+| 2 | 6-player court | Parallel games (see `620`) |
 | 3 | 3-player court | 2v1 format (3 matches, 21 points) |
 
 The organizer does NOT choose the court configuration — it's determined by the player count. The organizer chooses **what to do with the leftovers**: include them (default) or exclude them.
