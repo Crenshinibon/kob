@@ -18,21 +18,20 @@ The organizer chooses a scoring mode when creating the tournament:
 
 | Mode | Description | Default for |
 |------|-------------|-------------|
-| **Single Set to 21** | One set, first to 21, win by 2, cap 25 | 4p courts (standard) |
-| **Best of 3 to 15** | Up to 3 sets, each to 15 (win by 2, cap 19), 3rd set to 15 | Optional longer format |
+| **Single Set to 21** | One set, first to 21, win by 2 | 4p courts (standard) |
+| **Best of 3 to 15** | Up to 3 sets, each to 15 (win by 2) | Optional longer format |
 
 #### Single Set to 21 (Default)
 
 - 1 game per match
 - Rally scoring: every rally = point
 - First to 21 points, must win by 2
-- Cap at 25 (first to 25 wins regardless of margin)
 - Each player's points = their team's score in each match
 
 #### Best of 3 to 15
 
 - Up to 3 games per match
-- Each game: first to 15, must win by 2, cap at 19
+- Each game: first to 15, must win by 2
 - Best of 3: first to win 2 games
 - Each player's points = sum of their team's scores across all games they played
 - If a match ends 2-0, the 3rd game is not played (no points for game 3)
@@ -43,7 +42,6 @@ The organizer chooses a scoring mode when creating the tournament:
 |-----------|---------|-------|-------|
 | `pointsToWin` | 21 | 15-25 | Points needed to win a set |
 | `winBy` | 2 | 1-3 | Minimum point margin to win |
-| `pointCap` | 25 | 20-30 | Absolute maximum points per set |
 | `setsToWin` | 1 | 1-2 | Number of sets needed to win match |
 | `pointsToWinSet2` | 15 | 11-21 | Points for subsequent sets (if best-of-3) |
 
@@ -90,7 +88,6 @@ The organizer chooses a scoring mode when creating the tournament:
 | Single set to 21 | Single set to 21 | Single set to 15 | Single set to 15 |
 | Best-of-3 to 15 | Best-of-3 to 15 | Single set to 15 | Single set to 15 |
 | Win by 2 | Win by 2 | Win by 2 | Win by 2 |
-| Cap 25 | Cap 25 | Cap 19 | Cap 19 |
 | 3 games/round | 3 games/round | 4 parallel games/round | 4 parallel games/round |
 | Ranking: total pts | Ranking: total pts | Ranking: avg pts/game | Ranking: avg pts/game |
 
@@ -248,15 +245,8 @@ The system should show the estimate as "~3h 15min" (with tilde) to indicate appr
 scoringMode: text('scoring_mode').default('single-21')  // 'single-21' | 'best-of-3-15'
 pointsToWin: integer('points_to_win').default(21)
 winBy: integer('win_by').default(2)
-pointCap: integer('point_cap').default(25)
 setsToWin: integer('sets_to_win').default(1)
 pointsToWinSet2: integer('points_to_win_set_2').default(15)
-
-// Timing parameters
-setupTimeMinutes: integer('setup_time_minutes').default(15)
-transitionTimeMinutes: integer('transition_time_minutes').default(5)
-avgRallyDurationSeconds: integer('avg_rally_duration_seconds').default(35)
-bufferPercent: integer('buffer_percent').default(10)
 ```
 
 ### Court-Specific Overrides (Optional)
@@ -280,8 +270,7 @@ For advanced organizers who want different rules per court size:
 ## Open Questions
 
 1. **Best-of-3 scoring**: Should the 3rd set always be to 15, or should it be configurable separately (e.g., 3rd set to 11)?
-2. **Point cap**: Should the cap always be `pointsToWin + 4`, or should it be independently configurable?
-3. **Duration by skill level**: Should we offer "beginner / intermediate / advanced" presets that adjust rally duration estimates?
-4. **Break time**: Should the estimate include optional player break time between rounds (e.g., 10 min every 2 rounds)?
-5. **Parallel game timing**: For 5/6p courts, does the round duration equal the time for 4 sequential games, or is it shorter because 2 games run in parallel? Need to clarify: are the 4 games truly parallel (2 at a time) or sequential?
-6. **Score validation per mode**: 5/6p courts use 15 points (inferred from 4p rules). Win by 2 stays. 3p courts use same rules as 4p courts.
+2. **Duration by skill level**: Should we offer "beginner / intermediate / advanced" presets that adjust rally duration estimates?
+3. **Break time**: Should the estimate include optional player break time between rounds (e.g., 10 min every 2 rounds)?
+4. **Parallel game timing**: For 5/6p courts, does the round duration equal the time for 4 sequential games, or is it shorter because 2 games run in parallel? Need to clarify: are the 4 games truly parallel (2 at a time) or sequential?
+5. **Score validation per mode**: 5/6p courts use 15 points (inferred from 4p rules). Win by 2 stays. 3p courts use same rules as 4p courts.
