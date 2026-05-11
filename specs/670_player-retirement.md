@@ -202,6 +202,5 @@ No changes needed. The existing court rotation system handles variable court siz
 
 1. **Forfeited matches**: If a player retires mid-round (scores partially entered), how do we handle their remaining matches? Auto-forfeit 0-21?
 2. **Replacement timing**: Can a replacement join between rounds, or only before the tournament starts?
-3. **Retired player visibility**: Should retired players appear on the standings page with a "retired" label, or be hidden?
-4. **Final round elimination**: Should eliminated players be notified before the final round starts, or only when the round is displayed?
-5. **Tiebreaker for elimination**: If 2 players are tied for the last spot on the final court, how do we break the tie? (Points → diff → ID, same as everywhere)
+3. **Final round elimination**: Should eliminated players be notified before the final round starts, or only when the round is displayed?
+4. **Tiebreaker for elimination**: Compare by average points per game first (normalizes across court sizes), then total points, then diff, then playerId.

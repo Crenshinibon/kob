@@ -98,15 +98,13 @@ Write all redistribution algorithms as pure functions with comprehensive unit te
 ## Risks & Dependencies
 
 1. **Phase 1 is critical path** — all other phases depend on correct redistribution logic
-2. **5/6-player match rotation** needs careful design — equal play time is hard to guarantee
-3. **Database migration** must be backward-compatible with existing tournaments
-4. **Score validation** for 15-point games needs separate rules from 21-point games
-5. **UI complexity** increases significantly with variable court sizes
+2. **Separate match tables** per court type (3p/5p/6p) — more code but cleaner separation
+3. **Database cleanup** — existing tournaments deleted on scheduled dates with notification
+4. **Per-shift physical court mapping** — needs flexible UI for shift assignments
 
 ## What We're NOT Doing (Out of Scope)
 
 - Ghost players (organizers filling spots)
-- Late arrival / early departure handling
 - Multi-venue support (only physical/virtual courts at one venue)
 - Tournament merging / splitting for >64 players
 - Custom match formats beyond 2v2

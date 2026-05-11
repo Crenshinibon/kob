@@ -211,7 +211,7 @@ Round 2 — 8 virtual courts, 4 physical courts
 
 ## Decisions (Previously Open Questions)
 
-1. **Virtual court rotation**: Top courts get priority per round. Lower-ranked players wait first.
+1. **Virtual court rotation**: Start with lower courts first, work up. For the final round, run loser courts first, then winners — so the top court final is last with fresh players.
 2. **Ghost players**: No. Never. Ghost players don't make sense in beach volleyball.
 3. **Exclusion suggestion order**: Based on input order (usually registration date). Last entered players suggested first. Organizer can override.
 4. **Excluded player visibility**: Excluded players are informed before the tournament starts and will not be there. They do not appear on standings.

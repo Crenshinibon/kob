@@ -10,38 +10,40 @@ When N virtual courts > M physical courts, players on virtual courts M+1 through
 
 ### Execution Order
 
-Virtual courts are played in order: 1, 2, 3, ..., N. Physical courts process them in batches of M.
+Virtual courts are played starting from the **lowest courts** (highest numbers) and working up to the **top courts** (lowest numbers). This ensures the top court match is last, so finalists are fresh.
 
 **Example: 8 virtual courts, 4 physical courts**
 ```
-Shift 1: Virtual courts 1-4 → Physical courts 1-4 (active)
-Shift 2: Virtual courts 5-8 → Physical courts 1-4 (active)
+Shift 1: Virtual courts 5-8 → Physical courts 1-4 (active)
+Shift 2: Virtual courts 1-4 → Physical courts 1-4 (active)
 ```
 
 **Example: 12 virtual courts, 4 physical courts**
 ```
-Shift 1: Virtual courts 1-4  → Physical courts 1-4
+Shift 1: Virtual courts 9-12 → Physical courts 1-4
 Shift 2: Virtual courts 5-8  → Physical courts 1-4
-Shift 3: Virtual courts 9-12 → Physical courts 1-4
+Shift 3: Virtual courts 1-4  → Physical courts 1-4
 ```
+
+**Final round**: Same order — loser courts first, top court last. This creates a dramatic finale where the championship match is the last match of the tournament.
 
 ### Physical Court Reassignment
 
 When a physical court finishes its current virtual court assignment, it immediately gets the next waiting virtual court.
 
-**Example: 8 virtual, 4 physical**
+**Example: 8 virtual, 4 physical (starting from lower courts)**
 ```
-Time 0:  PC1←VC1, PC2←VC2, PC3←VC3, PC4←VC4
-         Waiting: VC5, VC6, VC7, VC8
+Time 0:  PC1←VC5, PC2←VC6, PC3←VC7, PC4←VC8
+         Waiting: VC1, VC2, VC3, VC4
 
-Time 45min: PC2 finishes VC2 first
-            PC2←VC5 (next in queue)
-            Waiting: VC6, VC7, VC8
-            Players on VC5 now know: "You're up next on Physical Court 2"
+Time 45min: PC2 finishes VC6 first
+            PC2←VC1 (next in queue — top courts now)
+            Waiting: VC2, VC3, VC4
+            Players on VC1 now know: "You're up next on Physical Court 2"
 
-Time 50min: PC4 finishes VC4
-            PC4←VC6
-            Waiting: VC7, VC8
+Time 50min: PC4 finishes VC8
+            PC4←VC2
+            Waiting: VC3, VC4
 ```
 
 **Key insight**: Within a shift, physical courts don't finish simultaneously. The fastest court gets the next virtual court first. This means the shift is "rolling" not "batched."

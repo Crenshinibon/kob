@@ -284,4 +284,4 @@ For advanced organizers who want different rules per court size:
 3. **Duration by skill level**: Should we offer "beginner / intermediate / advanced" presets that adjust rally duration estimates?
 4. **Break time**: Should the estimate include optional player break time between rounds (e.g., 10 min every 2 rounds)?
 5. **Parallel game timing**: For 5/6p courts, does the round duration equal the time for 4 sequential games, or is it shorter because 2 games run in parallel? Need to clarify: are the 4 games truly parallel (2 at a time) or sequential?
-6. **Score validation per mode**: Currently validated at 21 points, win by 2. Need to make validation dynamic based on tournament scoring mode.
+6. **Score validation per mode**: 5/6p courts use 15 points (inferred from 4p rules). Win by 2 stays. 3p courts use same rules as 4p courts.
