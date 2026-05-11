@@ -32,4 +32,10 @@
 
 - **[500_production-readiness-progress.md](./500_production-readiness-progress.md)**: Progress log of critical fixes made for production readiness.
 
-- **[600_incomplete-rosters.md](./600_incomplete-rosters.md)**: Strategies for handling player counts between 8-31: adjusted court counts, mixed 3p/4p courts, rotating sit-outs, preseed restrictions, and timing analysis. Below 8: cancel.
+- **[600_incomplete-rosters-index.md](./600_incomplete-rosters-index.md)**: Index for incomplete roster specs. Replaces original 600_incomplete-rosters.md. Supports 8-64 players, recursive preseed, physical/virtual courts.
+
+  - **[610_incomplete-core.md](./610_incomplete-core.md)**: Problem statement, physical vs virtual courts, player count extension (8-64), vertical seeding, leftover configuration.
+  - **[620_incomplete-options.md](./620_incomplete-options.md)**: Options A (recursive preseed), B (mixed courts), D (parallel games), E (generalized recursive split).
+  - **[630_incomplete-implementation.md](./630_incomplete-implementation.md)**: Implementation phases, unit testing strategy, open questions.
+  - **[640_incomplete-devplan.md](./640_incomplete-devplan.md)**: Development plan summary: 7 phases, effort estimates, risks.
+  - **[650_game-rules-and-duration.md](./650_game-rules-and-duration.md)**: Scoring modes, special court rules, duration estimation with live forecast.
