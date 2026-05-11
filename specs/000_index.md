@@ -39,3 +39,9 @@
   - **[630_incomplete-implementation.md](./630_incomplete-implementation.md)**: Implementation phases, unit testing strategy, open questions.
   - **[640_incomplete-devplan.md](./640_incomplete-devplan.md)**: Development plan summary: 7 phases, effort estimates, risks.
   - **[650_game-rules-and-duration.md](./650_game-rules-and-duration.md)**: Scoring modes, special court rules, duration estimation with live forecast.
+
+- **[700_i18n-index.md](./700_i18n-index.md)**: Internationalization spec index. German, French, Spanish support via Paraglide.
+
+  - **[710_i18n-core.md](./710_i18n-core.md)**: Architecture, Paraglide library, locale structure, URL strategy, language switcher.
+  - **[720_i18n-content.md](./720_i18n-content.md)**: Translation keys (~150 keys), pluralization, interpolation, format names.
+  - **[730_i18n-implementation.md](./730_i18n-implementation.md)**: 7 implementation phases, file changes, testing strategy.

@@ -21,3 +21,10 @@ Replaces the original `600_incomplete-rosters.md` (deleted). Split into focused 
 5. **Option D for 1-2 leftovers** — parallel games on 5/6-player courts
 6. **Physical vs virtual courts** — support tournaments where N virtual courts > M physical courts
 7. **Per-round override** — leftover strategy configurable per tournament + per round
+
+## Related Specs
+
+| File | Topic |
+|------|-------|
+| `650_game-rules-and-duration.md` | Scoring modes, special court rules, duration estimation |
+| `700_i18n-index.md` | Internationalization (DE, FR, ES) |
