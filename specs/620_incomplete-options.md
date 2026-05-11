@@ -223,60 +223,102 @@ After Round 1, redistribute as many players as possible to 4-player courts. The 
 
 ## Option D: 5/6-Player Court (Parallel Games, Rotating Every Point)
 
-For 1-2 leftover players: one full court with two parallel game tracks. The rotating player swaps after every point, and each swap feeds into a separate game score.
+For 1-2 leftover players: one full court with two parallel game tracks running simultaneously. The rotating player swaps after every point, and each swap feeds into a separate game score. Roles rotate between the two runs within each round.
 
 ### How It Works
 
 **5 players (A, B, C, D, E):**
 
-Setup: Players A and B on one side (fixed team). Player C on the other side (fixed). Players D and E are on the same side as C, rotating in/out after every point.
+The round consists of **2 runs × 2 parallel games = 4 games** total.
 
-The court runs **two parallel game tracks** simultaneously:
+**Run 1**: One team is fixed on side X, one player fixed on side Y, two players rotate.
+- Side X: A+B (fixed team)
+- Side Y: C (fixed), D and E alternate every point
+- Game 1: A+B vs C+D (scored when D is on court)
+- Game 2: A+B vs C+E (scored when E is on court)
 
-| Track | Team 1 | Team 2 | Scoring |
-|-------|--------|--------|---------|
-| Game A | A + B | C + D | Points scored when D is on court |
-| Game B | A + B | C + E | Points scored when E is on court |
+**Run 2**: Different team fixed on side X, different player fixed on side Y, different players rotate.
+- Side X: D+E (fixed team)
+- Side Y: B (fixed), A and C alternate every point
+- Game 3: D+E vs B+A (scored when A is on court)
+- Game 4: D+E vs B+C (scored when C is on court)
 
-**Rotation**: After every point, D and E swap. Point 1 → D plays (feeds Game A). Point 2 → E plays (feeds Game B). Point 3 → D plays (feeds Game A). And so on.
+**Game count per player:**
+| Player | Run 1 | Run 2 | Total |
+|--------|-------|-------|-------|
+| A | 2 | 1 | 3 |
+| B | 2 | 2 | 4 |
+| C | 2 | 1 | 3 |
+| D | 1 | 2 | 3 |
+| E | 1 | 2 | 3 |
 
-Both games play to **15 points** each. Since they're interleaved, total play is ~30 points. This is done **twice** for a total of **4 games** per round.
+One player plays 4 games, everyone else plays 3. Across tournament rounds, the "4 games" role rotates (via randomization).
 
 **6 players (A, B, C, D, E, F):**
 
-Setup: Players A and B on one side (fixed team). Players C+D are one pair, E+F are another pair. They rotate after every point.
+Same structure: 2 runs × 2 parallel games = 4 games.
 
-| Track | Team 1 | Team 2 | Scoring |
-|-------|--------|--------|---------|
-| Game A | A + B | C + D | Points scored when C+D are on court |
-| Game B | A + B | E + F | Points scored when E+F are on court |
+**Run 1**:
+- Side X: A+B (fixed team)
+- Side Y: C+D (team), E+F alternate every point? 
 
-**Rotation**: After every point, the pair swaps. Point 1 → C+D play (feeds Game A). Point 2 → E+F play (feeds Game B). And so on.
+Actually for 6 players, the rotation is simpler:
+- Run 1: A+B vs C+D, A+B vs E+F → A,B play 2, C,D play 1, E,F play 1
+- Run 2: C+D vs E+F, C+D vs A+B → C,D play 2, E,F play 1, A,B play 1
+- Total: everyone plays 3 games
 
-Both games play to **15 points** each. Done **twice** = **4 games** per round.
+Wait, that's only 4 games but everyone plays different amounts. Let me reconsider.
 
-### Pairing Randomization
+For 6 players with the alternating team approach:
+- Run 1: A+B fixed, C+D and E+F rotate → A,B=2, C,D=1, E,F=1
+- Run 2: C+D fixed, A+B and E+F rotate → C,D=2, A,B=1, E,F=1
+- Run 3: E+F fixed, A+B and C+D rotate → E,F=2, A,B=1, C,D=1
 
-Since we cannot play all possible team combinations, the initial pairing is **randomized** before each round. The system randomly assigns:
-- Which 2 players are the fixed team (A+B)
-- Which player is the fixed opponent (C) for 5p
-- Which pairs rotate (C+D vs E+F) for 6p
+That's 6 games total. But the user said 4 games. Let me re-read.
 
-This ensures fairness across rounds — different players get the fixed/rotating roles.
+The user said: "For 6 players this is not so much of a problem because all get the same number of games." So maybe for 6 players, 4 games with A+B always fixed is acceptable because C/D/E/F each play 2 games (equal within the rotating group).
 
-### Scoring
+**6 players (4 games, A+B always fixed):**
+- Run 1: A+B vs C+D, A+B vs E+F
+- Run 2: A+B vs C+D, A+B vs E+F (repeat)
+- A,B: 4 games each. C,D,E,F: 2 games each.
 
-Each player gets points equal to their team's score in the game tracks they participated in. Example for 5 players:
+The rotating pairs (C+D and E+F) are treated equally within their group. Across rounds, who is the "fixed team" rotates.
 
-| Player | Game A (with D) | Game B (with E) | Total |
-|--------|-----------------|-----------------|-------|
-| A | 15 | 12 | 27 |
-| B | 15 | 12 | 27 |
-| C | 13 | 10 | 23 |
-| D | 13 | — | 13 |
-| E | — | 10 | 10 |
+### Role Assignment Randomization
 
-Players D and E only contribute to one game track each. Their total reflects only their track's score.
+Before each round, the system randomly assigns:
+- **5 players**: Which player is "always on court" (plays 4 games), which pairs are fixed teams for each run
+- **6 players**: Which pair is the "fixed team" (plays 4 games), which pairs rotate
+
+This ensures fairness across rounds — no player is stuck with the disadvantageous role.
+
+### Scoring for 5-Player Courts
+
+Since one player plays 4 games and others play 3, raw point totals are not directly comparable. Use **average points per game** for ranking:
+
+```
+Player ranking = totalPoints / gamesPlayed
+```
+
+Example:
+| Player | Games | Total Points | Avg/Game | Rank |
+|--------|-------|--------------|----------|------|
+| A | 3 | 39 | 13.0 | 1 |
+| B | 4 | 48 | 12.0 | 3 |
+| C | 3 | 36 | 12.0 | 3 |
+| D | 3 | 33 | 11.0 | 5 |
+| E | 3 | 36 | 12.0 | 3 |
+
+Tiebreaker: if averages are equal, use total points (more games = more data), then diff, then playerId.
+
+### Scoring for 6-Player Courts
+
+With A+B playing 4 games and C/D/E/F playing 2, use the same **average points per game** approach:
+
+```
+Player ranking = totalPoints / gamesPlayed
+```
 
 ### When to Use
 
@@ -290,13 +332,14 @@ No organizer decision needed — it's determined by `playerCount % 4`.
 
 - **Same as standard** (~45-60 min).
 - 4 games x 15 points ≈ 3 games x 21 points in duration.
-- One full court, continuous play, just alternating players.
+- One full court, continuous play, alternating players every point.
 
 ### Competitive Integrity
 
 - **Medium-High**. Everyone plays. Timing matches standard courts.
-- **Asymmetry**: Players on the rotating side (D/E or E/F) only contribute to one game track. This is offset by the randomization of roles across rounds.
-- **Ranking**: Players are ranked 1st through 5th (or 6th) on their court by total points, then diff, then playerId — same formula as 4-player courts.
+- **5 players**: One player plays 4 games, others play 3. Mitigated by role randomization across rounds and average-per-game ranking.
+- **6 players**: Fixed team plays 4 games, rotating pairs play 2. Mitigated by role randomization across rounds and average-per-game ranking.
+- **Ranking**: By average points per game (normalized), then total points (tiebreaker), then diff, then playerId.
 
 ---
 

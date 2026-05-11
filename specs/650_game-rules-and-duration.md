@@ -65,23 +65,22 @@ The organizer chooses a scoring mode when creating the tournament:
 #### 5-Player Courts (Parallel Games, Rotating Every Point)
 
 - **Inferred from 4p rules**: If 4p uses 21 points, 5p uses 15 points
-- **4 games per round** (not 3) — two parallel game tracks, done twice
+- **4 games per round** — 2 runs × 2 parallel games
 - **One full court**, continuous play, rotating player swaps after every point
-- **Setup**: 2 fixed players (team A+B), 1 fixed opponent (C), 2 rotating (D+E)
-- **Game tracks**: Game A = 1+2 vs 3+D (scored when D is on), Game B = 1+2 vs 3+E (scored when E is on)
-- **Both tracks play to 15 points**, interleaved by alternating D/E every point
-- **Pairing randomization**: Roles randomized each round
+- **Run 1**: Fixed team on side X, one fixed player on side Y, two players rotate
+- **Run 2**: Different fixed team on side X, different fixed player on side Y, different players rotate
+- **Game count**: One player plays 4 games, others play 3 (role randomized across rounds)
+- **Ranking**: Average points per game (normalized), then total points, then diff, then playerId
 - **Override**: Organizer can set custom point target (default: 15)
 
 #### 6-Player Courts (Parallel Games, Rotating Every Point)
 
 - **Inferred from 4p rules**: If 4p uses 21 points, 6p uses 15 points
-- **4 games per round** (not 3) — two parallel game tracks, done twice
+- **4 games per round** — 2 runs × 2 parallel games
 - **One full court**, continuous play, rotating pair swaps after every point
-- **Setup**: 2 fixed players (team A+B), 2 rotating pairs (C+D and E+F)
-- **Game tracks**: Game A = 1+2 vs C+D (scored when C+D on), Game B = 1+2 vs E+F (scored when E+F on)
-- **Both tracks play to 15 points**, interleaved by alternating pairs every point
-- **Pairing randomization**: Roles randomized each round
+- **Setup**: Fixed team on side X, two pairs rotate on side Y
+- **Game count**: Fixed team plays 4, rotating pairs play 2 each (role randomized across rounds)
+- **Ranking**: Average points per game (normalized), then total points, then diff, then playerId
 - **Override**: Organizer can set custom point target (default: 15)
 
 #### 6-Player Courts (Rotating Players)
@@ -103,8 +102,9 @@ The organizer chooses a scoring mode when creating the tournament:
 | Win by 2 | Win by 2 | Win by 2 | Win by 2 |
 | Cap 25 | Cap 25 | Cap 19 | Cap 19 |
 | 3 games/round | 3 games/round | 4 parallel games/round | 4 parallel games/round |
+| Ranking: total pts | Ranking: total pts | Ranking: avg pts/game | Ranking: avg pts/game |
 
-**Rationale for 5p/6p defaults**: Two parallel game tracks (15pt each), interleaved by rotating players every point, done twice = 4 games total. Total duration ≈ 3 games at 21 points on a standard court.
+**Rationale for 5p/6p defaults**: Two parallel game tracks (15pt each), interleaved by rotating players every point, done in 2 runs = 4 games total. Ranking by average points per game normalizes for unequal game counts. Total duration ≈ 3 games at 21 points on a standard court.
 
 ---
 
