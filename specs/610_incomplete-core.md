@@ -23,16 +23,20 @@ A tournament with N virtual courts and M physical courts (where N > M) runs in "
 
 ### Example
 
-**4 physical courts, 32 players (8 virtual courts):**
+**4 physical courts, 32 players entered (8 virtual courts):**
 - Round 1: Virtual courts 1-4 are active (16 players playing). Courts 5-8 have players waiting.
 - Round 2: Courts 5-8 become active. Courts 1-4 players now wait.
 - The waiting players still get court assignments — they just play in a later shift.
+
+**How virtual courts are determined**: The system calculates `virtualCourtCount = Math.ceil(playerCount / 4)`. The organizer sets `physicalCourtCount` based on their venue. If `virtualCourtCount > physicalCourtCount`, shifts are used.
 
 **Implementation**: The system tracks `physicalCourtCount` and `virtualCourtCount` separately. The UI shows which physical court each virtual court maps to, and which players are "on break" for the current round.
 
 ### UI Support
 
-- Tournament creation: separate inputs for "Physical Courts" and "Total Players"
+- Tournament creation: "Physical Courts" input (number of actual courts at venue)
+- Player input: paste names (random seed) or names + points (preseed)
+- Court configuration: system calculates from player count + physical courts
 - Court display: show virtual court number AND physical court mapping
 - Round view: clearly indicate which players are active vs waiting
 - Waiting players see "You play next round" status
@@ -61,12 +65,16 @@ A tournament with N virtual courts and M physical courts (where N > M) runs in "
 
 ### With Leftovers (1-3 players)
 
-For any player count that is not a multiple of 4, we have 1-3 leftover players. These are handled by:
+For any player count that is not a multiple of 4, we have 1-3 leftover players. The leftover count is deterministic: `playerCount % 4`.
 
-- **Option B**: Mixed court sizes (3-player + 4-player courts)
-- **Option D**: 5/6-player courts (parallel games)
+| Leftovers | Natural Solution | Option |
+|-----------|-----------------|--------|
+| 0 | None needed | — |
+| 1 | Add to one 4p court → 5-player court | Option D (parallel games) |
+| 2 | Add to one 4p court → 6-player court | Option D (parallel games) |
+| 3 | Create one 3-player court | Option B (mixed courts, 2v1 format) |
 
-The chosen strategy is configured per-tournament as a default, with optional per-round overrides.
+The organizer does NOT choose the court configuration — it's determined by the player count. The organizer chooses **what to do with the leftovers**: include them (default) or exclude them.
 
 ## How Vertical Seeding Actually Works
 
@@ -111,30 +119,102 @@ After Round 1 with N courts, we have exactly N first places, N second places, N 
 
 **Key insight**: Vertical seeding works cleanly for ANY court count. The pattern is a natural cascade where overflow from one rank flows into the next court, sorted by performance (points/diff).
 
-## Leftover Handling Configuration
+## Leftover Handling
 
-### Tournament-Level Default
+### How Leftovers Work
 
-When creating a tournament, the organizer chooses a default leftover strategy:
+The leftover count is `playerCount % 4`. The system determines the court configuration automatically:
 
-- **Option B: Mixed courts** — Use 3-player courts for leftovers (2v1 format)
-- **Option D: Parallel games** — Use 5/6-player courts with parallel 2v2 games
+```
+27 players → 6 courts of 4 + 3 leftover → 6×4p + 1×3p = 7 courts
+26 players → 6 courts of 4 + 2 leftover → 6×4p + 1×6p = 7 courts
+25 players → 6 courts of 4 + 1 leftover → 6×4p + 1×5p = 7 courts
+24 players → 6 courts of 4 + 0 leftover → 6×4p = 6 courts (clean)
+```
 
-This default applies to all rounds unless overridden.
+### Organizer Decision: Include or Exclude Leftovers
 
-### Per-Round Override
+The organizer enters player names (and seed points for preseed). The system counts them and determines the leftover situation. The UI shows the result:
 
-The organizer can override the leftover strategy for individual rounds. This accommodates:
+```
+┌─────────────────────────────────────────────────────────┐
+│ 27 players entered                                       │
+│                                                          │
+│ Court configuration: 6 courts of 4 players + 3 leftover  │
+│                                                          │
+│ The 3 leftover players will play on a 3-player court     │
+│ (2v1 format, 3 matches per round).                       │
+│                                                          │
+│ ○ Include all 27 players (recommended)                   │
+│ ○ Exclude 3 players to get 24 (6 clean courts)           │
+│   └─ Select which 3 players to exclude:                  │
+│      [ ] Player X (seed: 45)                             │
+│      [ ] Player Y (seed: 52)                             │
+│      [ ] Player Z (seed: 61)                             │
+│                                                          │
+│ [Start Tournament]                                       │
+└─────────────────────────────────────────────────────────┘
+```
 
-- Player preferences (e.g., "we don't want parallel games this round")
-- Logistical constraints (e.g., "court 4 is being repaired, use mixed instead")
-- Dynamic decisions based on how the tournament is going
+The player count field is removed from tournament creation. The system calculates:
+- `playerCount` = number of names entered
+- `leftoverCount` = `playerCount % 4`
+- `courtCount` = `Math.floor(playerCount / 4)` + (1 if leftover > 0 and included)
+
+### Leftover Scenarios
+
+| Leftover | Include (Default) | Exclude |
+|----------|-------------------|---------|
+| **1 player** | One 5-player court (parallel games, 4 matches at 15pt) | Exclude 1 player → clean courts. Organizer picks who. |
+| **2 players** | One 6-player court (parallel games, 4 matches at 15pt) | Exclude 2 players → clean courts. Organizer picks who. |
+| **3 players** | One 3-player court (2v1 format, 3 matches at 21pt) | Exclude 3 players → clean courts. Organizer picks who. |
+
+### Exclusion Rules
+
+- Organizer can only exclude players **before starting the tournament** (not mid-tournament)
+- Excluded players are marked as "alternates" — they can replace a dropout
+- The system suggests exclusion based on seed points (lowest-ranked players suggested first)
+- Organizer can override and manually select who to exclude
+- Excluded players are NOT charged entry fee (organizer's responsibility)
+
+### Per-Round Override (Advanced)
+
+For advanced organizers, the leftover strategy can be overridden per-round:
+
+- **Round 1**: Include leftovers (default)
+- **Round 2**: Override to exclude (e.g., a player left early, now only 1 leftover → 5p court)
+- **Round 3**: Back to default
 
 The override is set before closing the previous round. The UI shows a dropdown per round: "Use tournament default" or specific strategy.
 
+### UI: Court Configuration Summary
+
+The tournament view always shows the current court configuration:
+
+```
+Round 2 — 7 courts
+├─ Courts 1-4: 4 players each (standard)
+├─ Courts 5-6: 4 players each (standard)
+└─ Court 7: 3 players (2v1 format)
+```
+
+Or with virtual courts:
+
+```
+Round 2 — 8 virtual courts, 4 physical courts
+├─ Shift 1 (active): VC1-VC4
+│   ├─ VC1-VC3: 4 players each
+│   └─ VC4: 3 players (2v1)
+├─ Shift 2 (waiting): VC5-VC8
+│   ├─ VC5-VC7: 4 players each
+│   └─ VC8: 3 players (2v1)
+```
+
 ## Open Questions
 
-1. Should the system auto-suggest the best configuration when the user enters a player count? Or should the user manually choose?
-2. For virtual courts: should the waiting rotation be random, or based on standings (lower-ranked players wait first)?
-3. Should we support "ghost players" (organizers/volunteers) to fill spots and reach a multiple of 4?
-4. How do we handle players arriving late or leaving early mid-tournament with virtual courts?
+1. For virtual courts: should the waiting rotation be random, or based on standings (lower-ranked players wait first)?
+2. Should we support "ghost players" (organizers/volunteers) to fill spots and reach a multiple of 4?
+3. When excluding players, should the system auto-suggest based on seed points, or let the organizer choose freely?
+4. Should excluded players (alternates) be visible on the standings page with an "alternate" label?
+
+**Player retirement during tournament**: See `670_player-retirement.md` for handling players leaving mid-tournament, redistribution after retirement, and final round elimination rules.
