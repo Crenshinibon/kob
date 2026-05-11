@@ -40,7 +40,11 @@ Each locale file (`en.json`, `de.json`, etc.) contains flat key-value pairs with
 | `create.player_count` | Number of Players | |
 | `create.physical_courts` | Physical Courts | |
 | `create.virtual_courts` | Virtual Courts | |
-| `create.leftover_strategy` | Leftover Handling | |
+| `create.court_config` | Court Configuration | |
+| `create.court_config.bottom_5p` | Bottom court: 5-player (1 leftover) | |
+| `create.court_config.bottom_6p` | Bottom court: 6-player (2 leftovers) | |
+| `create.court_config.bottom_3p` | Bottom court: 3-player (3 leftovers) | |
+| `create.court_config.clean` | All courts: 4-player (no leftovers) | |
 | `create.leftover.include` | Include all players (recommended) | |
 | `create.leftover.exclude` | Exclude {count} players for clean courts | |
 | `create.leftover.parallel` | Parallel Games (5p/6p) | |

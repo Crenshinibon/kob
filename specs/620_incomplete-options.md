@@ -108,11 +108,21 @@ Total: 5 rounds
 
 #### Round Count Formula
 
-For N courts, the number of rounds is: `floor(log2(N)) + 1` for the winner bracket, plus additional rounds for any remainder > 1.
+```
+rounds(N) = floor(log2(N-1)) + 2  for N >= 2
+```
 
-More precisely:
-- Power-of-2 courts (2,4,8,16): log2(N) + 1 rounds
-- Non-power-of-2: depends on the remainder after extracting the largest power of 2
+| Courts | Rounds |
+|--------|--------|
+| 2 | 2 |
+| 3 | 3 |
+| 4 | 3 |
+| 5-7 | 4 |
+| 8 | 4 |
+| 9-15 | 5 |
+| 16 | 5 |
+
+The winner group's depth determines the total rounds. The loser group plays along but doesn't add rounds.
 
 #### Preseed Split Algorithm
 
@@ -409,7 +419,7 @@ How many players registered?
 │
 ├─ 8-64 (multiple of 4) → Standard N-court tournament
 │   ├─ Random Seed: N rounds configurable
-│   └─ Preseed: Recursive splitting, rounds = log2(N)+1 (approx)
+│   └─ Preseed: Recursive splitting, rounds = floor(log2(N-1)) + 2
 │
 ├─ 8-64 (not multiple of 4) → One non-standard bottom court
 │   ├─ 1 leftover → 5-player court (parallel games)

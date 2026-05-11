@@ -180,15 +180,11 @@ The player count field is removed from tournament creation. The system calculate
 - Excluded players are NOT charged entry fee (organizer's responsibility)
 - Excluded players do NOT appear on the standings page
 
-### Per-Round Override (Advanced)
+### Include/Exclude Leftovers
 
-For advanced organizers, the leftover strategy can be overridden per-round:
+The organizer can choose to exclude leftover players before starting the tournament. Excluded players are informed and do not participate. This results in clean courts (all 4-player).
 
-- **Round 1**: Include leftovers (default)
-- **Round 2**: Override to exclude (e.g., a player left early, now only 1 leftover → 5p court)
-- **Round 3**: Back to default
-
-The override is set before closing the previous round. The UI shows a dropdown per round: "Use tournament default" or specific strategy.
+If included, the bottom court is non-standard (3p/5p/6p) as determined by `playerCount % 4`.
 
 ### UI: Court Configuration Summary
 

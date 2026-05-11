@@ -21,7 +21,7 @@ Replaces the original `600_incomplete-rosters.md` (deleted). Split into focused 
 3. **Option C removed** — no rotating sit-outs
 4. **One non-standard bottom court** — 3 leftovers → 3p court, 1 leftover → 5p court, 2 leftovers → 6p court
 5. **Physical vs virtual courts** — support tournaments where N virtual courts > M physical courts
-6. **Per-round override** — leftover strategy configurable per tournament + per round
+6. **Include/exclude decision** — organizer can exclude leftovers before starting tournament
 
 ## Related Specs
 

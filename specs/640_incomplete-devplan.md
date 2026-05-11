@@ -13,7 +13,7 @@ Extend KoB Tracker to support 8-64 players (currently only 16/32). Implement rec
 | Option C: Rotating sit-outs | **Removed** — one non-standard bottom court for leftovers |
 | Option E: Single cut to top 16 | Generalized to recursive splitting for any court count |
 | No physical/virtual court distinction | Physical vs virtual courts with UI support |
-| No per-round strategy override | Tournament default + per-round override for leftover handling |
+| No per-round strategy override | Include/exclude leftovers before starting tournament |
 | Preseed "not possible" for 3, 5, 6, 7 courts | Preseed works for all via recursive splitting |
 
 ## Implementation Phases
@@ -28,7 +28,7 @@ Write all redistribution algorithms as pure functions with comprehensive unit te
 **Functions to implement**:
 1. `redistributePreseedRecursive(courtResults, currentRound, totalRounds)` — recursive splitting
 2. `calculateRoundCount(courtCount, format)` — round count calculator
-3. `getLeftoverConfig(playerCount, strategy)` — court configuration dispatcher
+3. `getCourtConfiguration(playerCount)` — court configuration calculator (deterministic)
 4. Extend `redistributeLadder` for any court count (2-16)
 5. Extend `calculateCourtStandings` for 3p, 5p, 6p courts
 
@@ -40,7 +40,7 @@ Write all redistribution algorithms as pure functions with comprehensive unit te
 **Files to modify**: `src/lib/server/db/schema.ts`
 
 **Changes**:
-- `tournament` table: remove playerCount constraint, add `physicalCourtCount`, `leftoverStrategy`
+- `tournament` table: remove playerCount constraint, add `physicalCourtCount`
 - `courtRotation` table: add `courtSize`, `isWaiting`
 - `match` table: add `waitingPlayer1Id`, `waitingPlayer2Id` (nullable)
 - Generate and run Drizzle migration
@@ -50,7 +50,7 @@ Write all redistribution algorithms as pure functions with comprehensive unit te
 
 **Files to modify**:
 - `src/routes/tournament/create/+page.server.ts` — remove 16/32 restriction
-- `src/routes/tournament/create/+page.svelte` — add player count input (8-64), physical courts, leftover strategy
+- `src/routes/tournament/create/+page.svelte` — add physical courts input, show court configuration preview
 - `src/routes/tournament/[id]/players/+page.server.ts` — flexible player count validation
 - `src/routes/tournament/[id]/players/+page.svelte` — update UI for flexible count
 

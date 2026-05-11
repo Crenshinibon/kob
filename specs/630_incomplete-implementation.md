@@ -27,12 +27,14 @@
 4. **Round count calculator** (`calculateRoundCount`)
    - Input: number of courts, format type
    - Output: number of rounds needed
-   - For preseed: `floor(log2(N)) + 1` plus remainder handling
+   - For preseed: `floor(log2(N-1)) + 2` for N >= 2
    - For random seed: configurable (1-10)
 
-5. **Leftover strategy dispatcher**
-   - Input: player count, chosen strategy (mixed/parallel)
-   - Output: court configuration (how many 4p, 3p, 5p, 6p courts)
+5. **Court configuration calculator** (`getCourtConfiguration`)
+   - Input: player count
+   - Output: court configuration (how many 4p courts + bottom court type)
+   - Logic: `playerCount % 4` determines the bottom court (0=none, 1=5p, 2=6p, 3=3p)
+   - No strategy choice — it's deterministic
 
 **Testing**: Comprehensive unit tests for all functions (see Testing section below).
 
@@ -47,7 +49,6 @@ playerCount: integer('player_count').notNull()  // Remove default, accept 8-64
 
 // New columns:
 physicalCourtCount: integer('physical_court_count')  // Nullable, defaults to virtualCourtCount
-leftoverStrategy: text('leftover_strategy').default('mixed')  // 'mixed' | 'parallel'
 ```
 
 **Changes to `courtRotation` table**:
@@ -72,13 +73,14 @@ isWaiting: boolean('is_waiting').default(false)  // For virtual courts on break
 **Changes to `src/routes/tournament/[id]/players/+page.server.ts`**:
 - Remove `if (allPlayers.length !== maxPlayers)` exact match check
 - Allow starting with any player count 8-64
-- Calculate court configuration based on leftover strategy
+- Calculate court configuration from player count
 - Generate appropriate match assignments (3p, 4p, 5p, 6p courts)
 
 **Changes to tournament creation UI**:
-- Player count: dropdown or number input (8-64)
-- Physical courts: optional input (defaults to virtual court count)
-- Leftover strategy: dropdown (Mixed courts / Parallel games)
+- Physical courts: input (number of actual courts at venue)
+- Player input: paste names (random seed) or names + points (preseed)
+- System calculates court configuration from player count
+- Show court configuration preview before starting
 
 ### Phase 4: Match Generation for Variable Court Sizes
 
@@ -134,7 +136,7 @@ Match 4: A+E vs B+F (C,D wait)  — or similar rotation
 - Show court cards with variable player counts
 - Indicate court size (3p, 4p, 5p, 6p)
 - For virtual courts: show physical court mapping and "waiting" status
-- Leftover strategy override per round
+- Court configuration: system calculates from player count + physical courts
 
 **Court page** (`/court/[token]`):
 - Adapt layout for 3p, 5p, 6p courts
@@ -235,20 +237,23 @@ For each court count N, given N courts with known standings, verify the cascade 
 | `standings-5player` | 5 | 4 | 5-player parallel | Same formula, 5 rankings |
 | `standings-6player` | 6 | 4 | 6-player parallel | Same formula, 6 rankings |
 
-### Table: Leftover Strategy Dispatcher
+### Table: Court Configuration Calculator
 
-| Test Name | Players | Strategy | Expected 4p Courts | Expected 3p Courts | Expected 5p Courts | Expected 6p Courts |
-|-----------|---------|----------|-------------------|-------------------|-------------------|-------------------|
-| `leftover-9-mixed` | 9 | mixed | 1 | 1 | 0 | 0 |
-| `leftover-11-mixed` | 11 | mixed | 2 | 1 | 0 | 0 |
-| `leftover-13-mixed` | 13 | mixed | 2 | 1 | 0 | 0 |
-| `leftover-9-parallel` | 9 | parallel | 1 | 0 | 1 | 0 |
-| `leftover-10-parallel` | 10 | parallel | 1 | 0 | 0 | 1 |
-| `leftover-11-parallel` | 11 | parallel | 2 | 0 | 1 | 0 |
-| `leftover-31-mixed` | 31 | mixed | 7 | 1 | 0 | 0 |
-| `leftover-31-parallel` | 31 | parallel | 7 | 0 | 1 | 0 |
-| `leftover-33-mixed` | 33 | mixed | 8 | 1 | 0 | 0 |
-| `leftover-63-mixed` | 63 | mixed | 15 | 1 | 0 | 0 |
+| Test Name | Players | Expected 4p Courts | Expected Bottom Court |
+|-----------|---------|-------------------|----------------------|
+| `config-8p` | 8 | 2 | none |
+| `config-9p` | 9 | 1 | 5p (1 leftover) |
+| `config-10p` | 10 | 1 | 6p (2 leftovers) |
+| `config-11p` | 11 | 2 | 3p (3 leftovers) |
+| `config-12p` | 12 | 3 | none |
+| `config-13p` | 13 | 3 | 5p (1 leftover) |
+| `config-15p` | 15 | 3 | 3p (3 leftovers) |
+| `config-16p` | 16 | 4 | none |
+| `config-24p` | 24 | 6 | none |
+| `config-25p` | 25 | 6 | 5p (1 leftover) |
+| `config-27p` | 27 | 6 | 3p (3 leftovers) |
+| `config-32p` | 32 | 8 | none |
+| `config-64p` | 64 | 16 | none |
 
 ---
 
@@ -268,7 +273,7 @@ For each court count N, given N courts with known standings, verify the cascade 
 
 3. **Preseed with non-standard bottom court**: When a preseed tournament has a non-standard bottom court (3p/5p/6p), how does the recursive split handle it? Does it get lumped into the loser group, or treated specially?
 
-4. **Per-round strategy override**: How does the UI work? A dropdown per round on the tournament page? Or a separate "configure round" modal?
+4. **Per-round override**: How does the UI work for the exclude/include decision? A dropdown per round on the tournament page? Or a separate "configure round" modal?
 
 5. **Standings with variable court sizes**: The current standings logic assumes court 1 = places 1-4, court 2 = places 5-8, etc. With a non-standard bottom court (3p/5p/6p), the placement calculation needs adjustment. A 3-player court only produces 3 placements, not 4.
 
