@@ -11,6 +11,7 @@ Replaces the original `600_incomplete-rosters.md` (deleted). Split into focused 
 | `630_incomplete-implementation.md` | Implementation phases, unit testing strategy (~50 test cases), 12 open questions |
 | `640_incomplete-devplan.md` | Development plan summary: 7 phases, effort estimates (10-16 days), risks, out-of-scope |
 | `650_game-rules-and-duration.md` | Scoring modes (single-21, best-of-3-15), special court rules (3p/5p/6p), duration estimation, configurable timing |
+| `660_virtual-court-scheduling.md` | Shift scheduling, wait time forecasting, court reassignment, player-facing estimates |
 
 ## Key Decisions
 
