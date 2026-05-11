@@ -40,7 +40,7 @@
 
 ### Phase 2: Database Schema Updates
 
-**Goal**: Extend schema to support flexible player counts and leftover strategies.
+**Goal**: Extend schema to support flexible player counts and new court types.
 
 **Changes to `tournament` table**:
 ```typescript
@@ -58,7 +58,14 @@ courtSize: integer('court_size').default(4)  // 3, 4, 5, or 6
 isWaiting: boolean('is_waiting').default(false)  // For virtual courts on break
 ```
 
-**Migration**: Drizzle migration to add new columns.
+**New tables** (see Phase 4 for full schemas):
+- `match3Player` — for 3-player courts (2v1 format)
+- `match5Player` — for 5-player courts (parallel games)
+- `match6Player` — for 6-player courts (parallel games)
+
+Existing `match` table is unchanged (4-player courts only).
+
+**Migration**: Drizzle migration to add new columns and tables.
 
 ### Phase 3: Player Input Updates
 
@@ -93,40 +100,124 @@ Match 2: A+C vs B
 Match 3: B+C vs A
 ```
 
-**5-player court matches** (parallel games):
-```
-Match 1: A+B vs C+D (E waits)
-Match 2: A+B vs C+E (D waits)
-Match 3: A+B vs D+E (C waits)
-Match 4: A+C vs B+D (E waits)  — or similar rotation
-```
-*Exact rotation TBD — needs to ensure equal play time.*
+**5-player court matches** (2 runs × 2 parallel games = 4 games):
 
-**6-player court matches** (parallel games):
+Run 1: A+B fixed on side X, C fixed on side Y, D/E rotate every point.
 ```
-Match 1: A+B vs C+D (E,F wait)
-Match 2: A+B vs E+F (C,D wait)
-Match 3: A+C vs B+D (E,F wait)
-Match 4: A+E vs B+F (C,D wait)  — or similar rotation
+Game 1: A+B vs C+D (scored when D on court)
+Game 2: A+B vs C+E (scored when E on court)
 ```
-*Exact rotation TBD.*
 
-**Schema consideration**: The `match` table currently has exactly 4 player fields (2 per team). For 5/6-player courts, we need to track which players participated in each match. Options:
-- Add `participant3Id`, `participant4Id`, `participant5Id`, `participant6Id` to match table (sparse, nullable)
-- Create a `matchParticipant` join table
-- Keep 4 player fields but add a `waitingPlayer1Id`, `waitingPlayer2Id` field
+Run 2: D+E fixed on side X, B fixed on side Y, A/C rotate every point.
+```
+Game 3: D+E vs B+A (scored when A on court)
+Game 4: D+E vs B+C (scored when C on court)
+```
 
-**Recommendation**: Keep the existing 4 player fields for the active players in each match. Add `waitingPlayer1Id` and `waitingPlayer2Id` nullable fields to track who sat out each match.
+Roles randomized each round. One player plays 4 games, others play 3. Ranking by average points per game.
+
+**6-player court matches** (2 runs × 2 parallel games = 4 games):
+
+Run 1: A+B fixed on side X, C+D and E+F rotate every point.
+```
+Game 1: A+B vs C+D (scored when C+D on court)
+Game 2: A+B vs E+F (scored when E+F on court)
+```
+
+Run 2: C+D fixed on side X, A+B and E+F rotate every point.
+```
+Game 3: C+D vs A+B (scored when A+B on court)
+Game 4: C+D vs E+F (scored when E+F on court)
+```
+
+Roles randomized each round. Some players play 3, others play 2. Ranking by average points per game.
+
+**Schema**: Instead of reusing the existing `match` table (designed for 2v2), create separate tables per court type. This avoids if-cascades in all layers (DB queries, server logic, UI components).
+
+**Existing table** (unchanged):
+```typescript
+// match — for 4-player courts (2v2)
+{
+  id: serial('id').primaryKey(),
+  courtRotationId: integer('court_rotation_id').notNull(),
+  matchNumber: integer('match_number').notNull(),
+  teamAPlayer1Id: integer('team_a_player_1_id').notNull(),
+  teamAPlayer2Id: integer('team_a_player_2_id').notNull(),
+  teamBPlayer1Id: integer('team_b_player_1_id').notNull(),
+  teamBPlayer2Id: integer('team_b_player_2_id').notNull(),
+  teamAScore: integer('team_a_score'),
+  teamBScore: integer('team_b_score')
+}
+```
+
+**New table for 3-player courts**:
+```typescript
+// match3Player — 2v1 format, 3 matches per round
+{
+  id: serial('id').primaryKey(),
+  courtRotationId: integer('court_rotation_id').notNull(),
+  matchNumber: integer('match_number').notNull(),  // 1, 2, 3
+  teamOfTwoPlayer1Id: integer('team_of_two_player_1_id').notNull(),
+  teamOfTwoPlayer2Id: integer('team_of_two_player_2_id').notNull(),
+  soloPlayerId: integer('solo_player_id').notNull(),
+  teamOfTwoScore: integer('team_of_two_score'),
+  soloPlayerScore: integer('solo_player_score')
+}
+```
+
+**New table for 5-player courts**:
+```typescript
+// match5Player — parallel games, 4 games per round (2 runs × 2 games)
+{
+  id: serial('id').primaryKey(),
+  courtRotationId: integer('court_rotation_id').notNull(),
+  gameNumber: integer('game_number').notNull(),  // 1, 2, 3, 4
+  runNumber: integer('run_number').notNull(),    // 1 or 2
+  sideXPlayer1Id: integer('side_x_player_1_id').notNull(),  // fixed team
+  sideXPlayer2Id: integer('side_x_player_2_id').notNull(),
+  sideYFixedPlayerId: integer('side_y_fixed_player_id').notNull(),
+  sideYRotatingPlayerId: integer('side_y_rotating_player_id').notNull(),
+  sideXScore: integer('side_x_score'),
+  sideYScore: integer('side_y_score')
+}
+```
+
+**New table for 6-player courts**:
+```typescript
+// match6Player — parallel games, 4 games per round (2 runs × 2 games)
+{
+  id: serial('id').primaryKey(),
+  courtRotationId: integer('court_rotation_id').notNull(),
+  gameNumber: integer('game_number').notNull(),  // 1, 2, 3, 4
+  runNumber: integer('run_number').notNull(),    // 1 or 2
+  fixedTeamPlayer1Id: integer('fixed_team_player_1_id').notNull(),
+  fixedTeamPlayer2Id: integer('fixed_team_player_2_id').notNull(),
+  rotatingTeamPlayer1Id: integer('rotating_team_player_1_id').notNull(),
+  rotatingTeamPlayer2Id: integer('rotating_team_player_2_id').notNull(),
+  fixedTeamScore: integer('fixed_team_score'),
+  rotatingTeamScore: integer('rotating_team_score')
+}
+```
+
+**Benefits**:
+- Each table has exactly the fields needed — no nullable columns
+- Each court type has its own UI component — no conditional rendering
+- Each court type has its own score validation logic
+- Each court type has its own standings calculation
+- Clean separation, easy to extend if new court types are needed
+
+**Trade-off**: More tables and more code, but each piece is simpler and self-contained.
 
 ### Phase 5: Close Round with Variable Court Sizes
 
 **Goal**: Update `closeRound` action to handle non-4-player courts.
 
 **Changes to `src/routes/tournament/[id]/+page.server.ts`**:
-- `calculateCourtStandings()`: Already handles any player count (just iterates over playerIds)
+- `calculateCourtStandings()`: Existing for 4p. Create `calculateCourtStandings3p()`, `calculateCourtStandings5p()`, `calculateCourtStandings6p()`
 - `redistributePlayers()`: Use the new recursive preseed or generalized ladder
 - Match generation: use the appropriate match generator based on court size
 - Handle virtual court rotation (which physical courts are active)
+- Query the correct match table based on `courtRotation.courtSize`
 
 ### Phase 6: UI Updates
 
@@ -269,24 +360,20 @@ For each court count N, given N courts with known standings, verify the cascade 
 
 1. **Virtual court rotation**: Should the waiting rotation be random, or based on standings (lower-ranked players wait first)? Waiting first means less play time but also less fatigue.
 
-2. **5/6-player match rotation**: What is the exact match rotation for 5 and 6 player courts that ensures equal play time? Need to design and test this carefully.
+2. **Preseed with non-standard bottom court**: When a preseed tournament has a non-standard bottom court (3p/5p/6p), how does the recursive split handle it? Does it get lumped into the loser group, or treated specially?
 
-3. **Preseed with non-standard bottom court**: When a preseed tournament has a non-standard bottom court (3p/5p/6p), how does the recursive split handle it? Does it get lumped into the loser group, or treated specially?
+3. **Per-round override**: How does the UI work for the exclude/include decision? A dropdown per round on the tournament page? Or a separate "configure round" modal?
 
-4. **Per-round override**: How does the UI work for the exclude/include decision? A dropdown per round on the tournament page? Or a separate "configure round" modal?
+4. **Standings with variable court sizes**: The current standings logic assumes court 1 = places 1-4, court 2 = places 5-8, etc. With a non-standard bottom court (3p/5p/6p), the placement calculation needs adjustment. A 3-player court only produces 3 placements, not 4.
 
-5. **Standings with variable court sizes**: The current standings logic assumes court 1 = places 1-4, court 2 = places 5-8, etc. With a non-standard bottom court (3p/5p/6p), the placement calculation needs adjustment. A 3-player court only produces 3 placements, not 4.
+5. **Database migration**: How to handle existing tournaments (16/32 players) during migration? They should continue to work unchanged.
 
-6. **Database migration**: How to handle existing tournaments (16/32 players) during migration? They should continue to work unchanged.
+6. **Score validation for 5/6-player courts**: Currently validated at 21 points, win by 2. For 15-point parallel games, need separate validation rules.
 
-7. **Score validation for 5/6-player courts**: Currently validated at 21 points, win by 2. For 15-point parallel games, need separate validation rules.
+7. **Physical court mapping UI**: How to display which virtual court maps to which physical court? A simple mapping table during tournament setup?
 
-8. **Physical court mapping UI**: How to display which virtual court maps to which physical court? A simple mapping table during tournament setup?
+8. **Late arrivals / early departures**: With virtual courts, what happens if a player leaves mid-tournament? Do they get removed from the rotation, or does their spot stay empty?
 
-9. **Late arrivals / early departures**: With virtual courts, what happens if a player leaves mid-tournament? Do they get removed from the rotation, or does their spot stay empty?
+9. **Tiebreaker for cut boundary (Option E generalized)**: When cutting between winner/loser groups, if two players have the same rank on different courts, how do we break the tie? Points → diff → playerId, but rank on court comes first.
 
-10. **Tiebreaker for cut boundary (Option E generalized)**: When cutting between winner/loser groups, if two players have the same rank on different courts, how do we break the tie? Points → diff → playerId, but rank on court comes first.
-
-11. **Match generation for 3-player courts**: The `match` table has 4 player fields. For 3-player courts, one team has only 1 player. Need to handle the "single player" team correctly in the schema and UI.
-
-12. **Consolation bracket for losers**: In the recursive preseed, the loser group plays their own mini-tournament. Should these be labeled as "consolation" in the UI, or just shown as lower courts?
+10. **Consolation bracket for losers**: In the recursive preseed, the loser group plays their own mini-tournament. Should these be labeled as "consolation" in the UI, or just shown as lower courts?
