@@ -365,7 +365,7 @@ For each court count N, given N courts with known standings, verify the cascade 
    - 5p court: 1st → 1st, 2nd → 2nd, 3rd → 3rd, 4th → 4th, 5th → 4th
    - 6p court: 1st → 1st, 2nd → 2nd, 3rd → 2nd, 4th → 3rd, 5th → 4th, 6th → 4th
 8. **Database migration**: No migration of existing tournaments. Clean up database on scheduled "no-tournament" dates with advance notification. Existing tournaments will be deleted by that date.
-9. **Score validation for 5/6-player courts**: 15 points (inferred from 4p rules). Win by 2 stays.
+9. **Score validation for 5/6-player courts**: 1 set to 15, win by 2. No cap.
 10. **Physical court mapping**: Each shift (active courts per round) has a mapping table showing which virtual court maps to which physical court. More flexible than a single tournament-level mapping.
 11. **Player retirement**: Already have retirement concept (see `670_player-retirement.md`). Org can retire players mid-tournament, next best player takes their spot, all players "shift around."
 12. **Tiebreaker across court sizes**: Compare by average points per game first (normalizes for 3p/4p/5p/6p courts), then total points, then diff, then playerId.

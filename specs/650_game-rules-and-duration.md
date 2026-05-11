@@ -35,6 +35,7 @@ The organizer chooses a scoring mode when creating the tournament:
 - Best of 3: first to win 2 games
 - Each player's points = sum of their team's scores across all games they played
 - If a match ends 2-0, the 3rd game is not played (no points for game 3)
+- All sets (including 3rd) play to 15
 
 ### Configurable Parameters
 
@@ -62,24 +63,22 @@ The organizer chooses a scoring mode when creating the tournament:
 
 #### 5-Player Courts (Parallel Games, Rotating Every Point)
 
-- **Inferred from 4p rules**: If 4p uses 21 points, 5p uses 15 points
+- **1 set to 15 points**, win by 2
 - **4 games per round** — 2 runs × 2 parallel games
 - **One full court**, continuous play, rotating player swaps after every point
 - **Run 1**: Fixed team on side X, one fixed player on side Y, two players rotate
 - **Run 2**: Different fixed team on side X, different fixed player on side Y, different players rotate
 - **Game count**: One player plays 4 games, others play 3 (role randomized across rounds)
 - **Ranking**: Average points per game (normalized), then total points, then diff, then playerId
-- **Override**: Organizer can set custom point target (default: 15)
 
 #### 6-Player Courts (Parallel Games, Rotating Every Point)
 
-- **Inferred from 4p rules**: If 4p uses 21 points, 6p uses 15 points
+- **1 set to 15 points**, win by 2
 - **4 games per round** — 2 runs × 2 parallel games
 - **One full court**, continuous play, rotating pair swaps after every point
 - **Setup**: Fixed team on side X, two pairs rotate on side Y
 - **Game count**: Some players play 3, others play 2 (role randomized across rounds)
 - **Ranking**: Average points per game (normalized), then total points, then diff, then playerId
-- **Override**: Organizer can set custom point target (default: 15)
 
 ### Rule Inference Table
 
@@ -91,7 +90,7 @@ The organizer chooses a scoring mode when creating the tournament:
 | 3 games/round | 3 games/round | 4 parallel games/round | 4 parallel games/round |
 | Ranking: total pts | Ranking: total pts | Ranking: avg pts/game | Ranking: avg pts/game |
 
-**Rationale for 5p/6p defaults**: Two parallel game tracks (15pt each), interleaved by rotating players every point, done in 2 runs = 4 games total. Ranking by average points per game normalizes for unequal game counts. Total duration ≈ 3 games at 21 points on a standard court.
+**Rationale for 5p/6p defaults**: Two parallel game tracks (15pt each), interleaved by rotating players every point, done in 2 runs = 4 games total. Not truly parallel — approximately same duration as a single game + 10% overhead for player switches. Ranking by average points per game normalizes for unequal game counts.
 
 ---
 
@@ -111,7 +110,7 @@ Total Duration = (Rounds × Round Duration) + ((Rounds - 1) × Transition Time) 
 |-----------|-------------|---------|
 | **Setup Time** | Initial court setup, player briefing | 15 min |
 | **Round Duration** | Time for one round (all courts play) | Calculated |
-| **Transition Time** | Score finalization, redistribution, new court assignments | 5 min |
+| **Transition Time** | Score finalization, redistribution, new court assignments, player break | 10 min |
 
 ### Round Duration Calculation
 
@@ -123,13 +122,15 @@ Round Duration = max(Court Duration for each active court)
 
 #### Court Duration by Type
 
-| Court Type | Games | Points/Game | Est. Rally Duration | Est. Court Duration |
-|------------|-------|-------------|--------------------|--------------------|
-| 4p (21pt) | 3 | 21 | ~45 sec/rally | ~45 min |
-| 4p (15pt BO3) | up to 3×3=9 | 15 | ~40 sec/rally | ~55 min |
-| 3p (21pt) | 3 | 21 | ~30 sec/rally | ~35 min |
-| 5p (15pt) | 4 | 15 | ~40 sec/rally | ~40 min |
-| 6p (15pt) | 4 | 15 | ~40 sec/rally | ~40 min |
+| Court Type | Games | Points/Game | Est. Court Duration |
+|------------|-------|-------------|---------------------|
+| 4p (21pt) | 3 | 21 | ~45 min |
+| 4p (15pt BO3) | up to 3×3=9 | 15 | ~55 min |
+| 3p (21pt) | 3 | 21 | ~35 min |
+| 5p (15pt) | 4 | 15 | ~45 min |
+| 6p (15pt) | 4 | 15 | ~45 min |
+
+**Note on 5p/6p courts**: The parallel games are not truly parallel — they alternate points with player switches. Duration is approximately the same as a single game with the same total points, plus ~10% overhead for switching players in and out.
 
 **Rally duration estimates** are configurable defaults. The system uses:
 - Average rallies per game ≈ pointsToWin × 1.5 (accounts for side-outs)
@@ -156,8 +157,8 @@ Where:
 | 4p (21pt single set) | 45 min | 3 games, ~15 min each |
 | 4p (15pt best-of-3) | 55 min | Up to 9 games |
 | 3p (21pt) | 35 min | 3 games, faster rallies (2v1) |
-| 5p (15pt parallel) | 40 min | 4 games, rotation overhead |
-| 6p (15pt parallel) | 40 min | 4 games, rotation overhead |
+| 5p (15pt) | 45 min | 4 games + 10% switching overhead |
+| 6p (15pt) | 45 min | 4 games + 10% switching overhead |
 
 ### Virtual Court Scheduling
 
@@ -171,8 +172,8 @@ Round Duration = Shifts per round × Max Court Duration per Shift + (Shifts - 1)
 **Example**: 8 virtual courts, 4 physical courts
 - 2 shifts per round
 - Each shift: 4 courts play simultaneously, max 45 min
-- Shift transition: 5 min
-- Round Duration = 2 × 45 + 1 × 5 = 95 minutes
+- Shift transition: 10 min
+- Round Duration = 2 × 45 + 1 × 10 = 100 minutes
 
 ### Total Tournament Duration
 
@@ -182,26 +183,26 @@ Total = Setup + (Rounds × Round Duration) + ((Rounds - 1) × Transition) + Buff
 
 | Tournament Size | Courts | Rounds | Est. Round Duration | Total (with transitions) |
 |-----------------|--------|--------|--------------------|-----------------------|
-| 16p (4 courts) | 4 | 3 | 45 min | ~2h 30min |
-| 32p (8 courts) | 8 | 4 | 45 min | ~3h 30min |
-| 24p (6 courts) | 6 | 4 | 45 min | ~3h 15min |
-| 16p (2 physical, 4 virtual) | 2×2 shifts | 3 | 95 min | ~5h 15min |
-| 20p (5 courts, preseed) | 5 | 4 | 45 min | ~3h 15min |
-| 8p (2 courts) | 2 | 2 | 45 min | ~1h 35min |
+| 16p (4 courts) | 4 | 3 | 45 min | ~2h 45min |
+| 32p (8 courts) | 8 | 4 | 45 min | ~3h 45min |
+| 24p (6 courts) | 6 | 4 | 45 min | ~3h 30min |
+| 16p (2 physical, 4 virtual) | 2×2 shifts | 3 | 100 min | ~5h 40min |
+| 20p (5 courts, preseed) | 5 | 4 | 45 min | ~3h 30min |
+| 8p (2 courts) | 2 | 2 | 45 min | ~1h 45min |
 
 ### UI: Duration Estimate Display
 
 On tournament creation page, show:
 
 ```
-Estimated Duration: ~3h 15min
+Estimated Duration: ~3h 30min
 ├─ Setup: 15 min
 ├─ Round 1: 45 min
-├─ Transition: 5 min
+├─ Transition: 10 min
 ├─ Round 2: 45 min
-├─ Transition: 5 min
+├─ Transition: 10 min
 ├─ Round 3: 45 min
-├─ Transition: 5 min
+├─ Transition: 10 min
 ├─ Round 4: 45 min
 └─ Buffer: 15 min
 
@@ -215,10 +216,10 @@ The estimate updates live as the organizer changes settings.
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `setupTimeMinutes` | 15 | Time before first round |
-| `transitionTimeMinutes` | 5 | Time between rounds |
+| `transitionTimeMinutes` | 10 | Time between rounds (score finalization, redistribution, player break) |
 | `avgRallyDurationSeconds` | 35 | Average rally length |
 | `timeBetweenRalliesSeconds` | 8 | Serve setup time |
-| `timeBetweenMatchesMinutes` | 3 | Score recording, rotation |
+| `timeBetweenMatchesMinutes` | 3 | Score recording, team rotation |
 | `bufferPercent` | 10 | Extra time buffer (%) |
 
 Organizers can adjust these for their venue/player skill level.
@@ -267,10 +268,10 @@ For advanced organizers who want different rules per court size:
 
 ---
 
-## Open Questions
+## Decisions (Previously Open Questions)
 
-1. **Best-of-3 scoring**: Should the 3rd set always be to 15, or should it be configurable separately (e.g., 3rd set to 11)?
-2. **Duration by skill level**: Should we offer "beginner / intermediate / advanced" presets that adjust rally duration estimates?
-3. **Break time**: Should the estimate include optional player break time between rounds (e.g., 10 min every 2 rounds)?
-4. **Parallel game timing**: For 5/6p courts, does the round duration equal the time for 4 sequential games, or is it shorter because 2 games run in parallel? Need to clarify: are the 4 games truly parallel (2 at a time) or sequential?
-5. **Score validation per mode**: 5/6p courts use 15 points (inferred from 4p rules). Win by 2 stays. 3p courts use same rules as 4p courts.
+1. **Best-of-3 scoring**: All sets (including 3rd) play to 15.
+2. **Duration by skill level**: No presets. Use defaults, organizers can adjust manually.
+3. **Break time**: 10 min transition between rounds (includes score finalization, redistribution, player break).
+4. **Parallel game timing**: Not truly parallel. ~Same as single game + 10% overhead for player switches.
+5. **Score validation**: 5/6p courts play 1 set to 15, win by 2. 3p courts use same rules as 4p courts.
