@@ -180,7 +180,7 @@ After each round, redistribute using the standard logic (vertical seeding or lad
 - After Round 1: 25 players across 7 courts
 - Redistribute: vertical seeding cascade
   - C1-C6: Top 24 players (4 each)
-  - C7: Last 1 player → stays on 5-player court with new partners
+  - C7: Last 1 player stays on 5-player court, gets the worst 4 players from the other courts as new partners
 
 **Key principle**: The remainder follows you. After each redistribution, the bottom court is non-standard. Players on the bottom court play by different rules but still compete for ranking.
 
@@ -265,7 +265,7 @@ A-D play 3 games each, E-F play 2 each. Within each rotating pair (C+D, E+F, A+B
 
 ### Role Assignment Randomization
 
-Before each round, the system randomly assigns roles:
+Before each round, the system randomly assigns roles using a seeded PRNG (based on tournament ID + round number for reproducibility):
 
 **5 players:**
 - Which player is fixed on side Y in both runs (plays 4 games)
@@ -277,11 +277,14 @@ Before each round, the system randomly assigns roles:
 - Which pair is fixed on side X in Run 2 (plays 3 games)
 - The remaining pair rotates in both runs (plays 2 games)
 
-Across tournament rounds, roles rotate so no player is stuck with fewer games.
+**Algorithm**: Shuffle the player list using the seeded PRNG, then assign roles in order. This ensures:
+- Reproducibility (same tournament + same round = same assignment)
+- Fairness across rounds (different seed each round)
+- No player is stuck with fewer games over the tournament
 
 ### Scoring
 
-Since players play different numbers of games, use **average points per game** for ranking:
+Since players play different numbers of games, use **average points per round** for ranking:
 
 ```
 Player ranking = totalPoints / gamesPlayed
@@ -307,9 +310,9 @@ Tiebreaker: if averages are equal, use total points (more games = more data), th
 ### Competitive Integrity
 
 - **Medium-High**. Everyone plays. Timing matches standard courts.
-- **5 players**: One player plays 4 games, others play 3. Mitigated by role randomization across rounds and average-per-game ranking.
-- **6 players**: Some players play 3 games, others play 2. Mitigated by role randomization across rounds and average-per-game ranking.
-- **Ranking**: By average points per game (normalized), then total points (tiebreaker), then diff, then playerId.
+- **5 players**: One player plays 4 games, others play 3. Mitigated by role randomization across rounds and average-per-round ranking.
+- **6 players**: Some players play 3 games, others play 2. Mitigated by role randomization across rounds and average-per-round ranking.
+- **Ranking**: By average points per round (normalized), then total points (tiebreaker), then diff, then playerId.
 
 ---
 

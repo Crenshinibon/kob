@@ -63,22 +63,22 @@ The organizer chooses a scoring mode when creating the tournament:
 
 #### 5-Player Courts (Parallel Games, Rotating Every Point)
 
-- **1 set to 15 points**, win by 2
+- **1 set to 15 points** (default) or **1 set to 21 points** (organizer choice), win by 2
 - **4 games per round** — 2 runs × 2 parallel games
 - **One full court**, continuous play, rotating player swaps after every point
 - **Run 1**: Fixed team on side X, one fixed player on side Y, two players rotate
 - **Run 2**: Different fixed team on side X, different fixed player on side Y, different players rotate
 - **Game count**: One player plays 4 games, others play 3 (role randomized across rounds)
-- **Ranking**: Average points per game (normalized), then total points, then diff, then playerId
+- **Ranking**: Average points per round (normalized), then total points, then diff, then playerId
 
 #### 6-Player Courts (Parallel Games, Rotating Every Point)
 
-- **1 set to 15 points**, win by 2
+- **1 set to 15 points** (default) or **1 set to 21 points** (organizer choice), win by 2
 - **4 games per round** — 2 runs × 2 parallel games
 - **One full court**, continuous play, rotating pair swaps after every point
 - **Setup**: Fixed team on side X, two pairs rotate on side Y
 - **Game count**: Some players play 3, others play 2 (role randomized across rounds)
-- **Ranking**: Average points per game (normalized), then total points, then diff, then playerId
+- **Ranking**: Average points per round (normalized), then total points, then diff, then playerId
 
 ### Rule Inference Table
 
@@ -88,9 +88,9 @@ The organizer chooses a scoring mode when creating the tournament:
 | Best-of-3 to 15 | Best-of-3 to 15 | Single set to 15 | Single set to 15 |
 | Win by 2 | Win by 2 | Win by 2 | Win by 2 |
 | 3 games/round | 3 games/round | 4 parallel games/round | 4 parallel games/round |
-| Ranking: total pts | Ranking: total pts | Ranking: avg pts/game | Ranking: avg pts/game |
+| Ranking: total pts | Ranking: total pts | Ranking: avg pts/round | Ranking: avg pts/round |
 
-**Rationale for 5p/6p defaults**: Two parallel game tracks (15pt each), interleaved by rotating players every point, done in 2 runs = 4 games total. Not truly parallel — approximately same duration as a single game + 10% overhead for player switches. Ranking by average points per game normalizes for unequal game counts.
+**Rationale for 5p/6p defaults**: Two parallel game tracks (15pt each), interleaved by rotating players every point, done in 2 runs = 4 games total. Not truly parallel — approximately same duration as a single game + 10% overhead for player switches. Ranking by average points per round normalizes for unequal game counts.
 
 ---
 
@@ -220,7 +220,6 @@ The estimate updates live as the organizer changes settings.
 | `avgRallyDurationSeconds` | 35 | Average rally length |
 | `timeBetweenRalliesSeconds` | 8 | Serve setup time |
 | `timeBetweenMatchesMinutes` | 3 | Score recording, team rotation |
-| `bufferPercent` | 10 | Extra time buffer (%) |
 
 Organizers can adjust these for their venue/player skill level.
 

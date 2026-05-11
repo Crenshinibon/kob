@@ -56,12 +56,11 @@ After removing 1: 23 players → 5×4p + 1×3p = 6 courts
 After removing 2: 22 players → 5×4p + 1×2p? No — 2p not valid
 ```
 
-**2-player courts are not valid.** Minimum court size is 3 (2v1 format).
+**2-player courts are not valid.** If only 2 players remain, they join a 6-player court (with the 4 worst players from other courts). Minimum court size is 3 (2v1 format), but 6-player court is preferred for 2 remaining players.
 
 So for 22 players:
 - 5×4p = 20 players + 2 leftover
-- Options: 1×6p (Option D) or exclude 2 players
-- Default: include as 6-player court
+- Default: 1×6p court (2 leftover + 4 worst from other courts)
 
 ### Step 2: Apply Normal Redistribution
 
@@ -91,7 +90,7 @@ If 2+ players retire at once, apply the same logic:
 
 ### Retirement Drops Below 8 Players
 
-If retirements drop below 8 players mid-tournament, the tournament can still continue. The minimum is flexible — as long as there's at least 1 court (2+ players), the tournament continues. If only 4 players remain, they play on 1 court. If 3 remain, they play on a 3-player court. If 2 remain, they play a single match.
+If retirements drop below 8 players mid-tournament, the tournament can still continue. The minimum is flexible — as long as there's at least 1 court (3+ players), the tournament continues. If only 4 players remain, they play on 1 court. If 3 remain, they play on a 3-player court. If 2 remain, they join a 6-player court (with the 4 worst players from other courts).
 
 The 8-player minimum only applies at tournament start. Once running, the tournament adapts to however many players remain.
 
@@ -245,7 +244,8 @@ function calculateRetiredStanding(
   totalRounds: number,
   currentRound: number,
   format: 'preseed' | 'random-seed',
-  bracketRange: { min: number, max: number }  // for preseed: e.g., {min: 9, max: 16} for loser bracket
+  bracketRange: { min: number, max: number },  // for preseed
+  courtSize: number  // 3, 4, 5, or 6
 ): number {
   if (format === 'preseed') {
     // Worst place in current bracket
@@ -254,13 +254,27 @@ function calculateRetiredStanding(
     // Worst place if relegated every remaining round, capped at totalCourts
     const remainingRounds = totalRounds - currentRound;
     const worstCourt = Math.min(currentCourt + remainingRounds, totalCourts);
-    const playersPerCourt = 4;
-    return worstCourt * playersPerCourt;
+    
+    // The non-standard court is always the last court
+    // Final standing = position on court + 4 * (courts before it)
+    // For the last court: worst position = courtSize (3, 5, or 6)
+    // But we use 4 * (worstCourt - 1) + worst position on that court
+    const courtsBefore = worstCourt - 1;
+    const worstPositionOnCourt = (worstCourt === totalCourts && courtSize !== 4) ? courtSize : 4;
+    return courtsBefore * 4 + worstPositionOnCourt;
   }
 }
 ```
 
-**Bracket range for preseed**: Determined by the recursive splitting. After Round 1, the split determines which courts go to which bracket. The bracket range is fixed for the rest of the tournament.
+**Non-standard court rule**: The non-standard court (3p/5p/6p) is always the last court. Final standing = position on that court + 4 × (number of courts before it).
+
+**Example**: 6 courts (5 standard + 1 non-standard 6p at bottom)
+- Court 1: places 1-4
+- Court 2: places 5-8
+- Court 3: places 9-12
+- Court 4: places 13-16
+- Court 5: places 17-20
+- Court 6 (6p): 1st → 21, 2nd → 22, ..., 6th → 26
 
 ### Multiple Retirements
 
@@ -294,4 +308,4 @@ No changes needed. The existing court rotation system handles variable court siz
 1. **Forfeited matches**: Auto-forfeit 0-21.
 2. **Replacement timing**: Only before the tournament starts. No mid-tournament replacements.
 3. **Final round elimination**: The org should see which players are eliminated from the final round before it starts.
-4. **Tiebreaker for elimination**: Compare by average points per game first (normalizes across court sizes), then total points, then diff, then playerId.
+4. **Tiebreaker for elimination**: Compare by average points per round first (normalizes across court sizes), then total points, then diff, then playerId.

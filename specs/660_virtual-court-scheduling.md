@@ -72,7 +72,7 @@ Est. Wait = (Courts Ahead × Avg Court Duration) + Transition Overhead
 Where:
 - `Courts Ahead` = number of virtual courts still waiting before yours
 - `Avg Court Duration` = calculated from game rules (see `650_game-rules-and-duration.md`)
-- `Transition Overhead` = 5 min per physical court reassignment
+- `Transition Overhead` = 10 min per physical court reassignment
 
 ### Forecast Limitations
 
@@ -143,7 +143,7 @@ Round 2 Progress: 2/8 courts complete
 
 ### Court Status Tracking
 
-Add status to `courtRotation`:
+Add fields to `courtRotation`:
 
 ```typescript
 status: text('status').default('waiting')  // 'waiting' | 'active' | 'completed'
@@ -152,6 +152,8 @@ completedAt: timestamp('completed_at')
 physicalCourtNumber: integer('physical_court_number')  // which physical court it's on
 gamesCompleted: integer('games_completed').default(0)  // 0/3, 1/3, 2/3, 3/3 for 4p courts
 ```
+
+The `physicalCourtNumber` field stores the mapping from virtual court to physical court. When a virtual court is assigned to a physical court (at round start or reassignment), this field is updated.
 
 The `gamesCompleted` counter updates each time a match score is saved. This is the only real-time data we have — no live scores during games.
 

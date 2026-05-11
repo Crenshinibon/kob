@@ -114,7 +114,7 @@ Game 3: D+E vs B+A (scored when A on court)
 Game 4: D+E vs B+C (scored when C on court)
 ```
 
-Roles randomized each round. One player plays 4 games, others play 3. Ranking by average points per game.
+Roles randomized each round. One player plays 4 games, others play 3. Ranking by average points per round.
 
 **6-player court matches** (2 runs × 2 parallel games = 4 games):
 
@@ -130,7 +130,7 @@ Game 3: C+D vs A+B (scored when A+B on court)
 Game 4: C+D vs E+F (scored when E+F on court)
 ```
 
-Roles randomized each round. Some players play 3, others play 2. Ranking by average points per game.
+Roles randomized each round. Some players play 3, others play 2. Ranking by average points per round.
 
 **Schema**: Instead of reusing the existing `match` table (designed for 2v2), create separate tables per court type. This avoids if-cascades in all layers (DB queries, server logic, UI components).
 
@@ -335,8 +335,8 @@ For each court count N, given N courts with known standings, verify the cascade 
 | Test Name | Players | Expected 4p Courts | Expected Bottom Court |
 |-----------|---------|-------------------|----------------------|
 | `config-8p` | 8 | 2 | none |
-| `config-9p` | 9 | 1 | 5p (1 leftover) |
-| `config-10p` | 10 | 1 | 6p (2 leftovers) |
+| `config-9p` | 9 | 2 | 5p (1 leftover) |
+| `config-10p` | 10 | 2 | 6p (2 leftovers) |
 | `config-11p` | 11 | 2 | 3p (3 leftovers) |
 | `config-12p` | 12 | 3 | none |
 | `config-13p` | 13 | 3 | 5p (1 leftover) |
@@ -368,5 +368,5 @@ For each court count N, given N courts with known standings, verify the cascade 
 9. **Score validation for 5/6-player courts**: 1 set to 15, win by 2. No cap.
 10. **Physical court mapping**: Each shift (active courts per round) has a mapping table showing which virtual court maps to which physical court. More flexible than a single tournament-level mapping.
 11. **Player retirement**: Already have retirement concept (see `670_player-retirement.md`). Org can retire players mid-tournament, next best player takes their spot, all players "shift around."
-12. **Tiebreaker across court sizes**: Compare by average points per game first (normalizes for 3p/4p/5p/6p courts), then total points, then diff, then playerId.
+12. **Tiebreaker across court sizes**: Compare by average points per round first (normalizes for 3p/4p/5p/6p courts), then total points, then diff, then playerId.
 13. **Max achievable place**: Show players which final place they can still achieve from their current position. E.g., being 3rd in round 1 of a 16p tournament allows max 9th final place.

@@ -42,7 +42,7 @@ Write all redistribution algorithms as pure functions with comprehensive unit te
 **Changes**:
 - `tournament` table: remove playerCount constraint, add `physicalCourtCount`
 - `courtRotation` table: add `courtSize`, `isWaiting`
-- `match` table: add `waitingPlayer1Id`, `waitingPlayer2Id` (nullable)
+- New tables: `match3Player`, `match5Player`, `match6Player` (see `630` for schemas)
 - Generate and run Drizzle migration
 
 ### Phase 3: Player Input & Tournament Creation
