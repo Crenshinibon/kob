@@ -221,22 +221,24 @@ Roles randomized each round. Some players play 3, others play 2. Ranking by aver
 
 ### Phase 6: UI Updates
 
-**Goal**: Display variable court sizes and virtual court mapping.
+**Goal**: Display variable court sizes, virtual court mapping, and max achievable places.
 
 **Tournament view** (`/tournament/[id]`):
 - Show court cards with variable player counts
 - Indicate court size (3p, 4p, 5p, 6p)
-- For virtual courts: show physical court mapping and "waiting" status
+- For virtual courts: show physical court mapping per shift
 - Court configuration: system calculates from player count + physical courts
+- Show max achievable final place for each player from current position
 
 **Court page** (`/court/[token]`):
 - Adapt layout for 3p, 5p, 6p courts
 - Show correct number of match cards
-- Adjust standings display
+- Adjust standings display (using cross-court-size normalization)
 
 **Standings page** (`/tournament/[id]/standings`):
-- Handle variable court sizes in final placement
-- A 1st place on a 3p court is still 1st place
+- Handle variable court sizes in final placement (3p → 1st/2nd/4th mapping)
+- Show max achievable place per player
+- Final round: loser courts first, top court last (dramatic finale)
 
 ---
 
@@ -355,25 +357,16 @@ For each court count N, given N courts with known standings, verify the cascade 
 1. ~~Should preseed be restricted to power-of-2 court counts?~~ **No.** Recursive splitting works for any court count.
 2. ~~Should we use rotating sit-outs?~~ **No.** Eliminated. One non-standard bottom court for leftovers instead.
 3. ~~Which redistribution strategy for mixed courts?~~ **One non-standard bottom court.** The lowest court always gets the leftovers.
-
-### Open
-
-1. **Virtual court rotation**: Should the waiting rotation be random, or based on standings (lower-ranked players wait first)? Waiting first means less play time but also less fatigue.
-
-2. **Preseed with non-standard bottom court**: When a preseed tournament has a non-standard bottom court (3p/5p/6p), how does the recursive split handle it? Does it get lumped into the loser group, or treated specially?
-
-3. **Per-round override**: How does the UI work for the exclude/include decision? A dropdown per round on the tournament page? Or a separate "configure round" modal?
-
-4. **Standings with variable court sizes**: The current standings logic assumes court 1 = places 1-4, court 2 = places 5-8, etc. With a non-standard bottom court (3p/5p/6p), the placement calculation needs adjustment. A 3-player court only produces 3 placements, not 4.
-
-5. **Database migration**: How to handle existing tournaments (16/32 players) during migration? They should continue to work unchanged.
-
-6. **Score validation for 5/6-player courts**: Currently validated at 21 points, win by 2. For 15-point parallel games, need separate validation rules.
-
-7. **Physical court mapping UI**: How to display which virtual court maps to which physical court? A simple mapping table during tournament setup?
-
-8. **Late arrivals / early departures**: With virtual courts, what happens if a player leaves mid-tournament? Do they get removed from the rotation, or does their spot stay empty?
-
-9. **Tiebreaker for cut boundary (Option E generalized)**: When cutting between winner/loser groups, if two players have the same rank on different courts, how do we break the tie? Points → diff → playerId, but rank on court comes first.
-
-10. **Consolation bracket for losers**: In the recursive preseed, the loser group plays their own mini-tournament. Should these be labeled as "consolation" in the UI, or just shown as lower courts?
+4. **Virtual court rotation order**: Start with lower courts first, work up. For the final round, run loser courts first, then winners — so the top court final is last with fresh players.
+5. **Preseed with non-standard bottom court**: Top courts filled to 4p. Non-standard court at the bottom with lowest-ranked players.
+6. **Per-round override**: The org can decide to do something different for non-standard courts each round, or manually decide who advances/stays in the top of a specific split.
+7. **Standings with variable court sizes**:
+   - 3p court: 1st → 1st, 2nd → 2nd, 3rd → 4th
+   - 5p court: 1st → 1st, 2nd → 2nd, 3rd → 3rd, 4th → 4th, 5th → 4th
+   - 6p court: 1st → 1st, 2nd → 2nd, 3rd → 2nd, 4th → 3rd, 5th → 4th, 6th → 4th
+8. **Database migration**: No migration of existing tournaments. Clean up database on scheduled "no-tournament" dates with advance notification. Existing tournaments will be deleted by that date.
+9. **Score validation for 5/6-player courts**: 15 points (inferred from 4p rules). Win by 2 stays.
+10. **Physical court mapping**: Each shift (active courts per round) has a mapping table showing which virtual court maps to which physical court. More flexible than a single tournament-level mapping.
+11. **Player retirement**: Already have retirement concept (see `670_player-retirement.md`). Org can retire players mid-tournament, next best player takes their spot, all players "shift around."
+12. **Tiebreaker across court sizes**: Compare by average points per game first (normalizes for 3p/4p/5p/6p courts), then total points, then diff, then playerId.
+13. **Max achievable place**: Show players which final place they can still achieve from their current position. E.g., being 3rd in round 1 of a 16p tournament allows max 9th final place.
