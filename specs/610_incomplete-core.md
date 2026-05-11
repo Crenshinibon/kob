@@ -172,10 +172,11 @@ The player count field is removed from tournament creation. The system calculate
 ### Exclusion Rules
 
 - Organizer can only exclude players **before starting the tournament** (not mid-tournament)
-- Excluded players are marked as "alternates" — they can replace a dropout
-- The system suggests exclusion based on seed points (lowest-ranked players suggested first)
+- Excluded players are informed before the tournament starts — they are not present at the venue
+- The system suggests exclusion based on **input order** (which is usually registration date), last entered players suggested first
 - Organizer can override and manually select who to exclude
 - Excluded players are NOT charged entry fee (organizer's responsibility)
+- Excluded players do NOT appear on the standings page
 
 ### Per-Round Override (Advanced)
 
@@ -210,11 +211,11 @@ Round 2 — 8 virtual courts, 4 physical courts
 │   └─ VC8: 3 players (2v1)
 ```
 
-## Open Questions
+## Decisions (Previously Open Questions)
 
-1. For virtual courts: should the waiting rotation be random, or based on standings (lower-ranked players wait first)?
-2. Should we support "ghost players" (organizers/volunteers) to fill spots and reach a multiple of 4?
-3. When excluding players, should the system auto-suggest based on seed points, or let the organizer choose freely?
-4. Should excluded players (alternates) be visible on the standings page with an "alternate" label?
+1. **Virtual court rotation**: Top courts get priority per round. Lower-ranked players wait first.
+2. **Ghost players**: No. Never. Ghost players don't make sense in beach volleyball.
+3. **Exclusion suggestion order**: Based on input order (usually registration date). Last entered players suggested first. Organizer can override.
+4. **Excluded player visibility**: Excluded players are informed before the tournament starts and will not be there. They do not appear on standings.
 
 **Player retirement during tournament**: See `670_player-retirement.md` for handling players leaving mid-tournament, redistribution after retirement, and final round elimination rules.
