@@ -221,45 +221,81 @@ After Round 1, redistribute as many players as possible to 4-player courts. The 
 
 ---
 
-## Option D: 5/6-Player Court (Parallel Games)
+## Option D: 5/6-Player Court (Parallel Games, Rotating Every Point)
 
-For 1-2 leftover players: run parallel 2v2 games on a single court with rotating players.
+For 1-2 leftover players: one full court with two parallel game tracks. The rotating player swaps after every point, and each swap feeds into a separate game score.
 
 ### How It Works
 
 **5 players (A, B, C, D, E):**
-- The court hosts 2 parallel 2v2 games simultaneously (splitting the full court into two halves).
-- At any time, 4 players are actively playing and 1 player waits on the sideline.
-- 3 players have fixed positions (e.g., A, B, C). The 4th active spot is shared by D and E, who rotate in/out.
-- **4 games per round** (not 3). Each game played to **15 points** (not 21).
-- The reduced point target compensates for the extra game, keeping total round duration similar.
+
+Setup: Players A and B on one side (fixed team). Player C on the other side (fixed). Players D and E are on the same side as C, rotating in/out after every point.
+
+The court runs **two parallel game tracks** simultaneously:
+
+| Track | Team 1 | Team 2 | Scoring |
+|-------|--------|--------|---------|
+| Game A | A + B | C + D | Points scored when D is on court |
+| Game B | A + B | C + E | Points scored when E is on court |
+
+**Rotation**: After every point, D and E swap. Point 1 → D plays (feeds Game A). Point 2 → E plays (feeds Game B). Point 3 → D plays (feeds Game A). And so on.
+
+Both games play to **15 points** each. Since they're interleaved, total play is ~30 points. This is done **twice** for a total of **4 games** per round.
 
 **6 players (A, B, C, D, E, F):**
-- The court hosts 2 parallel 2v2 games simultaneously.
-- At any time, 4 players are actively playing and 2 players wait.
-- 2 players are fixed (e.g., A, B). The opposing side rotates between pairs (C+D) and (E+F).
-- **4 games per round**, each to **15 points**.
-- Over the 4 games, everyone plays equal time.
 
-**Scoring**: Each player gets points equal to their team's score in the games they participated in.
+Setup: Players A and B on one side (fixed team). Players C+D are one pair, E+F are another pair. They rotate after every point.
+
+| Track | Team 1 | Team 2 | Scoring |
+|-------|--------|--------|---------|
+| Game A | A + B | C + D | Points scored when C+D are on court |
+| Game B | A + B | E + F | Points scored when E+F are on court |
+
+**Rotation**: After every point, the pair swaps. Point 1 → C+D play (feeds Game A). Point 2 → E+F play (feeds Game B). And so on.
+
+Both games play to **15 points** each. Done **twice** = **4 games** per round.
+
+### Pairing Randomization
+
+Since we cannot play all possible team combinations, the initial pairing is **randomized** before each round. The system randomly assigns:
+- Which 2 players are the fixed team (A+B)
+- Which player is the fixed opponent (C) for 5p
+- Which pairs rotate (C+D vs E+F) for 6p
+
+This ensures fairness across rounds — different players get the fixed/rotating roles.
+
+### Scoring
+
+Each player gets points equal to their team's score in the game tracks they participated in. Example for 5 players:
+
+| Player | Game A (with D) | Game B (with E) | Total |
+|--------|-----------------|-----------------|-------|
+| A | 15 | 12 | 27 |
+| B | 15 | 12 | 27 |
+| C | 13 | 10 | 23 |
+| D | 13 | — | 13 |
+| E | — | 10 | 10 |
+
+Players D and E only contribute to one game track each. Their total reflects only their track's score.
 
 ### When to Use
 
-Option D is the preferred strategy for handling 1-2 leftover players because:
-- Everyone plays (no sit-outs)
-- Timing matches standard courts
-- The 15-point games keep total round duration similar
-- Players get a different but equivalent experience
+Option D is the automatic result when there are 1-2 leftover players:
+- 1 leftover → 5-player court
+- 2 leftover → 6-player court
+
+No organizer decision needed — it's determined by `playerCount % 4`.
 
 ### Timing Impact
 
 - **Same as standard** (~45-60 min).
 - 4 games x 15 points ≈ 3 games x 21 points in duration.
-- The parallel format means 2 games run at once, but the total ball-in-play time is calibrated to match standard courts.
+- One full court, continuous play, just alternating players.
 
 ### Competitive Integrity
 
-- **Medium-High**. Everyone plays equal time. Timing matches standard courts. The only asymmetry is that 5/6-player courts use 15-point games instead of 21, but this is applied uniformly.
+- **Medium-High**. Everyone plays. Timing matches standard courts.
+- **Asymmetry**: Players on the rotating side (D/E or E/F) only contribute to one game track. This is offset by the randomization of roles across rounds.
 - **Ranking**: Players are ranked 1st through 5th (or 6th) on their court by total points, then diff, then playerId — same formula as 4-player courts.
 
 ---

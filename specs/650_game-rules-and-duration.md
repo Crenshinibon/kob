@@ -62,20 +62,36 @@ The organizer chooses a scoring mode when creating the tournament:
   - Match 3: B+C vs A
 - The solo player uses all 3 team touches themselves
 
-#### 5-Player Courts (Parallel Games)
+#### 5-Player Courts (Parallel Games, Rotating Every Point)
 
 - **Inferred from 4p rules**: If 4p uses 21 points, 5p uses 15 points
-- **4 matches per round** (not 3) to compensate for shorter games
-- **Parallel format**: 2 games run simultaneously on split court
-- **Rotation**: 3 fixed players, 2 rotating in/out
+- **4 games per round** (not 3) — two parallel game tracks, done twice
+- **One full court**, continuous play, rotating player swaps after every point
+- **Setup**: 2 fixed players (team A+B), 1 fixed opponent (C), 2 rotating (D+E)
+- **Game tracks**: Game A = 1+2 vs 3+D (scored when D is on), Game B = 1+2 vs 3+E (scored when E is on)
+- **Both tracks play to 15 points**, interleaved by alternating D/E every point
+- **Pairing randomization**: Roles randomized each round
 - **Override**: Organizer can set custom point target (default: 15)
 
-#### 6-Player Courts (Parallel Games)
+#### 6-Player Courts (Parallel Games, Rotating Every Point)
 
 - **Inferred from 4p rules**: If 4p uses 21 points, 6p uses 15 points
-- **4 matches per round** (not 3)
-- **Parallel format**: 2 games run simultaneously
-- **Rotation**: 2 fixed players, 4 rotating in pairs
+- **4 games per round** (not 3) — two parallel game tracks, done twice
+- **One full court**, continuous play, rotating pair swaps after every point
+- **Setup**: 2 fixed players (team A+B), 2 rotating pairs (C+D and E+F)
+- **Game tracks**: Game A = 1+2 vs C+D (scored when C+D on), Game B = 1+2 vs E+F (scored when E+F on)
+- **Both tracks play to 15 points**, interleaved by alternating pairs every point
+- **Pairing randomization**: Roles randomized each round
+- **Override**: Organizer can set custom point target (default: 15)
+
+#### 6-Player Courts (Rotating Players)
+
+- **Inferred from 4p rules**: If 4p uses 21 points, 6p uses 15 points
+- **4 games per round** (not 3)
+- **One full court**, no split — rotating player system
+- **Setup**: 2 fixed players (team), 2 pairs rotating every point
+- **Games**: 1+2 vs 3+4, 1+2 vs 5+6, repeat = 4 games
+- **Pairing randomization**: Roles (fixed/rotating) are randomized each round
 - **Override**: Organizer can set custom point target (default: 15)
 
 ### Rule Inference Table
@@ -86,9 +102,9 @@ The organizer chooses a scoring mode when creating the tournament:
 | Best-of-3 to 15 | Best-of-3 to 15 | Single set to 15 | Single set to 15 |
 | Win by 2 | Win by 2 | Win by 2 | Win by 2 |
 | Cap 25 | Cap 25 | Cap 19 | Cap 19 |
-| 3 matches/round | 3 matches/round | 4 matches/round | 4 matches/round |
+| 3 games/round | 3 games/round | 4 parallel games/round | 4 parallel games/round |
 
-**Rationale for 5p/6p defaults**: Parallel games run 2 simultaneous matches. With 4 games per round at 15 points, the total ball-in-play time approximates 3 games at 21 points on a standard court.
+**Rationale for 5p/6p defaults**: Two parallel game tracks (15pt each), interleaved by rotating players every point, done twice = 4 games total. Total duration ≈ 3 games at 21 points on a standard court.
 
 ---
 
@@ -120,10 +136,10 @@ Round Duration = max(Court Duration for each active court)
 
 #### Court Duration by Type
 
-| Court Type | Matches | Points/Match | Est. Rally Duration | Est. Court Duration |
-|------------|---------|--------------|--------------------|--------------------|
+| Court Type | Games | Points/Game | Est. Rally Duration | Est. Court Duration |
+|------------|-------|-------------|--------------------|--------------------|
 | 4p (21pt) | 3 | 21 | ~45 sec/rally | ~45 min |
-| 4p (15pt BO3) | up to 3×3=9 games | 15 | ~40 sec/rally | ~55 min |
+| 4p (15pt BO3) | up to 3×3=9 | 15 | ~40 sec/rally | ~55 min |
 | 3p (21pt) | 3 | 21 | ~30 sec/rally | ~35 min |
 | 5p (15pt) | 4 | 15 | ~40 sec/rally | ~40 min |
 | 6p (15pt) | 4 | 15 | ~40 sec/rally | ~40 min |
