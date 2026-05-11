@@ -55,11 +55,13 @@ Time 50min: PC4 finishes VC8
 When a physical court finishes and gets reassigned, update the forecast for all waiting players:
 
 ```
-VC5 players: "You're up next — ~5 min until your court starts"
-VC6 players: "1 court ahead of you — ~50 min wait"
-VC7 players: "2 courts ahead of you — ~1h 40min wait"
-VC8 players: "3 courts ahead of you — ~2h 30min wait"
+VC5 players: "You're up next"
+VC6 players: "1 court ahead of you"
+VC7 players: "2 courts ahead of you"
+VC8 players: "3 courts ahead of you"
 ```
+
+Time estimates are based on average court duration × queue position. No live score tracking — we only know when games are complete.
 
 ### Forecast Calculation
 
@@ -72,43 +74,41 @@ Where:
 - `Avg Court Duration` = calculated from game rules (see `650_game-rules-and-duration.md`)
 - `Transition Overhead` = 5 min per physical court reassignment
 
-### More Precise Forecast
+### Forecast Limitations
 
-When a specific physical court is playing, we can estimate its remaining time:
+We only know when games are **completed** (scores saved), not live progress. The forecast is based on:
+- Average court duration from game rules
+- Queue position (courts ahead)
 
-```
-VC5 Wait = PC2 Remaining Time + Transition
-VC6 Wait = min(PC1, PC3, PC4 Remaining) + PC2 Remaining + 2 × Transition
-...
-```
-
-But this is complex. **Simple approach**: use average court duration × queue position.
+No real-time score tracking — the progress indicator shows completed games only.
 
 ## UI Display
 
 ### Tournament View (Admin)
 
-Show the shift schedule with live status:
+Show the shift schedule with game progress (games completed, not percentages — we don't get live scores):
 
 ```
-┌─────────────────────────────────────────────┐
-│ Round 2 — Shift Schedule                     │
-│                                              │
-│ ● ACTIVE                                     │
-│   Physical Court 1 ← Virtual Court 1  [45%]  │
-│   Physical Court 2 ← Virtual Court 5  [12%]  │
-│   Physical Court 3 ← Virtual Court 3  [78%]  │
-│   Physical Court 4 ← Virtual Court 4  [62%]  │
-│                                              │
-│ ○ WAITING                                    │
-│   Virtual Court 6  — ~50 min                 │
-│   Virtual Court 7  — ~1h 40min               │
-│   Virtual Court 8  — ~2h 30min               │
-│                                              │
-│ ✓ COMPLETED                                  │
-│   Virtual Court 2  — finished at 14:32       │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│ Round 2 — Shift Schedule                         │
+│                                                  │
+│ ● ACTIVE                                         │
+│   Physical Court 1 ← Virtual Court 1  (2/3)      │
+│   Physical Court 2 ← Virtual Court 5  (0/3)      │
+│   Physical Court 3 ← Virtual Court 3  (3/3)      │
+│   Physical Court 4 ← Virtual Court 4  (1/3)      │
+│                                                  │
+│ ○ WAITING                                        │
+│   Virtual Court 6  — next                         │
+│   Virtual Court 7  — 1 court ahead                │
+│   Virtual Court 8  — 2 courts ahead               │
+│                                                  │
+│ ✓ COMPLETED                                      │
+│   Virtual Court 2  — finished at 14:32           │
+└─────────────────────────────────────────────────┘
 ```
+
+For 5p/6p courts, show 4 games: (0/4), (1/4), (2/4), (3/4), (4/4).
 
 ### Court Page (Players)
 
@@ -119,9 +119,6 @@ Players on waiting courts see their status:
 │ Virtual Court 6 — Round 2                    │
 │                                              │
 │ Status: WAITING                              │
-│                                              │
-│ Your estimated start time: ~14:45            │
-│ Wait time: ~50 minutes                       │
 │                                              │
 │ 1 court ahead of you (Virtual Court 5)       │
 │                                              │
@@ -137,9 +134,9 @@ Players on waiting courts see their status:
 
 ```
 Round 2 Progress: 2/8 courts complete
-├─ Active: 4 courts
-├─ Waiting: 2 courts (~1h 30min remaining)
-└─ Est. round completion: ~15:30
+├─ Active: 4 courts (showing games completed per court)
+├─ Waiting: 2 courts
+└─ Est. round completion: based on avg court duration × remaining courts
 ```
 
 ## Database Considerations
@@ -153,7 +150,10 @@ status: text('status').default('waiting')  // 'waiting' | 'active' | 'completed'
 startedAt: timestamp('started_at')
 completedAt: timestamp('completed_at')
 physicalCourtNumber: integer('physical_court_number')  // which physical court it's on
+gamesCompleted: integer('games_completed').default(0)  // 0/3, 1/3, 2/3, 3/3 for 4p courts
 ```
+
+The `gamesCompleted` counter updates each time a match score is saved. This is the only real-time data we have — no live scores during games.
 
 ### Forecast Cache
 
@@ -181,7 +181,7 @@ function assignNextVirtualCourt(
 
 function calculateWaitTime(
   virtualCourtNumber: number,
-  activeCourts: Map<number, { virtual: number, estimatedRemaining: number }>,
+  activeCourts: Map<number, { virtual: number, gamesCompleted: number, totalGames: number }>,
   waitingCourts: number[],
   avgCourtDuration: number,
   transitionTime: number
@@ -210,12 +210,12 @@ function calculateWaitTime(
 
 1. **All physical courts finish simultaneously**: Assign next N virtual courts in order
 2. **One court is very slow**: Other physical courts "leapfrog" — they take more virtual courts while the slow one is still playing
-3. **Player leaves mid-wait**: Their spot on the virtual court stays — they're still expected to play when their turn comes
-4. **Score entry delayed**: Forecast is based on actual completion time (when scores are saved), not estimated time
+3. **Player leaves mid-wait**: Reschedule everything. The court configuration may change (e.g., 5p → 4p, or different leftover handling). All waiting players get new assignments.
+4. **Score entry delayed**: Progress shows completed games only (0/3 → 1/3 → etc.). No live score tracking.
 
-## Open Questions
+## Decisions (Previously Open Questions)
 
-1. **Should players on waiting courts be able to see scores from active courts?** (Spectating while waiting)
-2. **Should the forecast account for historical court durations?** (e.g., Court 3 tends to be slower than Court 1)
-3. **Push notifications**: Should the system notify players when their court is "up next"? (Out of scope for now — no real-time)
-4. **Break activities**: Should the UI suggest break activities? (e.g., "You have ~1 hour — grab food, warm up")
+1. **Spectating while waiting**: Not possible — we don't have live scores.
+2. **Historical court durations**: No. Use average court duration for all courts.
+3. **Push notifications**: No. No real-time capabilities.
+4. **Break activities**: No. Keep UI simple.

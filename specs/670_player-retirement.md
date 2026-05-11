@@ -89,12 +89,11 @@ If 2+ players retire at once, apply the same logic:
 - 24 → 21 players: 5×4p + 1 leftover → 5×4p + 1×5p (Option D)
 - 24 → 20 players: 5×4p (clean)
 
-### Retirement Drops Below Minimum
+### Retirement Drops Below 8 Players
 
-If retirements drop below 8 players:
-- Tournament cannot continue (minimum 2 courts)
-- Show warning: "Only 7 players remain. Tournament cannot continue."
-- Options: cancel tournament or recruit replacements
+If retirements drop below 8 players mid-tournament, the tournament can still continue. The minimum is flexible — as long as there's at least 1 court (2+ players), the tournament continues. If only 4 players remain, they play on 1 court. If 3 remain, they play on a 3-player court. If 2 remain, they play a single match.
+
+The 8-player minimum only applies at tournament start. Once running, the tournament adapts to however many players remain.
 
 ### Retirement in Final Round
 
@@ -105,14 +104,12 @@ If the retirement happens between rounds (before final round starts), normal red
 ### Retired Player's Scores
 
 - **Completed rounds**: Scores are preserved in history
-- **Current round**: If round is in progress, retired player's matches are marked as forfeit
-- **Final standing**: Retired player gets standing based on their last completed round
+- **Current round**: If round is in progress, retired player's remaining matches are auto-forfeit 0-21
+- **Final standing**: Calculated using the bracket/relegation logic described below
 
-### Replacements (Future)
+### Replacements
 
-- Retired players can be replaced by "alternates" (players previously excluded due to leftovers)
-- Replacement must happen before the next round starts
-- Replacement inherits the retired player's court position (or is placed at the bottom — TBD)
+Replacements are only allowed before the tournament starts. Once the tournament is active, no mid-tournament replacements. Retired players are out for the rest of the tournament.
 
 ## Final Round Exception
 
@@ -182,6 +179,100 @@ For the final round:
 └─────────────────────────────────────────────────────────┘
 ```
 
+## Final Placement for Retired Players
+
+### Preseed Format
+
+A retired player gets the **worst place in their current bracket**. The bracket is determined by the recursive splitting.
+
+**Bracket determination**: After each round, the recursive split divides courts into winner and loser groups. Each group has a range of possible final places.
+
+**Example: 16-player preseed**
+- Round 1: 4 courts play
+- Round 2: Split → Winner courts (C1, C2 → places 1-8), Loser courts (C3, C4 → places 9-16)
+- A player who finished 3rd in Round 1 goes to the loser bracket (places 9-16)
+- If they retire: place 16 (worst in bracket)
+- If a second player in the same bracket retires: place 15
+- Order of retirement matters within the same bracket
+
+**Example: 32-player preseed**
+- Round 1: 8 courts play
+- Round 2: Split → Winner courts (C1-C4 → places 1-16), Loser courts (C5-C8 → places 17-32)
+- A player on Court 5 (loser bracket) retires: place 32
+- A player on Court 1 (winner bracket) retires: place 16
+
+**Example: 24-player preseed (recursive)**
+- Round 1: 6 courts play
+- Round 2: Split → Winner courts (C1-C4 → places 1-16), Loser courts (C5-C6 → places 17-24)
+- A player on Court 5 retires: place 24
+- A player on Court 1 retires: place 16
+
+### Multiple Retirements (Preseed)
+
+Within the same bracket, retirements are ordered. The first retiree gets the worst place, the second gets the second-worst, etc.
+
+**Example**: Two players retire from the loser bracket (places 9-16) in a 16-player preseed.
+- First retiree: place 16
+- Second retiree: place 15
+
+### Random Seed Format
+
+A retired player gets the **worst place possible if they were relegated every remaining round**, capped at the total number of courts in the tournament.
+
+**Example**: 24 players, random seed, 4 rounds, 6 courts. Player retires after Round 2 on Court 3.
+- If relegated every round: Court 3 → Court 4 → Court 5 → Court 6 (max 6 courts)
+- Court 6 determines places 21-24
+- Retired player gets place 24 (worst possible)
+
+**Example**: 16 players, random seed, 3 rounds, 4 courts. Player retires after Round 1 on Court 2.
+- If relegated every round: Court 2 → Court 3 → Court 4 (max 4 courts)
+- Court 4 determines places 13-16
+- Retired player gets place 16 (worst possible)
+
+**Example**: 32 players, random seed, 4 rounds, 8 courts. Player retires after Round 1 on Court 3.
+- If relegated every round: Court 3 → Court 4 → Court 5 → Court 6 (capped at 8 courts, but only 3 remaining rounds)
+- Court 6 determines places 21-24
+- Retired player gets place 24
+
+**Key rule**: `worstCourt = min(currentCourt + remainingRounds, totalCourts)`. A player cannot be relegated beyond the bottom court.
+
+### Calculation
+
+```
+function calculateRetiredStanding(
+  currentCourt: number,
+  totalCourts: number,
+  totalRounds: number,
+  currentRound: number,
+  format: 'preseed' | 'random-seed',
+  bracketRange: { min: number, max: number }  // for preseed: e.g., {min: 9, max: 16} for loser bracket
+): number {
+  if (format === 'preseed') {
+    // Worst place in current bracket
+    return bracketRange.max;
+  } else {
+    // Worst place if relegated every remaining round, capped at totalCourts
+    const remainingRounds = totalRounds - currentRound;
+    const worstCourt = Math.min(currentCourt + remainingRounds, totalCourts);
+    const playersPerCourt = 4;
+    return worstCourt * playersPerCourt;
+  }
+}
+```
+
+**Bracket range for preseed**: Determined by the recursive splitting. After Round 1, the split determines which courts go to which bracket. The bracket range is fixed for the rest of the tournament.
+
+### Multiple Retirements
+
+**Preseed**: Within the same bracket, retirements are ordered. First retiree gets worst place, second gets second-worst, etc.
+
+**Random seed**: Retirements are ordered by current court position. Player on the worse court gets the worse standing.
+
+**Example (random seed)**: Players on Court 2 and Court 4 retire after Round 2 (24 players, 4 rounds, 6 courts).
+- Court 2 player: worst place = 24 (Court 2 → Court 6 with full relegation)
+- Court 4 player: worst place = 24... but two players can't share place 24.
+- Resolution: Court 4 player gets 24 (worse court), Court 2 player gets 23.
+
 ## Database Changes
 
 ### Player Table
@@ -198,9 +289,9 @@ finalStanding: integer('final_standing')     // set when tournament completes
 
 No changes needed. The existing court rotation system handles variable court sizes.
 
-## Open Questions
+## Decisions (Previously Open Questions)
 
-1. **Forfeited matches**: If a player retires mid-round (scores partially entered), how do we handle their remaining matches? Auto-forfeit 0-21?
-2. **Replacement timing**: Can a replacement join between rounds, or only before the tournament starts?
-3. **Final round elimination**: Should eliminated players be notified before the final round starts, or only when the round is displayed?
+1. **Forfeited matches**: Auto-forfeit 0-21.
+2. **Replacement timing**: Only before the tournament starts. No mid-tournament replacements.
+3. **Final round elimination**: The org should see which players are eliminated from the final round before it starts.
 4. **Tiebreaker for elimination**: Compare by average points per game first (normalizes across court sizes), then total points, then diff, then playerId.
