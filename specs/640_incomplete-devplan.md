@@ -2,7 +2,7 @@
 
 ## Summary
 
-Extend KoB Tracker to support 8-64 players (currently only 16/32). Implement recursive preseed splitting, mixed court sizes, parallel game courts, and physical/virtual court mapping.
+Extend KoB Tracker to support 8-64 players (currently only 16/32). Implement recursive preseed splitting, non-standard bottom court for leftovers, parallel game courts, and physical/virtual court mapping.
 
 ## What Changed in the Spec
 
@@ -10,7 +10,7 @@ Extend KoB Tracker to support 8-64 players (currently only 16/32). Implement rec
 |----------|----------|
 | Player count: 16 or 32 only | Player count: 8-64 |
 | Preseed: power-of-2 only (2, 4, 8 courts) | Preseed: any court count via recursive splitting |
-| Option C: Rotating sit-outs | **Removed** — replaced by Option B and D |
+| Option C: Rotating sit-outs | **Removed** — one non-standard bottom court for leftovers |
 | Option E: Single cut to top 16 | Generalized to recursive splitting for any court count |
 | No physical/virtual court distinction | Physical vs virtual courts with UI support |
 | No per-round strategy override | Tournament default + per-round override for leftover handling |
@@ -73,7 +73,7 @@ Write all redistribution algorithms as pure functions with comprehensive unit te
 **Files to modify**:
 - `src/routes/tournament/[id]/+page.server.ts` — use new redistribution functions
 - Wire up recursive preseed for all court counts
-- Handle mixed court redistribution (bottom courts incomplete)
+- Handle non-standard bottom court redistribution (3p/5p/6p)
 
 ### Phase 6: UI Updates
 **Estimated effort**: 2-3 days

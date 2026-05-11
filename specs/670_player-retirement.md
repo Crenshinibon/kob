@@ -74,7 +74,7 @@ Use the standard redistribution logic (ladder or preseed) with the new player co
 → Bottom court gets the 3 lowest-ranked players
 ```
 
-**Key rule**: The incomplete court is always the BOTTOM court (lowest ranked players). This is consistent with the "accept asymmetry" approach from Option B.
+**Key rule**: The incomplete court is always the BOTTOM court (lowest ranked players). This is consistent with the one non-standard bottom court approach.
 
 ### Step 3: Continue Tournament
 

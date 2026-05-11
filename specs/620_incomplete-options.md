@@ -1,4 +1,4 @@
-# Incomplete Rosters: Options A, B, D, E
+# Incomplete Rosters: Options A, D, E
 
 ## Option A: Adjust Court Count (Clean Multiples of 4)
 
@@ -143,36 +143,38 @@ function splitCourts(courts):
 
 ---
 
-## Option B: Mixed Court Sizes (3-Player + 4-Player Courts)
+## Non-Standard Bottom Court (Leftovers)
 
-For counts where pure 4-player courts leave 1-3 leftovers, mix in 3-player courts (2v1 format).
+When `playerCount % 4` is not 0, the lowest court gets the leftover players. This is always ONE court at the bottom — no mixed court configurations across multiple courts.
 
-### Possible Configurations
+| Leftovers | Bottom Court | Format |
+|-----------|-------------|--------|
+| 0 | None (all standard) | All 4-player courts |
+| 1 | 5-player court | Parallel games (rotating every point) |
+| 2 | 6-player court | Parallel games (rotating every point) |
+| 3 | 3-player court | 2v1 format (3 matches) |
 
-| Players | 4-Player Courts | 3-Player Courts | Total Courts |
-|---------|----------------|-----------------|--------------|
-| 31      | 7 (28 players) | 1 (3 players)   | 8            |
-| 30      | 6 (24 players) | 2 (6 players)   | 8            |
-| 29      | 5 (20 players) | 3 (9 players)   | 8            |
-| 27      | 6 (24 players) | 1 (3 players)   | 7            |
-| 26      | 5 (20 players) | 2 (6 players)   | 7            |
-| 25      | 4 (16 players) | 3 (9 players)   | 7            |
-| 23      | 5 (20 players) | 1 (3 players)   | 6            |
-| 22      | 4 (16 players) | 2 (6 players)   | 6            |
-| 21      | 3 (12 players) | 3 (9 players)   | 6            |
-| 19      | 4 (16 players) | 1 (3 players)   | 5            |
-| 18      | 3 (12 players) | 2 (6 players)   | 5            |
-| 17      | 2 (8 players)  | 3 (9 players)   | 5            |
-| 15      | 3 (12 players) | 1 (3 players)   | 4            |
-| 14      | 2 (8 players)  | 2 (6 players)   | 4            |
-| 13      | 2 (8 players)  | 1 (3 players)   | 3            |
-| 11      | 2 (8 players)  | 1 (3 players)   | 3            |
-| 10      | 1 (4 players)  | 2 (6 players)   | 3            |
-| 9       | 1 (4 players)  | 1 (3 players)   | 2            |
+### Redistribution with Non-Standard Bottom Court
 
-(Extends to 64 players — e.g., 61 = 14x4p + 1x3p + 1x3p, etc.)
+After each round, redistribute using the standard logic (vertical seeding or ladder). The bottom court always gets the remaining players:
 
-### 3-Player Court Format
+**Example: 11 players (2x4p + 1x3p)**
+- After Round 1: 11 players across 3 courts
+- Redistribute: Sort all by rank, then points/diff
+  - C1: Top 4 players (1st places + best 2nd)
+  - C2: Next 4 players
+  - C3: Last 3 players (3-player court)
+- The non-standard court is always C3 (the bottom)
+
+**Example: 25 players (6x4p + 1x5p)**
+- After Round 1: 25 players across 7 courts
+- Redistribute: vertical seeding cascade
+  - C1-C6: Top 24 players (4 each)
+  - C7: Last 1 player → stays on 5-player court with new partners
+
+**Key principle**: The remainder follows you. After each redistribution, the bottom court is non-standard. Players on the bottom court play by different rules but still compete for ranking.
+
+### 3-Player Court Format (3 Leftovers)
 
 - **3 players per court**: A, B, C.
 - **Matches** (3 total):
@@ -181,47 +183,16 @@ For counts where pure 4-player courts leave 1-3 leftovers, mix in 3-player court
   3. B+C vs A
 - **Scoring**: Standard rally points. Team of 2 gets team score each; single player gets their score.
 - **Standard volleyball rules** — no modifications. Single player simply uses all 3 team touches themselves.
-- **Timing**: Still 3 matches. May run slightly faster in practice because the 1v2 team is at a significant disadvantage, so rallies tend to end sooner.
+- **Timing**: 3 matches, same as standard. May run slightly faster (2v1 advantage).
+- **Ranking**: Total points → diff → playerId (same as 4-player courts).
 
-### Redistribution Strategy: Accept the Asymmetry (Strategy 3)
+### 5/6-Player Court Format (1-2 Leftovers)
 
-After Round 1, redistribute as many players as possible to 4-player courts. The incomplete courts are always the BOTTOM courts.
-
-**How it works**:
-1. Collect all finishers from all courts (both 3p and 4p)
-2. Group by rank: all 1st places, all 2nd places, all 3rd places, all 4th places
-3. Fill courts top-down: top courts get 4 players each, bottom court(s) get 3 (or fewer)
-4. The bottom courts are always the incomplete ones
-
-**Example: 11 players (2x4p + 1x3p)**
-- After Round 1: 11 players across 3 courts
-- Redistribute: Sort all by rank, then points/diff
-  - C1: Top 4 players (all 1st places + best 2nd)
-  - C2: Next 4 players
-  - C3: Last 3 players (incomplete court)
-- The incomplete court is always C3 (the bottom)
-
-**Example: 13 players (2x4p + 1x3p)**
-- After Round 1: 13 players across 3 courts
-- Redistribute:
-  - C1: Top 4
-  - C2: Next 4
-  - C3: Next 4
-  - C4: Last 1 player (sit-out) — or use Option D for 5-player court
-
-**Key principle**: The remainder follows you. After each redistribution, the bottom court(s) may be incomplete. This is acceptable — players understand "I'm on the lower court."
-
-### Timing Impact
-
-- **None**. 3-player courts take the same time as 4-player courts (3 matches).
-
-### Competitive Integrity
-
-- **Medium**. The 3-player format is inherently different (2v1). Some players may perceive it as easier or harder. The asymmetry is accepted: 1st place on any court is still 1st place for redistribution purposes.
+See detailed description below.
 
 ---
 
-## Option D: 5/6-Player Court (Parallel Games, Rotating Every Point)
+## 5/6-Player Court (Parallel Games, Rotating Every Point)
 
 For 1-2 leftover players: one full court with two parallel game tracks running simultaneously. The rotating player swaps after every point, and each swap feeds into a separate game score. Roles rotate between the two runs within each round.
 
@@ -298,15 +269,15 @@ Before each round, the system randomly assigns roles:
 
 Across tournament rounds, roles rotate so no player is stuck with fewer games.
 
-### Scoring for 5-Player Courts
+### Scoring
 
-Since one player plays 4 games and others play 3, raw point totals are not directly comparable. Use **average points per game** for ranking:
+Since players play different numbers of games, use **average points per game** for ranking:
 
 ```
 Player ranking = totalPoints / gamesPlayed
 ```
 
-Example:
+Example for 5 players:
 | Player | Games | Total Points | Avg/Game | Rank |
 |--------|-------|--------------|----------|------|
 | A | 3 | 39 | 13.0 | 1 |
@@ -316,22 +287,6 @@ Example:
 | E | 3 | 36 | 12.0 | 3 |
 
 Tiebreaker: if averages are equal, use total points (more games = more data), then diff, then playerId.
-
-### Scoring for 6-Player Courts
-
-With some players playing 3 games and others playing 2, use the same **average points per game** approach:
-
-```
-Player ranking = totalPoints / gamesPlayed
-```
-
-### When to Use
-
-Option D is the automatic result when there are 1-2 leftover players:
-- 1 leftover → 5-player court
-- 2 leftover → 6-player court
-
-No organizer decision needed — it's determined by `playerCount % 4`.
 
 ### Timing Impact
 
@@ -412,9 +367,8 @@ The recursive approach produces the same result for 20/24/28 players but general
 
 | Approach | Round Time | Setup Complexity | Player Satisfaction |
 |----------|-----------|------------------|---------------------|
-| Adjust court count (any N) | ~45-60 min | Low | High |
-| Mixed 4p + 3p courts | ~45-60 min | Medium | Medium-High |
-| 5/6p parallel games | ~45-60 min | Medium | Medium-High |
+| Standard 4p courts | ~45-60 min | Low | High |
+| Non-standard bottom court (3p/5p/6p) | ~45-60 min | Low | Medium-High |
 
 ---
 
@@ -444,7 +398,7 @@ The recursive approach produces the same result for 20/24/28 players but general
 
 Random seed is flexible because vertical seeding and the ladder system work for any court count. For any player count 8-64:
 - Clean multiples of 4: standard courts, ladder redistribution
-- With leftovers: use Option B (mixed) or Option D (parallel) for the remainder
+- With leftovers: bottom court is non-standard (3p/5p/6p)
 
 ### Decision Tree
 
@@ -457,11 +411,12 @@ How many players registered?
 │   ├─ Random Seed: N rounds configurable
 │   └─ Preseed: Recursive splitting, rounds = log2(N)+1 (approx)
 │
-├─ 8-64 (not multiple of 4) → Handle leftovers
-│   ├─ Default strategy: Option B (mixed) or Option D (parallel)
-│   ├─ Per-round override available
+├─ 8-64 (not multiple of 4) → One non-standard bottom court
+│   ├─ 1 leftover → 5-player court (parallel games)
+│   ├─ 2 leftovers → 6-player court (parallel games)
+│   ├─ 3 leftovers → 3-player court (2v1 format)
 │   ├─ Random Seed: Vertical seeding + ladder
-│   └─ Preseed: Recursive splitting (incomplete courts are always bottom)
+│   └─ Preseed: Recursive splitting (bottom court is non-standard)
 │
 └─ > 64 → Too many players, split into multiple tournaments
 ```

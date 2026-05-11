@@ -257,8 +257,8 @@ For each court count N, given N courts with known standings, verify the cascade 
 ### Decided
 
 1. ~~Should preseed be restricted to power-of-2 court counts?~~ **No.** Recursive splitting works for any court count.
-2. ~~Should we use rotating sit-outs?~~ **No.** Eliminated in favor of Option B (mixed) and Option D (parallel).
-3. ~~Which redistribution strategy for mixed courts?~~ **Strategy 3: Accept asymmetry.** Bottom courts are always incomplete.
+2. ~~Should we use rotating sit-outs?~~ **No.** Eliminated. One non-standard bottom court for leftovers instead.
+3. ~~Which redistribution strategy for mixed courts?~~ **One non-standard bottom court.** The lowest court always gets the leftovers.
 
 ### Open
 
@@ -266,11 +266,11 @@ For each court count N, given N courts with known standings, verify the cascade 
 
 2. **5/6-player match rotation**: What is the exact match rotation for 5 and 6 player courts that ensures equal play time? Need to design and test this carefully.
 
-3. **Preseed with incomplete courts**: When a preseed tournament has mixed courts (3p + 4p), how does the recursive split handle the 3-player court? Does it get lumped into the loser group, or treated specially?
+3. **Preseed with non-standard bottom court**: When a preseed tournament has a non-standard bottom court (3p/5p/6p), how does the recursive split handle it? Does it get lumped into the loser group, or treated specially?
 
 4. **Per-round strategy override**: How does the UI work? A dropdown per round on the tournament page? Or a separate "configure round" modal?
 
-5. **Standings with variable court sizes**: The current standings logic assumes court 1 = places 1-4, court 2 = places 5-8, etc. With variable court sizes (3p, 5p, 6p), the placement calculation needs adjustment. A 3-player court only produces 3 placements, not 4.
+5. **Standings with variable court sizes**: The current standings logic assumes court 1 = places 1-4, court 2 = places 5-8, etc. With a non-standard bottom court (3p/5p/6p), the placement calculation needs adjustment. A 3-player court only produces 3 placements, not 4.
 
 6. **Database migration**: How to handle existing tournaments (16/32 players) during migration? They should continue to work unchanged.
 

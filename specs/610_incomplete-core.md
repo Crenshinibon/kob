@@ -67,12 +67,14 @@ A tournament with N virtual courts and M physical courts (where N > M) runs in "
 
 For any player count that is not a multiple of 4, we have 1-3 leftover players. The leftover count is deterministic: `playerCount % 4`.
 
-| Leftovers | Natural Solution | Option |
-|-----------|-----------------|--------|
-| 0 | None needed | — |
-| 1 | Add to one 4p court → 5-player court | Option D (parallel games) |
-| 2 | Add to one 4p court → 6-player court | Option D (parallel games) |
-| 3 | Create one 3-player court | Option B (mixed courts, 2v1 format) |
+The lowest court is always the "odd one" — one non-standard court at the bottom:
+
+| Leftovers | Bottom Court | Format |
+|-----------|-------------|--------|
+| 0 | None (all standard) | All 4-player courts |
+| 1 | 5-player court | Parallel games (see Option D in `620`) |
+| 2 | 6-player court | Parallel games (see Option D in `620`) |
+| 3 | 3-player court | 2v1 format (3 matches, 21 points) |
 
 The organizer does NOT choose the court configuration — it's determined by the player count. The organizer chooses **what to do with the leftovers**: include them (default) or exclude them.
 
