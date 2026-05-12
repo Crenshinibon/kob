@@ -199,8 +199,8 @@ The leftover count is `playerCount % 4`. The system determines the court configu
 
 ```
 27 players → 6 courts of 4 + 3 leftover → 6×4p + 1×3p = 7 courts
-26 players → 6 courts of 4 + 2 leftover → 6×4p + 1×6p = 7 courts
-25 players → 6 courts of 4 + 1 leftover → 6×4p + 1×5p = 7 courts
+26 players → 6 courts of 4 + 2 leftover → 5×4p + 1×6p = 6 courts
+25 players → 6 courts of 4 + 1 leftover → 5×4p + 1×5p = 6 courts
 24 players → 6 courts of 4 + 0 leftover → 6×4p = 6 courts (clean)
 ```
 
