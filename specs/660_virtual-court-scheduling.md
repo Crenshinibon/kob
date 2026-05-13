@@ -27,21 +27,23 @@ The default is `batch`. The org can choose either mode. The mode applies to all 
 
 Virtual courts are played in **shifts**. Each shift assigns up to M virtual courts to M physical courts. Shifts proceed from **lowest courts first** (highest numbers), working up to **top courts** (lowest numbers). This ensures the top court match is last, so finalists are fresh.
 
+**Key distinction from Rolling**: A new shift starts only after **all** courts in the current shift have finished — even if some individual matches completed earlier. This makes batch predictable but potentially slower.
+
 **Example: 8 virtual courts, 4 physical courts**
 ```
 Shift 1: Virtual courts 5-8 → Physical courts 1-4 (simultaneous)
-[WAIT]  Physical courts idle after all finish shift 1
+[WAIT]  Score entry, redistribution, rest (~10 min transition)
 Shift 2: Virtual courts 1-4 → Physical courts 1-4 (simultaneous)
 ```
 
 **Example: 12 virtual courts, 4 physical courts**
 ```
 Shift 1: Virtual courts  9-12 → Physical courts 1-4
+[WAIT]  Score entry, redistribution, rest (~10 min transition)
 Shift 2: Virtual courts  5-8  → Physical courts 1-4
+[WAIT]  Score entry, redistribution, rest (~10 min transition)
 Shift 3: Virtual courts  1-4  → Physical courts 1-4
 ```
-
-**Batch transition**: Between shifts, there is a transition period (default 10 min) for score recording, redistribution, and player rest.
 
 **Final round**: Same ordering — loser courts first, top court last. This creates a dramatic finale where the championship match is the last match of the tournament.
 

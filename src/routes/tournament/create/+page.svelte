@@ -1,22 +1,24 @@
 <script lang="ts">
 	let { form } = $props<{ form?: { error?: string } }>();
 
-	let name = $state('');
+	let tournamentName = $state('');
 	let formatType = $state<'random-seed' | 'preseed'>('random-seed');
-	let playerCount = $state(16);
+	let playerNames = $state('');
 	let schedulingMode = $state<'batch' | 'rolling'>('batch');
 	let physicalCourts = $state(4);
 
 	const minPlayers = 8;
 	const maxPlayers = 64;
 
+	const computedPlayerCount = $derived(
+		name.split('\n').filter((n) => n.trim()).length
+	);
+
 	const roundCounts = $derived(() => {
-		// Calculate minimum rounds needed for the selected player count
-		const courts = Math.ceil(playerCount / 4);
+		const courts = Math.ceil(computedPlayerCount / 4);
 		if (formatType === 'preseed') {
 			return Math.max(1, Math.floor(Math.log2(courts <= 1 ? 1 : courts - 1)) + 2);
 		}
-		// Random seed: log2 based
 		if (courts <= 4) return 3;
 		if (courts <= 8) return 4;
 		if (courts <= 16) return 5;
@@ -72,31 +74,34 @@
 		</div>
 
 		<div class="field">
-			<label for="playerCount">Player Count: {playerCount}</label>
-			<input
-				type="range"
-				id="playerCount"
-				name="playerCount"
-				bind:value={playerCount}
-				min={minPlayers}
-				max={maxPlayers}
-				step={1}
-			/>
-			<div class="range-labels">
-				<span>{minPlayers}</span>
-				<span>{playerCount} players</span>
-				<span>{maxPlayers}</span>
-			</div>
-			{#if playerCount % 4 !== 0}
+			<label for="names">Player Names</label>
+			<textarea
+				id="names"
+				name="names"
+				bind:value={name}
+				rows="10"
+				placeholder="Alice 1250&#10;Bob 1100&#10;Carol 950&#10;..."
+				required
+			></textarea>
+			<p class="count">{computedPlayerCount} players detected</p>
+			{#if computedPlayerCount > 0 && computedPlayerCount < minPlayers}
+				<p class="info">Minimum {minPlayers} players required</p>
+			{:else if computedPlayerCount > maxPlayers}
+				<p class="info">Maximum {maxPlayers} players allowed (remove {computedPlayerCount - maxPlayers})</p>
+			{:else if computedPlayerCount > 0}
 				<p class="info">
-					{playerCount % 4 === 1
+					{computedPlayerCount % 4 === 1
 						? '1 leftover → one 5p court'
-						: playerCount % 4 === 2
+						: computedPlayerCount % 4 === 2
 							? '2 leftovers → one 6p court'
-							: '3 leftovers → one 3p court'}
+							: computedPlayerCount % 4 === 3
+								? '3 leftovers → one 3p court'
+								: 'No leftovers — all 4p courts'}
 				</p>
 			{/if}
 		</div>
+
+		<input type="hidden" name="playerCount" value={computedPlayerCount} />
 
 		<div class="field">
 			<span class="label">Scheduling Mode</span>
@@ -106,8 +111,8 @@
 						<input type="radio" name="schedulingMode" value="batch" bind:group={schedulingMode} />
 					</div>
 					<span class="radio-content">
-						<strong>Batch</strong>
-						<small>All courts active simultaneously</small>
+						<strong>Batch Shifts</strong>
+						<small>All physical courts play simultaneously in shifts. Next shift starts only after all courts finish</small>
 					</span>
 				</label>
 				<label class="radio-label">
@@ -115,8 +120,8 @@
 						<input type="radio" name="schedulingMode" value="rolling" bind:group={schedulingMode} />
 					</div>
 					<span class="radio-content">
-						<strong>Rolling</strong>
-						<small>Courts play in shifts (4 physical courts at a time)</small>
+						<strong>Rolling Assignment</strong>
+						<small>When a court finishes, it immediately takes the next waiting group. No shift boundaries</small>
 					</span>
 				</label>
 			</div>
@@ -138,9 +143,9 @@
 				<span>{physicalCourts} courts</span>
 				<span>16</span>
 			</div>
-			{#if physicalCourts < Math.ceil(playerCount / 4)}
+			{#if physicalCourts < Math.ceil(computedPlayerCount / 4)}
 				<p class="info">
-					Virtual courts ({Math.ceil(playerCount / 4)}) will be scheduled across {physicalCourts} physical
+					Virtual courts ({Math.ceil(computedPlayerCount / 4)}) will be scheduled across {physicalCourts} physical
 					courts in {schedulingMode === 'batch' ? 'batch shifts' : 'rolling rotation'}
 				</p>
 			{/if}
@@ -155,7 +160,7 @@
 		<button
 			type="submit"
 			class="btn-primary"
-			disabled={playerCount < minPlayers || playerCount > maxPlayers}
+			disabled={computedPlayerCount < minPlayers || computedPlayerCount > maxPlayers}
 		>
 			Create Tournament
 		</button>
