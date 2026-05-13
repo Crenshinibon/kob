@@ -9,6 +9,7 @@ export const tournament = pgTable('tournament', {
 	numRounds: integer('num_rounds').notNull().default(3),
 	formatType: text('format_type').notNull().default('random-seed'),
 	schedulingMode: text('scheduling_mode').notNull().default('batch'),
+	physicalCourtCount: integer('physical_court_count').notNull().default(4),
 	playerCount: integer('player_count').notNull().default(16),
 	courtSizes: text('court_sizes'),
 	createdAt: timestamp('created_at').defaultNow()

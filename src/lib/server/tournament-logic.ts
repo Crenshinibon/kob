@@ -26,6 +26,7 @@ export type TournamentConfig = {
 	readonly playerCount: number;
 	readonly schedulingMode: SchedulingMode;
 	readonly courtSizes: readonly number[];
+	readonly physicalCourtCount: number;
 };
 
 export type Player = {
@@ -143,14 +144,15 @@ export type CreateTournamentOpts = {
 	formatType: FormatType;
 	playerCount: number;
 	schedulingMode?: SchedulingMode;
+	physicalCourtCount?: number;
 };
 
 export function createInitialState(opts: CreateTournamentOpts): TournamentState {
-	const { tournamentId, formatType, playerCount, schedulingMode = 'batch' } = opts;
+	const { tournamentId, formatType, playerCount, schedulingMode = 'batch', physicalCourtCount = 4 } = opts;
 	if (playerCount < 8 || playerCount > 64) throw new Error(`Player count must be 8-64, got ${playerCount}`);
 	const courtSizes = calculateCourtSizes(playerCount);
 	return {
-		config: { tournamentId, formatType, playerCount, schedulingMode, courtSizes },
+		config: { tournamentId, formatType, playerCount, schedulingMode, courtSizes, physicalCourtCount: Math.min(physicalCourtCount, courtSizes.length) },
 		players: [], roundsCompleted: 0, currentRound: 0,
 		totalRounds: calculateRoundCount(courtSizes.length, formatType),
 		isComplete: false, completedRounds: [], currentAssignments: [], nextAssignments: [], currentMatches: []
@@ -341,8 +343,89 @@ export function redistributeLadder(
 }
 
 // ============================================================================
-// Close Round
+// Virtual Court Scheduling Helper
 // ============================================================================
+
+function getBatchShifts(virtualCourtCount: number, physicalCourtCount: number): number[][] {
+	const shifts: number[][] = [];
+	const courtQueue: number[] = [];
+	// Reverse order: highest-numbered virtual courts first (lowest priority / bottom courts go first)
+	for (let i = virtualCourtCount; i >= 1; i--) {
+		courtQueue.push(i);
+	}
+	while (courtQueue.length > 0) {
+		const shift: number[] = [];
+		for (let i = 0; i < physicalCourtCount && courtQueue.length > 0; i++) {
+			shift.push(courtQueue.pop()!);
+		}
+		shifts.push(shift);
+	}
+	return shifts;
+}
+
+export function getShiftAssignments(
+	virtualCourtCount: number,
+	physicalCourtCount: number,
+	schedulingMode: SchedulingMode
+): Map<number, number> {
+	// Maps physical court number → virtual court number
+	const mapping = new Map<number, number>();
+
+	if (schedulingMode === 'batch') {
+		const shifts = getBatchShifts(virtualCourtCount, physicalCourtCount);
+		// First shift: virtual courts at end of array (highest numbers)
+		// These are the "bottom" courts (losers/worst courts go first)
+		const firstShift = shifts[0] || [];
+		for (let i = 0; i < firstShift.length; i++) {
+			mapping.set(i + 1, firstShift[i]);
+		}
+	} else {
+		// Rolling: same as batch for initial assignment (highest virtual courts first)
+		const maxPhysical = Math.min(physicalCourtCount, virtualCourtCount);
+		// Assign from bottom up: worst courts played first
+		for (let i = 0; i < maxPhysical; i++) {
+			mapping.set(i + 1, virtualCourtCount - i);
+		}
+	}
+
+	return mapping;
+}
+
+export function getShiftForCourt(virtualCourtNumber: number, virtualCourtCount: number, physicalCourtCount: number): number {
+	// In batch mode, which shift does a virtual court belong to?
+	// Shifts are formed from highest-numbered (bottom) courts first
+	const shifts = getBatchShifts(virtualCourtCount, physicalCourtCount);
+	for (let si = 0; si < shifts.length; si++) {
+		if (shifts[si].includes(virtualCourtNumber)) return si + 1;
+	}
+	return 1;
+}
+
+function waitTimeForVirtualCourt(virtualCourtNumber: number, virtualCourtCount: number, physicalCourtCount: number, schedulingMode: SchedulingMode, avgCourtDuration: number, transitionTime: number): number {
+	if (schedulingMode === 'batch') {
+		const shift = getShiftForCourt(virtualCourtNumber, virtualCourtCount, physicalCourtCount);
+		const shifts = getBatchShifts(virtualCourtCount, physicalCourtCount);
+		const remainingShifts = shifts.length - shift;
+		return remainingShifts * avgCourtDuration + remainingShifts * transitionTime;
+	} else {
+		// Rolling: courts ahead in the queue
+		// Higher-numbered virtual courts (bottom courts) go first
+		const sorted = Array.from({ length: virtualCourtCount }, (_, i) => i + 1)
+			.sort((a, b) => b - a); // highest first (they play first)
+		const position = sorted.indexOf(virtualCourtNumber);
+		const courtsAhead = Math.max(0, position - physicalCourtCount + 1);
+		return courtsAhead * avgCourtDuration + courtsAhead * 5; // 5 min transition overhead for rolling
+	}
+}
+
+export function estimateWaitTime(virtualCourtNumber: number, virtualCourtCount: number, physicalCourtCount: number, schedulingMode: SchedulingMode, avgCourtDuration: number, transitionTime: number): string {
+	const minutes = waitTimeForVirtualCourt(virtualCourtNumber, virtualCourtCount, physicalCourtCount, schedulingMode, avgCourtDuration, transitionTime);
+	if (minutes <= 0) return 'Now';
+	if (minutes < 60) return `~${minutes} min`;
+	const hours = Math.floor(minutes / 60);
+	const mins = minutes % 60;
+	return mins > 0 ? `~${hours}h ${mins}m` : `~${hours}h`;
+}
 
 export function closeRound(state: TournamentState): TournamentState {
 	if (state.currentRound === 0) throw new Error('No active round to close');

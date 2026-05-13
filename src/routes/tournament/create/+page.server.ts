@@ -27,6 +27,7 @@ export const actions = {
 		const formatType = formData.get('formatType')?.toString() || 'random-seed';
 		const playerCount = parseInt(formData.get('playerCount')?.toString() || '16');
 		const schedulingMode = formData.get('schedulingMode')?.toString() || 'batch';
+		const physicalCourtCount = parseInt(formData.get('physicalCourts')?.toString() || '4');
 
 		if (!name) {
 			return { error: 'Tournament name is required' };
@@ -56,6 +57,7 @@ export const actions = {
 				formatType,
 				schedulingMode,
 				playerCount,
+				physicalCourtCount,
 				courtSizes: JSON.stringify(courtSizes),
 				status: 'draft',
 				currentRound: 0

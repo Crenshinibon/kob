@@ -1,9 +1,10 @@
 import { error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { courtAccess, courtRotation, match, tournament, player } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import type { PageServerLoad } from './$types';
+import type { MatchData } from '$lib/server/tournament-logic';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const token = params.token;
@@ -36,12 +37,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.where(eq(match.courtRotationId, rotation.id))
 		.orderBy(match.matchNumber);
 
-	// Get player names
-	const playerIds = [
+	// Get player names for all player slots (including player5/6 for non-standard courts)
+	const playerIds: number[] = [
 		rotation.player1Id,
 		rotation.player2Id,
-		rotation.player3Id,
-		rotation.player4Id
+		...(rotation.player3Id ? [rotation.player3Id] : []),
+		...(rotation.player4Id ? [rotation.player4Id] : []),
+		...(rotation.player5Id ? [rotation.player5Id] : []),
+		...(rotation.player6Id ? [rotation.player6Id] : [])
 	];
 
 	const players = await db
@@ -58,11 +61,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// Calculate standings
 	const standings = calculateStandings(matches, playerNames);
 
+	const courtSize = (tourney as any).courtSizes
+		? (JSON.parse((tourney as any).courtSizes) as number[])[rotation.courtNumber - 1] ?? playerIds.length
+		: playerIds.length;
+
 	return {
 		court: {
 			tournamentName: tourney.name,
 			courtNumber: rotation.courtNumber,
 			roundNumber: rotation.roundNumber,
+			courtSize,
 			playerNames
 		},
 		matches,
@@ -72,19 +80,17 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	};
 };
 
-import type { Actions } from './$types';
-
 export const actions: Actions = {
-	saveScore: async ({ request, params }) => {
-		const token = params.token;
-		const formData = await request.formData();
+	saveScore: async (event) => {
+		const token = event.params.token;
+		const formData = await event.request.formData();
 		const matchId = parseInt(formData.get('matchId')?.toString() || '0');
 		const teamAScore = parseInt(formData.get('teamAScore')?.toString() || '0');
 		const teamBScore = parseInt(formData.get('teamBScore')?.toString() || '0');
 
 		// Validate scores
-		if (teamAScore < 1 || teamAScore > 50 || teamBScore < 1 || teamBScore > 50) {
-			return { error: 'Scores must be between 1 and 50' };
+		if (teamAScore < 0 || teamAScore > 50 || teamBScore < 0 || teamBScore > 50) {
+			return { error: 'Scores must be between 0 and 50' };
 		}
 
 		if (teamAScore === teamBScore) {
@@ -122,7 +128,11 @@ export const actions: Actions = {
 	}
 };
 
-function calculateStandings(matches: any[], playerNames: Record<number, string>) {
+interface Actions {
+	saveScore: (event: { request: Request; params: { token: string } }) => Promise<{ success?: string; error?: string }>;
+}
+
+function calculateStandings(matches: MatchData[], playerNames: Record<number, string>) {
 	const stats: Record<number, { id: number; points: number; for: number; against: number }> = {};
 
 	// Get all player IDs from matches
@@ -141,7 +151,7 @@ function calculateStandings(matches: any[], playerNames: Record<number, string>)
 
 	// Calculate stats from completed matches
 	matches.forEach((m) => {
-		if (m.teamAScore === null) return;
+		if (m.teamAScore === null || m.teamBScore === null) return;
 
 		// Team A players
 		stats[m.teamAPlayer1Id].points += m.teamAScore;

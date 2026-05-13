@@ -26,17 +26,31 @@
 	// Local match data for optimistic updates
 	let matchData = $state<Record<number, any>>({});
 
+	// Generate labels for player slots based on court size
+	// 3p: A vs B, A vs B, B vs A (solo rotation)
+	// 4p: AB vs CD, AC vs BD, AD vs BC
+	// 5p/6p: parallel style
+	const teamLabels = $derived(
+		data.matches.map((m: any) => {
+			const nameA1 = getPlayerName(m, 'a1');
+			const nameA2 = getPlayerName(m, 'a2');
+			const nameB1 = getPlayerName(m, 'b1');
+			const nameB2 = getPlayerName(m, 'b2');
+			return { teamA: `${nameA1} & ${nameA2}`, teamB: `${nameB1} & ${nameB2}` };
+		})
+	);
+
 	function getPlayerName(match: any, position: string) {
 		const names = data.court.playerNames;
 		switch (position) {
 			case 'a1':
-				return names[match.teamAPlayer1Id];
+				return names[match.teamAPlayer1Id] || '—';
 			case 'a2':
-				return names[match.teamAPlayer2Id];
+				return names[match.teamAPlayer2Id] || '—';
 			case 'b1':
-				return names[match.teamBPlayer1Id];
+				return names[match.teamBPlayer1Id] || '—';
 			case 'b2':
-				return names[match.teamBPlayer2Id];
+				return names[match.teamBPlayer2Id] || '—';
 		}
 	}
 
@@ -49,7 +63,14 @@
 <main>
 	<header>
 		<h1>{data.court.tournamentName}</h1>
-		<p>Court {data.court.courtNumber}, Round {data.court.roundNumber}</p>
+		<p>
+			Court {data.court.courtNumber}, Round {data.court.roundNumber}
+			{#if data.court.courtSize}
+				<span class="court-size-tag" style="--court-color: var(--accent-info)">
+					{data.court.courtSize}p
+				</span>
+			{/if}
+		</p>
 	</header>
 
 	<section class="qr-section">
@@ -68,10 +89,29 @@
 
 	{#if !data.isActive}
 		<div class="closed" transition:slide>
-			<h2>This round is closed</h2>
-			<p>Scores have been finalized.</p>
+			<h2>This court is closed</h2>
+			<p>Scores have been finalized. Stand by for next round assignments.</p>
 		</div>
 	{:else}
+<section class="players-section">
+		<h3>Players on This Court ({data.court.courtSize}p)</h3>
+		{#if data.court.courtSize === 3}
+			<p class="courtsize-note">Solo rotation format — one player plays solo against the other two</p>
+		{:else if data.court.courtSize === 5}
+			<p class="courtsize-note">5-player court — one team of 3, one team of 2</p>
+		{:else if data.court.courtSize === 6}
+			<p class="courtsize-note">6-player court — two teams of 3</p>
+		{/if}
+		<div class="player-cards" class:three-player={data.court.courtSize === 3} class:five-player={data.court.courtSize === 5} class:six-player={data.court.courtSize === 6}>
+			{#each Object.entries(data.court.playerNames) as [id, name], i}
+				<div class="player-card">
+					<span class="player-letter">{String.fromCharCode(65 + i)}</span>
+					<span class="player-name">{name}</span>
+				</div>
+			{/each}
+		</div>
+		</section>
+
 		<section class="matches">
 			{#each data.matches as match, i (match.id)}
 				{@const scoreForm = saveScore.for(match.id)}
@@ -86,7 +126,14 @@
 						</div>
 					{/if}
 
-					<h3>Match {i + 1}</h3>
+					<h3>
+						Match {i + 1}
+						{#if teamLabels[i]}
+							<span class="team-label">
+								{@html `${teamLabels[i].teamA}`} vs {@html `${teamLabels[i].teamB}`}
+							</span>
+						{/if}
+					</h3>
 
 					{#if completedMatches.has(match.id) && !editingMatches.has(match.id)}
 						<div class="completed" transition:slide>
@@ -135,7 +182,7 @@
 										data-testid="team-a-score-{match.id}"
 										type="number"
 										name="teamAScore"
-										min="1"
+										min="0"
 										max="50"
 										required
 										disabled={savingMatches.has(match.id)}
@@ -151,7 +198,7 @@
 										data-testid="team-b-score-{match.id}"
 										type="number"
 										name="teamBScore"
-										min="1"
+										min="0"
 										max="50"
 										required
 										disabled={savingMatches.has(match.id)}
@@ -198,6 +245,9 @@
 	{#if data.standings.length > 0}
 		<section class="standings" transition:slide>
 			<h2>Current Standings</h2>
+			{#if data.court.courtSize === 3}
+				<p class="standings-note">3-player court: solo rotation format — each player takes a turn solo</p>
+			{/if}
 			<table>
 				<thead>
 					<tr>
@@ -232,18 +282,34 @@
 
 	header {
 		margin-bottom: var(--spacing-lg);
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
 	}
 
-	h1 {
+	header h1 {
 		margin: 0;
 		font-size: var(--font-size-xl);
 		color: var(--text-primary);
 	}
 
 	header p {
-		margin: var(--spacing-xs) 0 0 0;
+		margin: 0;
 		color: var(--text-secondary);
 		font-size: var(--font-size-sm);
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+	}
+
+	.court-size-tag {
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		padding: 2px 6px;
+		border: 2px solid var(--court-color);
+		border-radius: var(--radius-sm);
+		color: var(--court-color);
+		margin-left: var(--spacing-xs);
 	}
 
 	.qr-section {
@@ -284,12 +350,15 @@
 		padding: var(--spacing-xl);
 		font-size: var(--font-size-sm);
 		color: var(--text-muted);
+		background-color: var(--bg-secondary);
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-default);
 	}
 
 	.qr-error {
 		color: var(--accent-error);
 		background-color: rgba(255, 51, 51, 0.1);
-		border-radius: var(--radius-sm);
+		border-color: var(--accent-error);
 	}
 
 	.closed {
@@ -309,6 +378,104 @@
 	.closed p {
 		margin: 0;
 		color: var(--text-secondary);
+	}
+
+	.players-section {
+		margin-bottom: var(--spacing-lg);
+	}
+
+	.players-section h3 {
+		margin: 0 0 var(--spacing-sm) 0;
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.courtsize-note {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+		font-style: italic;
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.player-cards {
+		display: flex;
+		gap: var(--spacing-sm);
+		flex-wrap: wrap;
+		margin-bottom: var(--spacing-lg);
+		justify-content: center;
+	}
+
+	.player-cards.three-player .player-card {
+		flex: 0 0 auto;
+		min-width: 100px;
+	}
+
+	.player-cards.five-player .player-card {
+		flex: 0 0 auto;
+		min-width: 90px;
+	}
+
+	.player-cards.six-player .player-card {
+		flex: 0 0 auto;
+		min-width: 80px;
+	}
+
+	.team-row {
+		display: flex;
+		gap: var(--spacing-sm);
+		align-items: center;
+		margin-bottom: var(--spacing-xs);
+		justify-content: center;
+	}
+
+	.team-row.team-a {
+		border-bottom: 2px solid var(--accent-primary);
+		padding-bottom: var(--spacing-xs);
+	}
+
+	.team-row.team-b {
+		padding-top: var(--spacing-xs);
+	}
+
+	.team-label-inline {
+		font-weight: 700;
+		font-size: var(--font-size-xs);
+		color: var(--accent-primary);
+		margin-right: var(--spacing-sm);
+	}
+
+	.player-card {
+		background-color: var(--bg-card);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		padding: var(--spacing-sm);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		min-width: 60px;
+	}
+
+	.player-letter {
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		color: var(--text-muted);
+		margin-bottom: 2px;
+	}
+
+	.player-name {
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		color: var(--text-primary);
+		text-align: center;
+	}
+
+	.standings-note {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		margin-bottom: var(--spacing-sm);
+		font-style: italic;
 	}
 
 	.error {
@@ -343,6 +510,14 @@
 		margin: 0 0 var(--spacing-sm) 0;
 		font-size: var(--font-size-base);
 		color: var(--text-primary);
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.team-label {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
 	}
 
 	.completed {
@@ -429,7 +604,7 @@
 	}
 
 	.team p {
-		margin: 0 0 var(--spacing-sm) 0;
+		margin: 0 0 var(--spacing-xs) 0;
 		font-size: var(--font-size-sm);
 		color: var(--text-secondary);
 		font-weight: 600;
@@ -454,7 +629,7 @@
 
 	.team input:focus {
 		outline: none;
-		border-color: var(--accent-info);
+		border-color: var(--border-focus);
 		box-shadow: var(--shadow-focus);
 		transform: scale(1.05);
 	}

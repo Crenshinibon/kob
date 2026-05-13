@@ -5,6 +5,7 @@
 
 	const tournament = $derived(data.tournament);
 	const standings = $derived(data.standings);
+	const courtSizes = $derived(data.courtSizes);
 
 	// Get top 3 for podium
 	const top3 = $derived(standings.slice(0, 3));
@@ -15,8 +16,30 @@
 	// Medal emojis
 	const medals = ['🥇', '🥈', '🥉'];
 
-	function formatNumber(num: number): string {
-		return num > 0 ? `+${num}` : String(num);
+	const formatNumber = (num: number): string => (num > 0 ? `+${num}` : String(num));
+
+	function getCourtSizeLabel(size: number): string {
+		if (size === 3) return '3p';
+		if (size === 4) return '4p';
+		if (size === 5) return '5p';
+		if (size === 6) return '6p';
+		return `${size}p`;
+	}
+
+	function getCourtSizeColor(size: number): string {
+		if (size === 3) return 'var(--accent-warning)';
+		if (size === 4) return 'var(--accent-success)';
+		return 'var(--accent-info)';
+	}
+
+	function getCourtBadgeStyle(courtNum: number): string {
+		const size = courtSizes.length >= courtNum ? courtSizes[courtNum - 1] : 4;
+		return getCourtSizeColor(size);
+	}
+
+	function getCourtBadgeLabel(courtNum: number): string {
+		const size = courtSizes.length >= courtNum ? courtSizes[courtNum - 1] : 4;
+		return `C${courtNum} ${getCourtSizeLabel(size)}`;
 	}
 
 	// Calculate variance for consistent performer achievement
@@ -33,6 +56,7 @@
 			status: string;
 			currentRound: number;
 			numRounds: number;
+			formatType?: string;
 		};
 		standings: Array<{
 			playerId: number;
@@ -52,6 +76,8 @@
 			currentRoundPoints: number;
 			currentRoundDiff: number;
 		}>;
+		players?: Array<{ id: number; name: string }>;
+		courtSizes: number[];
 	};
 </script>
 
@@ -59,7 +85,14 @@
 	<header>
 		<a href={resolve(`/tournament/${tournament.id}`)}>← Back to Tournament</a>
 		<h1>{tournament.name}</h1>
-		<p>Total Standings - Round {tournament.currentRound} of {tournament.numRounds}</p>
+		{#if tournament.formatType}
+			<p>
+				Total Standings - Round {tournament.currentRound} of {tournament.numRounds}
+				· {tournament.formatType === 'preseed' ? 'Preseed' : 'Random Seed'}
+			</p>
+		{:else}
+			<p>Total Standings - Round {tournament.currentRound} of {tournament.numRounds}</p>
+		{/if}
 	</header>
 
 	{#if standings.length === 0}
@@ -149,7 +182,9 @@
 									{@const roundData = player.roundHistory.find((r) => r.round === roundIdx + 1)}
 									<td class="round-data">
 										{#if roundData}
-											<span class="court-badge court-{roundData.court}">C{roundData.court}</span>
+											<span class="court-badge" style="border-color: {getCourtBadgeStyle(roundData.court)}; color: {getCourtBadgeStyle(roundData.court)}">
+												{getCourtBadgeLabel(roundData.court)}
+											</span>
 											<span class="rank-badge">#{roundData.rankOnCourt}</span>
 										{:else}
 											-
@@ -410,44 +445,15 @@
 		margin-right: 4px;
 	}
 
-	.court-badge.court-1 {
-		background-color: var(--accent-success);
-		color: var(--bg-primary);
-	}
-
-	.court-badge.court-2 {
-		background-color: var(--accent-info);
-		color: var(--bg-primary);
-	}
-
-	.court-badge.court-3 {
-		background-color: var(--accent-warning);
-		color: var(--bg-primary);
-	}
-
-	.court-badge.court-4 {
-		background-color: var(--text-muted);
-		color: var(--bg-primary);
-	}
-
-	.court-badge.court-5 {
-		background-color: #8b5cf6;
-		color: var(--bg-primary);
-	}
-
-	.court-badge.court-6 {
-		background-color: #ec4899;
-		color: var(--bg-primary);
-	}
-
-	.court-badge.court-7 {
-		background-color: #f97316;
-		color: var(--bg-primary);
-	}
-
-	.court-badge.court-8 {
-		background-color: #6b7280;
-		color: var(--bg-primary);
+	.court-badge {
+		display: inline-block;
+		padding: 2px 6px;
+		border-radius: var(--radius-sm);
+		font-weight: 600;
+		font-size: var(--font-size-xs);
+		margin-right: 4px;
+		border: 2px solid;
+		border-radius: var(--radius-sm);
 	}
 
 	.rank-badge {

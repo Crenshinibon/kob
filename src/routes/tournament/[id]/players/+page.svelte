@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import type { PageData } from './$types';
+
 	let { data, form } = $props<{
-		data: { tournament: any; players: any[] };
+		data: { tournament: any; players: any[]; courtPreview?: { courts: number; sizes: number[]; physical: number } };
 		form?: { error?: string; success?: string };
 	}>();
 
@@ -44,13 +47,32 @@
 	<header>
 		<a href="/">← Back</a>
 		<h1>{data.tournament.name}</h1>
-		<p>
-			{#if isPreseed}
-				Preseed format • Add {maxPlayers} players with points
-			{:else}
-				Random seed format • Add {maxPlayers} players
-			{/if}
-		</p>
+		{#if data.courtPreview}
+			<p>
+				{#if isPreseed}
+					Preseed format
+				{:else}
+					Random seed format
+				{/if}
+				· {maxPlayers} players
+				· {data.courtPreview.courts} court{data.courtPreview.courts !== 1 ? 's' : ''}
+				(
+				{#each data.courtPreview.sizes.slice(0, -1) as size}
+					{size}p,
+				{/each}
+				{data.courtPreview.sizes[data.courtPreview.sizes.length - 1]}p
+				)
+				· {data.courtPreview.physical} physical court{data.courtPreview.physical !== 1 ? 's' : ''}
+			</p>
+		{:else}
+			<p>
+				{#if isPreseed}
+					Preseed format • Add {maxPlayers} players with points
+				{:else}
+					Random seed format • Add {maxPlayers} players
+				{/if}
+			</p>
+		{/if}
 	</header>
 
 	{#if form?.error}

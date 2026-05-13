@@ -33,9 +33,24 @@ export const load = async ({ params, locals }) => {
 
 	if (!tourney) throw error(404, 'Tournament not found');
 
+	const maxPlayers = tourney.playerCount;
 	const players = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
 
-	return { tournament: tourney, players };
+	const config = getCourtConfiguration(maxPlayers);
+	const courtSizes: number[] = config.bottomCourtSize
+		? [...Array(config.standardCourts).fill(4), config.bottomCourtSize]
+		: Array(config.totalCourts).fill(4);
+	const physicalCourtCount = tourney.physicalCourtCount ?? Math.min(4, courtSizes.length);
+
+	return {
+		tournament: tourney,
+		players,
+		courtPreview: {
+			courts: courtSizes.length,
+			sizes: courtSizes,
+			physical: physicalCourtCount
+		}
+	};
 };
 
 function parsePreseedInput(text: string): PlayerWithPoints[] {
@@ -171,17 +186,21 @@ export const actions = {
 			return { error: `Need exactly ${maxPlayers} players. Currently have ${allPlayers.length}.` };
 		}
 
-		const courtConfig = getCourtConfiguration(maxPlayers);
-		const courtSizes: number[] = courtConfig.bottomCourtSize
-			? [...Array(courtConfig.standardCourts).fill(4), courtConfig.bottomCourtSize]
-			: Array(courtConfig.totalCourts).fill(4);
+		const config = getCourtConfiguration(maxPlayers);
+		const courtSizes: number[] = config.bottomCourtSize
+			? [...Array(config.standardCourts).fill(4), config.bottomCourtSize]
+			: Array(config.totalCourts).fill(4);
+
+		const physicalCourtCount = tourney.physicalCourtCount ?? Math.min(4, courtSizes.length);
+		const schedulingMode = (tourney.schedulingMode || 'batch') as SchedulingMode;
 
 		// Build tournament state and generate Round 1
 		const initState = createInitialState({
 			tournamentId: tourney.id,
 			formatType: tourney.formatType as FormatType,
 			playerCount: maxPlayers,
-			schedulingMode: (tourney.schedulingMode || 'batch') as SchedulingMode
+			schedulingMode,
+			physicalCourtCount
 		});
 
 		const players = allPlayers.map((p) => ({

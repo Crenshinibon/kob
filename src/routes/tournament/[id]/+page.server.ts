@@ -12,6 +12,8 @@ import {
 	getCourtConfiguration,
 	matchCountForCourtSize,
 	generateAllMatchesForAssignment,
+	getShiftAssignments,
+	estimateWaitTime,
 	type FormatType,
 	type TournamentState,
 	type MatchData,
@@ -59,6 +61,33 @@ export const load = async ({ params, locals }: any) => {
 	let isFinalRound = false;
 
 	if (currentRound === 0) {
+		// Before tournament start — check for in-progress round from crashed state
+		const existingRotations = await db
+			.select()
+			.from(courtRotation)
+			.where(eq(courtRotation.tournamentId, tournamentId));
+
+		if (existingRotations.length > 0) {
+			// Recover: find the highest round number with rotations
+			const maxRound = Math.max(...existingRotations.map((r) => r.roundNumber));
+			const roundRotations = existingRotations.filter((r) => r.roundNumber === maxRound);
+
+			const expectedMatchCount = courtSizes.reduce(
+				(sum, size) => sum + matchCountForCourtSize(size),
+				0
+			);
+
+			const rotationIds = roundRotations.map((r) => r.id);
+			const allMatches = await db
+				.select()
+				.from(match)
+				.where(inArray(match.courtRotationId, rotationIds));
+
+			const scoredMatchCount = allMatches.filter(
+				(m) => m.teamAScore !== null && m.teamBScore !== null
+			).length;
+			canCloseRound = scoredMatchCount >= expectedMatchCount;
+		}
 		isFinalRound = false;
 	} else {
 		// Check if all matches are scored for the current round
@@ -69,10 +98,18 @@ export const load = async ({ params, locals }: any) => {
 
 		const rotationIdList = rotationIds.map((r: any) => r.id);
 
-		const allMatches = await db.select().from(match).where(inArray(match.courtRotationId, rotationIdList));
+		const allMatches = await db
+			.select()
+			.from(match)
+			.where(inArray(match.courtRotationId, rotationIdList));
 
-		const expectedMatchCount = courtSizes.reduce((sum: number, size: number) => sum + matchCountForCourtSize(size), 0);
-		const scoredMatchCount = allMatches.filter((m: any) => m.teamAScore !== null && m.teamBScore !== null).length;
+		const expectedMatchCount = courtSizes.reduce(
+			(sum, size) => sum + matchCountForCourtSize(size),
+			0
+		);
+		const scoredMatchCount = allMatches.filter(
+			(m) => m.teamAScore !== null && m.teamBScore !== null
+		).length;
 		canCloseRound = allMatches.length >= expectedMatchCount && scoredMatchCount === expectedMatchCount;
 		isFinalRound = currentRound >= tourney.numRounds;
 	}
@@ -96,24 +133,38 @@ export const load = async ({ params, locals }: any) => {
 			.where(eq(courtAccess.courtRotationId, rotation.id))
 			.limit(1);
 
-		const rotationPlayers = [
-			playerMap.get(rotation.player1Id),
-			playerMap.get(rotation.player2Id),
-			rotation.player3Id ? playerMap.get(rotation.player3Id) : undefined,
-			rotation.player4Id ? playerMap.get(rotation.player4Id) : undefined,
-			rotation.player5Id ? playerMap.get(rotation.player5Id) : undefined,
-			rotation.player6Id ? playerMap.get(rotation.player6Id) : undefined
-		].filter(Boolean);
+		const playerIds = [
+			rotation.player1Id,
+			rotation.player2Id,
+			rotation.player3Id,
+			rotation.player4Id,
+			rotation.player5Id,
+			rotation.player6Id
+		].filter((id): id is number => id !== null);
+
+		const rotationPlayers = playerIds.map((id) => playerMap.get(id)).filter(Boolean);
+
+		const size = courtSizes[rotation.courtNumber - 1] ?? 4;
 
 		courts.push({
 			courtNumber: rotation.courtNumber,
+			courtSize: size,
 			matches,
 			token: access[0]?.token,
 			players: rotationPlayers
 		});
 	}
 
-	return { tournament: tourney, courts, canCloseRound, isFinalRound, courtSizes, currentRound };
+	return {
+		tournament: tourney,
+		courts,
+		canCloseRound,
+		isFinalRound,
+		courtSizes,
+		currentRound,
+		physicalCourtCount: tourney.physicalCourtCount ?? 4,
+		schedulingMode: tourney.schedulingMode || 'batch'
+	};
 };
 
 export const actions = {
@@ -153,11 +204,13 @@ export const actions = {
 
 		const courtSizes: number[] = parseCourtSizes(tourney);
 
+		const physicalCourtCount = tourney.physicalCourtCount ?? 4;
 		const initState = createInitialState({
 			tournamentId: tourney.id,
 			formatType: tourney.formatType as FormatType,
 			playerCount: tourney.playerCount,
-			schedulingMode: (tourney.schedulingMode || 'batch') as any
+			schedulingMode: (tourney.schedulingMode || 'batch') as any,
+			physicalCourtCount
 		});
 
 		const stateWithPlayers = addPlayers(initState, players);
@@ -277,8 +330,8 @@ export const actions = {
 			.from(courtRotation)
 			.where(eq(courtRotation.roundNumber, nextRound));
 
-		const physicalCourtCount = Math.min(4, newRotations.length);
-		for (let i = 0; i < physicalCourtCount; i++) {
+		const activeCount = Math.min(physicalCourtCount, newRotations.length);
+		for (let i = 0; i < activeCount; i++) {
 			const accessRecords = await db
 				.select()
 				.from(courtAccess)
@@ -328,5 +381,31 @@ export const actions = {
 		await db.delete(tournament).where(eq(tournament.id, tournamentId));
 
 		throw redirect(303, '/');
+	},
+
+	startTournament: async ({ params, locals }: any) => {
+		const user = locals.user;
+		if (!user) throw error(401, 'Unauthorized');
+
+		const tournamentId = parseInt(params.id);
+
+		const [tourney] = await db
+			.select()
+			.from(tournament)
+			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
+
+		if (!tourney) throw error(404, 'Not found');
+		if (tourney.status !== 'draft') throw error(400, 'Tournament already started');
+
+		const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
+		const requiredCount = tourney.playerCount;
+
+		if (dbPlayers.length !== requiredCount) {
+			throw redirect(303, `/tournament/${tournamentId}?error=Need exactly ${requiredCount} players, currently have ${dbPlayers.length}`);
+		}
+
+		await db.update(tournament).set({ status: 'active' }).where(eq(tournament.id, tournamentId));
+
+		throw redirect(303, `/tournament/${tournamentId}`);
 	}
 };

@@ -2,7 +2,8 @@ import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { tournament, courtRotation, match, player } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
+import { calculateCourtStandings, matchCountForCourtSize } from '$lib/server/tournament-logic';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const user = locals.user;
@@ -19,15 +20,19 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// Get all players
 	const players = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
 
-	// Get all completed rounds (rounds with matches that have scores)
+	// Get court sizes
+	const courtSizes: number[] = tourney.courtSizes
+		? JSON.parse(tourney.courtSizes)
+		: [4, 4, 4, 4]; // fallback
+	const matchCountPerCourt = courtSizes.map((s) => matchCountForCourtSize(s));
+
+	// Get all rotations
 	const rotations = await db
 		.select()
 		.from(courtRotation)
 		.where(eq(courtRotation.tournamentId, tournamentId));
 
-	// Calculate standings for the CURRENT round only (not cumulative)
-	// Court rankings determine overall ranking ranges:
-	// - Court 1: ranks 1-4, Court 2: ranks 5-8, Court 3: ranks 9-12, Court 4: ranks 13-16
+	// Calculate standings across all rounds
 	const playerStats: Record<
 		number,
 		{
@@ -71,18 +76,25 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		for (const rotation of roundRotations) {
 			const matches = await db.select().from(match).where(eq(match.courtRotationId, rotation.id));
 
-			// Check if all matches in this court have scores
+			// Check if all matches for this court have scores
+			const courtIdx = rotation.courtNumber - 1;
+			const requiredMatches = matchCountPerCourt[courtIdx] ?? 3;
 			const allMatchesComplete =
-				matches.length === 3 && matches.every((m) => m.teamAScore !== null);
+				matches.length >= requiredMatches && matches.every((m) => m.teamAScore !== null);
 			if (!allMatchesComplete) continue;
 
-			// Calculate court standings for this round
-			const courtStandings = calculateCourtStandings(matches, [
+			// Get all player IDs from this court (including player5/6)
+			const playerIds: number[] = [
 				rotation.player1Id,
 				rotation.player2Id,
-				rotation.player3Id,
-				rotation.player4Id
-			]);
+				...(rotation.player3Id ? [rotation.player3Id] : []),
+				...(rotation.player4Id ? [rotation.player4Id] : []),
+				...(rotation.player5Id ? [rotation.player5Id] : []),
+				...(rotation.player6Id ? [rotation.player6Id] : [])
+			];
+
+			// Calculate court standings
+			const courtStandings = calculateCourtStandings(matches as any[], playerIds);
 
 			// Update player stats
 			courtStandings.forEach((standing) => {
@@ -91,7 +103,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 					stats.totalPoints += standing.points;
 					stats.totalDiff += standing.diff;
 					stats.roundsPlayed++;
-					stats.matchesPlayed += 3;
+					stats.matchesPlayed += requiredMatches;
 					stats.roundHistory.push({
 						round: roundNum,
 						court: rotation.courtNumber,
@@ -110,78 +122,17 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		}
 	}
 
-	// Rank players based on CURRENT ROUND performance only
-	// Court determines rank range: C1=1-4, C2=5-8, C3=9-12, C4=13-16
+	// Rank players: Primary sort by total points, secondary by total differential, tertiary by playerId
 	const standings = Object.values(playerStats)
 		.filter((s) => s.roundsPlayed > 0)
 		.sort((a, b) => {
-			// Get last round history for both players
-			const aLastRound = a.roundHistory[a.roundHistory.length - 1];
-			const bLastRound = b.roundHistory[b.roundHistory.length - 1];
-
-			if (!aLastRound || !bLastRound) return 0;
-
-			// First sort by court number (lower court = better overall rank)
-			if (aLastRound.court !== bLastRound.court) {
-				return aLastRound.court - bLastRound.court;
-			}
-
-			// Same court: sort by current round points (descending)
-			if (b.currentRoundPoints !== a.currentRoundPoints) {
-				return b.currentRoundPoints - a.currentRoundPoints;
-			}
-
-			// Tiebreaker: current round differential
-			return b.currentRoundDiff - a.currentRoundDiff;
+			if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+			if (b.totalDiff !== a.totalDiff) return b.totalDiff - a.totalDiff;
+			return a.playerId - b.playerId;
 		})
 		.map((s, i) => ({ ...s, overallRank: i + 1 }));
 
-	return { tournament: tourney, standings, players };
+	return { tournament: tourney, standings, players, courtSizes };
 };
 
-interface Match {
-	teamAScore: number | null;
-	teamBScore: number | null;
-	teamAPlayer1Id: number;
-	teamAPlayer2Id: number;
-	teamBPlayer1Id: number;
-	teamBPlayer2Id: number;
-}
-
-function calculateCourtStandings(matches: Match[], playerIds: number[]) {
-	const stats: Record<number, { playerId: number; points: number; for: number; against: number }> =
-		{};
-
-	playerIds.forEach((id) => {
-		stats[id] = { playerId: id, points: 0, for: 0, against: 0 };
-	});
-
-	matches.forEach((m) => {
-		if (m.teamAScore === null || m.teamBScore === null) return;
-
-		stats[m.teamAPlayer1Id].points += m.teamAScore;
-		stats[m.teamAPlayer1Id].for += m.teamAScore;
-		stats[m.teamAPlayer1Id].against += m.teamBScore;
-
-		stats[m.teamAPlayer2Id].points += m.teamAScore;
-		stats[m.teamAPlayer2Id].for += m.teamAScore;
-		stats[m.teamAPlayer2Id].against += m.teamBScore;
-
-		stats[m.teamBPlayer1Id].points += m.teamBScore;
-		stats[m.teamBPlayer1Id].for += m.teamBScore;
-		stats[m.teamBPlayer1Id].against += m.teamAScore;
-
-		stats[m.teamBPlayer2Id].points += m.teamBScore;
-		stats[m.teamBPlayer2Id].for += m.teamBScore;
-		stats[m.teamBPlayer2Id].against += m.teamAScore;
-	});
-
-	return Object.values(stats)
-		.map((s) => ({ ...s, diff: s.for - s.against }))
-		.sort((a, b) => {
-			if (b.points !== a.points) return b.points - a.points;
-			if (b.diff !== a.diff) return b.diff - a.diff;
-			return a.playerId - b.playerId;
-		})
-		.map((s, i) => ({ ...s, rank: i + 1 }));
-}
+// StandingsPlayer type is implicit from usage
