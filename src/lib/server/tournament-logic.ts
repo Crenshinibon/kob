@@ -455,6 +455,29 @@ export function matchCountForCourtSize(courtSize: number): number {
 	switch (courtSize) { case 3: return 3; case 4: return 3; case 5: case 6: return 4; default: throw new Error(`Invalid court size: ${courtSize}`); }
 }
 
+export function generateAllMatchesForAssignment(assignment: CourtAssignment, courtSizes: readonly number[]): MatchData[] {
+	const idx = assignment.courtNumber - 1;
+	const size = courtSizes[idx] ?? 4;
+	switch (size) {
+		case 3: return generate3pMatches(assignment.playerIds);
+		case 4: return generate4pMatches(assignment.playerIds);
+		case 5:
+		case 6: {
+			const [p1, p2, p3] = assignment.playerIds;
+			const p4 = assignment.playerIds.length > 3 ? assignment.playerIds[3] : assignment.playerIds[2];
+			const p5 = assignment.playerIds.length > 4 ? assignment.playerIds[4] : assignment.playerIds[0];
+			const p6 = assignment.playerIds.length > 5 ? assignment.playerIds[5] : assignment.playerIds[1];
+			return [
+				{ teamAPlayer1Id: p1, teamAPlayer2Id: p2, teamBPlayer1Id: p3, teamBPlayer2Id: p4, teamAScore: null, teamBScore: null },
+				{ teamAPlayer1Id: p1, teamAPlayer2Id: p3, teamBPlayer1Id: p5, teamBPlayer2Id: p6, teamAScore: null, teamBScore: null },
+				{ teamAPlayer1Id: p1, teamAPlayer2Id: p4, teamBPlayer1Id: p5, teamBPlayer2Id: p2, teamAScore: null, teamBScore: null },
+				{ teamAPlayer1Id: p2, teamAPlayer2Id: p6, teamBPlayer1Id: p3, teamBPlayer2Id: p4, teamAScore: null, teamBScore: null }
+			];
+		}
+		default: return generate4pMatches(assignment.playerIds);
+	}
+}
+
 export function countScoredMatches(courtMatches: readonly (MatchData | undefined)[]): number {
 	return courtMatches.filter((m) => m !== undefined && m.teamAScore !== null && m.teamBScore !== null).length;
 }

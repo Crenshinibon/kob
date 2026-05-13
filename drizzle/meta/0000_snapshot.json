@@ -1,5 +1,5 @@
 {
-  "id": "46a0906e-0b17-4b83-a108-d9744aaedcdd",
+  "id": "033ce075-6718-4c60-b344-42a8e043794a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -101,6 +101,18 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "player_5_id": {
+          "name": "player_5_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "player_6_id": {
+          "name": "player_6_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -199,6 +211,18 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "seed_points": {
+          "name": "seed_points",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "seed_rank": {
+          "name": "seed_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -251,6 +275,33 @@
           "primaryKey": false,
           "notNull": true,
           "default": 3
+        },
+        "format_type": {
+          "name": "format_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'random-seed'"
+        },
+        "scheduling_mode": {
+          "name": "scheduling_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'batch'"
+        },
+        "player_count": {
+          "name": "player_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 16
+        },
+        "court_sizes": {
+          "name": "court_sizes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

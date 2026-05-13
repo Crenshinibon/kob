@@ -8,7 +8,9 @@ export const tournament = pgTable('tournament', {
 	currentRound: integer('current_round').default(0),
 	numRounds: integer('num_rounds').notNull().default(3),
 	formatType: text('format_type').notNull().default('random-seed'),
+	schedulingMode: text('scheduling_mode').notNull().default('batch'),
 	playerCount: integer('player_count').notNull().default(16),
+	courtSizes: text('court_sizes'),
 	createdAt: timestamp('created_at').defaultNow()
 });
 
@@ -28,7 +30,9 @@ export const courtRotation = pgTable('court_rotation', {
 	player1Id: integer('player_1_id').notNull(),
 	player2Id: integer('player_2_id').notNull(),
 	player3Id: integer('player_3_id').notNull(),
-	player4Id: integer('player_4_id').notNull()
+	player4Id: integer('player_4_id').notNull(),
+	player5Id: integer('player_5_id'),
+	player6Id: integer('player_6_id')
 });
 
 export const match = pgTable('match', {

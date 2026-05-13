@@ -1,6 +1,11 @@
 import { redirect, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { tournament } from '$lib/server/db/schema';
+import {
+	getCourtConfiguration,
+	calculateRoundCount,
+	matchCountForCourtSize
+} from '$lib/server/tournament-logic';
 
 export const load = async ({ locals }) => {
 	if (!locals.user) {
@@ -21,7 +26,7 @@ export const actions = {
 		const name = formData.get('name')?.toString().trim();
 		const formatType = formData.get('formatType')?.toString() || 'random-seed';
 		const playerCount = parseInt(formData.get('playerCount')?.toString() || '16');
-		let numRounds = parseInt(formData.get('numRounds')?.toString() || '3');
+		const schedulingMode = formData.get('schedulingMode')?.toString() || 'batch';
 
 		if (!name) {
 			return { error: 'Tournament name is required' };
@@ -31,17 +36,16 @@ export const actions = {
 			return { error: 'Invalid format type' };
 		}
 
-		if (playerCount !== 16 && playerCount !== 32) {
-			return { error: 'Player count must be 16 or 32' };
+		if (playerCount < 8 || playerCount > 64) {
+			return { error: 'Player count must be between 8 and 64' };
 		}
 
-		if (formatType === 'preseed') {
-			numRounds = playerCount === 16 ? 3 : 4;
-		} else {
-			if (numRounds < 1 || numRounds > 10) {
-				return { error: 'Number of rounds must be 1-10' };
-			}
-		}
+		const config = getCourtConfiguration(playerCount);
+		const courtSizes = config.bottomCourtSize
+			? [...Array(config.standardCourts).fill(4), config.bottomCourtSize]
+			: Array(config.totalCourts).fill(4);
+
+		const numRounds = calculateRoundCount(config.totalCourts, formatType);
 
 		const [newTournament] = await db
 			.insert(tournament)
@@ -50,7 +54,9 @@ export const actions = {
 				name,
 				numRounds,
 				formatType,
+				schedulingMode,
 				playerCount,
+				courtSizes: JSON.stringify(courtSizes),
 				status: 'draft',
 				currentRound: 0
 			})

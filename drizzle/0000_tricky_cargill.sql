@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS "court_access" (
+CREATE TABLE "court_access" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"court_rotation_id" integer NOT NULL,
 	"token" text NOT NULL,
@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS "court_access" (
 	CONSTRAINT "court_access_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "court_rotation" (
+CREATE TABLE "court_rotation" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"tournament_id" integer NOT NULL,
 	"round_number" integer NOT NULL,
@@ -14,10 +14,12 @@ CREATE TABLE IF NOT EXISTS "court_rotation" (
 	"player_1_id" integer NOT NULL,
 	"player_2_id" integer NOT NULL,
 	"player_3_id" integer NOT NULL,
-	"player_4_id" integer NOT NULL
+	"player_4_id" integer NOT NULL,
+	"player_5_id" integer,
+	"player_6_id" integer
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "match" (
+CREATE TABLE "match" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"court_rotation_id" integer NOT NULL,
 	"match_number" integer NOT NULL,
@@ -29,23 +31,29 @@ CREATE TABLE IF NOT EXISTS "match" (
 	"team_b_score" integer
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "player" (
+CREATE TABLE "player" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"tournament_id" integer NOT NULL,
-	"name" text NOT NULL
+	"name" text NOT NULL,
+	"seed_points" integer,
+	"seed_rank" integer
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "tournament" (
+CREATE TABLE "tournament" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"org_id" text NOT NULL,
 	"name" text NOT NULL,
 	"status" text DEFAULT 'draft' NOT NULL,
 	"current_round" integer DEFAULT 0,
 	"num_rounds" integer DEFAULT 3 NOT NULL,
+	"format_type" text DEFAULT 'random-seed' NOT NULL,
+	"scheduling_mode" text DEFAULT 'batch' NOT NULL,
+	"player_count" integer DEFAULT 16 NOT NULL,
+	"court_sizes" text,
 	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "account" (
+CREATE TABLE "account" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
 	"provider_id" text NOT NULL,
@@ -61,7 +69,7 @@ CREATE TABLE IF NOT EXISTS "account" (
 	"updated_at" timestamp NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "session" (
+CREATE TABLE "session" (
 	"id" text PRIMARY KEY NOT NULL,
 	"expires_at" timestamp NOT NULL,
 	"token" text NOT NULL,
@@ -73,7 +81,7 @@ CREATE TABLE IF NOT EXISTS "session" (
 	CONSTRAINT "session_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "user" (
+CREATE TABLE "user" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"email" text NOT NULL,
@@ -84,7 +92,7 @@ CREATE TABLE IF NOT EXISTS "user" (
 	CONSTRAINT "user_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "verification" (
+CREATE TABLE "verification" (
 	"id" text PRIMARY KEY NOT NULL,
 	"identifier" text NOT NULL,
 	"value" text NOT NULL,
@@ -93,10 +101,8 @@ CREATE TABLE IF NOT EXISTS "verification" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "account" DROP CONSTRAINT IF EXISTS "account_user_id_user_id_fk";
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "session" DROP CONSTRAINT IF EXISTS "session_user_id_user_id_fk";
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "account_userId_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "session_userId_idx" ON "session" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "verification_identifier_idx" ON "verification" USING btree ("identifier");
+CREATE INDEX "account_userId_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "session_userId_idx" ON "session" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");

@@ -3,6 +3,18 @@ import { db } from '$lib/server/db';
 import { tournament, player, courtRotation, match, courtAccess } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import crypto from 'crypto';
+import {
+	getCourtConfiguration,
+	createInitialState,
+	addPlayers,
+	startRound,
+	generate4pMatches,
+	generate3pMatches,
+	generateAllMatchesForAssignment,
+	type FormatType,
+	type SchedulingMode
+} from '$lib/server/tournament-logic';
+import type { TournamentState } from '$lib/server/tournament-logic';
 
 type PlayerWithPoints = {
 	name: string;
@@ -47,22 +59,6 @@ function parsePreseedInput(text: string): PlayerWithPoints[] {
 	}
 
 	return result;
-}
-
-function snakeDistribute<T>(items: T[], courtCount: number): T[][] {
-	const courts: T[][] = Array.from({ length: courtCount }, () => []);
-	const playersPerCourt = 4;
-
-	for (let pos = 0; pos < playersPerCourt; pos++) {
-		for (let court = 0; court < courtCount; court++) {
-			const index = pos * courtCount + court;
-			if (index < items.length) {
-				courts[court].push(items[index]);
-			}
-		}
-	}
-
-	return courts;
 }
 
 export const actions = {
@@ -168,84 +164,138 @@ export const actions = {
 
 		if (!tourney) throw error(404, 'Tournament not found');
 
-		const maxPlayers = tourney.playerCount;
-		const courtCount = maxPlayers / 4;
-		const isPreseed = tourney.formatType === 'preseed';
-
 		const allPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
+		const maxPlayers = tourney.playerCount;
 
 		if (allPlayers.length !== maxPlayers) {
 			return { error: `Need exactly ${maxPlayers} players. Currently have ${allPlayers.length}.` };
 		}
 
-		let courtAssignments: (typeof allPlayers)[];
+		const courtConfig = getCourtConfiguration(maxPlayers);
+		const courtSizes: number[] = courtConfig.bottomCourtSize
+			? [...Array(courtConfig.standardCourts).fill(4), courtConfig.bottomCourtSize]
+			: Array(courtConfig.totalCourts).fill(4);
 
-		if (isPreseed) {
-			const sorted = [...allPlayers].sort((a, b) => (b.seedPoints ?? 0) - (a.seedPoints ?? 0));
+		// Build tournament state and generate Round 1
+		const initState = createInitialState({
+			tournamentId: tourney.id,
+			formatType: tourney.formatType as FormatType,
+			playerCount: maxPlayers,
+			schedulingMode: (tourney.schedulingMode || 'batch') as SchedulingMode
+		});
 
+		const players = allPlayers.map((p) => ({
+			id: p.id,
+			name: p.name,
+			seedPoints: p.seedPoints,
+			seedRank: p.seedRank
+		}));
+
+		const stateWithPlayers = addPlayers(initState, players);
+
+		if (tourney.formatType === 'preseed') {
+			// Update seed ranks in DB
+			const sorted = [...players].sort((a, b) => (b.seedPoints ?? 0) - (a.seedPoints ?? 0));
 			for (let i = 0; i < sorted.length; i++) {
 				await db
 					.update(player)
 					.set({ seedRank: i + 1 })
 					.where(eq(player.id, sorted[i].id));
 			}
-
-			courtAssignments = snakeDistribute(sorted, courtCount);
-		} else {
-			const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
-			courtAssignments = [];
-			for (let i = 0; i < courtCount; i++) {
-				courtAssignments.push(shuffled.slice(i * 4, (i + 1) * 4));
-			}
 		}
 
-		for (let courtNum = 1; courtNum <= courtCount; courtNum++) {
-			const courtPlayers = courtAssignments[courtNum - 1];
+		const startedState = startRound(stateWithPlayers);
+		const assignments = startedState.currentAssignments;
+		const matches = startedState.currentMatches;
+
+		for (let courtNum = 0; courtNum < assignments.length; courtNum++) {
+			const assignment = assignments[courtNum];
+			const matchData = matches[courtNum];
+			const size = courtSizes[courtNum] ?? 4;
 
 			const [rotation] = await db
 				.insert(courtRotation)
 				.values({
 					tournamentId,
 					roundNumber: 1,
-					courtNumber: courtNum,
-					player1Id: courtPlayers[0].id,
-					player2Id: courtPlayers[1].id,
-					player3Id: courtPlayers[2].id,
-					player4Id: courtPlayers[3].id
+					courtNumber: assignment.courtNumber,
+					player1Id: assignment.playerIds[0],
+					player2Id: assignment.playerIds[1],
+					player3Id: assignment.playerIds.length > 2 ? assignment.playerIds[2] : 0,
+					player4Id: assignment.playerIds.length > 3 ? assignment.playerIds[3] : 0,
+					player5Id: size >= 5 ? assignment.playerIds[4] : null,
+					player6Id: size >= 6 ? assignment.playerIds[5] : null
 				})
 				.returning();
 
-			const p1 = courtPlayers[0].id;
-			const p2 = courtPlayers[1].id;
-			const p3 = courtPlayers[2].id;
-			const p4 = courtPlayers[3].id;
+			if (matchData) {
+				await db.insert(match).values({
+					courtRotationId: rotation.id,
+					matchNumber: 1,
+					teamAPlayer1Id: matchData.teamAPlayer1Id,
+					teamAPlayer2Id: matchData.teamAPlayer2Id,
+					teamBPlayer1Id: matchData.teamBPlayer1Id,
+					teamBPlayer2Id: matchData.teamBPlayer2Id
+				});
 
-			await db.insert(match).values({
-				courtRotationId: rotation.id,
-				matchNumber: 1,
-				teamAPlayer1Id: p1,
-				teamAPlayer2Id: p2,
-				teamBPlayer1Id: p3,
-				teamBPlayer2Id: p4
-			});
+				// For 4p courts, also insert matches 2 and 3
+				if (size === 4) {
+					const m2 = generate4pMatches(assignment.playerIds)[1];
+					const m3 = generate4pMatches(assignment.playerIds)[2];
 
-			await db.insert(match).values({
-				courtRotationId: rotation.id,
-				matchNumber: 2,
-				teamAPlayer1Id: p1,
-				teamAPlayer2Id: p3,
-				teamBPlayer1Id: p2,
-				teamBPlayer2Id: p4
-			});
+					await db.insert(match).values({
+						courtRotationId: rotation.id,
+						matchNumber: 2,
+						teamAPlayer1Id: m2.teamAPlayer1Id,
+						teamAPlayer2Id: m2.teamAPlayer2Id,
+						teamBPlayer1Id: m2.teamBPlayer1Id,
+						teamBPlayer2Id: m2.teamBPlayer2Id
+					});
 
-			await db.insert(match).values({
-				courtRotationId: rotation.id,
-				matchNumber: 3,
-				teamAPlayer1Id: p1,
-				teamAPlayer2Id: p4,
-				teamBPlayer1Id: p2,
-				teamBPlayer2Id: p3
-			});
+					await db.insert(match).values({
+						courtRotationId: rotation.id,
+						matchNumber: 3,
+						teamAPlayer1Id: m3.teamAPlayer1Id,
+						teamAPlayer2Id: m3.teamAPlayer2Id,
+						teamBPlayer1Id: m3.teamBPlayer1Id,
+						teamBPlayer2Id: m3.teamBPlayer2Id
+					});
+				} else if (size === 3) {
+					const m2 = generate3pMatches(assignment.playerIds)[1];
+					const m3 = generate3pMatches(assignment.playerIds)[2];
+
+					await db.insert(match).values({
+						courtRotationId: rotation.id,
+						matchNumber: 2,
+						teamAPlayer1Id: m2.teamAPlayer1Id,
+						teamAPlayer2Id: m2.teamAPlayer2Id,
+						teamBPlayer1Id: m2.teamBPlayer1Id,
+						teamBPlayer2Id: m2.teamBPlayer2Id
+					});
+
+					await db.insert(match).values({
+						courtRotationId: rotation.id,
+						matchNumber: 3,
+						teamAPlayer1Id: m3.teamAPlayer1Id,
+						teamAPlayer2Id: m3.teamAPlayer2Id,
+						teamBPlayer1Id: m3.teamBPlayer1Id,
+						teamBPlayer2Id: m3.teamBPlayer2Id
+					});
+				} else if (size >= 5) {
+					const extraMatches = generateAllMatchesForAssignment(assignment, courtSizes);
+					for (let mi = 1; mi < extraMatches.length; mi++) {
+						const m = extraMatches[mi];
+						await db.insert(match).values({
+							courtRotationId: rotation.id,
+							matchNumber: mi + 1,
+							teamAPlayer1Id: m.teamAPlayer1Id,
+							teamAPlayer2Id: m.teamAPlayer2Id,
+							teamBPlayer1Id: m.teamBPlayer1Id,
+							teamBPlayer2Id: m.teamBPlayer2Id
+						});
+					}
+				}
+			}
 
 			const token = crypto.randomBytes(16).toString('hex');
 			await db.insert(courtAccess).values({
@@ -257,7 +307,11 @@ export const actions = {
 
 		await db
 			.update(tournament)
-			.set({ status: 'active', currentRound: 1 })
+			.set({
+				status: 'active',
+				currentRound: 1,
+				courtSizes: JSON.stringify(courtSizes)
+			})
 			.where(eq(tournament.id, tournamentId));
 
 		throw redirect(302, `/tournament/${tournamentId}`);
