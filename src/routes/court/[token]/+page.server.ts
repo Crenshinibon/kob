@@ -63,8 +63,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const courtSize = (tourney as any).courtSizes
 		? ((JSON.parse((tourney as any).courtSizes) as number[])[rotation.courtNumber - 1] ??
-			playerIds.length)
+				playerIds.length)
 		: playerIds.length;
+
+	const scoreCap = courtSize >= 5 ? 15 : 21;
 
 	return {
 		court: {
@@ -72,7 +74,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			courtNumber: rotation.courtNumber,
 			roundNumber: rotation.roundNumber,
 			courtSize,
-			playerNames
+			playerNames,
+			scoreCap
 		},
 		matches,
 		standings,
@@ -89,7 +92,7 @@ export const actions: Actions = {
 		const teamAScore = parseInt(formData.get('teamAScore')?.toString() || '0');
 		const teamBScore = parseInt(formData.get('teamBScore')?.toString() || '0');
 
-		// Validate scores
+		// Basic sanity checks
 		if (teamAScore < 0 || teamAScore > 50 || teamBScore < 0 || teamBScore > 50) {
 			return { error: 'Scores must be between 0 and 50' };
 		}
@@ -100,10 +103,6 @@ export const actions: Actions = {
 
 		const maxScore = Math.max(teamAScore, teamBScore);
 		const minScore = Math.min(teamAScore, teamBScore);
-
-		if (maxScore < 21) {
-			return { error: 'Winner must have at least 21 points' };
-		}
 
 		if (maxScore - minScore < 2) {
 			return { error: 'Winner must win by at least 2 points' };
@@ -120,6 +119,24 @@ export const actions: Actions = {
 
 		if (!matchRecord || matchRecord.courtRotationId !== access.courtRotationId) {
 			return { error: 'Invalid match' };
+		}
+
+		// Look up court size to determine score cap
+		const [rotation] = await db
+			.select()
+			.from(courtRotation)
+			.where(eq(courtRotation.id, matchRecord.courtRotationId));
+		const [tourney] = await db
+			.select()
+			.from(tournament)
+			.where(eq(tournament.id, rotation.tournamentId));
+
+		const courtSizes: number[] = tourney.courtSizes ? JSON.parse(tourney.courtSizes) : [];
+		const courtSize = courtSizes[rotation.courtNumber - 1] ?? 4;
+		const scoreCap = courtSize >= 5 ? 15 : 21;
+
+		if (maxScore < scoreCap) {
+			return { error: `Winner must have at least ${scoreCap} points` };
 		}
 
 		// Save score

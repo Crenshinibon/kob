@@ -97,12 +97,12 @@
 			<h3>Players on This Court ({data.court.courtSize}p)</h3>
 			{#if data.court.courtSize === 3}
 				<p class="courtsize-note">
-					Solo rotation format — one player plays solo against the other two
+					3-player solo rotation — 3 games per player (to 21)
 				</p>
 			{:else if data.court.courtSize === 5}
-				<p class="courtsize-note">5-player court — one team of 3, one team of 2</p>
+				<p class="courtsize-note">5-player court — 4 parallel games per player (to 15)</p>
 			{:else if data.court.courtSize === 6}
-				<p class="courtsize-note">6-player court — two teams of 3</p>
+				<p class="courtsize-note">6-player court — 4 parallel games per player (to 15)</p>
 			{/if}
 			<div
 				class="player-cards"
