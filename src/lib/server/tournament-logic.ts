@@ -83,7 +83,7 @@ export type TournamentState = {
 	// Current round's court assignments
 	readonly currentAssignments: readonly CourtAssignment[];
 
-	// Next round's pre-computed assignments (set by closeRound)
+	// Next round's pre-computed assignments (set by closeRound, consumed by startRound)
 	readonly nextAssignments: readonly CourtAssignment[];
 
 	// Current round's match data
@@ -153,7 +153,7 @@ export function createInitialState(opts: CreateTournamentOpts): TournamentState 
 		config: { tournamentId, formatType, playerCount, schedulingMode, courtSizes },
 		players: [], roundsCompleted: 0, currentRound: 0,
 		totalRounds: calculateRoundCount(courtSizes.length, formatType),
-		isComplete: false, completedRounds: [], currentAssignments: [], currentMatches: []
+		isComplete: false, completedRounds: [], currentAssignments: [], nextAssignments: [], currentMatches: []
 	};
 }
 
@@ -184,10 +184,11 @@ export function startRound(state: TournamentState): TournamentState {
 	}
 
 	// Subsequent rounds: use pre-computed assignments from closeRound
-	if (state.currentAssignments.length === 0) throw new Error('Call closeRound first.');
+	if (state.nextAssignments.length === 0) throw new Error('Call closeRound first.');
 	return { ...state, currentRound: nextRound,
-		currentMatches: state.currentAssignments.map((a) => genMatchForAssignment(state.config.courtSizes, a)),
-		isComplete: nextRound >= state.totalRounds };
+		currentAssignments: state.nextAssignments,
+		currentMatches: state.nextAssignments.map((a) => genMatchForAssignment(state.config.courtSizes, a)),
+		nextAssignments: [], isComplete: nextRound >= state.totalRounds };
 }
 
 // ============================================================================
@@ -380,7 +381,7 @@ export function closeRound(state: TournamentState): TournamentState {
 	}
 
 	return { ...state, completedRounds: updated, roundsCompleted: nextRound, isComplete: false,
-		currentAssignments: nextAssignments, currentMatches: [], currentRound: state.currentRound };
+		currentAssignments: [], currentMatches: [], nextAssignments, currentRound: state.currentRound };
 }
 
 // ============================================================================

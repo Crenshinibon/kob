@@ -375,7 +375,7 @@ describe('closeRound', () => {
 		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 8 });
 		s = addPlayers(s, Array.from({ length: 8 }, (_, i) => mockPlayer(i + 1)));
 		s = startRound(s);
-		expect(() => closeRound(s)).toThrow('match data');
+		expect(() => closeRound(s)).toThrow('No scored matches');
 	});
 });
 
@@ -410,7 +410,7 @@ describe('redistributePreseedRecursive', () => {
 
 	it('preserves all players', () => {
 		const results = Array.from({ length: 8 }, (_, i) =>
-			mockCourtResult(i + 1, Array.from((_, j) => ({
+			mockCourtResult(i + 1, Array.from({ length: 4 }, (_, j) => ({
 				playerId: i * 4 + j + 1, rank: j + 1, points: 0, diff: 0
 			})))
 		);
@@ -459,8 +459,9 @@ describe('verticalSeeding', () => {
 
 	it('redistributes 8 courts', () => {
 		const results = Array.from({ length: 8 }, (_, i) =>
-			mockCourtResult(i + 1, Array.from((_, j) => ({
-				playerId: i * 4 + j + 1, rank: j + 1, points: (8 - i) * 10, diff: 0
+			mockCourtResult(i + 1, Array.from({ length: 4 }, (_, j) => ({
+				playerId: i * 4 + j + 1, rank: j + 1,
+				points: (8 - i) * 10, diff: 0
 			})))
 		);
 		const a = verticalSeeding(results, 8);
@@ -471,7 +472,7 @@ describe('verticalSeeding', () => {
 
 	it('handles 3 courts, 12 players', () => {
 		const results = [1, 5, 9].map((start, ci) =>
-			mockCourtResult(ci + 1, Array.from((_, j) => ({
+			mockCourtResult(ci + 1, Array.from({ length: 4 }, (_, j) => ({
 				playerId: start + j, rank: j + 1, points: 40 - j * 5, diff: 0
 			})))
 		);
@@ -513,7 +514,7 @@ describe('ladderRedistribute', () => {
 
 	it('8 courts preserves all players', () => {
 		const results = Array.from({ length: 8 }, (_, i) =>
-			mockCourtResult(i + 1, Array.from((_, j) => ({
+			mockCourtResult(i + 1, Array.from({ length: 4 }, (_, j) => ({
 				playerId: i * 4 + j + 1, rank: j + 1
 			})))
 		);
