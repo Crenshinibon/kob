@@ -83,6 +83,9 @@ export type TournamentState = {
 	// Current round's court assignments
 	readonly currentAssignments: readonly CourtAssignment[];
 
+	// Next round's pre-computed assignments (set by closeRound)
+	readonly nextAssignments: readonly CourtAssignment[];
+
 	// Current round's match data
 	readonly currentMatches: readonly (MatchData | undefined)[];
 };
@@ -342,7 +345,11 @@ export function redistributeLadder(
 
 export function closeRound(state: TournamentState): TournamentState {
 	if (state.currentRound === 0) throw new Error('No active round to close');
-	if (state.currentMatches.length === 0) throw new Error('No scored matches in current round');
+	if (state.currentMatches.length === 0) throw new Error('No matches have been generated for this round');
+	const scoredCount = state.currentMatches.filter((m): m is MatchData =>
+		m !== undefined && m.teamAScore !== null && m.teamBScore !== null
+	).length;
+	if (scoredCount === 0) throw new Error('No scored matches in this round');
 
 	// Calculate standings for each court
 	const courtResults: CourtResult[] = state.currentAssignments.map((assign) => {
