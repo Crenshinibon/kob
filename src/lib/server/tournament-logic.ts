@@ -146,12 +146,7 @@ export type CreateTournamentOpts = {
 };
 
 export function createInitialState(opts: CreateTournamentOpts): TournamentState {
-	const {
-		tournamentId,
-		formatType,
-		playerCount,
-		physicalCourtCount = 4
-	} = opts;
+	const { tournamentId, formatType, playerCount, physicalCourtCount = 4 } = opts;
 	if (playerCount < 8 || playerCount > 64)
 		throw new Error(`Player count must be 8-64, got ${playerCount}`);
 	const courtSizes = calculateCourtSizes(playerCount);

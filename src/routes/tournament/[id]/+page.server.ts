@@ -165,7 +165,7 @@ export const load = async ({ params, locals }: any) => {
 		isFinalRound,
 		courtSizes,
 		currentRound,
-		physicalCourtCount: tourney.physicalCourtCount ?? 4,
+		physicalCourtCount: tourney.physicalCourtCount ?? 4
 	};
 };
 
@@ -211,7 +211,6 @@ export const actions = {
 			tournamentId: tourney.id,
 			formatType: tourney.formatType as FormatType,
 			playerCount: tourney.playerCount,
-			schedulingMode: 'batch',
 			physicalCourtCount
 		});
 

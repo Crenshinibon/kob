@@ -9,11 +9,7 @@
 	const minPlayers = 8;
 	const maxPlayers = 64;
 
-	const computedPlayerCount = $derived(
-		playerNames
-			.split('\n')
-			.filter((n) => n.trim()).length
-	);
+	const computedPlayerCount = $derived(playerNames.split('\n').filter((n) => n.trim()).length);
 
 	const roundCounts = $derived(() => {
 		const courts = Math.ceil(computedPlayerCount / 4);

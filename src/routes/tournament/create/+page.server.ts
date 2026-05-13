@@ -65,7 +65,9 @@ export const actions = {
 		const parsed: ParsedPlayer[] = lines.map((line: string) => parsePlayerLine(line, formatType));
 
 		if (formatType === 'preseed') {
-			const missingPoints: ParsedPlayer[] = parsed.filter((p: ParsedPlayer) => p.seedPoints === null);
+			const missingPoints: ParsedPlayer[] = parsed.filter(
+				(p: ParsedPlayer) => p.seedPoints === null
+			);
 			if (missingPoints.length > 0) {
 				return {
 					error: `Preseed format requires points for all players. Missing points for: ${missingPoints.map((p: ParsedPlayer) => p.name).join(', ')}`

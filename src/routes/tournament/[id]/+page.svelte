@@ -65,14 +65,15 @@
 		{:else}
 			<p class="status-completed">Completed</p>
 		{/if}
-		<a href="/tournament/{data.tournament.id}/standings" class="standings-link">📊 View Standings</a>
+		<a href="/tournament/{data.tournament.id}/standings" class="standings-link">📊 View Standings</a
+		>
 	</header>
 
 	{#if isWaiting}
 		<div class="waiting-info">
 			<p>
-				⏳ {totalPlayers}/{expectedPlayers} players registered —
-				waiting for {expectedPlayers - totalPlayers} more before starting.
+				⏳ {totalPlayers}/{expectedPlayers} players registered — waiting for {expectedPlayers -
+					totalPlayers} more before starting.
 			</p>
 		</div>
 	{/if}
@@ -81,9 +82,15 @@
 		<div class="scheduling-info">
 			<h3>Court Scheduling (Round {data.currentRound})</h3>
 			<p>
-				Batch shifts · {data.physicalCourtCount} physical court{data.physicalCourtCount !== 1 ? 's' : ''}
+				Batch shifts · {data.physicalCourtCount} physical court{data.physicalCourtCount !== 1
+					? 's'
+					: ''}
 				· {virtualCourtCount} virtual court{virtualCourtCount !== 1 ? 's' : ''}
-				· {Math.ceil(virtualCourtCount / data.physicalCourtCount)} shift{Math.ceil(virtualCourtCount / data.physicalCourtCount) !== 1 ? 's' : ''}
+				· {Math.ceil(virtualCourtCount / data.physicalCourtCount)} shift{Math.ceil(
+					virtualCourtCount / data.physicalCourtCount
+				) !== 1
+					? 's'
+					: ''}
 			</p>
 		</div>
 	{/if}
@@ -96,7 +103,9 @@
 					<div class="court-meta">
 						<span
 							class="court-size-badge"
-							style="border-color: {getCourtSizeColor(court.courtSize)}; color: {getCourtSizeColor(court.courtSize)}"
+							style="border-color: {getCourtSizeColor(court.courtSize)}; color: {getCourtSizeColor(
+								court.courtSize
+							)}"
 						>
 							{getCourtSizeLabel(court.courtSize)}
 						</span>
@@ -142,9 +151,7 @@
 				</button>
 			</form>
 		{:else if data.tournament.status === 'active'}
-			<button disabled class="btn-primary btn-disabled">
-				⏳ Waiting for all scores...
-			</button>
+			<button disabled class="btn-primary btn-disabled"> ⏳ Waiting for all scores... </button>
 		{/if}
 
 		{#if data.tournament.status === 'draft'}

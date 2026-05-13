@@ -11,8 +11,7 @@ import {
 	generate4pMatches,
 	generate3pMatches,
 	generateAllMatchesForAssignment,
-	type FormatType,
-	type SchedulingMode
+	type FormatType
 } from '$lib/server/tournament-logic';
 import type { TournamentState } from '$lib/server/tournament-logic';
 
@@ -192,7 +191,6 @@ export const actions = {
 			: Array(config.totalCourts).fill(4);
 
 		const physicalCourtCount = tourney.physicalCourtCount ?? Math.min(4, courtSizes.length);
-		
 
 		// Build tournament state and generate Round 1
 		const initState = createInitialState({

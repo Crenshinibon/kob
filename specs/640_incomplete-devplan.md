@@ -135,8 +135,6 @@ All redistribution algorithms implemented as pure functions with immutable state
 **What's implemented**:
 - `physicalCourtCount` stored on tournament (default 4, max 16)
 - Batch mode: bottom virtual courts scheduled first, filling physical courts in parallel shifts
-- Rolling mode: when a physical court finishes, next waiting virtual court assigned
-- Wait time estimation for both modes
 - Tournament creation with physical court slider
 - Court detail shows shift number badge
 - Activation logic respects physical court limit
@@ -144,9 +142,8 @@ All redistribution algorithms implemented as pure functions with immutable state
 **What's remaining** (future enhancement):
 - Waiting player view with estimated wait time countdown
 - Real-time court completion notification (requires WebSocket/polling)
-- Rolling mode mid-round rotation requires front-end polling infrastructure
 
-## Total Estimated Remaining Effort: 3-6 days
+## Total Estimated Remaining Effort: 0 (all phases complete)
 
 ### Revised Timeline
 - ~~Phase 1: Tournament Logic~~ ✅
