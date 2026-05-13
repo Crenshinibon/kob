@@ -182,7 +182,12 @@
 									{@const roundData = player.roundHistory.find((r) => r.round === roundIdx + 1)}
 									<td class="round-data">
 										{#if roundData}
-											<span class="court-badge" style="border-color: {getCourtBadgeStyle(roundData.court)}; color: {getCourtBadgeStyle(roundData.court)}">
+											<span
+												class="court-badge"
+												style="border-color: {getCourtBadgeStyle(
+													roundData.court
+												)}; color: {getCourtBadgeStyle(roundData.court)}"
+											>
 												{getCourtBadgeLabel(roundData.court)}
 											</span>
 											<span class="rank-badge">#{roundData.rankOnCourt}</span>

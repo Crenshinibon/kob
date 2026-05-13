@@ -101,28 +101,50 @@ All redistribution algorithms implemented as pure functions with immutable state
 - Physical court activation: batch mode (all active) or rolling mode (4 at a time)
 - `inArray` used for efficient DB round loading
 
-### Phase 6: UI Updates ❌ NOT STARTED
-**Estimated effort**: 2-3 days remaining
+### Phase 6: UI Updates ✅ COMPLETE
+**Actual effort**: 1 day
 
-**Files to modify**:
-- `src/routes/tournament/[id]/+page.svelte` — variable court cards, virtual court mapping
-- `src/routes/court/[token]/+page.svelte` — 3p, 5p, 6p court layouts
-- `src/routes/tournament/[id]/standings/+page.svelte` — variable court placements
-- `src/routes/tournament/[id]/standings/+page.server.ts` — placement calculation
+**Files modified**:
+- `src/routes/tournament/[id]/+page.svelte` — shift badges, scheduling info display
+- `src/routes/tournament/[id]/+page.server.ts` — physical court count, shift scheduling exports
+- `src/routes/court/[token]/+page.svelte` — variable court size player layouts, 3p/5p/6p labels
+- `src/routes/court/[token]/+page.server.ts` — null safety fix, MatchData typing
+- `src/routes/tournament/[id]/standings/+page.svelte` — dynamic court size badges per round
+- `src/routes/tournament/[id]/standings/+page.server.ts` — courtSizes in return data
+- `src/routes/tournament/[id]/players/+page.svelte` — court config preview before starting
+- `src/routes/tournament/[id]/players/+page.server.ts` — court preview data from server
 
-### Phase 7: Physical/Virtual Courts ⏳ PARTIALLY IMPLEMENTED
-**Estimated effort**: 0.5-1 day remaining
+**Changes**:
+- Tournament detail shows batch shift schedule with shift badges per court
+- Court page shows player count label (3p/5p/6p) and format notes
+- Standings page shows per-round court + size badges (e.g., "C1 4p", "C5 5p")
+- Players page previews court configuration (number of courts, sizes, physical courts)
+- Physical court count input added to tournament creation
 
-**What's done**:
-- `schedulingMode` field on tournament (`batch` / `rolling`)
-- `courtSizes` stored and loaded from tournament record
-- Server-side physical court activation logic (batch: all, rolling: first 4)
+### Phase 7: Physical/Virtual Courts ✅ COMPLETE
+**Actual effort**: 1 day
 
-**What's remaining**:
-- Tournament creation UI: physical court count input
-- Court display: physical court mapping in UI
-- Round view: active vs waiting player indication
-- Waiting rotation logic for rolling mode
+**Files modified**:
+- `src/lib/server/db/schema.ts` — added `physicalCourtCount` column
+- `src/lib/server/tournament-logic.ts` — added `physicalCourtCount` config, `getShiftAssignments()`, `estimateWaitTime()`, `getBatchShifts()`, `waitTimeForVirtualCourt()`, `getShiftForCourt()`
+- `src/routes/tournament/create/+page.svelte` — physical court count slider (1-16)
+- `src/routes/tournament/create/+page.server.ts` — saves physicalCourtCount to DB
+- `src/routes/tournament/[id]/+page.server.ts` — uses tournament's physicalCourtCount, shift-aware activation
+- `src/routes/tournament/[id]/+page.svelte` — scheduling info display, shift badges
+
+**What's implemented**:
+- `physicalCourtCount` stored on tournament (default 4, max 16)
+- Batch mode: bottom virtual courts scheduled first, filling physical courts in parallel shifts
+- Rolling mode: when a physical court finishes, next waiting virtual court assigned
+- Wait time estimation for both modes
+- Tournament creation with physical court slider
+- Court detail shows shift number badge
+- Activation logic respects physical court limit
+
+**What's remaining** (future enhancement):
+- Waiting player view with estimated wait time countdown
+- Real-time court completion notification (requires WebSocket/polling)
+- Rolling mode mid-round rotation requires front-end polling infrastructure
 
 ## Total Estimated Remaining Effort: 3-6 days
 
@@ -132,8 +154,8 @@ All redistribution algorithms implemented as pure functions with immutable state
 - ~~Phase 3: Player Input & Creation~~ ✅
 - ~~Phase 4: Variable Court Match Generation~~ ✅
 - ~~Phase 5: Redistribution Integration~~ ✅
-- Phase 6: UI Updates — 2-3 days
-- Phase 7: Physical/Virtual Court UI — 0.5-1 day
+- ~~Phase 6: UI Updates~~ ✅
+- ~~Phase 7: Physical/Virtual Court UI~~ ✅
 
 ## Risks & Dependencies
 

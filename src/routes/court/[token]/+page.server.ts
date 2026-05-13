@@ -62,7 +62,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const standings = calculateStandings(matches, playerNames);
 
 	const courtSize = (tourney as any).courtSizes
-		? (JSON.parse((tourney as any).courtSizes) as number[])[rotation.courtNumber - 1] ?? playerIds.length
+		? ((JSON.parse((tourney as any).courtSizes) as number[])[rotation.courtNumber - 1] ??
+			playerIds.length)
 		: playerIds.length;
 
 	return {
@@ -129,7 +130,10 @@ export const actions: Actions = {
 };
 
 interface Actions {
-	saveScore: (event: { request: Request; params: { token: string } }) => Promise<{ success?: string; error?: string }>;
+	saveScore: (event: {
+		request: Request;
+		params: { token: string };
+	}) => Promise<{ success?: string; error?: string }>;
 }
 
 function calculateStandings(matches: MatchData[], playerNames: Record<number, string>) {

@@ -93,23 +93,30 @@
 			<p>Scores have been finalized. Stand by for next round assignments.</p>
 		</div>
 	{:else}
-<section class="players-section">
-		<h3>Players on This Court ({data.court.courtSize}p)</h3>
-		{#if data.court.courtSize === 3}
-			<p class="courtsize-note">Solo rotation format — one player plays solo against the other two</p>
-		{:else if data.court.courtSize === 5}
-			<p class="courtsize-note">5-player court — one team of 3, one team of 2</p>
-		{:else if data.court.courtSize === 6}
-			<p class="courtsize-note">6-player court — two teams of 3</p>
-		{/if}
-		<div class="player-cards" class:three-player={data.court.courtSize === 3} class:five-player={data.court.courtSize === 5} class:six-player={data.court.courtSize === 6}>
-			{#each Object.entries(data.court.playerNames) as [id, name], i}
-				<div class="player-card">
-					<span class="player-letter">{String.fromCharCode(65 + i)}</span>
-					<span class="player-name">{name}</span>
-				</div>
-			{/each}
-		</div>
+		<section class="players-section">
+			<h3>Players on This Court ({data.court.courtSize}p)</h3>
+			{#if data.court.courtSize === 3}
+				<p class="courtsize-note">
+					Solo rotation format — one player plays solo against the other two
+				</p>
+			{:else if data.court.courtSize === 5}
+				<p class="courtsize-note">5-player court — one team of 3, one team of 2</p>
+			{:else if data.court.courtSize === 6}
+				<p class="courtsize-note">6-player court — two teams of 3</p>
+			{/if}
+			<div
+				class="player-cards"
+				class:three-player={data.court.courtSize === 3}
+				class:five-player={data.court.courtSize === 5}
+				class:six-player={data.court.courtSize === 6}
+			>
+				{#each Object.entries(data.court.playerNames) as [id, name], i}
+					<div class="player-card">
+						<span class="player-letter">{String.fromCharCode(65 + i)}</span>
+						<span class="player-name">{name}</span>
+					</div>
+				{/each}
+			</div>
 		</section>
 
 		<section class="matches">
@@ -246,7 +253,9 @@
 		<section class="standings" transition:slide>
 			<h2>Current Standings</h2>
 			{#if data.court.courtSize === 3}
-				<p class="standings-note">3-player court: solo rotation format — each player takes a turn solo</p>
+				<p class="standings-note">
+					3-player court: solo rotation format — each player takes a turn solo
+				</p>
 			{/if}
 			<table>
 				<thead>

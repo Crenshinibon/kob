@@ -46,7 +46,9 @@
 	}
 
 	const gridClass = $derived(data.courts.length > 4 ? 'courts courts-8' : 'courts');
-	const totalPlayers = $derived(data.courts.reduce((sum: number, c: any) => sum + c.players.length, 0));
+	const totalPlayers = $derived(
+		data.courts.reduce((sum: number, c: any) => sum + c.players.length, 0)
+	);
 	const expectedPlayers = $derived(data.courtSizes.reduce((sum: number, s: number) => sum + s, 0));
 	const isWaiting = $derived(totalPlayers < expectedPlayers && data.currentRound === 0);
 	const virtualCourtCount = $derived(data.courtSizes.length);
@@ -74,14 +76,15 @@
 		{:else}
 			<p class="status-completed">Completed</p>
 		{/if}
-		<a href="/tournament/{data.tournament.id}/standings" class="standings-link">📊 View Standings</a>
+		<a href="/tournament/{data.tournament.id}/standings" class="standings-link">📊 View Standings</a
+		>
 	</header>
 
 	{#if isWaiting}
 		<div class="waiting-info">
 			<p>
-				⏳ {totalPlayers}/{expectedPlayers} players registered —
-				waiting for {expectedPlayers - totalPlayers} more before starting.
+				⏳ {totalPlayers}/{expectedPlayers} players registered — waiting for {expectedPlayers -
+					totalPlayers} more before starting.
 			</p>
 		</div>
 	{/if}
@@ -90,10 +93,14 @@
 		<div class="scheduling-info">
 			<h3>Court Scheduling (Round {data.currentRound})</h3>
 			<p>
-				Mode: <strong>{data.schedulingMode === 'batch' ? 'Batch Shifts' : 'Rolling Assignment'}</strong>
+				Mode: <strong
+					>{data.schedulingMode === 'batch' ? 'Batch Shifts' : 'Rolling Assignment'}</strong
+				>
 				· {data.physicalCourtCount} physical court{data.physicalCourtCount !== 1 ? 's' : ''}
 				· {virtualCourtCount} virtual court{virtualCourtCount !== 1 ? 's' : ''}
-				{data.schedulingMode === 'batch' ? ` · ${Math.ceil(virtualCourtCount / data.physicalCourtCount)} shift${Math.ceil(virtualCourtCount / data.physicalCourtCount) !== 1 ? 's' : ''}` : ''}
+				{data.schedulingMode === 'batch'
+					? ` · ${Math.ceil(virtualCourtCount / data.physicalCourtCount)} shift${Math.ceil(virtualCourtCount / data.physicalCourtCount) !== 1 ? 's' : ''}`
+					: ''}
 			</p>
 		</div>
 	{/if}
@@ -106,7 +113,9 @@
 					<div class="court-meta">
 						<span
 							class="court-size-badge"
-							style="border-color: {getCourtSizeColor(court.courtSize)}; color: {getCourtSizeColor(court.courtSize)}"
+							style="border-color: {getCourtSizeColor(court.courtSize)}; color: {getCourtSizeColor(
+								court.courtSize
+							)}"
 						>
 							{getCourtSizeLabel(court.courtSize)}
 						</span>
@@ -157,14 +166,16 @@
 				</button>
 			</form>
 		{:else if data.tournament.status === 'active'}
-			<button disabled class="btn-primary btn-disabled">
-				⏳ Waiting for all scores...
-			</button>
+			<button disabled class="btn-primary btn-disabled"> ⏳ Waiting for all scores... </button>
 		{/if}
 
 		{#if data.tournament.status === 'draft'}
 			<form method="POST" action="?/startTournament" class="start-form">
-				<button type="submit" class="btn-success" disabled={!isWaiting && totalPlayers < expectedPlayers}>
+				<button
+					type="submit"
+					class="btn-success"
+					disabled={!isWaiting && totalPlayers < expectedPlayers}
+				>
 					🚀 Start Tournament
 				</button>
 			</form>

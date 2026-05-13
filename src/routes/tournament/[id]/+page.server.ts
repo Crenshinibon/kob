@@ -22,7 +22,9 @@ import {
 } from '$lib/server/tournament-logic';
 
 function parseCourtSizes(tourney: any): number[] {
-	return tourney.courtSizes ? JSON.parse(tourney.courtSizes) : getDefaultCourtSizes(tourney.playerCount);
+	return tourney.courtSizes
+		? JSON.parse(tourney.courtSizes)
+		: getDefaultCourtSizes(tourney.playerCount);
 }
 
 function getDefaultCourtSizes(playerCount: number): number[] {
@@ -110,7 +112,8 @@ export const load = async ({ params, locals }: any) => {
 		const scoredMatchCount = allMatches.filter(
 			(m) => m.teamAScore !== null && m.teamBScore !== null
 		).length;
-		canCloseRound = allMatches.length >= expectedMatchCount && scoredMatchCount === expectedMatchCount;
+		canCloseRound =
+			allMatches.length >= expectedMatchCount && scoredMatchCount === expectedMatchCount;
 		isFinalRound = currentRound >= tourney.numRounds;
 	}
 
@@ -119,7 +122,9 @@ export const load = async ({ params, locals }: any) => {
 	const rotations = await db
 		.select()
 		.from(courtRotation)
-		.where(and(eq(courtRotation.tournamentId, tournamentId), eq(courtRotation.roundNumber, displayRound)));
+		.where(
+			and(eq(courtRotation.tournamentId, tournamentId), eq(courtRotation.roundNumber, displayRound))
+		);
 
 	const playerMap = new Map(players.map((p: any) => [p.id, p]));
 
@@ -219,11 +224,19 @@ export const actions = {
 		const currentRotations = await db
 			.select()
 			.from(courtRotation)
-			.where(and(eq(courtRotation.tournamentId, tournamentId), eq(courtRotation.roundNumber, currentRound)));
+			.where(
+				and(
+					eq(courtRotation.tournamentId, tournamentId),
+					eq(courtRotation.roundNumber, currentRound)
+				)
+			);
 
 		const courtResults: CourtResult[] = [];
 		for (const rotation of currentRotations) {
-			const rotationMatches = await db.select().from(match).where(eq(match.courtRotationId, rotation.id));
+			const rotationMatches = await db
+				.select()
+				.from(match)
+				.where(eq(match.courtRotationId, rotation.id));
 
 			const playerIds: number[] = [
 				rotation.player1Id,
@@ -248,7 +261,10 @@ export const actions = {
 		// Build scored matches from DB data — one scored match per court
 		const scoredMatches: (MatchData | undefined)[] = await Promise.all(
 			currentRotations.map(async (rotation) => {
-				const rotationMatches = await db.select().from(match).where(eq(match.courtRotationId, rotation.id));
+				const rotationMatches = await db
+					.select()
+					.from(match)
+					.where(eq(match.courtRotationId, rotation.id));
 				const scored = (rotationMatches as MatchData[]).filter(
 					(m) => m.teamAScore !== null && m.teamBScore !== null
 				);
@@ -401,7 +417,10 @@ export const actions = {
 		const requiredCount = tourney.playerCount;
 
 		if (dbPlayers.length !== requiredCount) {
-			throw redirect(303, `/tournament/${tournamentId}?error=Need exactly ${requiredCount} players, currently have ${dbPlayers.length}`);
+			throw redirect(
+				303,
+				`/tournament/${tournamentId}?error=Need exactly ${requiredCount} players, currently have ${dbPlayers.length}`
+			);
 		}
 
 		await db.update(tournament).set({ status: 'active' }).where(eq(tournament.id, tournamentId));

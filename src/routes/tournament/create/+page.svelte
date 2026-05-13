@@ -89,7 +89,11 @@
 			</div>
 			{#if playerCount % 4 !== 0}
 				<p class="info">
-					{playerCount % 4 === 1 ? '1 leftover → one 5p court' : playerCount % 4 === 2 ? '2 leftovers → one 6p court' : '3 leftovers → one 3p court'}
+					{playerCount % 4 === 1
+						? '1 leftover → one 5p court'
+						: playerCount % 4 === 2
+							? '2 leftovers → one 6p court'
+							: '3 leftovers → one 3p court'}
 				</p>
 			{/if}
 		</div>
@@ -136,8 +140,8 @@
 			</div>
 			{#if physicalCourts < Math.ceil(playerCount / 4)}
 				<p class="info">
-					Virtual courts ({Math.ceil(playerCount / 4)}) will be scheduled across {physicalCourts} physical courts
-					in {schedulingMode === 'batch' ? 'batch shifts' : 'rolling rotation'}
+					Virtual courts ({Math.ceil(playerCount / 4)}) will be scheduled across {physicalCourts} physical
+					courts in {schedulingMode === 'batch' ? 'batch shifts' : 'rolling rotation'}
 				</p>
 			{/if}
 		</div>
@@ -148,7 +152,11 @@
 			<input type="hidden" name="numRounds" value={roundCounts()} />
 		</div>
 
-		<button type="submit" class="btn-primary" disabled={playerCount < minPlayers || playerCount > maxPlayers}>
+		<button
+			type="submit"
+			class="btn-primary"
+			disabled={playerCount < minPlayers || playerCount > maxPlayers}
+		>
 			Create Tournament
 		</button>
 	</form>
@@ -216,7 +224,9 @@
 		border: var(--border-thickness) solid var(--border-strong);
 		border-radius: var(--radius-sm);
 		font-weight: 500;
-		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+		transition:
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast);
 	}
 
 	input[type='text']:focus {

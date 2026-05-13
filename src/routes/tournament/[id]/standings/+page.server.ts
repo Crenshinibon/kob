@@ -21,9 +21,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const players = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
 
 	// Get court sizes
-	const courtSizes: number[] = tourney.courtSizes
-		? JSON.parse(tourney.courtSizes)
-		: [4, 4, 4, 4]; // fallback
+	const courtSizes: number[] = tourney.courtSizes ? JSON.parse(tourney.courtSizes) : [4, 4, 4, 4]; // fallback
 	const matchCountPerCourt = courtSizes.map((s) => matchCountForCourtSize(s));
 
 	// Get all rotations

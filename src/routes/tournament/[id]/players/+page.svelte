@@ -3,7 +3,11 @@
 	import type { PageData } from './$types';
 
 	let { data, form } = $props<{
-		data: { tournament: any; players: any[]; courtPreview?: { courts: number; sizes: number[]; physical: number } };
+		data: {
+			tournament: any;
+			players: any[];
+			courtPreview?: { courts: number; sizes: number[]; physical: number };
+		};
 		form?: { error?: string; success?: string };
 	}>();
 
@@ -54,15 +58,15 @@
 				{:else}
 					Random seed format
 				{/if}
-				· {maxPlayers} players
-				· {data.courtPreview.courts} court{data.courtPreview.courts !== 1 ? 's' : ''}
+				· {maxPlayers} players · {data.courtPreview.courts} court{data.courtPreview.courts !== 1
+					? 's'
+					: ''}
 				(
 				{#each data.courtPreview.sizes.slice(0, -1) as size}
 					{size}p,
 				{/each}
-				{data.courtPreview.sizes[data.courtPreview.sizes.length - 1]}p
-				)
-				· {data.courtPreview.physical} physical court{data.courtPreview.physical !== 1 ? 's' : ''}
+				{data.courtPreview.sizes[data.courtPreview.sizes.length - 1]}p ) · {data.courtPreview
+					.physical} physical court{data.courtPreview.physical !== 1 ? 's' : ''}
 			</p>
 		{:else}
 			<p>
