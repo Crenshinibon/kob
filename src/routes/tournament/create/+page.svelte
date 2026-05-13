@@ -4,14 +4,15 @@
 	let tournamentName = $state('');
 	let formatType = $state<'random-seed' | 'preseed'>('random-seed');
 	let playerNames = $state('');
-	let schedulingMode = $state<'batch' | 'rolling'>('batch');
 	let physicalCourts = $state(4);
 
 	const minPlayers = 8;
 	const maxPlayers = 64;
 
 	const computedPlayerCount = $derived(
-		name.split('\n').filter((n) => n.trim()).length
+		playerNames
+			.split('\n')
+			.filter((n) => n.trim()).length
 	);
 
 	const roundCounts = $derived(() => {
@@ -43,7 +44,7 @@
 				type="text"
 				id="name"
 				name="name"
-				bind:value={name}
+				bind:value={tournamentName}
 				required
 				placeholder="King Of the Beach 2026"
 			/>
@@ -78,7 +79,7 @@
 			<textarea
 				id="names"
 				name="names"
-				bind:value={name}
+				bind:value={playerNames}
 				rows="10"
 				placeholder="Alice 1250&#10;Bob 1100&#10;Carol 950&#10;..."
 				required
@@ -87,7 +88,9 @@
 			{#if computedPlayerCount > 0 && computedPlayerCount < minPlayers}
 				<p class="info">Minimum {minPlayers} players required</p>
 			{:else if computedPlayerCount > maxPlayers}
-				<p class="info">Maximum {maxPlayers} players allowed (remove {computedPlayerCount - maxPlayers})</p>
+				<p class="info">
+					Maximum {maxPlayers} players allowed (remove {computedPlayerCount - maxPlayers})
+				</p>
 			{:else if computedPlayerCount > 0}
 				<p class="info">
 					{computedPlayerCount % 4 === 1
@@ -99,32 +102,6 @@
 								: 'No leftovers — all 4p courts'}
 				</p>
 			{/if}
-		</div>
-
-		<input type="hidden" name="playerCount" value={computedPlayerCount} />
-
-		<div class="field">
-			<span class="label">Scheduling Mode</span>
-			<div class="radio-group">
-				<label class="radio-label">
-					<div class="radio-wrapper">
-						<input type="radio" name="schedulingMode" value="batch" bind:group={schedulingMode} />
-					</div>
-					<span class="radio-content">
-						<strong>Batch Shifts</strong>
-						<small>All physical courts play simultaneously in shifts. Next shift starts only after all courts finish</small>
-					</span>
-				</label>
-				<label class="radio-label">
-					<div class="radio-wrapper">
-						<input type="radio" name="schedulingMode" value="rolling" bind:group={schedulingMode} />
-					</div>
-					<span class="radio-content">
-						<strong>Rolling Assignment</strong>
-						<small>When a court finishes, it immediately takes the next waiting group. No shift boundaries</small>
-					</span>
-				</label>
-			</div>
 		</div>
 
 		<div class="field">
@@ -145,8 +122,8 @@
 			</div>
 			{#if physicalCourts < Math.ceil(computedPlayerCount / 4)}
 				<p class="info">
-					Virtual courts ({Math.ceil(computedPlayerCount / 4)}) will be scheduled across {physicalCourts} physical
-					courts in {schedulingMode === 'batch' ? 'batch shifts' : 'rolling rotation'}
+					Virtual courts ({Math.ceil(computedPlayerCount / 4)}) will be scheduled across
+					{physicalCourts} physical courts in batch shifts
 				</p>
 			{/if}
 		</div>
@@ -252,6 +229,33 @@
 		justify-content: space-between;
 		font-size: var(--font-size-sm);
 		color: var(--text-muted);
+	}
+
+	textarea {
+		padding: var(--spacing-sm);
+		font-size: var(--font-size-base);
+		background-color: var(--bg-input);
+		color: var(--text-input);
+		border: var(--border-thickness) solid var(--border-strong);
+		border-radius: var(--radius-sm);
+		font-family: inherit;
+		min-height: 150px;
+		resize: vertical;
+		font-weight: 500;
+	}
+
+	textarea:focus {
+		outline: none;
+		border-color: var(--border-focus);
+		box-shadow: var(--shadow-focus);
+		transform: scale(1.02);
+	}
+
+	.count {
+		margin: 0;
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		font-weight: 600;
 	}
 
 	.info {

@@ -1,13 +1,26 @@
 import { redirect, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { tournament } from '$lib/server/db/schema';
-import {
-	getCourtConfiguration,
-	calculateRoundCount,
-	matchCountForCourtSize
-} from '$lib/server/tournament-logic';
+import { tournament, player } from '$lib/server/db/schema';
+import { getCourtConfiguration, calculateRoundCount } from '$lib/server/tournament-logic';
 
-export const load = async ({ locals }) => {
+type ParsedPlayer = { name: string; seedPoints: number | null };
+
+function parsePlayerLine(line: string, formatType: string): ParsedPlayer {
+	const trimmed = line.trim();
+	if (!trimmed) return { name: '', seedPoints: null };
+
+	if (formatType === 'preseed') {
+		const match = trimmed.match(/^(.+?)\s+(\d+)$/);
+		if (match) {
+			return { name: match[1].trim(), seedPoints: parseInt(match[2], 10) };
+		}
+		return { name: trimmed, seedPoints: null };
+	}
+
+	return { name: trimmed, seedPoints: null };
+}
+
+export const load = async ({ locals }: any) => {
 	if (!locals.user) {
 		throw redirect(302, '/login');
 	}
@@ -15,7 +28,7 @@ export const load = async ({ locals }) => {
 };
 
 export const actions = {
-	create: async ({ request, locals }) => {
+	create: async ({ request, locals }: any) => {
 		const user = locals.user;
 
 		if (!user) {
@@ -25,8 +38,7 @@ export const actions = {
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString().trim();
 		const formatType = formData.get('formatType')?.toString() || 'random-seed';
-		const playerCount = parseInt(formData.get('playerCount')?.toString() || '16');
-		const schedulingMode = formData.get('schedulingMode')?.toString() || 'batch';
+		const namesText = formData.get('names')?.toString() || '';
 		const physicalCourtCount = parseInt(formData.get('physicalCourts')?.toString() || '4');
 
 		if (!name) {
@@ -37,16 +49,37 @@ export const actions = {
 			return { error: 'Invalid format type' };
 		}
 
-		if (playerCount < 8 || playerCount > 64) {
-			return { error: 'Player count must be between 8 and 64' };
+		const lines: string[] = namesText
+			.split('\n')
+			.map((l: string) => l.trim())
+			.filter((l: string) => l.length > 0);
+
+		if (lines.length < 8) {
+			return { error: `At least 8 players required. You entered ${lines.length}.` };
 		}
 
+		if (lines.length > 64) {
+			return { error: `Maximum 64 players allowed. You entered ${lines.length}.` };
+		}
+
+		const parsed: ParsedPlayer[] = lines.map((line: string) => parsePlayerLine(line, formatType));
+
+		if (formatType === 'preseed') {
+			const missingPoints: ParsedPlayer[] = parsed.filter((p: ParsedPlayer) => p.seedPoints === null);
+			if (missingPoints.length > 0) {
+				return {
+					error: `Preseed format requires points for all players. Missing points for: ${missingPoints.map((p: ParsedPlayer) => p.name).join(', ')}`
+				};
+			}
+		}
+
+		const playerCount: number = parsed.length;
 		const config = getCourtConfiguration(playerCount);
-		const courtSizes = config.bottomCourtSize
+		const courtSizes: number[] = config.bottomCourtSize
 			? [...Array(config.standardCourts).fill(4), config.bottomCourtSize]
 			: Array(config.totalCourts).fill(4);
 
-		const numRounds = calculateRoundCount(config.totalCourts, formatType);
+		const numRounds: number = calculateRoundCount(config.totalCourts, formatType);
 
 		const [newTournament] = await db
 			.insert(tournament)
@@ -55,7 +88,7 @@ export const actions = {
 				name,
 				numRounds,
 				formatType,
-				schedulingMode,
+				schedulingMode: 'batch',
 				playerCount,
 				physicalCourtCount,
 				courtSizes: JSON.stringify(courtSizes),
@@ -63,6 +96,15 @@ export const actions = {
 				currentRound: 0
 			})
 			.returning();
+
+		for (const p of parsed) {
+			await db.insert(player).values({
+				tournamentId: newTournament.id,
+				name: p.name,
+				seedPoints: p.seedPoints,
+				seedRank: null
+			});
+		}
 
 		throw redirect(302, `/tournament/${newTournament.id}/players`);
 	}

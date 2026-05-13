@@ -192,14 +192,14 @@ export const actions = {
 			: Array(config.totalCourts).fill(4);
 
 		const physicalCourtCount = tourney.physicalCourtCount ?? Math.min(4, courtSizes.length);
-		const schedulingMode = (tourney.schedulingMode || 'batch') as SchedulingMode;
+		
 
 		// Build tournament state and generate Round 1
 		const initState = createInitialState({
 			tournamentId: tourney.id,
 			formatType: tourney.formatType as FormatType,
 			playerCount: maxPlayers,
-			schedulingMode,
+
 			physicalCourtCount
 		});
 

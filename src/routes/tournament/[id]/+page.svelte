@@ -10,7 +10,6 @@
 			courtSizes: number[];
 			currentRound: number;
 			physicalCourtCount: number;
-			schedulingMode: string;
 		};
 	}>();
 
@@ -53,16 +52,6 @@
 	const isWaiting = $derived(totalPlayers < expectedPlayers && data.currentRound === 0);
 	const virtualCourtCount = $derived(data.courtSizes.length);
 	const showScheduling = $derived(data.tournament.status === 'active');
-
-	function getShiftNumber(courtNum: number): number | null {
-		if (!showScheduling) return null;
-		const virtualCourts = virtualCourtCount;
-		const physical = data.physicalCourtCount;
-		// Bottom courts (higher numbers) are scheduled first
-		// Court at index i from the end gets shift based on its position
-		const positionFromBottom = virtualCourts - courtNum;
-		return Math.floor(positionFromBottom / physical) + 1;
-	}
 </script>
 
 <main>
@@ -76,15 +65,14 @@
 		{:else}
 			<p class="status-completed">Completed</p>
 		{/if}
-		<a href="/tournament/{data.tournament.id}/standings" class="standings-link">📊 View Standings</a
-		>
+		<a href="/tournament/{data.tournament.id}/standings" class="standings-link">📊 View Standings</a>
 	</header>
 
 	{#if isWaiting}
 		<div class="waiting-info">
 			<p>
-				⏳ {totalPlayers}/{expectedPlayers} players registered — waiting for {expectedPlayers -
-					totalPlayers} more before starting.
+				⏳ {totalPlayers}/{expectedPlayers} players registered —
+				waiting for {expectedPlayers - totalPlayers} more before starting.
 			</p>
 		</div>
 	{/if}
@@ -93,14 +81,9 @@
 		<div class="scheduling-info">
 			<h3>Court Scheduling (Round {data.currentRound})</h3>
 			<p>
-				Mode: <strong
-					>{data.schedulingMode === 'batch' ? 'Batch Shifts' : 'Rolling Assignment'}</strong
-				>
-				· {data.physicalCourtCount} physical court{data.physicalCourtCount !== 1 ? 's' : ''}
+				Batch shifts · {data.physicalCourtCount} physical court{data.physicalCourtCount !== 1 ? 's' : ''}
 				· {virtualCourtCount} virtual court{virtualCourtCount !== 1 ? 's' : ''}
-				{data.schedulingMode === 'batch'
-					? ` · ${Math.ceil(virtualCourtCount / data.physicalCourtCount)} shift${Math.ceil(virtualCourtCount / data.physicalCourtCount) !== 1 ? 's' : ''}`
-					: ''}
+				· {Math.ceil(virtualCourtCount / data.physicalCourtCount)} shift{Math.ceil(virtualCourtCount / data.physicalCourtCount) !== 1 ? 's' : ''}
 			</p>
 		</div>
 	{/if}
@@ -113,17 +96,10 @@
 					<div class="court-meta">
 						<span
 							class="court-size-badge"
-							style="border-color: {getCourtSizeColor(court.courtSize)}; color: {getCourtSizeColor(
-								court.courtSize
-							)}"
+							style="border-color: {getCourtSizeColor(court.courtSize)}; color: {getCourtSizeColor(court.courtSize)}"
 						>
 							{getCourtSizeLabel(court.courtSize)}
 						</span>
-						{#if showScheduling && data.currentRound > 0}
-							<span class="shift-badge shift-{getShiftNumber(court.courtNumber)}">
-								Shift {getShiftNumber(court.courtNumber)}
-							</span>
-						{/if}
 						<span class="matches">{getMatchStatus(court.matches)}</span>
 					</div>
 				</div>
@@ -166,7 +142,9 @@
 				</button>
 			</form>
 		{:else if data.tournament.status === 'active'}
-			<button disabled class="btn-primary btn-disabled"> ⏳ Waiting for all scores... </button>
+			<button disabled class="btn-primary btn-disabled">
+				⏳ Waiting for all scores...
+			</button>
 		{/if}
 
 		{#if data.tournament.status === 'draft'}
@@ -262,28 +240,6 @@
 
 	.scheduling-info p {
 		margin: 0;
-	}
-
-	.shift-badge {
-		display: inline-block;
-		padding: 2px 6px;
-		border-radius: var(--radius-sm);
-		font-weight: 600;
-		font-size: var(--font-size-xs);
-		margin-right: 4px;
-		border: 1px solid;
-	}
-
-	.shift-badge.shift-1 {
-		background-color: rgba(0, 217, 255, 0.15);
-		color: var(--accent-info);
-		border-color: var(--accent-info);
-	}
-
-	.shift-badge:not(.shift-1) {
-		background-color: rgba(255, 255, 255, 0.05);
-		color: var(--text-muted);
-		border-color: var(--border-default);
 	}
 
 	.standings-link {

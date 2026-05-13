@@ -12,8 +12,6 @@ import {
 	getCourtConfiguration,
 	matchCountForCourtSize,
 	generateAllMatchesForAssignment,
-	getShiftAssignments,
-	estimateWaitTime,
 	type FormatType,
 	type TournamentState,
 	type MatchData,
@@ -168,7 +166,6 @@ export const load = async ({ params, locals }: any) => {
 		courtSizes,
 		currentRound,
 		physicalCourtCount: tourney.physicalCourtCount ?? 4,
-		schedulingMode: tourney.schedulingMode || 'batch'
 	};
 };
 
@@ -214,7 +211,7 @@ export const actions = {
 			tournamentId: tourney.id,
 			formatType: tourney.formatType as FormatType,
 			playerCount: tourney.playerCount,
-			schedulingMode: (tourney.schedulingMode || 'batch') as any,
+			schedulingMode: 'batch',
 			physicalCourtCount
 		});
 
