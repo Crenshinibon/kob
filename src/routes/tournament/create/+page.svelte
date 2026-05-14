@@ -1,10 +1,14 @@
 <script lang="ts">
+	import { slide } from 'svelte/transition';
+
 	let { form } = $props<{ form?: { error?: string } }>();
 
 	let tournamentName = $state('');
 	let formatType = $state<'random-seed' | 'preseed'>('random-seed');
 	let playerNames = $state('');
 	let physicalCourts = $state(4);
+	let scoringMode = $state<'single-21' | 'best-of-3-15'>('single-21');
+	let showAdvanced = $state(false);
 
 	const minPlayers = 8;
 	const maxPlayers = 64;
@@ -20,6 +24,42 @@
 		if (courts <= 8) return 4;
 		if (courts <= 16) return 5;
 		return 6;
+	});
+
+	const durationEstimate = $derived(() => {
+		if (computedPlayerCount < minPlayers) return null;
+
+		const courtSizes: number[] = [];
+		const courts = Math.ceil(computedPlayerCount / 4);
+		const leftover = computedPlayerCount % 4;
+		for (let i = 0; i < courts; i++) {
+			if (i === courts - 1 && leftover !== 0) {
+				courtSizes.push(leftover === 1 ? 5 : leftover === 2 ? 6 : 3);
+			} else {
+				courtSizes.push(4);
+			}
+		}
+
+		const shiftsPerRound = Math.ceil(courts / physicalCourts);
+		const pointsToWin = 21;
+		const setsToWin = scoringMode === 'best-of-3-15' ? 2 : 1;
+		const avgSec = 35 + 8; // rally + between
+		const ralliesPerGame = pointsToWin * 1.5;
+
+		let maxCourtDur = 0;
+		for (const size of courtSizes) {
+			const matches = size >= 5 ? 4 : 3;
+			const gamesPerMatch = setsToWin === 1 ? 1 : setsToWin * 1.5;
+			const ct = matches * gamesPerMatch * ((ralliesPerGame * avgSec) / 60) + (matches - 1) * 3;
+			const dur = size >= 5 ? Math.round(ct * 1.1) : Math.round(ct);
+			if (dur > maxCourtDur) maxCourtDur = dur;
+		}
+
+		const roundDur = shiftsPerRound * maxCourtDur + (shiftsPerRound - 1) * 10;
+		const transitions = (roundCounts() - 1) * 10;
+		const total = 15 + roundCounts() * roundDur + transitions;
+
+		return { total, roundDur, maxCourtDur, courts, shiftsPerRound };
 	});
 </script>
 
@@ -69,6 +109,78 @@
 				</label>
 			</div>
 		</div>
+
+		<div class="field">
+			<span class="label">Scoring Mode</span>
+			<div class="radio-group">
+				<label class="radio-label">
+					<div class="radio-wrapper">
+						<input type="radio" name="scoringMode" value="single-21" bind:group={scoringMode} />
+					</div>
+					<span class="radio-content">
+						<strong>Single Set to 21</strong>
+						<small>1 set per match, first to 21, win by 2</small>
+					</span>
+				</label>
+				<label class="radio-label">
+					<div class="radio-wrapper">
+						<input type="radio" name="scoringMode" value="best-of-3-15" bind:group={scoringMode} />
+					</div>
+					<span class="radio-content">
+						<strong>Best of 3 to 15</strong>
+						<small>Up to 3 sets per match, each to 15, win by 2</small>
+					</span>
+				</label>
+			</div>
+		</div>
+
+		<button type="button" class="btn-advanced" onclick={() => (showAdvanced = !showAdvanced)}>
+			{showAdvanced ? '− Hide' : '+ Advanced'} Parameters
+		</button>
+
+		{#if showAdvanced}
+			<div class="advanced-section" transition:slide>
+				<div class="field">
+					<label for="pointsToWin">Points to Win (First Set)</label>
+					<input
+						type="number"
+						id="pointsToWin"
+						name="pointsToWin"
+						min="15"
+						max="25"
+						value={scoringMode === 'best-of-3-15' ? 15 : 21}
+					/>
+				</div>
+				<div class="field">
+					<label for="winBy">Win By Margin</label>
+					<input type="number" id="winBy" name="winBy" min="1" max="3" value="2" />
+				</div>
+				<div class="field">
+					<label for="setsToWin">Sets to Win Match</label>
+					<input
+						type="number"
+						id="setsToWin"
+						name="setsToWin"
+						min="1"
+						max="2"
+						value={scoringMode === 'best-of-3-15' ? 2 : 1}
+					/>
+				</div>
+				{#if scoringMode === 'best-of-3-15'}
+					<div class="field">
+						<label for="pointsToWinSet2">Points to Win (Sets 2+)</label>
+						<input
+							type="number"
+							id="pointsToWinSet2"
+							name="pointsToWinSet2"
+							min="11"
+							max="21"
+							value="15"
+						/>
+					</div>
+				{/if}
+			</div>
+		{/if}
 
 		<div class="field">
 			<label for="names">Player Names</label>
@@ -129,6 +241,29 @@
 			<div class="info-box">{roundCounts()} rounds (auto-calculated)</div>
 			<input type="hidden" name="numRounds" value={roundCounts()} />
 		</div>
+
+		{#if durationEstimate() && computedPlayerCount >= minPlayers}
+			<div class="field duration-estimate">
+				<span class="label">Estimated Duration</span>
+				<div class="duration-box">
+					<p class="duration-total">
+						~{Math.floor(durationEstimate()!.total / 60)}h {durationEstimate()!.total % 60}min
+					</p>
+					<div class="duration-breakdown">
+						<span>Setup: 15 min</span>
+						{#each Array(roundCounts()) as _, r}
+							<span>Round {r + 1}: {durationEstimate()!.roundDur} min</span>
+						{/each}
+						<span
+							>Based on: {durationEstimate()!.courts} courts, {computedPlayerCount} players, {scoringMode ===
+							'single-21'
+								? 'single set to 21'
+								: 'best of 3 to 15'}, {formatType === 'preseed' ? 'preseed' : 'random'} format</span
+						>
+					</div>
+				</div>
+			</div>
+		{/if}
 
 		<button
 			type="submit"
@@ -364,5 +499,82 @@
 		padding: var(--spacing-sm);
 		border-radius: var(--radius-sm);
 		font-weight: 500;
+	}
+
+	.btn-advanced {
+		background: none;
+		border: 2px dashed var(--border-strong);
+		border-radius: var(--radius-sm);
+		padding: var(--spacing-sm) var(--spacing-md);
+		color: var(--text-muted);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		align-self: flex-start;
+	}
+
+	.btn-advanced:hover {
+		border-color: var(--border-focus);
+		color: var(--text-secondary);
+	}
+
+	.advanced-section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-md);
+		border: 2px dashed var(--border-strong);
+		border-radius: var(--radius-md);
+		background-color: var(--bg-secondary);
+	}
+
+	.advanced-section .field {
+		gap: var(--spacing-xs);
+	}
+
+	.advanced-section input[type='number'] {
+		width: 80px;
+		min-height: 40px;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		font-size: var(--font-size-base);
+		background-color: var(--bg-input);
+		color: var(--text-input);
+		border: var(--border-thickness) solid var(--border-strong);
+		border-radius: var(--radius-sm);
+		font-weight: 500;
+		text-align: center;
+	}
+
+	.advanced-section input[type='number']:focus {
+		outline: none;
+		border-color: var(--border-focus);
+		box-shadow: var(--shadow-focus);
+	}
+
+	.duration-estimate {
+		margin-top: var(--spacing-sm);
+	}
+
+	.duration-box {
+		padding: var(--spacing-md);
+		background-color: rgba(255, 187, 0, 0.08);
+		border: 2px solid var(--accent-primary);
+		border-radius: var(--radius-md);
+	}
+
+	.duration-total {
+		font-size: var(--font-size-xl);
+		font-weight: 700;
+		color: var(--accent-primary);
+		margin: 0 0 var(--spacing-sm) 0;
+	}
+
+	.duration-breakdown {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
 	}
 </style>

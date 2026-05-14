@@ -7,11 +7,13 @@
 ### Steps
 
 1. **Install Paraglide**
+
    ```bash
    npm install @inlang/paraglide-sveltekit
    ```
 
 2. **Create project.inlang directory**
+
    ```bash
    npx @inlang/paraglide-sveltekit init
    ```
@@ -19,6 +21,7 @@
 3. **Configure Vite** — add Paraglide plugin to `vite.config.ts`
 
 4. **Create message files**
+
    ```
    src/lib/i18n/
    ├── en.json    # English (copy from existing UI strings)
@@ -46,6 +49,7 @@
 Go through every `.svelte` file and `+page.server.ts` file, extract hardcoded English strings.
 
 **Route files**:
+
 - `src/routes/+page.svelte` — dashboard
 - `src/routes/+layout.svelte` — navigation
 - `src/routes/login/+page.svelte` — login form
@@ -58,26 +62,30 @@ Go through every `.svelte` file and `+page.server.ts` file, extract hardcoded En
 - `src/routes/privacy/+page.svelte` — privacy policy
 
 **Server files**:
+
 - `src/routes/tournament/create/+page.server.ts` — error messages
 - `src/routes/tournament/[id]/+page.server.ts` — error messages
 - `src/routes/tournament/[id]/players/+page.server.ts` — error/success messages
 - `src/routes/court/[token]/+page.server.ts` — validation messages
 
 **Components**:
+
 - `src/lib/components/CookieNotice.svelte` — cookie notice text
 
 ### Extraction Pattern
 
 Before:
+
 ```svelte
 <h1>Create Tournament</h1>
 <button>Create</button>
 ```
 
 After:
+
 ```svelte
 <script>
-  import * as m from '$lib/paraglide/messages';
+	import * as m from '$lib/paraglide/messages';
 </script>
 
 <h1>{m.create_title()}</h1>
@@ -130,11 +138,9 @@ throw error(404, getTranslation(lang, 'error.tournament_not_found'));
 import messages from './messages.json';
 
 export function getTranslation(lang: string, key: string, params?: Record<string, string>): string {
-  const msg = messages[lang]?.[key] ?? messages['en']?.[key] ?? key;
-  if (!params) return msg;
-  return Object.entries(params).reduce(
-    (str, [k, v]) => str.replace(`{${k}}`, v), msg
-  );
+	const msg = messages[lang]?.[key] ?? messages['en']?.[key] ?? key;
+	if (!params) return msg;
+	return Object.entries(params).reduce((str, [k, v]) => str.replace(`{${k}}`, v), msg);
 }
 ```
 
@@ -159,21 +165,21 @@ return { error: m.court_error_min_score({ min: 21 }) };
 ```typescript
 // src/lib/i18n/format.ts
 export function formatDate(date: Date, lang: string): string {
-  return date.toLocaleDateString(lang);
+	return date.toLocaleDateString(lang);
 }
 
 export function formatNumber(num: number, lang: string): string {
-  return new Intl.NumberFormat(lang).format(num);
+	return new Intl.NumberFormat(lang).format(num);
 }
 
 export function formatDuration(minutes: number, lang: string): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  // Use translated unit labels
-  if (hours > 0) {
-    return `${hours}${m.duration_hours()} ${mins}${m.duration_minutes()}`;
-  }
-  return `${mins}${m.duration_minutes()}`;
+	const hours = Math.floor(minutes / 60);
+	const mins = minutes % 60;
+	// Use translated unit labels
+	if (hours > 0) {
+		return `${hours}${m.duration_hours()} ${mins}${m.duration_minutes()}`;
+	}
+	return `${mins}${m.duration_minutes()}`;
 }
 ```
 
@@ -184,6 +190,7 @@ export function formatDuration(minutes: number, lang: string): string {
 ### Route Structure Change
 
 Option A: Add `[[lang]]` to all routes:
+
 ```
 src/routes/
 ├── [[lang]]/
@@ -197,15 +204,16 @@ src/routes/
 ```
 
 Option B: Use hook to strip locale prefix (keeps routes clean):
+
 ```typescript
 // src/hooks.server.ts
 export const handle = async ({ event, resolve }) => {
-  const langMatch = event.url.pathname.match(/^\/(en|de|fr|es)(\/|$)/);
-  if (langMatch) {
-    event.locals.lang = langMatch[1];
-    event.url.pathname = event.url.pathname.slice(3) || '/';
-  }
-  return resolve(event);
+	const langMatch = event.url.pathname.match(/^\/(en|de|fr|es)(\/|$)/);
+	if (langMatch) {
+		event.locals.lang = langMatch[1];
+		event.url.pathname = event.url.pathname.slice(3) || '/';
+	}
+	return resolve(event);
 };
 ```
 
@@ -216,12 +224,12 @@ export const handle = async ({ event, resolve }) => {
 ```svelte
 <!-- src/routes/+layout.svelte -->
 <script>
-  import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 </script>
 
 <header>
-  <nav>...</nav>
-  <LanguageSwitcher />
+	<nav>...</nav>
+	<LanguageSwitcher />
 </header>
 ```
 
@@ -238,30 +246,30 @@ export const handle = async ({ event, resolve }) => {
 
 ### Test Cases
 
-| Test | Description |
-|------|-------------|
-| `i18n-all-keys-exist` | Every key in `en.json` exists in `de.json`, `fr.json`, `es.json` |
-| `i18n-no-missing-interpolation` | All `{param}` placeholders match across locales |
-| `i18n-language-switcher` | Clicking DE switches to German, URL changes to `/de/...` |
-| `i18n-locale-persistence` | Setting DE, navigating, stays DE |
-| `i18n-error-messages` | Error messages display in current locale |
-| `i18n-score-entry` | Court page works in all languages |
-| `i18n-duration-display` | Duration shows correct format per locale |
-| `i18n-mobile-layout` | Long translations don't overflow on mobile |
+| Test                            | Description                                                      |
+| ------------------------------- | ---------------------------------------------------------------- |
+| `i18n-all-keys-exist`           | Every key in `en.json` exists in `de.json`, `fr.json`, `es.json` |
+| `i18n-no-missing-interpolation` | All `{param}` placeholders match across locales                  |
+| `i18n-language-switcher`        | Clicking DE switches to German, URL changes to `/de/...`         |
+| `i18n-locale-persistence`       | Setting DE, navigating, stays DE                                 |
+| `i18n-error-messages`           | Error messages display in current locale                         |
+| `i18n-score-entry`              | Court page works in all languages                                |
+| `i18n-duration-display`         | Duration shows correct format per locale                         |
+| `i18n-mobile-layout`            | Long translations don't overflow on mobile                       |
 
 ### Translation Key Audit Script
 
 ```javascript
 // scripts/audit-translations.js
 const locales = ['en', 'de', 'fr', 'es'];
-const messages = locales.map(l => require(`../src/lib/i18n/${l}.json`));
+const messages = locales.map((l) => require(`../src/lib/i18n/${l}.json`));
 
 const keys = Object.keys(messages[0]);
 for (const locale of locales.slice(1)) {
-  const missing = keys.filter(k => !messages[locale][k]);
-  if (missing.length) {
-    console.log(`Missing in ${locale}:`, missing);
-  }
+	const missing = keys.filter((k) => !messages[locale][k]);
+	if (missing.length) {
+		console.log(`Missing in ${locale}:`, missing);
+	}
 }
 ```
 
@@ -269,19 +277,19 @@ for (const locale of locales.slice(1)) {
 
 ## File Change Summary
 
-| File | Change |
-|------|--------|
-| `package.json` | Add `@inlang/paraglide-sveltekit` dependency |
-| `vite.config.ts` | Add Paraglide Vite plugin |
-| `src/hooks.server.ts` | Add locale detection middleware |
-| `src/routes/+layout.svelte` | Add LanguageSwitcher component |
-| `src/lib/i18n/en.json` | New — English messages |
-| `src/lib/i18n/de.json` | New — German messages |
-| `src/lib/i18n/fr.json` | New — French messages |
-| `src/lib/i18n/es.json` | New — Spanish messages |
-| `src/lib/components/LanguageSwitcher.svelte` | New — language dropdown |
-| All `.svelte` files | Extract English strings to message calls |
-| All `+page.server.ts` files | Translate error messages |
+| File                                         | Change                                       |
+| -------------------------------------------- | -------------------------------------------- |
+| `package.json`                               | Add `@inlang/paraglide-sveltekit` dependency |
+| `vite.config.ts`                             | Add Paraglide Vite plugin                    |
+| `src/hooks.server.ts`                        | Add locale detection middleware              |
+| `src/routes/+layout.svelte`                  | Add LanguageSwitcher component               |
+| `src/lib/i18n/en.json`                       | New — English messages                       |
+| `src/lib/i18n/de.json`                       | New — German messages                        |
+| `src/lib/i18n/fr.json`                       | New — French messages                        |
+| `src/lib/i18n/es.json`                       | New — Spanish messages                       |
+| `src/lib/components/LanguageSwitcher.svelte` | New — language dropdown                      |
+| All `.svelte` files                          | Extract English strings to message calls     |
+| All `+page.server.ts` files                  | Translate error messages                     |
 
 ## Total Estimated Effort: 10-15 days
 

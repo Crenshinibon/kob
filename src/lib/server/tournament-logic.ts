@@ -19,12 +19,19 @@ export type TournamentId = number;
 
 export type FormatType = 'preseed' | 'random-seed';
 
+export type ScoringMode = 'single-21' | 'best-of-3-15';
+
 export type TournamentConfig = {
 	readonly tournamentId: TournamentId;
 	readonly formatType: FormatType;
 	readonly playerCount: number;
 	readonly courtSizes: readonly number[];
 	readonly physicalCourtCount: number;
+	readonly scoringMode: ScoringMode;
+	readonly pointsToWin: number;
+	readonly winBy: number;
+	readonly setsToWin: number;
+	readonly pointsToWinSet2: number;
 };
 
 export type Player = {
@@ -143,10 +150,25 @@ export type CreateTournamentOpts = {
 	formatType: FormatType;
 	playerCount: number;
 	physicalCourtCount?: number;
+	scoringMode?: ScoringMode;
+	pointsToWin?: number;
+	winBy?: number;
+	setsToWin?: number;
+	pointsToWinSet2?: number;
 };
 
 export function createInitialState(opts: CreateTournamentOpts): TournamentState {
-	const { tournamentId, formatType, playerCount, physicalCourtCount = 4 } = opts;
+	const {
+		tournamentId,
+		formatType,
+		playerCount,
+		physicalCourtCount = 4,
+		scoringMode = 'single-21',
+		pointsToWin = 21,
+		winBy = 2,
+		setsToWin = 1,
+		pointsToWinSet2 = 15
+	} = opts;
 	if (playerCount < 8 || playerCount > 64)
 		throw new Error(`Player count must be 8-64, got ${playerCount}`);
 	const courtSizes = calculateCourtSizes(playerCount);
@@ -156,7 +178,12 @@ export function createInitialState(opts: CreateTournamentOpts): TournamentState 
 			formatType,
 			playerCount,
 			courtSizes,
-			physicalCourtCount: Math.min(physicalCourtCount, courtSizes.length)
+			physicalCourtCount: Math.min(physicalCourtCount, courtSizes.length),
+			scoringMode,
+			pointsToWin,
+			winBy,
+			setsToWin,
+			pointsToWinSet2
 		},
 		players: [],
 		roundsCompleted: 0,
@@ -698,9 +725,234 @@ export function getTop2(court: {
 	return court.standings.filter((s) => s.rank <= 2).map((s) => s.playerId);
 }
 
-export function getBottom2(court: {
-	standings: readonly { playerId: number; rank: number }[];
-}): number[] {
-	const len = court.standings.length;
-	return court.standings.filter((s) => s.rank > len - 2).map((s) => s.playerId);
+// ============================================================================
+// Scoring Rules
+// ============================================================================
+
+export function getScoreCap(config: TournamentConfig, courtSize: number): number {
+	if (config.scoringMode === 'best-of-3-15') return config.pointsToWinSet2 ?? 15;
+	if (courtSize >= 5) return config.pointsToWin === 21 ? 15 : config.pointsToWin;
+	return config.pointsToWin;
+}
+
+export function getScoringLabel(config: TournamentConfig, courtSize: number): string {
+	if (config.scoringMode === 'best-of-3-15')
+		return `Best of ${config.setsToWin} to ${config.pointsToWinSet2 ?? 15}`;
+	const cap = getScoreCap(config, courtSize);
+	return `1 set to ${cap}`;
+}
+
+// ============================================================================
+// Duration Estimation
+// ============================================================================
+
+export type DurationConfig = {
+	readonly setupTimeMinutes: number;
+	readonly transitionTimeMinutes: number;
+	readonly avgRallyDurationSeconds: number;
+	readonly timeBetweenRalliesSeconds: number;
+	readonly timeBetweenMatchesMinutes: number;
+};
+
+export function estimateCourtDurationMinutes(
+	courtSize: number,
+	pointsToWin: number,
+	setsToWin: number,
+	durationConfig: DurationConfig
+): number {
+	const avgRalliesPerGame = pointsToWin * 1.5;
+	const rallyTimeSec =
+		avgRalliesPerGame *
+		(durationConfig.avgRallyDurationSeconds + durationConfig.timeBetweenRalliesSeconds);
+	const gameTimeMin = rallyTimeSec / 60;
+
+	let matches: number;
+	switch (courtSize) {
+		case 3:
+			matches = 3;
+			break;
+		case 4:
+			matches = 3;
+			break;
+		case 5:
+			matches = 4;
+			break;
+		case 6:
+			matches = 4;
+			break;
+		default:
+			matches = 3;
+	}
+
+	const gamesPerMatch = setsToWin === 1 ? 1 : setsToWin * 1.5;
+	const matchTimeMin = gamesPerMatch * gameTimeMin;
+	const total = matches * matchTimeMin + (matches - 1) * durationConfig.timeBetweenMatchesMinutes;
+
+	if (courtSize >= 5) return Math.round(total * 1.1);
+	return Math.round(total);
+}
+
+export function estimateRoundDurationMinutes(
+	activeCourtSizes: readonly number[],
+	pointsToWin: number,
+	setsToWin: number,
+	durationConfig: DurationConfig
+): number {
+	if (activeCourtSizes.length === 0) return 0;
+	let max = 0;
+	for (const size of activeCourtSizes) {
+		const d = estimateCourtDurationMinutes(size, pointsToWin, setsToWin, durationConfig);
+		if (d > max) max = d;
+	}
+	return max;
+}
+
+export function estimateTournamentDuration(
+	totalRounds: number,
+	courtSizes: readonly number[],
+	physicalCourtCount: number,
+	pointsToWin: number,
+	setsToWin: number,
+	durationConfig: DurationConfig
+): {
+	total: number;
+	setup: number;
+	rounds: number[];
+	transitions: number;
+	breakdown: string;
+} {
+	const setup = durationConfig.setupTimeMinutes;
+	const shiftsPerRound = Math.ceil(courtSizes.length / physicalCourtCount);
+	const roundDur = estimateRoundDurationMinutes(courtSizes, pointsToWin, setsToWin, durationConfig);
+	const adjustedRound =
+		shiftsPerRound * roundDur + (shiftsPerRound - 1) * durationConfig.transitionTimeMinutes;
+
+	const rounds: number[] = [];
+	for (let r = 0; r < totalRounds; r++) rounds.push(adjustedRound);
+
+	const transitionCount = totalRounds - 1;
+	const transitions = transitionCount * durationConfig.transitionTimeMinutes;
+	const total = setup + rounds.reduce((a, b) => a + b, 0) + transitions;
+
+	return {
+		total,
+		setup,
+		rounds,
+		transitions,
+		breakdown: `Setup: ${setup} min, ${totalRounds} rounds x ${adjustedRound} min, ${transitionCount} transitions x ${durationConfig.transitionTimeMinutes} min`
+	};
+}
+
+// ============================================================================
+// Shift Scheduling & Wait Time
+// ============================================================================
+
+export function getBatchShifts(virtualCourtCount: number, physicalCourtCount: number): number[][] {
+	const shifts: number[][] = [];
+	const queue: number[] = [];
+	for (let i = virtualCourtCount; i >= 1; i--) queue.push(i);
+
+	while (queue.length > 0) {
+		const shift: number[] = [];
+		for (let i = 0; i < physicalCourtCount && queue.length > 0; i++) {
+			shift.push(queue.pop()!);
+		}
+		shifts.push(shift);
+	}
+	return shifts;
+}
+
+export function getShiftForCourt(
+	virtualCourtNumber: number,
+	shifts: number[][]
+): { shift: number; total: number } {
+	for (let i = 0; i < shifts.length; i++) {
+		if (shifts[i].includes(virtualCourtNumber)) return { shift: i + 1, total: shifts.length };
+	}
+	return { shift: 0, total: shifts.length };
+}
+
+export function estimateWaitTimeMinutes(
+	shiftIndex: number,
+	totalShifts: number,
+	roundDurationMinutes: number,
+	transitionTimeMinutes: number
+): number {
+	const remaining = totalShifts - shiftIndex;
+	return remaining * roundDurationMinutes + remaining * transitionTimeMinutes;
+}
+
+export function formatDuration(totalMinutes: number): string {
+	const h = Math.floor(totalMinutes / 60);
+	const m = totalMinutes % 60;
+	if (h > 0) return `~${h}h ${m}min`;
+	return `~${m}min`;
+}
+
+// ============================================================================
+// Player Retirement
+// ============================================================================
+
+export function recalculateCourtConfigAfterRetirement(newPlayerCount: number): {
+	courtSizes: number[];
+	totalCourts: number;
+} {
+	if (newPlayerCount < 3) return { courtSizes: [newPlayerCount], totalCourts: 1 };
+	const leftover = newPlayerCount % 4;
+	if (leftover === 0) {
+		const count = newPlayerCount / 4;
+		return { courtSizes: Array(count).fill(4), totalCourts: count };
+	}
+	const bottomSize = leftover === 1 ? 5 : leftover === 2 ? 6 : 3;
+	const standard = (newPlayerCount - bottomSize) / 4;
+	const sizes: number[] = [];
+	for (let i = 0; i < standard; i++) sizes.push(4);
+	sizes.push(bottomSize);
+	return { courtSizes: sizes, totalCourts: standard + 1 };
+}
+
+export function calculateRetiredStanding(
+	currentCourt: number,
+	currentCourtSize: number,
+	totalCourts: number,
+	remainingRounds: number,
+	formatType: FormatType,
+	courtSizes: readonly number[]
+): number {
+	if (formatType === 'preseed') {
+		let place = 0;
+		for (let i = 0; i < totalCourts; i++) {
+			const size = courtSizes[i] ?? 4;
+			place += i < currentCourt - 1 ? 4 : 0;
+		}
+		return place + currentCourtSize;
+	}
+
+	const worstCourt = Math.min(currentCourt + remainingRounds, totalCourts);
+	let place = 0;
+	for (let i = 0; i < worstCourt - 1; i++) {
+		place += 4;
+	}
+	const lastCourtSize = courtSizes[worstCourt - 1] ?? 4;
+	return place + lastCourtSize;
+}
+
+export function getFinalRoundCourtConfig(courtSizes: readonly number[]): {
+	courtSizes: number[];
+	eliminatedPlayerIds: number[];
+} {
+	const playerCount = courtSizes.reduce((a, b) => a + b, 0);
+
+	if (courtSizes.length === 1) {
+		const size = courtSizes[0];
+		if (size === 5) return { courtSizes: [4], eliminatedPlayerIds: [] };
+		if (size === 6) return { courtSizes: [4], eliminatedPlayerIds: [] };
+		return { courtSizes: [...courtSizes], eliminatedPlayerIds: [] };
+	}
+
+	if (playerCount % 4 === 0 || courtSizes.length >= 2) {
+		return { courtSizes: [...courtSizes], eliminatedPlayerIds: [] };
+	}
+
+	return { courtSizes: [...courtSizes], eliminatedPlayerIds: [] };
 }

@@ -3,7 +3,7 @@
 	import QRCode from 'qrcode';
 
 	import { saveScore } from './scores.remote';
-	import { scoreSchema } from './scoreSchema';
+	import { createScoreSchema } from './scoreSchema';
 
 	let { data } = $props<{
 		data: {
@@ -19,6 +19,8 @@
 	let savingMatches = $state<Set<number>>(new Set());
 	// Track which matches are being edited (for authenticated users)
 	let editingMatches = $state<Set<number>>(new Set());
+	// Dynamic score schema based on court's score cap
+	const dynamicScoreSchema = $derived(createScoreSchema(data.court.scoreCap ?? 21));
 	// Track completed matches locally for smooth transitions
 	let completedMatches = $derived<Set<number>>(
 		new Set(data.matches.filter((m: any) => m.teamAScore !== null).map((m: any) => m.id))
@@ -97,12 +99,19 @@
 			<h3>Players on This Court ({data.court.courtSize}p)</h3>
 			{#if data.court.courtSize === 3}
 				<p class="courtsize-note">
-					3-player solo rotation — 3 games per player (to 21)
+					3-player solo rotation — 3 games per player ({data.court.scoringLabel ??
+						`to ${data.court.scoreCap ?? 21}`})
 				</p>
 			{:else if data.court.courtSize === 5}
-				<p class="courtsize-note">5-player court — 4 parallel games per player (to 15)</p>
+				<p class="courtsize-note">
+					5-player court — 4 parallel games per player ({data.court.scoringLabel ??
+						`to ${data.court.scoreCap ?? 15}`})
+				</p>
 			{:else if data.court.courtSize === 6}
-				<p class="courtsize-note">6-player court — 4 parallel games per player (to 15)</p>
+				<p class="courtsize-note">
+					6-player court — 4 parallel games per player ({data.court.scoringLabel ??
+						`to ${data.court.scoreCap ?? 15}`})
+				</p>
 			{/if}
 			<div
 				class="player-cards"
@@ -166,7 +175,7 @@
 						{@const isEditing = editingMatches.has(match.id)}
 						<form
 							data-testid="match-form-{match.id}"
-							{...scoreForm.preflight(scoreSchema).enhance(async ({ submit }) => {
+							{...scoreForm.preflight(dynamicScoreSchema).enhance(async ({ submit }) => {
 								savingMatches = new Set([...savingMatches, match.id]);
 								try {
 									await submit();

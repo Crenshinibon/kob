@@ -3,6 +3,7 @@
 ## Problem
 
 When N virtual courts > M physical courts, players on virtual courts M+1 through N are waiting. They need to know:
+
 - **When do I play next?** (which shift)
 - **How long is my break?** (estimated wait time)
 
@@ -13,6 +14,7 @@ All virtual courts are played in **batch shifts**. Each shift assigns up to M vi
 Shifts proceed from **lowest priority courts first** (highest virtual court numbers), working up to **top courts** (lowest virtual court numbers). This ensures the top court match is last, so finalists are fresh.
 
 **Example: 8 virtual courts, 4 physical courts**
+
 ```
 Shift 1: Virtual courts 5-8 → Physical courts 1-4 (simultaneous)
 [WAIT]  Score entry, redistribution, rest (~10 min transition)
@@ -20,6 +22,7 @@ Shift 2: Virtual courts 1-4 → Physical courts 1-4 (simultaneous)
 ```
 
 **Example: 12 virtual courts, 4 physical courts**
+
 ```
 Shift 1: Virtual courts  9-12 → Physical courts 1-4
 [WAIT]  Score entry, redistribution, rest (~10 min transition)
@@ -55,11 +58,13 @@ Est. Wait for Shift S = (Remaining Shifts × Avg Court Duration) + (Remaining Sh
 ```
 
 Where:
+
 - `Remaining Shifts` = number of shifts after yours
 - `Avg Court Duration` = estimated from game rules
 - `Transition Time` = configured transition time between shifts (default 10 min)
 
 **Example**: 12 virtual courts, 4 physical courts. Player on VC5 is in Shift 2:
+
 - 1 remaining shift after theirs (Shift 3: VC1-VC4)
 - Avg court duration: 45 min
 - Transition time: 10 min
@@ -69,24 +74,21 @@ Where:
 ## Batch Shift Assignment Algorithm
 
 ```typescript
-function getBatchShifts(
-    virtualCourtCount: number,
-    physicalCourtCount: number
-): number[][] {
-    const shifts: number[][] = [];
-    const courtQueue: number[] = [];
-    // Reverse order: highest-numbered virtual courts first (bottom courts go first)
-    for (let i = virtualCourtCount; i >= 1; i--) {
-        courtQueue.push(i);
-    }
-    while (courtQueue.length > 0) {
-        const shift: number[] = [];
-        for (let i = 0; i < physicalCourtCount && courtQueue.length > 0; i++) {
-            shift.push(courtQueue.pop()!);
-        }
-        shifts.push(shift);
-    }
-    return shifts;
+function getBatchShifts(virtualCourtCount: number, physicalCourtCount: number): number[][] {
+	const shifts: number[][] = [];
+	const courtQueue: number[] = [];
+	// Reverse order: highest-numbered virtual courts first (bottom courts go first)
+	for (let i = virtualCourtCount; i >= 1; i--) {
+		courtQueue.push(i);
+	}
+	while (courtQueue.length > 0) {
+		const shift: number[] = [];
+		for (let i = 0; i < physicalCourtCount && courtQueue.length > 0; i++) {
+			shift.push(courtQueue.pop()!);
+		}
+		shifts.push(shift);
+	}
+	return shifts;
 }
 // Example: getBatchShifts(8, 4) → [[5,6,7,8], [1,2,3,4]]
 // Example: getBatchShifts(12, 4) → [[9,10,11,12], [5,6,7,8], [1,2,3,4]]
@@ -95,6 +97,7 @@ function getBatchShifts(
 ## UI Display
 
 ### Tournament View (Admin)
+
 ```
 ┌─────────────────────────────────────────────────┐
 │ Round 2 — Shift Schedule                          │
@@ -116,6 +119,7 @@ function getBatchShifts(
 ```
 
 ### Player Waiting View
+
 ```
 ┌─────────────────────────────────────────────┐
 │ Virtual Court 2 — Round 2                    │

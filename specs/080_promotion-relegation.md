@@ -55,6 +55,7 @@ Same logic extends for 32 players across 8 courts.
 ### 16 Players (3 Rounds, 4 Courts)
 
 **Round 1 → Round 2:**
+
 ```
 Court 1: All 1st places from Courts 1-4
 Court 2: All 2nd places from Courts 1-4
@@ -63,6 +64,7 @@ Court 4: All 4th places from Courts 1-4
 ```
 
 **Round 2 → Round 3:**
+
 ```
 Court 1: 1st-2nd from Courts 1,2 → Places 1-4
 Court 2: 3rd-4th from Courts 1,2 → Places 5-8
@@ -73,12 +75,14 @@ Court 4: 3rd-4th from Courts 3,4 → Places 13-16
 ### 32 Players (4 Rounds, 8 Courts)
 
 **Round 1 → Round 2:** Winner/loser split
+
 - ALL 1st-2nd places from Courts 1-8 → Winner Courts 1-4
 - ALL 3rd-4th places from Courts 1-8 → Loser Courts 5-8
 
 **Round 2 → Round 3:** Tier consolidation within Winner and Loser groups
 
 **Round 3 → Round 4:** Final placement
+
 - Court 1: Places 1-4 | Court 5: Places 17-20
 - Court 2: Places 5-8 | Court 6: Places 21-24
 - Court 3: Places 9-12 | Court 7: Places 25-28

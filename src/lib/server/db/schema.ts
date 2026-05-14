@@ -8,10 +8,20 @@ export const tournament = pgTable('tournament', {
 	currentRound: integer('current_round').default(0),
 	numRounds: integer('num_rounds').notNull().default(3),
 	formatType: text('format_type').notNull().default('random-seed'),
+	scoringMode: text('scoring_mode').notNull().default('single-21'),
+	pointsToWin: integer('points_to_win').notNull().default(21),
+	winBy: integer('win_by').notNull().default(2),
+	setsToWin: integer('sets_to_win').notNull().default(1),
+	pointsToWinSet2: integer('points_to_win_set_2').default(15),
 	schedulingMode: text('scheduling_mode').notNull().default('batch'),
 	physicalCourtCount: integer('physical_court_count').notNull().default(4),
 	playerCount: integer('player_count').notNull().default(16),
 	courtSizes: text('court_sizes'),
+	setupTimeMinutes: integer('setup_time_minutes').notNull().default(15),
+	transitionTimeMinutes: integer('transition_time_minutes').notNull().default(10),
+	avgRallyDurationSeconds: integer('avg_rally_duration_seconds').notNull().default(35),
+	timeBetweenRalliesSeconds: integer('time_between_rallies_seconds').notNull().default(8),
+	timeBetweenMatchesMinutes: integer('time_between_matches_minutes').notNull().default(3),
 	createdAt: timestamp('created_at').defaultNow()
 });
 
@@ -20,7 +30,11 @@ export const player = pgTable('player', {
 	tournamentId: integer('tournament_id').notNull(),
 	name: text('name').notNull(),
 	seedPoints: integer('seed_points'),
-	seedRank: integer('seed_rank')
+	seedRank: integer('seed_rank'),
+	retiredAt: timestamp('retired_at'),
+	retiredRound: integer('retired_round'),
+	retirementReason: text('retirement_reason'),
+	finalStanding: integer('final_standing')
 });
 
 export const courtRotation = pgTable('court_rotation', {

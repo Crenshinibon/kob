@@ -109,6 +109,7 @@ _Goal: Strong players move up, weaker players move down._
 #### Initial Seeding (Round 1)
 
 Players distributed in snake pattern based on seed points:
+
 - **16 players:** Seeds 1,5,9,13 on Court 1; Seeds 2,6,10,14 on Court 2; etc.
 - **32 players:** Seeds 1,9,17,25 on Court 1; Seeds 2,10,18,26 on Court 2; etc.
 

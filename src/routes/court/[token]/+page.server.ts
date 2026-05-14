@@ -63,10 +63,26 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const courtSize = (tourney as any).courtSizes
 		? ((JSON.parse((tourney as any).courtSizes) as number[])[rotation.courtNumber - 1] ??
-				playerIds.length)
+			playerIds.length)
 		: playerIds.length;
 
-	const scoreCap = courtSize >= 5 ? 15 : 21;
+	const scoringMode = tourney.scoringMode ?? 'single-21';
+	const pointsToWin = tourney.pointsToWin ?? 21;
+	const pointsToWinSet2 = tourney.pointsToWinSet2 ?? 15;
+
+	let scoreCap: number;
+	if (scoringMode === 'best-of-3-15') {
+		scoreCap = pointsToWinSet2;
+	} else if (courtSize >= 5) {
+		scoreCap = pointsToWin === 21 ? 15 : pointsToWin;
+	} else {
+		scoreCap = pointsToWin;
+	}
+
+	const scoringLabel =
+		scoringMode === 'best-of-3-15'
+			? `Best of ${tourney.setsToWin ?? 1} to ${pointsToWinSet2}`
+			: `1 set to ${scoreCap}`;
 
 	return {
 		court: {
@@ -75,7 +91,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			roundNumber: rotation.roundNumber,
 			courtSize,
 			playerNames,
-			scoreCap
+			scoreCap,
+			scoringLabel
 		},
 		matches,
 		standings,
@@ -133,7 +150,19 @@ export const actions: Actions = {
 
 		const courtSizes: number[] = tourney.courtSizes ? JSON.parse(tourney.courtSizes) : [];
 		const courtSize = courtSizes[rotation.courtNumber - 1] ?? 4;
-		const scoreCap = courtSize >= 5 ? 15 : 21;
+
+		const scoringMode = tourney.scoringMode ?? 'single-21';
+		const pointsToWin = tourney.pointsToWin ?? 21;
+		const pointsToWinSet2 = tourney.pointsToWinSet2 ?? 15;
+
+		let scoreCap: number;
+		if (scoringMode === 'best-of-3-15') {
+			scoreCap = pointsToWinSet2;
+		} else if (courtSize >= 5) {
+			scoreCap = pointsToWin === 21 ? 15 : pointsToWin;
+		} else {
+			scoreCap = pointsToWin;
+		}
 
 		if (maxScore < scoreCap) {
 			return { error: `Winner must have at least ${scoreCap} points` };

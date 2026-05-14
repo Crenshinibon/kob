@@ -10,6 +10,8 @@
 			courtSizes: number[];
 			currentRound: number;
 			physicalCourtCount: number;
+			shifts?: number[][];
+			roundDuration?: number;
 		};
 	}>();
 
@@ -92,6 +94,18 @@
 					? 's'
 					: ''}
 			</p>
+			{#if data.roundDuration}
+				<p class="round-dur">Est. round duration: ~{data.roundDuration} min per shift</p>
+			{/if}
+			{#if data.shifts && data.shifts.length > 1}
+				<div class="shift-list">
+					{#each data.shifts as shift, si}
+						<span class="shift-badge" class:active={si === 0}
+							>Shift {si + 1}: C{shift.join(', C')}</span
+						>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	{/if}
 
@@ -110,6 +124,18 @@
 							{getCourtSizeLabel(court.courtSize)}
 						</span>
 						<span class="matches">{getMatchStatus(court.matches)}</span>
+						{#if court.shift && court.totalShifts > 1}
+							<span
+								class="shift-badge"
+								class:active={court.shift === 1}
+								class:waiting={court.shift > 1}
+							>
+								{court.shift === 1 ? '▶ Active' : `Shift ${court.shift}/${court.totalShifts}`}
+							</span>
+							{#if court.waitLabel}
+								<span class="wait-time">Est. wait: {court.waitLabel}</span>
+							{/if}
+						{/if}
 					</div>
 				</div>
 
@@ -172,6 +198,39 @@
 			</form>
 		{/if}
 	</section>
+
+	{#if data.tournament.status === 'active' && data.currentRound > 0}
+		<section class="retire-section">
+			<details>
+				<summary class="btn-retire-header">Retire a Player</summary>
+				<form method="POST" action="?/retirePlayer" class="retire-form">
+					<div class="field">
+						<label for="retirePlayerId">Select player to retire</label>
+						<select id="retirePlayerId" name="playerId" required>
+							<option value="">— Select player —</option>
+							{#each data.courts as court}
+								{#each court.players as p}
+									<option value={p.id}>{p.name} (Court {court.courtNumber})</option>
+								{/each}
+							{/each}
+						</select>
+					</div>
+					<div class="field">
+						<label for="retireReason">Reason</label>
+						<select id="retireReason" name="reason">
+							<option value="">— Optional —</option>
+							<option value="injury">Injury</option>
+							<option value="schedule">Schedule</option>
+							<option value="personal">Personal</option>
+							<option value="disqualified">Disqualified</option>
+							<option value="other">Other</option>
+						</select>
+					</div>
+					<button type="submit" class="btn-danger"> Retire Player </button>
+				</form>
+			</details>
+		</section>
+	{/if}
 </main>
 
 <style>
@@ -498,5 +557,102 @@
 
 	.start-form {
 		margin-left: var(--spacing-md);
+	}
+
+	.round-dur {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		margin-top: var(--spacing-xs);
+	}
+
+	.shift-list {
+		display: flex;
+		gap: var(--spacing-xs);
+		margin-top: var(--spacing-sm);
+		flex-wrap: wrap;
+	}
+
+	.shift-badge {
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		padding: 2px 8px;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--border-strong);
+		color: var(--text-muted);
+	}
+
+	.shift-badge.active {
+		border-color: var(--accent-success);
+		color: var(--accent-success);
+		background-color: rgba(0, 255, 65, 0.08);
+	}
+
+	.shift-badge.waiting {
+		border-color: var(--accent-warning);
+		color: var(--accent-warning);
+	}
+
+	.wait-time {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+		font-style: italic;
+	}
+
+	.retire-section {
+		margin: var(--spacing-lg) 0;
+	}
+
+	.btn-retire-header {
+		cursor: pointer;
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		color: var(--text-muted);
+		padding: var(--spacing-sm);
+	}
+
+	.btn-retire-header:hover {
+		color: var(--text-secondary);
+	}
+
+	.retire-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-sm);
+		padding: var(--spacing-md);
+		background-color: var(--bg-card);
+		border: 2px solid var(--border-default);
+		border-radius: var(--radius-md);
+	}
+
+	.retire-form .field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+	}
+
+	.retire-form label {
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+	}
+
+	.retire-form select {
+		min-height: 40px;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		font-size: var(--font-size-base);
+		background-color: var(--bg-input);
+		color: var(--text-input);
+		border: var(--border-thickness) solid var(--border-strong);
+		border-radius: var(--radius-sm);
+	}
+
+	.retire-form select:focus {
+		outline: none;
+		border-color: var(--border-focus);
+	}
+
+	.retire-form .btn-danger {
+		align-self: flex-start;
 	}
 </style>

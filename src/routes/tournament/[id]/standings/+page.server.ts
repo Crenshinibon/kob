@@ -130,7 +130,17 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		})
 		.map((s, i) => ({ ...s, overallRank: i + 1 }));
 
-	return { tournament: tourney, standings, players, courtSizes };
+	const retiredPlayers = players
+		.filter((p) => p.retiredAt)
+		.map((p) => ({
+			id: p.id,
+			name: p.name,
+			retiredRound: p.retiredRound,
+			retirementReason: p.retirementReason,
+			finalStanding: p.finalStanding
+		}));
+
+	return { tournament: tourney, standings, players, courtSizes, retiredPlayers };
 };
 
 // StandingsPlayer type is implicit from usage

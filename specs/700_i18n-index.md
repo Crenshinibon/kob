@@ -2,20 +2,20 @@
 
 ## Sub-Specs
 
-| File | Topic |
-|------|-------|
-| `710_i18n-core.md` | Architecture, library choice, locale structure, translation file organization |
-| `720_i18n-content.md` | What to translate, translation keys, UI strings, error messages, status labels |
-| `730_i18n-implementation.md` | Implementation phases, file changes, testing strategy |
+| File                         | Topic                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------------ |
+| `710_i18n-core.md`           | Architecture, library choice, locale structure, translation file organization  |
+| `720_i18n-content.md`        | What to translate, translation keys, UI strings, error messages, status labels |
+| `730_i18n-implementation.md` | Implementation phases, file changes, testing strategy                          |
 
 ## Languages
 
-| Code | Language | Priority |
-|------|----------|----------|
-| `en` | English | Default (existing) |
-| `de` | German | Phase 1 |
-| `fr` | French | Phase 1 |
-| `es` | Spanish | Phase 1 |
+| Code | Language | Priority           |
+| ---- | -------- | ------------------ |
+| `en` | English  | Default (existing) |
+| `de` | German   | Phase 1            |
+| `fr` | French   | Phase 1            |
+| `es` | Spanish  | Phase 1            |
 
 ## Key Decisions
 

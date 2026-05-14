@@ -12,11 +12,18 @@ import {
 	getCourtConfiguration,
 	matchCountForCourtSize,
 	generateAllMatchesForAssignment,
+	getBatchShifts,
+	getShiftForCourt,
+	estimateRoundDurationMinutes,
+	formatDuration,
+	recalculateCourtConfigAfterRetirement,
+	calculateRoundCount,
 	type FormatType,
 	type TournamentState,
 	type MatchData,
 	type CourtResult,
-	type CourtAssignment
+	type CourtAssignment,
+	type DurationConfig
 } from '$lib/server/tournament-logic';
 
 function parseCourtSizes(tourney: any): number[] {
@@ -158,6 +165,39 @@ export const load = async ({ params, locals }: any) => {
 		});
 	}
 
+	const physicalCourtCount = tourney.physicalCourtCount ?? 4;
+	const virtualCourtCount = courts.length;
+	const shifts = getBatchShifts(virtualCourtCount, physicalCourtCount);
+
+	const durationConfig: DurationConfig = {
+		setupTimeMinutes: tourney.setupTimeMinutes ?? 15,
+		transitionTimeMinutes: tourney.transitionTimeMinutes ?? 10,
+		avgRallyDurationSeconds: tourney.avgRallyDurationSeconds ?? 35,
+		timeBetweenRalliesSeconds: tourney.timeBetweenRalliesSeconds ?? 8,
+		timeBetweenMatchesMinutes: tourney.timeBetweenMatchesMinutes ?? 3
+	};
+
+	const pointsToWin = tourney.pointsToWin ?? 21;
+	const setsToWin = tourney.setsToWin ?? 1;
+	const roundDuration = estimateRoundDurationMinutes(
+		courtSizes,
+		pointsToWin,
+		setsToWin,
+		durationConfig
+	);
+
+	for (const court of courts) {
+		const shiftInfo = getShiftForCourt(court.courtNumber, shifts);
+		court.shift = shiftInfo.shift;
+		court.totalShifts = shiftInfo.total;
+		if (shiftInfo.shift > 1) {
+			court.waitMinutes =
+				(shiftInfo.shift - 1) * roundDuration +
+				(shiftInfo.shift - 1) * durationConfig.transitionTimeMinutes;
+			court.waitLabel = formatDuration(court.waitMinutes);
+		}
+	}
+
 	return {
 		tournament: tourney,
 		courts,
@@ -165,7 +205,9 @@ export const load = async ({ params, locals }: any) => {
 		isFinalRound,
 		courtSizes,
 		currentRound,
-		physicalCourtCount: tourney.physicalCourtCount ?? 4
+		physicalCourtCount,
+		shifts,
+		roundDuration
 	};
 };
 
@@ -422,5 +464,98 @@ export const actions = {
 		await db.update(tournament).set({ status: 'active' }).where(eq(tournament.id, tournamentId));
 
 		throw redirect(303, `/tournament/${tournamentId}`);
+	},
+
+	retirePlayer: async ({ request, params, locals }: any) => {
+		const user = locals.user;
+		if (!user) throw error(401, 'Unauthorized');
+
+		const tournamentId = parseInt(params.id);
+		const formData = await request.formData();
+		const retirePlayerId = parseInt(formData.get('playerId')?.toString() || '0');
+		const reason = formData.get('reason')?.toString() || null;
+
+		const [tourney] = await db
+			.select()
+			.from(tournament)
+			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
+
+		if (!tourney) throw error(404, 'Tournament not found');
+		if (tourney.status !== 'active') throw error(400, 'Tournament not active');
+		if (tourney.currentRound === 0) throw error(400, 'Tournament has not started yet');
+
+		const [retiringPlayer] = await db
+			.select()
+			.from(player)
+			.where(and(eq(player.id, retirePlayerId), eq(player.tournamentId, tournamentId)));
+
+		if (!retiringPlayer) throw error(400, 'Player not found');
+		if (retiringPlayer.retiredAt) throw error(400, 'Player already retired');
+
+		const currentRound = tourney.currentRound ?? 1;
+
+		// Mark player as retired
+		await db
+			.update(player)
+			.set({
+				retiredAt: new Date(),
+				retiredRound: currentRound,
+				retirementReason: reason
+			})
+			.where(eq(player.id, retirePlayerId));
+
+		// Count remaining active players
+		const allPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
+		const activePlayers = allPlayers.filter((p) => !p.retiredAt);
+
+		if (activePlayers.length < 3) {
+			throw error(400, 'Cannot continue with fewer than 3 active players');
+		}
+
+		// Recalculate court configuration
+		const newConfig = recalculateCourtConfigAfterRetirement(activePlayers.length);
+		const newCourtSizes = newConfig.courtSizes;
+		const newPlayerCount = activePlayers.length;
+		const newRoundCount = calculateRoundCount(
+			newConfig.totalCourts,
+			tourney.formatType as FormatType
+		);
+
+		// Update tournament with new player count and court sizes
+		await db
+			.update(tournament)
+			.set({
+				playerCount: newPlayerCount,
+				numRounds: newRoundCount,
+				courtSizes: JSON.stringify(newCourtSizes)
+			})
+			.where(eq(tournament.id, tournamentId));
+
+		// Delete existing court rotations for the current round (they were pre-computed)
+		// and let closeRound regenerate them with the new player count
+		const existingRotations = await db
+			.select()
+			.from(courtRotation)
+			.where(
+				and(
+					eq(courtRotation.tournamentId, tournamentId),
+					eq(courtRotation.roundNumber, currentRound + 1)
+				)
+			);
+
+		for (const rot of existingRotations) {
+			await db.delete(match).where(eq(match.courtRotationId, rot.id));
+			await db.delete(courtAccess).where(eq(courtAccess.courtRotationId, rot.id));
+			await db.delete(courtRotation).where(eq(courtRotation.id, rot.id));
+		}
+
+		// Re-trigger closeRound to regenerate assignments with new player count
+		// We decrement currentRound so closeRound regenerates for the just-completed round
+		await db
+			.update(tournament)
+			.set({ currentRound: currentRound - 1 })
+			.where(eq(tournament.id, tournamentId));
+
+		return { success: true };
 	}
 };

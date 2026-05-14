@@ -40,6 +40,13 @@ export const actions = {
 		const formatType = formData.get('formatType')?.toString() || 'random-seed';
 		const namesText = formData.get('names')?.toString() || '';
 		const physicalCourtCount = parseInt(formData.get('physicalCourts')?.toString() || '4');
+		const scoringMode = formData.get('scoringMode')?.toString() || 'single-21';
+		const pointsToWin = parseInt(formData.get('pointsToWin')?.toString() || '21');
+		const winBy = parseInt(formData.get('winBy')?.toString() || '2');
+		const setsToWin = parseInt(formData.get('setsToWin')?.toString() || '1');
+		const pointsToWinSet2 = formData.get('pointsToWinSet2')?.toString()
+			? parseInt(formData.get('pointsToWinSet2')!.toString())
+			: 15;
 
 		if (!name) {
 			return { error: 'Tournament name is required' };
@@ -90,6 +97,11 @@ export const actions = {
 				name,
 				numRounds,
 				formatType,
+				scoringMode,
+				pointsToWin,
+				winBy,
+				setsToWin,
+				pointsToWinSet2,
 				schedulingMode: 'batch',
 				playerCount,
 				physicalCourtCount,

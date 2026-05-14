@@ -6,20 +6,20 @@
 
 Each court plays 3 matches per round. Every player partners with every other player exactly once:
 
-| Match | Team A | Team B |
-|-------|--------|--------|
-| 1 | P1 + P2 | P3 + P4 |
-| 2 | P1 + P3 | P2 + P4 |
-| 3 | P1 + P4 | P2 + P3 |
+| Match | Team A  | Team B  |
+| ----- | ------- | ------- |
+| 1     | P1 + P2 | P3 + P4 |
+| 2     | P1 + P3 | P2 + P4 |
+| 3     | P1 + P4 | P2 + P3 |
 
 ### Scoring Modes
 
 The organizer chooses a scoring mode when creating the tournament:
 
-| Mode | Description | Default for |
-|------|-------------|-------------|
-| **Single Set to 21** | One set, first to 21, win by 2 | 4p courts (standard) |
-| **Best of 3 to 15** | Up to 3 sets, each to 15 (win by 2) | Optional longer format |
+| Mode                 | Description                         | Default for            |
+| -------------------- | ----------------------------------- | ---------------------- |
+| **Single Set to 21** | One set, first to 21, win by 2      | 4p courts (standard)   |
+| **Best of 3 to 15**  | Up to 3 sets, each to 15 (win by 2) | Optional longer format |
 
 #### Single Set to 21 (Default)
 
@@ -39,12 +39,12 @@ The organizer chooses a scoring mode when creating the tournament:
 
 ### Configurable Parameters
 
-| Parameter | Default | Range | Notes |
-|-----------|---------|-------|-------|
-| `pointsToWin` | 21 | 15-25 | Points needed to win a set |
-| `winBy` | 2 | 1-3 | Minimum point margin to win |
-| `setsToWin` | 1 | 1-2 | Number of sets needed to win match |
-| `pointsToWinSet2` | 15 | 11-21 | Points for subsequent sets (if best-of-3) |
+| Parameter         | Default | Range | Notes                                     |
+| ----------------- | ------- | ----- | ----------------------------------------- |
+| `pointsToWin`     | 21      | 15-25 | Points needed to win a set                |
+| `winBy`           | 2       | 1-3   | Minimum point margin to win               |
+| `setsToWin`       | 1       | 1-2   | Number of sets needed to win match        |
+| `pointsToWinSet2` | 15      | 11-21 | Points for subsequent sets (if best-of-3) |
 
 ### Special Court Rules (3p, 5p, 6p)
 
@@ -82,13 +82,13 @@ The organizer chooses a scoring mode when creating the tournament:
 
 ### Rule Inference Table
 
-| 4p Rule | 3p Court | 5p Court | 6p Court |
-|---------|----------|----------|----------|
-| Single set to 21 | Single set to 21 | 1 set to 15 (default) or configurable | 1 set to 15 (default) or configurable |
-| Best-of-3 to 15 | Best-of-3 to 15 | Single set to 15 | Single set to 15 |
-| Win by 2 | Win by 2 | Win by 2 | Win by 2 |
-| 3 games/round | 3 games/round | 4 parallel games/round | 4 parallel games/round |
-| Ranking: total pts | Ranking: total pts | Ranking: avg pts/round | Ranking: avg pts/round |
+| 4p Rule            | 3p Court           | 5p Court                              | 6p Court                              |
+| ------------------ | ------------------ | ------------------------------------- | ------------------------------------- |
+| Single set to 21   | Single set to 21   | 1 set to 15 (default) or configurable | 1 set to 15 (default) or configurable |
+| Best-of-3 to 15    | Best-of-3 to 15    | Single set to 15                      | Single set to 15                      |
+| Win by 2           | Win by 2           | Win by 2                              | Win by 2                              |
+| 3 games/round      | 3 games/round      | 4 parallel games/round                | 4 parallel games/round                |
+| Ranking: total pts | Ranking: total pts | Ranking: avg pts/round                | Ranking: avg pts/round                |
 
 **Rationale for 5p/6p defaults**: Two parallel game tracks (15pt each), interleaved by rotating players every point, done in 2 runs = 4 games total. Not truly parallel — approximately same duration as a single game + 10% overhead for player switches. Because players play different numbers of games (3 or 4 in 5-player; 2 or 3 in 6-player), ranking uses **average points per round** to normalize performance. Ties are broken by total points (more data = advantage), then differential, then playerId. For 3-player courts, all players play the same number of games, so standard total-points ranking applies.
 
@@ -106,11 +106,11 @@ Tournament organizers need to tell players "the tournament will take approximate
 Total Duration = (Rounds × Round Duration) + ((Rounds - 1) × Transition Time) + Setup Time
 ```
 
-| Component | Description | Default |
-|-----------|-------------|---------|
-| **Setup Time** | Initial court setup, player briefing | 15 min |
-| **Round Duration** | Time for one round (all courts play) | Calculated |
-| **Transition Time** | Score finalization, redistribution, new court assignments, player break | 10 min |
+| Component           | Description                                                             | Default    |
+| ------------------- | ----------------------------------------------------------------------- | ---------- |
+| **Setup Time**      | Initial court setup, player briefing                                    | 15 min     |
+| **Round Duration**  | Time for one round (all courts play)                                    | Calculated |
+| **Transition Time** | Score finalization, redistribution, new court assignments, player break | 10 min     |
 
 ### Round Duration Calculation
 
@@ -122,17 +122,18 @@ Round Duration = max(Court Duration for each active court)
 
 #### Court Duration by Type
 
-| Court Type | Games | Points/Game | Est. Court Duration |
-|------------|-------|-------------|---------------------|
-| 4p (21pt) | 3 | 21 | ~45 min |
-| 4p (15pt BO3) | up to 3×3=9 | 15 | ~55 min |
-| 3p (21pt) | 3 | 21 | ~35 min |
-| 5p (15pt) | 4 | 15 | ~45 min |
-| 6p (15pt) | 4 | 15 | ~45 min |
+| Court Type    | Games       | Points/Game | Est. Court Duration |
+| ------------- | ----------- | ----------- | ------------------- |
+| 4p (21pt)     | 3           | 21          | ~45 min             |
+| 4p (15pt BO3) | up to 3×3=9 | 15          | ~55 min             |
+| 3p (21pt)     | 3           | 21          | ~35 min             |
+| 5p (15pt)     | 4           | 15          | ~45 min             |
+| 6p (15pt)     | 4           | 15          | ~45 min             |
 
 **Note on 5p/6p courts**: The parallel games are not truly parallel — they alternate points with player switches. Duration is approximately the same as a single game with the same total points, plus ~10% overhead for switching players in and out.
 
 **Rally duration estimates** are configurable defaults. The system uses:
+
 - Average rallies per game ≈ pointsToWin × 1.5 (accounts for side-outs)
 - Average rally duration ≈ 30-45 seconds (depends on court size and skill level)
 
@@ -143,6 +144,7 @@ Court Duration = Matches × Games per Match × (Avg Rallies per Game × Avg Rall
 ```
 
 Where:
+
 - `Avg Rallies per Game` = `pointsToWin × 1.5` (heuristic)
 - `Avg Rally Duration` = 35 seconds (default, configurable)
 - `Time between Rallies` = 8 seconds (serve setup, whistle)
@@ -152,13 +154,13 @@ Where:
 
 #### Court Duration Defaults
 
-| Court Type | Default Duration | Notes |
-|------------|-----------------|-------|
-| 4p (21pt single set) | 45 min | 3 games, ~15 min each |
-| 4p (15pt best-of-3) | 55 min | Up to 9 games |
-| 3p (21pt) | 35 min | 3 games, faster rallies (2v1) |
-| 5p (15pt) | 45 min | 4 games + 10% switching overhead |
-| 6p (15pt) | 45 min | 4 games + 10% switching overhead |
+| Court Type           | Default Duration | Notes                            |
+| -------------------- | ---------------- | -------------------------------- |
+| 4p (21pt single set) | 45 min           | 3 games, ~15 min each            |
+| 4p (15pt best-of-3)  | 55 min           | Up to 9 games                    |
+| 3p (21pt)            | 35 min           | 3 games, faster rallies (2v1)    |
+| 5p (15pt)            | 45 min           | 4 games + 10% switching overhead |
+| 6p (15pt)            | 45 min           | 4 games + 10% switching overhead |
 
 ### Virtual Court Scheduling
 
@@ -170,6 +172,7 @@ Round Duration = Shifts per round × Max Court Duration per Shift + (Shifts - 1)
 ```
 
 **Example**: 8 virtual courts, 4 physical courts
+
 - 2 shifts per round
 - Each shift: 4 courts play simultaneously, max 45 min
 - Shift transition: 10 min
@@ -181,14 +184,14 @@ Round Duration = Shifts per round × Max Court Duration per Shift + (Shifts - 1)
 Total = Setup + (Rounds × Round Duration) + ((Rounds - 1) × Transition) + Buffer
 ```
 
-| Tournament Size | Courts | Rounds | Est. Round Duration | Total (with transitions) |
-|-----------------|--------|--------|--------------------|-----------------------|
-| 16p (4 courts) | 4 | 3 | 45 min | ~2h 45min |
-| 32p (8 courts) | 8 | 4 | 45 min | ~3h 45min |
-| 24p (6 courts) | 6 | 4 | 45 min | ~3h 30min |
-| 16p (2 physical, 4 virtual) | 2×2 shifts | 3 | 100 min | ~5h 40min |
-| 20p (5 courts, preseed) | 5 | 4 | 45 min | ~3h 30min |
-| 8p (2 courts) | 2 | 2 | 45 min | ~1h 45min |
+| Tournament Size             | Courts     | Rounds | Est. Round Duration | Total (with transitions) |
+| --------------------------- | ---------- | ------ | ------------------- | ------------------------ |
+| 16p (4 courts)              | 4          | 3      | 45 min              | ~2h 45min                |
+| 32p (8 courts)              | 8          | 4      | 45 min              | ~3h 45min                |
+| 24p (6 courts)              | 6          | 4      | 45 min              | ~3h 30min                |
+| 16p (2 physical, 4 virtual) | 2×2 shifts | 3      | 100 min             | ~5h 40min                |
+| 20p (5 courts, preseed)     | 5          | 4      | 45 min              | ~3h 30min                |
+| 8p (2 courts)               | 2          | 2      | 45 min              | ~1h 45min                |
 
 ### UI: Duration Estimate Display
 
@@ -213,19 +216,20 @@ The estimate updates live as the organizer changes settings.
 
 ### Configurable Timing Parameters
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `setupTimeMinutes` | 15 | Time before first round |
-| `transitionTimeMinutes` | 10 | Time between rounds (score finalization, redistribution, player break) |
-| `avgRallyDurationSeconds` | 35 | Average rally length |
-| `timeBetweenRalliesSeconds` | 8 | Serve setup time |
-| `timeBetweenMatchesMinutes` | 3 | Score recording, team rotation |
+| Parameter                   | Default | Description                                                            |
+| --------------------------- | ------- | ---------------------------------------------------------------------- |
+| `setupTimeMinutes`          | 15      | Time before first round                                                |
+| `transitionTimeMinutes`     | 10      | Time between rounds (score finalization, redistribution, player break) |
+| `avgRallyDurationSeconds`   | 35      | Average rally length                                                   |
+| `timeBetweenRalliesSeconds` | 8       | Serve setup time                                                       |
+| `timeBetweenMatchesMinutes` | 3       | Score recording, team rotation                                         |
 
 Organizers can adjust these for their venue/player skill level.
 
 ### Duration Estimate Accuracy
 
 The estimate is a **forecast**, not a guarantee. Factors that affect actual duration:
+
 - Player skill level (beginners = longer rallies, more errors)
 - Score disputes / re-entry of scores
 - Weather delays (outdoor beach volleyball)
@@ -242,16 +246,15 @@ The system should show the estimate as "~3h 15min" (with tilde) to indicate appr
 
 ```typescript
 // New columns:
-scoringMode: text('scoring_mode').default('single-21')  // 'single-21' | 'best-of-3-15'
-pointsToWin: integer('points_to_win').default(21)
-winBy: integer('win_by').default(2)
-setsToWin: integer('sets_to_win').default(1)
-pointsToWinSet2: integer('points_to_win_set_2').default(15)
-schedulingMode: text('scheduling_mode').default('batch')  // 'batch' | 'rolling'
+scoringMode: text('scoring_mode').default('single-21'); // 'single-21' | 'best-of-3-15'
+pointsToWin: integer('points_to_win').default(21);
+winBy: integer('win_by').default(2);
+setsToWin: integer('sets_to_win').default(1);
+pointsToWinSet2: integer('points_to_win_set_2').default(15);
+schedulingMode: text('scheduling_mode').default('batch'); // 'batch' | 'rolling'
 ```
 
 ---
-
 
 ## Decisions (Previously Open Questions)
 

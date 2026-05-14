@@ -5,6 +5,7 @@
 **Use `@inlang/paraglide-sveltekit`**
 
 Why:
+
 - Built specifically for SvelteKit
 - Type-safe: generates TypeScript types from message files
 - Tree-shakable: only ships translations for the current locale
@@ -12,6 +13,7 @@ Why:
 - No runtime overhead for unused locales
 
 Alternatives considered:
+
 - `svelte-i18n`: More mature, but runtime-based, no tree-shaking
 - `typesafe-i18n`: Good TypeScript support, but not SvelteKit-native
 - Custom solution: Too much maintenance
@@ -21,11 +23,11 @@ Alternatives considered:
 ### Supported Locales
 
 | Code | Language | Direction | Date Format | Number Format |
-|------|----------|-----------|-------------|---------------|
-| `en` | English | LTR | MM/DD/YYYY | 1,234.56 |
-| `de` | German | LTR | DD.MM.YYYY | 1.234,56 |
-| `fr` | French | LTR | DD/MM/YYYY | 1 234,56 |
-| `es` | Spanish | LTR | DD/MM/YYYY | 1.234,56 |
+| ---- | -------- | --------- | ----------- | ------------- |
+| `en` | English  | LTR       | MM/DD/YYYY  | 1,234.56      |
+| `de` | German   | LTR       | DD.MM.YYYY  | 1.234,56      |
+| `fr` | French   | LTR       | DD/MM/YYYY  | 1 234,56      |
+| `es` | Spanish  | LTR       | DD/MM/YYYY  | 1.234,56      |
 
 ### URL Strategy
 
@@ -39,6 +41,7 @@ Locale prefix in URL:
 ```
 
 Routes without locale prefix redirect to detected/default locale:
+
 ```
 /tournament/1 → /en/tournament/1 (if default is en)
 ```
@@ -90,15 +93,15 @@ Instead of `[[lang]]` in every route, use a hook to handle locale:
 ```typescript
 // src/hooks.server.ts
 export const handle = async ({ event, resolve }) => {
-  const lang = event.url.pathname.match(/^\/(en|de|fr|es)/)?.[1] ?? 'en';
-  event.locals.lang = lang;
-  
-  // Strip locale from pathname for routing
-  const pathname = event.url.pathname.replace(/^\/(en|de|fr|es)/, '') || '/';
-  
-  return resolve(event, {
-    transformPageChunk: ({ html }) => html.replace('%lang%', lang)
-  });
+	const lang = event.url.pathname.match(/^\/(en|de|fr|es)/)?.[1] ?? 'en';
+	event.locals.lang = lang;
+
+	// Strip locale from pathname for routing
+	const pathname = event.url.pathname.replace(/^\/(en|de|fr|es)/, '') || '/';
+
+	return resolve(event, {
+		transformPageChunk: ({ html }) => html.replace('%lang%', lang)
+	});
 };
 ```
 
@@ -112,11 +115,11 @@ This keeps routes clean but adds complexity. The `[[lang]]` param approach is mo
 
 ```javascript
 export default {
-  locales: ['en', 'de', 'fr', 'es'],
-  defaultLocale: 'en',
-  sourceLanguageTag: 'en',
-  input: './src/lib/i18n',
-  output: './src/paraglide'
+	locales: ['en', 'de', 'fr', 'es'],
+	defaultLocale: 'en',
+	sourceLanguageTag: 'en',
+	input: './src/lib/i18n',
+	output: './src/paraglide'
 };
 ```
 
@@ -127,13 +130,13 @@ export default {
 import { paraglide } from '@inlang/paraglide-sveltekit/vite';
 
 export default defineConfig({
-  plugins: [
-    sveltekit(),
-    paraglide({
-      project: './project.inlang',
-      outdir: './src/paraglide'
-    })
-  ]
+	plugins: [
+		sveltekit(),
+		paraglide({
+			project: './project.inlang',
+			outdir: './src/paraglide'
+		})
+	]
 });
 ```
 
@@ -159,9 +162,9 @@ export default defineConfig({
 Use `Intl.DateTimeFormat` with locale:
 
 ```typescript
-new Date().toLocaleDateString('de-DE')  // "11.05.2026"
-new Date().toLocaleDateString('fr-FR')  // "11/05/2026"
-new Date().toLocaleDateString('es-ES')  // "11/05/2026"
+new Date().toLocaleDateString('de-DE'); // "11.05.2026"
+new Date().toLocaleDateString('fr-FR'); // "11/05/2026"
+new Date().toLocaleDateString('es-ES'); // "11/05/2026"
 ```
 
 ### Numbers
@@ -169,18 +172,18 @@ new Date().toLocaleDateString('es-ES')  // "11/05/2026"
 Use `Intl.NumberFormat` with locale:
 
 ```typescript
-new Intl.NumberFormat('de-DE').format(1234.56)  // "1.234,56"
-new Intl.NumberFormat('fr-FR').format(1234.56)  // "1 234,56"
+new Intl.NumberFormat('de-DE').format(1234.56); // "1.234,56"
+new Intl.NumberFormat('fr-FR').format(1234.56); // "1 234,56"
 ```
 
 ### Duration
 
 Translate duration units:
 
-| English | German | French | Spanish |
-|---------|--------|--------|---------|
-| hours | Stunden | heures | horas |
-| minutes | Minuten | minutes | minutos |
+| English   | German        | French    | Spanish   |
+| --------- | ------------- | --------- | --------- |
+| hours     | Stunden       | heures    | horas     |
+| minutes   | Minuten       | minutes   | minutos   |
 | ~3h 15min | ~3 Std 15 Min | ~3h 15min | ~3h 15min |
 
 ## Error Messages

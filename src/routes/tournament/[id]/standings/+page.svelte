@@ -78,6 +78,13 @@
 		}>;
 		players?: Array<{ id: number; name: string }>;
 		courtSizes: number[];
+		retiredPlayers?: Array<{
+			id: number;
+			name: string;
+			retiredRound: number | null;
+			retirementReason: string | null;
+			finalStanding: number | null;
+		}>;
 	};
 </script>
 
@@ -251,6 +258,30 @@
 						</div>
 					{/if}
 				</div>
+			</section>
+		{/if}
+
+		{#if data.retiredPlayers && data.retiredPlayers.length > 0}
+			<section class="retired-section">
+				<h2>Retired Players</h2>
+				<table class="standings-table">
+					<thead>
+						<tr>
+							<th>Player</th>
+							<th>Retired After Round</th>
+							<th>Reason</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each data.retiredPlayers as rp}
+							<tr>
+								<td>{rp.name}</td>
+								<td>Round {rp.retiredRound}</td>
+								<td>{rp.retirementReason || '—'}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</section>
 		{/if}
 	{/if}
@@ -506,5 +537,19 @@
 		font-size: var(--font-size-lg);
 		font-weight: 700;
 		color: var(--text-primary);
+	}
+
+	.retired-section {
+		margin-top: var(--spacing-xl);
+	}
+
+	.retired-section h2 {
+		color: var(--text-primary);
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.retired-section td {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
 	}
 </style>
