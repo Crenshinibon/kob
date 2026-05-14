@@ -15,6 +15,38 @@
 	const maxPlayers = 64;
 
 	const computedPlayerCount = $derived(playerNames.split('\n').filter((n) => n.trim()).length);
+	const leftoverCount = $derived(computedPlayerCount % 4);
+
+	function removeLastPlayers() {
+		const lines = playerNames.split('\n');
+		const n = leftoverCount;
+		if (n === 0) return;
+		playerNames = lines.slice(0, lines.length - n).join('\n');
+	}
+
+	function removeLowestPoints() {
+		const lines = playerNames.split('\n');
+		const n = leftoverCount;
+		if (n === 0) return;
+		const parsed = lines.map((line) => {
+			const match = line.trim().match(/^(.+?)\s+(\d+)$/);
+			if (match) return { line: line.trim(), name: match[1], points: parseInt(match[2]) };
+			return { line: line.trim(), name: line.trim(), points: 0 };
+		});
+		parsed.sort((a, b) => a.points - b.points);
+		const toRemove = new Set(parsed.slice(0, n).map((p) => p.line));
+		playerNames = lines.filter((line) => !toRemove.has(line.trim())).join('\n');
+	}
+
+	const leftoverLabel = $derived(
+		leftoverCount === 1
+			? '1 leftover → one 5p court'
+			: leftoverCount === 2
+				? '2 leftovers → one 6p court'
+				: leftoverCount === 3
+					? '3 leftovers → one 3p court'
+					: ''
+	);
 
 	const roundCounts = $derived(() => {
 		const courts = Math.ceil(computedPlayerCount / 4);
@@ -26,6 +58,11 @@
 		if (courts <= 16) return 5;
 		return 6;
 	});
+
+	const basePtTarget = $derived(scoringMode === 'custom' ? customPointsToWin : 21);
+	const setsToWin = $derived(
+		scoringMode === 'custom' ? parseInt(customFormat) : scoringMode !== 'single-21' ? 2 : 1
+	);
 
 	const durationEstimate = $derived(() => {
 		if (computedPlayerCount < minPlayers) return null;
@@ -40,9 +77,6 @@
 		if (bottomSize) courtSizes.push(bottomSize);
 
 		const shiftsPerRound = Math.ceil(courtSizes.length / physicalCourts);
-		const setsToWin =
-			scoringMode === 'custom' ? parseInt(customFormat) : scoringMode !== 'single-21' ? 2 : 1;
-		const basePtTarget = scoringMode === 'custom' ? customPointsToWin : 21;
 		const matchFactor = setsToWin >= 2 ? 1.4 : 1;
 
 		let maxCourtDur = 0;
@@ -193,15 +227,19 @@
 					Maximum {maxPlayers} players allowed (remove {computedPlayerCount - maxPlayers})
 				</p>
 			{:else if computedPlayerCount > 0}
-				<p class="info">
-					{computedPlayerCount % 4 === 1
-						? '1 leftover → one 5p court'
-						: computedPlayerCount % 4 === 2
-							? '2 leftovers → one 6p court'
-							: computedPlayerCount % 4 === 3
-								? '3 leftovers → one 3p court'
-								: 'No leftovers — all 4p courts'}
-				</p>
+				<p class="info">{leftoverLabel || 'No leftovers — all 4p courts'}</p>
+				{#if leftoverCount > 0 && computedPlayerCount >= minPlayers}
+					<div class="leftover-actions">
+						<button type="button" class="btn-small" onclick={removeLastPlayers}>
+							Remove last {leftoverCount} player{leftoverCount > 1 ? 's' : ''}
+						</button>
+						{#if formatType === 'preseed'}
+							<button type="button" class="btn-small" onclick={removeLowestPoints}>
+								Remove lowest {leftoverCount} by WVV points
+							</button>
+						{/if}
+					</div>
+				{/if}
 			{/if}
 		</div>
 
@@ -391,6 +429,30 @@
 		margin-top: var(--spacing-xs);
 	}
 
+	.leftover-actions {
+		display: flex;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-sm);
+		flex-wrap: wrap;
+	}
+
+	.btn-small {
+		background-color: var(--bg-secondary);
+		color: var(--text-secondary);
+		border: 1px solid var(--border-strong);
+		border-radius: var(--radius-sm);
+		padding: var(--spacing-xs) var(--spacing-sm);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.btn-small:hover {
+		border-color: var(--border-focus);
+		color: var(--text-primary);
+	}
+
 	.info-box {
 		padding: var(--spacing-sm) var(--spacing-md);
 		background-color: var(--bg-input);
@@ -513,6 +575,25 @@
 
 	.advanced-section .field {
 		gap: var(--spacing-xs);
+	}
+
+	.advanced-section select {
+		min-height: 40px;
+		width: 100%;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		font-size: var(--font-size-base);
+		background-color: var(--bg-input);
+		color: var(--text-input);
+		border: 2px solid var(--border-strong);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		appearance: auto;
+	}
+
+	.advanced-section select:focus-visible {
+		outline: 2px solid var(--border-focus);
+		outline-offset: -2px;
+		border-color: var(--border-strong);
 	}
 
 	.advanced-section input[type='number'] {
