@@ -164,17 +164,79 @@ All redistribution algorithms implemented as pure functions with immutable state
 - Activation logic respects physical court limit
 
 **What's remaining** (future enhancement):
-
 - ~~Waiting player view with estimated wait time countdown~~ → Moved to Phase 10
 - Real-time court completion notification (requires WebSocket/polling)
 
 ---
 
-### Phase 8: Game Rules & Scoring Modes (spec 650)
-
-**Estimated effort**: 2 days
+### Phase 8: Game Rules & Scoring Modes (spec 650) ✅ COMPLETE
+**Actual effort**: 1 day
 
 **Files modified**:
+- `src/lib/server/db/schema.ts` — added `scoring_mode`, `points_to_win`, `win_by`, `sets_to_win`, `points_to_win_set_2` columns
+- `src/lib/server/tournament-logic.ts` — extended `TournamentConfig` with scoring fields, added `getScoreCap()` and `getScoringLabel()` helpers
+- `src/routes/tournament/create/+page.server.ts` — accepts scoring mode and params from form
+- `src/routes/tournament/create/+page.svelte` — scoring mode radio (single-21 / best-of-3-15), optional param overrides (Advanced section)
+- `src/routes/court/[token]/scoreSchema.ts` — **FIXED**: removed hardcoded `maxScore >= 21`, uses tournament-level score cap via `createScoreSchema()`
+- `src/routes/court/[token]/scores.remote.ts` — updated to use base schema without score cap
+- `src/routes/court/[token]/+page.server.ts` — reads `scoreCap` and `scoringLabel` from tournament config instead of hardcoded `courtSize >= 5 ? 15 : 21`
+- `src/routes/court/[token]/+page.svelte` — dynamic "to X" display via `data.court.scoringLabel`
+
+**Database migration**: `0002_sad_loners.sql` — 5 scoring columns added
+
+---
+
+### Phase 9: Duration Estimation (spec 650) ✅ COMPLETE
+**Actual effort**: 0.5 day
+
+**Files modified**:
+- `src/lib/server/db/schema.ts` — added `setup_time_minutes`, `transition_time_minutes`, `avg_rally_duration_seconds`, `time_between_rallies_seconds`, `time_between_matches_minutes` columns
+- `src/lib/server/tournament-logic.ts` — added `estimateCourtDurationMinutes()`, `estimateRoundDurationMinutes()`, `estimateTournamentDuration()`, `DurationConfig` type
+- `src/routes/tournament/create/+page.svelte` — live duration estimate display with breakdown, updates on settings change
+
+**Database migration**: `0003_legal_khan.sql` — 5 timing columns added
+
+---
+
+### Phase 10: Wait Time Forecasting (spec 660) ✅ COMPLETE
+**Actual effort**: 0.5 day
+
+**Files modified**:
+- `src/lib/server/tournament-logic.ts` — added `getBatchShifts()`, `getShiftForCourt()`, `estimateWaitTimeMinutes()`, `formatDuration()` functions
+- `src/routes/tournament/[id]/+page.server.ts` — computes shift assignments and wait estimates per court, returns `shifts` and `roundDuration`
+- `src/routes/tournament/[id]/+page.svelte` — shift schedule display with active/waiting badges, per-court wait time labels
+
+---
+
+### Phase 11: Player Retirement (spec 670) ✅ COMPLETE
+**Actual effort**: 1 day
+
+**Files modified**:
+- `src/lib/server/db/schema.ts` — added `retired_at`, `retired_round`, `retirement_reason`, `final_standing` columns to `player` table
+- `src/lib/server/tournament-logic.ts` — added `recalculateCourtConfigAfterRetirement()`, `calculateRetiredStanding()`, `getFinalRoundCourtConfig()`
+- `src/routes/tournament/[id]/+page.server.ts` — added `retirePlayer` action with redistribution after retirement, recalculates court config and regenerates assignments
+- `src/routes/tournament/[id]/+page.svelte` — collapsible retire player form with player selector and reason dropdown
+- `src/routes/tournament/[id]/standings/+page.server.ts` — returns `retiredPlayers` list
+- `src/routes/tournament/[id]/standings/+page.svelte` — retired players section in standings view
+
+**Database migration**: `0004_safe_kate_bishop.sql` — 4 retirement columns added to player table
+
+---
+
+## Total Estimated Remaining Effort: 0 (all phases complete)
+
+### Revised Timeline
+- ~~Phase 1: Tournament Logic~~ ✅
+- ~~Phase 2: Database Schema~~ ✅
+- ~~Phase 3: Player Input & Creation~~ ✅
+- ~~Phase 4: Variable Court Match Generation~~ ✅
+- ~~Phase 5: Redistribution Integration~~ ✅
+- ~~Phase 6: UI Updates~~ ✅
+- ~~Phase 7: Physical/Virtual Court UI~~ ✅
+- **Phase 8: Game Rules & Scoring Modes** — ✅ COMPLETE
+- **Phase 9: Duration Estimation** — ✅ COMPLETE
+- **Phase 10: Wait Time Forecasting** — ✅ COMPLETE
+- **Phase 11: Player Retirement** — ✅ COMPLETE
 
 - `src/lib/server/db/schema.ts` — add `scoring_mode`, `points_to_win`, `win_by`, `sets_to_win`, `points_to_win_set_2` columns
 - `src/lib/server/tournament-logic.ts` — extend `TournamentConfig` with scoring fields, add `getScoreCap(tournament, courtSize)` helper
