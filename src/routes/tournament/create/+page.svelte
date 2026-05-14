@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { slide } from 'svelte/transition';
-
 	let { form } = $props<{ form?: { error?: string } }>();
 
 	let tournamentName = $state('');
@@ -9,6 +7,9 @@
 	let physicalCourts = $state(4);
 	let scoringMode = $state<'single-21' | 'best-of-3' | 'custom'>('single-21');
 	let customFormat = $state<'1' | '2'>('1');
+	let customPointsToWin = $state(21);
+	let customWinBy = $state(2);
+	let customDecidingPoints = $state(15);
 
 	const minPlayers = 8;
 	const maxPlayers = 64;
@@ -41,16 +42,16 @@
 		const shiftsPerRound = Math.ceil(courtSizes.length / physicalCourts);
 		const setsToWin =
 			scoringMode === 'custom' ? parseInt(customFormat) : scoringMode !== 'single-21' ? 2 : 1;
-
-		const gameMinutes = (pts: number) => Math.round(18 * (pts / 21));
+		const basePtTarget = scoringMode === 'custom' ? customPointsToWin : 21;
+		const matchFactor = setsToWin >= 2 ? 1.4 : 1;
 
 		let maxCourtDur = 0;
 		for (const size of courtSizes) {
-			const ptTarget = size >= 5 ? 15 : 21;
-			const gm = gameMinutes(ptTarget);
+			const ptTarget = size >= 5 ? 15 : basePtTarget;
+			const gm = 18 * (ptTarget / 21);
 			const perGame = size === 3 ? gm * 0.8 : gm;
 			const matches = size >= 5 ? 4 : 3;
-			const dur = Math.round(matches * perGame + (matches - 1) * 3);
+			const dur = Math.round((matches * perGame + (matches - 1) * 3) * matchFactor);
 			if (dur > maxCourtDur) maxCourtDur = dur;
 		}
 
@@ -142,39 +143,37 @@
 			</div>
 		</div>
 
-		{#if scoringMode === 'custom'}
-			<div class="advanced-section" transition:slide>
-				<div class="field">
-					<label for="setsToWin">Match Format</label>
-					<select id="setsToWin" name="setsToWin" bind:value={customFormat}>
-						<option value="1">Single set</option>
-						<option value="2">Best of 3</option>
-					</select>
-				</div>
-				<div class="field">
-					<label for="winBy">Win By</label>
-					<select id="winBy" name="winBy">
-						<option value="2">2 points</option>
-						<option value="1">1 point</option>
-					</select>
-				</div>
-				{#if customFormat === '1'}
-					<div class="field">
-						<label for="pointsToWin">Set Points</label>
-						<input type="number" id="pointsToWin" name="pointsToWin" min="9" max="21" value="21" />
-					</div>
-				{:else}
-					<div class="field">
-						<label for="pointsToWin">Regular Set Points</label>
-						<input type="number" id="pointsToWin" name="pointsToWin" min="9" max="21" value="21" />
-					</div>
-					<div class="field">
-						<label for="decidingSetPoints">Deciding Set Points</label>
-						<input type="number" id="decidingSetPoints" name="decidingSetPoints" min="9" max="21" value="15" />
-					</div>
-				{/if}
+		<div class="advanced-section" class:hidden={scoringMode !== 'custom'}>
+			<div class="field">
+				<label for="setsToWin">Match Format</label>
+				<select id="setsToWin" name="setsToWin" bind:value={customFormat} disabled={scoringMode !== 'custom'}>
+					<option value="1">Single set</option>
+					<option value="2">Best of 3</option>
+				</select>
 			</div>
-		{/if}
+			<div class="field">
+				<label for="winBy">Win By</label>
+				<select id="winBy" name="winBy" bind:value={customWinBy} disabled={scoringMode !== 'custom'}>
+					<option value={2}>2 points</option>
+					<option value={1}>1 point</option>
+				</select>
+			</div>
+			{#if customFormat === '1'}
+				<div class="field">
+					<label for="pointsToWin">Set Points</label>
+					<input type="number" id="pointsToWin" name="pointsToWin" min="9" max="21" bind:value={customPointsToWin} disabled={scoringMode !== 'custom'} />
+				</div>
+			{:else}
+				<div class="field">
+					<label for="pointsToWin">Regular Set Points</label>
+					<input type="number" id="pointsToWin" name="pointsToWin" min="9" max="21" bind:value={customPointsToWin} disabled={scoringMode !== 'custom'} />
+				</div>
+				<div class="field">
+					<label for="decidingSetPoints">Deciding Set Points</label>
+					<input type="number" id="decidingSetPoints" name="decidingSetPoints" min="9" max="21" bind:value={customDecidingPoints} disabled={scoringMode !== 'custom'} />
+				</div>
+			{/if}
+		</div>
 
 		<div class="field">
 			<label for="names">Player Names</label>
@@ -251,8 +250,10 @@
 						<span
 							>Based on: {durationEstimate()!.courts} courts, {computedPlayerCount} players, {scoringMode ===
 							'single-21'
-								? 'single set to 21'
-								: 'best of 3 to 15'}, {formatType === 'preseed' ? 'preseed' : 'random'} format</span
+								? 'one set to 21'
+								: scoringMode === 'best-of-3'
+									? 'best of 3'
+									: 'custom'}, {formatType === 'preseed' ? 'preseed' : 'random'} format</span
 						>
 					</div>
 				</div>
@@ -503,6 +504,11 @@
 		border: 2px dashed var(--border-strong);
 		border-radius: var(--radius-md);
 		background-color: var(--bg-secondary);
+		overflow: hidden;
+	}
+
+	.advanced-section.hidden {
+		display: none;
 	}
 
 	.advanced-section .field {

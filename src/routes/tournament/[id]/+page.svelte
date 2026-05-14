@@ -1,5 +1,6 @@
 <script lang="ts">
 	import QRCode from 'qrcode';
+	import { browser } from '$app/environment';
 
 	let { data } = $props<{
 		data: {
@@ -36,6 +37,7 @@
 	}
 
 	async function generateQR(token: string): Promise<string> {
+		if (!browser) return '';
 		const url = `${window.location.origin}/court/${token}`;
 		return QRCode.toDataURL(url, { width: 200, margin: 2 });
 	}

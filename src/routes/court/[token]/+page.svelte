@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
+	import { browser } from '$app/environment';
 	import QRCode from 'qrcode';
 
 	import { saveScore } from './scores.remote';
@@ -57,6 +58,7 @@
 	}
 
 	async function generateQR(): Promise<string> {
+		if (!browser) return '';
 		const url = window.location.href;
 		return QRCode.toDataURL(url, { width: 200, margin: 2 });
 	}
