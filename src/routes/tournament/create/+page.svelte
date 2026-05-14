@@ -48,6 +48,41 @@
 					: ''
 	);
 
+	const leftoverDescription = $derived(() => {
+		if (leftoverCount === 0) return null;
+		if (leftoverCount === 1) {
+			return {
+				title: '5-Player Court',
+				short: '1 leftover → 5p court',
+				format: '2 parallel games per run, 2 runs = 4 games/round',
+				scoring: '1 set to 15 points (default), win by 2',
+				ranking: 'Average points per round (normalized)',
+				rules: 'Players rotate every point. One player plays 4 games, others play 3.'
+			};
+		}
+		if (leftoverCount === 2) {
+			return {
+				title: '6-Player Court',
+				short: '2 leftovers → 6p court',
+				format: '2 parallel games per run, 2 runs = 4 games/round',
+				scoring: '1 set to 15 points (default), win by 2',
+				ranking: 'Average points per round (normalized)',
+				rules: 'Pairs rotate every point. Some play 3 games, others play 2.'
+			};
+		}
+		if (leftoverCount === 3) {
+			return {
+				title: '3-Player Court',
+				short: '3 leftovers → 3p court',
+				format: '2v1 format, 3 matches per round',
+				scoring: 'Same as standard (21 points or per tournament settings)',
+				ranking: 'Total points (same as standard courts)',
+				rules: 'Each player takes a solo turn against the pair.'
+			};
+		}
+		return null;
+	});
+
 	const roundCounts = $derived(() => {
 		const courts = Math.ceil(computedPlayerCount / 4);
 		if (formatType === 'preseed') {
@@ -261,22 +296,30 @@
 					Maximum {maxPlayers} players allowed (remove {computedPlayerCount - maxPlayers})
 				</p>
 			{:else if computedPlayerCount > 0}
-				{#if leftoverLabel}
-					<p class="leftover-info">{leftoverLabel}</p>
-				{:else}
-					<p class="info">No leftovers — all 4p courts</p>
-				{/if}
-				{#if leftoverCount > 0 && computedPlayerCount >= minPlayers}
-					<div class="leftover-actions">
-						<button type="button" class="btn-small" onclick={removeLastPlayers}>
-							Remove last {leftoverCount} player{leftoverCount > 1 ? 's' : ''}
-						</button>
-						{#if formatType === 'preseed'}
-							<button type="button" class="btn-small" onclick={removeLowestPoints}>
-								Remove lowest {leftoverCount} by WVV points
-							</button>
+				{#if leftoverCount > 0}
+					<div class="leftover-info">
+						<p class="leftover-label">{leftoverLabel}</p>
+						{#if leftoverDescription()}
+							<div class="leftover-description">
+								<p class="leftover-format">{leftoverDescription()!.format}</p>
+								<p class="leftover-scoring">{leftoverDescription()!.scoring}</p>
+								<p class="leftover-ranking">Ranking: {leftoverDescription()!.ranking}</p>
+								<p class="leftover-rules">{leftoverDescription()!.rules}</p>
+							</div>
+							<div class="leftover-actions">
+								<button type="button" class="btn-small" onclick={removeLastPlayers}>
+									Kick leftover{leftoverCount > 1 ? 's' : ''} (all 4p courts)
+								</button>
+								{#if formatType === 'preseed'}
+									<button type="button" class="btn-small" onclick={removeLowestPoints}>
+										Kick lowest {leftoverCount} by points
+									</button>
+								{/if}
+							</div>
 						{/if}
 					</div>
+				{:else}
+					<p class="info standard-court">All 4-player courts — standard format</p>
 				{/if}
 			{/if}
 		</div>
@@ -592,8 +635,53 @@
 	}
 
 	.leftover-info {
-		background-color: rgba(255, 51, 51, 0.1);
-		color: var(--accent-error);
+		background-color: rgba(255, 187, 0, 0.08);
+		border: 2px solid var(--accent-primary);
+		border-radius: var(--radius-md);
+		padding: var(--spacing-md);
+	}
+
+	.leftover-label {
+		font-weight: 600;
+		color: var(--accent-primary);
+		margin: 0 0 var(--spacing-xs) 0;
+	}
+
+	.leftover-description {
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.leftover-format,
+	.leftover-scoring,
+	.leftover-ranking,
+	.leftover-rules {
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		margin: 2px 0;
+	}
+
+	.leftover-format {
+		color: var(--text-primary);
+		font-weight: 500;
+	}
+
+	.leftover-scoring {
+		font-style: italic;
+	}
+
+	.leftover-ranking {
+		color: var(--text-muted);
+	}
+
+	.leftover-rules {
+		color: var(--text-muted);
+		font-size: var(--font-size-xs);
+	}
+
+	.standard-court {
+		padding: var(--spacing-sm);
+		background-color: rgba(0, 255, 65, 0.05);
+		border-radius: var(--radius-sm);
 	}
 
 	.error {

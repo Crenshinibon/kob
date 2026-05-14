@@ -768,16 +768,27 @@ export function estimateCourtDurationMinutes(
 
 	let matches: number;
 	switch (courtSize) {
-		case 3: matches = 3; break;
-		case 4: matches = 3; break;
-		case 5: matches = 4; break;
-		case 6: matches = 4; break;
-		default: matches = 3;
+		case 3:
+			matches = 3;
+			break;
+		case 4:
+			matches = 3;
+			break;
+		case 5:
+			matches = 4;
+			break;
+		case 6:
+			matches = 4;
+			break;
+		default:
+			matches = 3;
 	}
 
 	const perGame = courtSize === 3 ? courtGameTime * 0.8 : courtGameTime;
 	const matchFactor = setsToWin >= 2 ? 1.4 : 1;
-	return Math.round((matches * perGame + (matches - 1) * durationConfig.timeBetweenMatchesMinutes) * matchFactor);
+	return Math.round(
+		(matches * perGame + (matches - 1) * durationConfig.timeBetweenMatchesMinutes) * matchFactor
+	);
 }
 
 export function estimateRoundDurationMinutes(
