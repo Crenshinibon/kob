@@ -40,11 +40,11 @@
 
 	const leftoverLabel = $derived(
 		leftoverCount === 1
-			? '1 leftover → one 5p court'
+			? '1 leftover => one 5p court'
 			: leftoverCount === 2
-				? '2 leftovers → one 6p court'
+				? '2 leftovers => one 6p court'
 				: leftoverCount === 3
-					? '3 leftovers → one 3p court'
+					? '3 leftovers => one 3p court'
 					: ''
 	);
 
@@ -180,14 +180,24 @@
 		<div class="advanced-section" class:hidden={scoringMode !== 'custom'}>
 			<div class="field">
 				<label for="setsToWin">Match Format</label>
-				<select id="setsToWin" name="setsToWin" bind:value={customFormat} disabled={scoringMode !== 'custom'}>
+				<select
+					id="setsToWin"
+					name="setsToWin"
+					bind:value={customFormat}
+					disabled={scoringMode !== 'custom'}
+				>
 					<option value="1">Single set</option>
 					<option value="2">Best of 3</option>
 				</select>
 			</div>
 			<div class="field">
 				<label for="winBy">Win By</label>
-				<select id="winBy" name="winBy" bind:value={customWinBy} disabled={scoringMode !== 'custom'}>
+				<select
+					id="winBy"
+					name="winBy"
+					bind:value={customWinBy}
+					disabled={scoringMode !== 'custom'}
+				>
 					<option value={2}>2 points</option>
 					<option value={1}>1 point</option>
 				</select>
@@ -195,16 +205,40 @@
 			{#if customFormat === '1'}
 				<div class="field">
 					<label for="pointsToWin">Set Points</label>
-					<input type="number" id="pointsToWin" name="pointsToWin" min="9" max="21" bind:value={customPointsToWin} disabled={scoringMode !== 'custom'} />
+					<input
+						type="number"
+						id="pointsToWin"
+						name="pointsToWin"
+						min="9"
+						max="21"
+						bind:value={customPointsToWin}
+						disabled={scoringMode !== 'custom'}
+					/>
 				</div>
 			{:else}
 				<div class="field">
 					<label for="pointsToWin">Regular Set Points</label>
-					<input type="number" id="pointsToWin" name="pointsToWin" min="9" max="21" bind:value={customPointsToWin} disabled={scoringMode !== 'custom'} />
+					<input
+						type="number"
+						id="pointsToWin"
+						name="pointsToWin"
+						min="9"
+						max="21"
+						bind:value={customPointsToWin}
+						disabled={scoringMode !== 'custom'}
+					/>
 				</div>
 				<div class="field">
 					<label for="decidingSetPoints">Deciding Set Points</label>
-					<input type="number" id="decidingSetPoints" name="decidingSetPoints" min="9" max="21" bind:value={customDecidingPoints} disabled={scoringMode !== 'custom'} />
+					<input
+						type="number"
+						id="decidingSetPoints"
+						name="decidingSetPoints"
+						min="9"
+						max="21"
+						bind:value={customDecidingPoints}
+						disabled={scoringMode !== 'custom'}
+					/>
 				</div>
 			{/if}
 		</div>
@@ -221,13 +255,17 @@
 			></textarea>
 			<p class="count">{computedPlayerCount} players detected</p>
 			{#if computedPlayerCount > 0 && computedPlayerCount < minPlayers}
-				<p class="info">Minimum {minPlayers} players required</p>
+				<p class="info warn">Minimum {minPlayers} players required</p>
 			{:else if computedPlayerCount > maxPlayers}
-				<p class="info">
+				<p class="info warn">
 					Maximum {maxPlayers} players allowed (remove {computedPlayerCount - maxPlayers})
 				</p>
 			{:else if computedPlayerCount > 0}
-				<p class="info">{leftoverLabel || 'No leftovers — all 4p courts'}</p>
+				{#if leftoverLabel}
+					<p class="leftover-info">{leftoverLabel}</p>
+				{:else}
+					<p class="info">No leftovers — all 4p courts</p>
+				{/if}
 				{#if leftoverCount > 0 && computedPlayerCount >= minPlayers}
 					<div class="leftover-actions">
 						<button type="button" class="btn-small" onclick={removeLastPlayers}>
@@ -547,6 +585,15 @@
 		color: var(--text-muted);
 		border-color: var(--border-default);
 		cursor: not-allowed;
+	}
+
+	.warn {
+		color: var(--accent-error);
+	}
+
+	.leftover-info {
+		background-color: rgba(255, 51, 51, 0.1);
+		color: var(--accent-error);
 	}
 
 	.error {
