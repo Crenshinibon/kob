@@ -8,7 +8,7 @@
 	let playerNames = $state('');
 	let physicalCourts = $state(4);
 	let scoringMode = $state<'single-21' | 'best-of-3' | 'custom'>('single-21');
-	let customFormat = $state<'single' | 'best-of-3'>('single');
+	let customFormat = $state<'1' | '2'>('1');
 
 	const minPlayers = 8;
 	const maxPlayers = 64;
@@ -39,7 +39,8 @@
 		if (bottomSize) courtSizes.push(bottomSize);
 
 		const shiftsPerRound = Math.ceil(courtSizes.length / physicalCourts);
-		const setsToWin = scoringMode !== 'single-21' ? 2 : 1;
+		const setsToWin =
+			scoringMode === 'custom' ? parseInt(customFormat) : scoringMode !== 'single-21' ? 2 : 1;
 
 		const gameMinutes = (pts: number) => Math.round(18 * (pts / 21));
 
@@ -144,8 +145,11 @@
 		{#if scoringMode === 'custom'}
 			<div class="advanced-section" transition:slide>
 				<div class="field">
-					<label for="pointsToWin">Regular Set Points</label>
-					<input type="number" id="pointsToWin" name="pointsToWin" min="9" max="21" value="21" />
+					<label for="setsToWin">Match Format</label>
+					<select id="setsToWin" name="setsToWin" bind:value={customFormat}>
+						<option value="1">Single set</option>
+						<option value="2">Best of 3</option>
+					</select>
 				</div>
 				<div class="field">
 					<label for="winBy">Win By</label>
@@ -154,24 +158,21 @@
 						<option value="1">1 point</option>
 					</select>
 				</div>
-				<div class="field">
-					<label for="setsToWin">Match Format</label>
-					<select id="setsToWin" name="setsToWin">
-						<option value="1">Single set</option>
-						<option value="2">Best of 3</option>
-					</select>
-				</div>
-				<div class="field">
-					<label for="decidingSetPoints">Deciding Set Points</label>
-					<input
-						type="number"
-						id="decidingSetPoints"
-						name="decidingSetPoints"
-						min="9"
-						max="21"
-						value="15"
-					/>
-				</div>
+				{#if customFormat === '1'}
+					<div class="field">
+						<label for="pointsToWin">Set Points</label>
+						<input type="number" id="pointsToWin" name="pointsToWin" min="9" max="21" value="21" />
+					</div>
+				{:else}
+					<div class="field">
+						<label for="pointsToWin">Regular Set Points</label>
+						<input type="number" id="pointsToWin" name="pointsToWin" min="9" max="21" value="21" />
+					</div>
+					<div class="field">
+						<label for="decidingSetPoints">Deciding Set Points</label>
+						<input type="number" id="decidingSetPoints" name="decidingSetPoints" min="9" max="21" value="15" />
+					</div>
+				{/if}
 			</div>
 		{/if}
 
