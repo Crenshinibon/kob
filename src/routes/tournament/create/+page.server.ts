@@ -44,10 +44,7 @@ export const actions = {
 		const pointsToWin = parseInt(formData.get('pointsToWin')?.toString() || '21');
 		const winBy = parseInt(formData.get('winBy')?.toString() || '2');
 		const setsToWin = parseInt(formData.get('setsToWin')?.toString() || '1');
-		const pointsToWinSet2 = formData.get('pointsToWinSet2')?.toString()
-			? parseInt(formData.get('pointsToWinSet2')!.toString())
-			: 15;
-
+		const decidingSetPoints = parseInt(formData.get('decidingSetPoints')?.toString() || '15');
 		if (!name) {
 			return { error: 'Tournament name is required' };
 		}
@@ -101,7 +98,7 @@ export const actions = {
 				pointsToWin,
 				winBy,
 				setsToWin,
-				pointsToWinSet2,
+				decidingSetPoints,
 				schedulingMode: 'batch',
 				playerCount,
 				physicalCourtCount,

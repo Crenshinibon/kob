@@ -31,7 +31,7 @@ export type TournamentConfig = {
 	readonly pointsToWin: number;
 	readonly winBy: number;
 	readonly setsToWin: number;
-	readonly pointsToWinSet2: number;
+	readonly decidingSetPoints: number;
 };
 
 export type Player = {
@@ -154,7 +154,7 @@ export type CreateTournamentOpts = {
 	pointsToWin?: number;
 	winBy?: number;
 	setsToWin?: number;
-	pointsToWinSet2?: number;
+	decidingSetPoints?: number;
 };
 
 export function createInitialState(opts: CreateTournamentOpts): TournamentState {
@@ -167,7 +167,7 @@ export function createInitialState(opts: CreateTournamentOpts): TournamentState 
 		pointsToWin = 21,
 		winBy = 2,
 		setsToWin = 1,
-		pointsToWinSet2 = 15
+		decidingSetPoints = 15
 	} = opts;
 	if (playerCount < 8 || playerCount > 64)
 		throw new Error(`Player count must be 8-64, got ${playerCount}`);
@@ -183,7 +183,7 @@ export function createInitialState(opts: CreateTournamentOpts): TournamentState 
 			pointsToWin,
 			winBy,
 			setsToWin,
-			pointsToWinSet2
+			decidingSetPoints
 		},
 		players: [],
 		roundsCompleted: 0,
@@ -730,14 +730,17 @@ export function getTop2(court: {
 // ============================================================================
 
 export function getScoreCap(config: TournamentConfig, courtSize: number): number {
-	if (config.scoringMode === 'best-of-3-15') return config.pointsToWinSet2 ?? 15;
-	if (courtSize >= 5) return config.pointsToWin === 21 ? 15 : config.pointsToWin;
-	return config.pointsToWin;
+	const base = courtSize >= 5 ? (config.pointsToWin === 21 ? 15 : config.pointsToWin) : config.pointsToWin;
+	if (config.scoringMode === 'best-of-3-15') return Math.min(base, config.decidingSetPoints ?? 15);
+	return base;
 }
 
 export function getScoringLabel(config: TournamentConfig, courtSize: number): string {
-	if (config.scoringMode === 'best-of-3-15')
-		return `Best of ${config.setsToWin} to ${config.pointsToWinSet2 ?? 15}`;
+	if (config.scoringMode === 'best-of-3-15') {
+		const regular = config.pointsToWin;
+		const deciding = config.decidingSetPoints ?? 15;
+		return `Best of ${config.setsToWin} (reg: ${regular}pt, deciding: ${deciding}pt)`;
+	}
 	const cap = getScoreCap(config, courtSize);
 	return `1 set to ${cap}`;
 }

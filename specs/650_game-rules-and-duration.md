@@ -16,10 +16,10 @@ Each court plays 3 matches per round. Every player partners with every other pla
 
 The organizer chooses a scoring mode when creating the tournament:
 
-| Mode                 | Description                         | Default for            |
-| -------------------- | ----------------------------------- | ---------------------- |
-| **Single Set to 21** | One set, first to 21, win by 2      | 4p courts (standard)   |
-| **Best of 3 to 15**  | Up to 3 sets, each to 15 (win by 2) | Optional longer format |
+| Mode                 | Description                                         | Default for          |
+| -------------------- | --------------------------------------------------- | -------------------- |
+| **Single Set to 21** | One set, first to 21, win by 2                      | 4p courts (standard) |
+| **Best of 3**        | Up to 3 sets, first to win 2. Regular sets to 21, deciding set (3rd) to 15 | Optional longer format |
 
 #### Single Set to 21 (Default)
 
@@ -28,23 +28,26 @@ The organizer chooses a scoring mode when creating the tournament:
 - First to 21 points, must win by 2
 - Each player's points = their team's score in each match
 
-#### Best of 3 to 15
+#### Best of 3
 
 - Up to 3 games per match
-- Each game: first to 15, must win by 2
-- Best of 3: first to win 2 games
-- Each player's points = sum of their team's scores across all games they played
+- First to win 2 games wins the match
+- Regular sets (1st, 2nd): first to `pointsToWin` (default 21), win by `winBy`
+- Deciding set (3rd, if tied 1-1): first to `decidingSetPoints` (default 15), win by `winBy`
+- All non-deciding sets play to the **same** point target — the deciding set is the only one that is shorter
 - If a match ends 2-0, the 3rd game is not played (no points for game 3)
-- All sets (including 3rd) play to 15
+- Each player's points = sum of their team's scores across all games they played
+
+**Rationale**: In FIVB beach volleyball (and indoor), all regular sets play to the same point target (21 for beach, 25 for indoor). Only the deciding set is shorter (15 points). This keeps scoring consistent across regular sets and provides a dramatic shorter finale.
 
 ### Configurable Parameters
 
-| Parameter         | Default | Range | Notes                                     |
-| ----------------- | ------- | ----- | ----------------------------------------- |
-| `pointsToWin`     | 21      | 15-25 | Points needed to win a set                |
-| `winBy`           | 2       | 1-3   | Minimum point margin to win               |
-| `setsToWin`       | 1       | 1-2   | Number of sets needed to win match        |
-| `pointsToWinSet2` | 15      | 11-21 | Points for subsequent sets (if best-of-3) |
+| Parameter           | Default | Range  | Notes                                                  |
+| ------------------- | ------- | ------ | ------------------------------------------------------ |
+| `pointsToWin`       | 21      | 15-25  | Points needed to win a regular set                     |
+| `winBy`             | 2       | 1-3    | Minimum point margin to win                            |
+| `setsToWin`         | 1       | 1-2    | Number of sets needed to win match (1 = single set)    |
+| `decidingSetPoints` | 15      | 11-21  | Points for the deciding set only (last possible set)   |
 
 ### Special Court Rules (3p, 5p, 6p)
 
@@ -240,7 +243,7 @@ scoringMode: text('scoring_mode').default('single-21'); // 'single-21' | 'best-o
 pointsToWin: integer('points_to_win').default(21);
 winBy: integer('win_by').default(2);
 setsToWin: integer('sets_to_win').default(1);
-pointsToWinSet2: integer('points_to_win_set_2').default(15);
+decidingSetPoints: integer('deciding_set_points').default(15);
 schedulingMode: text('scheduling_mode').default('batch'); // 'batch' | 'rolling'
 ```
 

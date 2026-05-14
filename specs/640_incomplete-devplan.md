@@ -173,7 +173,7 @@ All redistribution algorithms implemented as pure functions with immutable state
 **Actual effort**: 1 day
 
 **Files modified**:
-- `src/lib/server/db/schema.ts` — added `scoring_mode`, `points_to_win`, `win_by`, `sets_to_win`, `points_to_win_set_2` columns
+- `src/lib/server/db/schema.ts` — added `scoring_mode`, `points_to_win`, `win_by`, `sets_to_win`, `deciding_set_points` columns
 - `src/lib/server/tournament-logic.ts` — extended `TournamentConfig` with scoring fields, added `getScoreCap()` and `getScoringLabel()` helpers
 - `src/routes/tournament/create/+page.server.ts` — accepts scoring mode and params from form
 - `src/routes/tournament/create/+page.svelte` — scoring mode radio (single-21 / best-of-3-15), optional param overrides (Advanced section)
@@ -238,7 +238,7 @@ All redistribution algorithms implemented as pure functions with immutable state
 - **Phase 10: Wait Time Forecasting** — ✅ COMPLETE
 - **Phase 11: Player Retirement** — ✅ COMPLETE
 
-- `src/lib/server/db/schema.ts` — add `scoring_mode`, `points_to_win`, `win_by`, `sets_to_win`, `points_to_win_set_2` columns
+- `src/lib/server/db/schema.ts` — add `scoring_mode`, `points_to_win`, `win_by`, `sets_to_win`, `deciding_set_points` columns
 - `src/lib/server/tournament-logic.ts` — extend `TournamentConfig` with scoring fields, add `getScoreCap(tournament, courtSize)` helper
 - `src/routes/tournament/create/+page.server.ts` — accept scoring mode and params from form
 - `src/routes/tournament/create/+page.svelte` — scoring mode radio (single-21 / best-of-3-15), optional param overrides (Advanced section)

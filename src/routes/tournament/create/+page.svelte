@@ -166,11 +166,11 @@
 				</div>
 				{#if scoringMode === 'best-of-3-15'}
 					<div class="field">
-						<label for="pointsToWinSet2">Points to Win (Sets 2+)</label>
+						<label for="decidingSetPoints">Deciding Set Points</label>
 						<input
 							type="number"
-							id="pointsToWinSet2"
-							name="pointsToWinSet2"
+							id="decidingSetPoints"
+							name="decidingSetPoints"
 							min="11"
 							max="21"
 							value="15"

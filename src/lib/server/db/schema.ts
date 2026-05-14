@@ -12,7 +12,7 @@ export const tournament = pgTable('tournament', {
 	pointsToWin: integer('points_to_win').notNull().default(21),
 	winBy: integer('win_by').notNull().default(2),
 	setsToWin: integer('sets_to_win').notNull().default(1),
-	pointsToWinSet2: integer('points_to_win_set_2').default(15),
+	decidingSetPoints: integer('deciding_set_points').default(15),
 	schedulingMode: text('scheduling_mode').notNull().default('batch'),
 	physicalCourtCount: integer('physical_court_count').notNull().default(4),
 	playerCount: integer('player_count').notNull().default(16),
