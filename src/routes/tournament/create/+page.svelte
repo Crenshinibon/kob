@@ -7,8 +7,8 @@
 	let formatType = $state<'random-seed' | 'preseed'>('random-seed');
 	let playerNames = $state('');
 	let physicalCourts = $state(4);
-	let scoringMode = $state<'single-21' | 'best-of-3-15'>('single-21');
-	let showAdvanced = $state(false);
+	let scoringMode = $state<'single-21' | 'best-of-3' | 'custom'>('single-21');
+	let customFormat = $state<'single' | 'best-of-3'>('single');
 
 	const minPlayers = 8;
 	const maxPlayers = 64;
@@ -39,7 +39,7 @@
 		if (bottomSize) courtSizes.push(bottomSize);
 
 		const shiftsPerRound = Math.ceil(courtSizes.length / physicalCourts);
-		const setsToWin = scoringMode === 'best-of-3-15' ? 2 : 1;
+		const setsToWin = scoringMode !== 'single-21' ? 2 : 1;
 
 		const gameMinutes = (pts: number) => Math.round(18 * (pts / 21));
 
@@ -116,67 +116,62 @@
 						<input type="radio" name="scoringMode" value="single-21" bind:group={scoringMode} />
 					</div>
 					<span class="radio-content">
-						<strong>Single Set to 21</strong>
-						<small>1 set per match, first to 21, win by 2</small>
+						<strong>One Set to 21</strong>
+						<small>Single set, first to 21, win by 2</small>
 					</span>
 				</label>
 				<label class="radio-label">
 					<div class="radio-wrapper">
-						<input type="radio" name="scoringMode" value="best-of-3-15" bind:group={scoringMode} />
+						<input type="radio" name="scoringMode" value="best-of-3" bind:group={scoringMode} />
 					</div>
 					<span class="radio-content">
-						<strong>Best of 3 to 15</strong>
-						<small>Up to 3 sets per match, each to 15, win by 2</small>
+						<strong>Best of 3</strong>
+						<small>First to 2 sets (21pt), deciding set to 15, win by 2</small>
+					</span>
+				</label>
+				<label class="radio-label">
+					<div class="radio-wrapper">
+						<input type="radio" name="scoringMode" value="custom" bind:group={scoringMode} />
+					</div>
+					<span class="radio-content">
+						<strong>Custom</strong>
+						<small>Set your own point targets and set count</small>
 					</span>
 				</label>
 			</div>
 		</div>
 
-		<button type="button" class="btn-advanced" onclick={() => (showAdvanced = !showAdvanced)}>
-			{showAdvanced ? '− Hide' : '+ Advanced'} Parameters
-		</button>
-
-		{#if showAdvanced}
+		{#if scoringMode === 'custom'}
 			<div class="advanced-section" transition:slide>
 				<div class="field">
-					<label for="pointsToWin">Points to Win (First Set)</label>
-					<input
-						type="number"
-						id="pointsToWin"
-						name="pointsToWin"
-						min="15"
-						max="25"
-						value={scoringMode === 'best-of-3-15' ? 15 : 21}
-					/>
+					<label for="pointsToWin">Regular Set Points</label>
+					<input type="number" id="pointsToWin" name="pointsToWin" min="9" max="21" value="21" />
 				</div>
 				<div class="field">
-					<label for="winBy">Win By Margin</label>
-					<input type="number" id="winBy" name="winBy" min="1" max="3" value="2" />
+					<label for="winBy">Win By</label>
+					<select id="winBy" name="winBy">
+						<option value="2">2 points</option>
+						<option value="1">1 point</option>
+					</select>
 				</div>
 				<div class="field">
-					<label for="setsToWin">Sets to Win Match</label>
+					<label for="setsToWin">Match Format</label>
+					<select id="setsToWin" name="setsToWin">
+						<option value="1">Single set</option>
+						<option value="2">Best of 3</option>
+					</select>
+				</div>
+				<div class="field">
+					<label for="decidingSetPoints">Deciding Set Points</label>
 					<input
 						type="number"
-						id="setsToWin"
-						name="setsToWin"
-						min="1"
-						max="2"
-						value={scoringMode === 'best-of-3-15' ? 2 : 1}
+						id="decidingSetPoints"
+						name="decidingSetPoints"
+						min="9"
+						max="21"
+						value="15"
 					/>
 				</div>
-				{#if scoringMode === 'best-of-3-15'}
-					<div class="field">
-						<label for="decidingSetPoints">Deciding Set Points</label>
-						<input
-							type="number"
-							id="decidingSetPoints"
-							name="decidingSetPoints"
-							min="11"
-							max="21"
-							value="15"
-						/>
-					</div>
-				{/if}
 			</div>
 		{/if}
 
@@ -497,24 +492,6 @@
 		padding: var(--spacing-sm);
 		border-radius: var(--radius-sm);
 		font-weight: 500;
-	}
-
-	.btn-advanced {
-		background: none;
-		border: 2px dashed var(--border-strong);
-		border-radius: var(--radius-sm);
-		padding: var(--spacing-sm) var(--spacing-md);
-		color: var(--text-muted);
-		font-size: var(--font-size-sm);
-		font-weight: 600;
-		cursor: pointer;
-		transition: all var(--transition-fast);
-		align-self: flex-start;
-	}
-
-	.btn-advanced:hover {
-		border-color: var(--border-focus);
-		color: var(--text-secondary);
 	}
 
 	.advanced-section {

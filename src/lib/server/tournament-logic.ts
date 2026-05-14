@@ -19,7 +19,7 @@ export type TournamentId = number;
 
 export type FormatType = 'preseed' | 'random-seed';
 
-export type ScoringMode = 'single-21' | 'best-of-3-15';
+export type ScoringMode = 'single-21' | 'best-of-3' | 'custom';
 
 export type TournamentConfig = {
 	readonly tournamentId: TournamentId;
@@ -730,18 +730,18 @@ export function getTop2(court: {
 // ============================================================================
 
 export function getScoreCap(config: TournamentConfig, courtSize: number): number {
-	const base = courtSize >= 5 ? (config.pointsToWin === 21 ? 15 : config.pointsToWin) : config.pointsToWin;
-	if (config.scoringMode === 'best-of-3-15') return Math.min(base, config.decidingSetPoints ?? 15);
+	const base =
+		courtSize >= 5 ? (config.pointsToWin === 21 ? 15 : config.pointsToWin) : config.pointsToWin;
+	if (config.setsToWin >= 2) return Math.min(base, config.decidingSetPoints ?? 15);
 	return base;
 }
 
 export function getScoringLabel(config: TournamentConfig, courtSize: number): string {
-	if (config.scoringMode === 'best-of-3-15') {
-		const regular = config.pointsToWin;
-		const deciding = config.decidingSetPoints ?? 15;
-		return `Best of ${config.setsToWin} (reg: ${regular}pt, deciding: ${deciding}pt)`;
-	}
 	const cap = getScoreCap(config, courtSize);
+	if (config.setsToWin >= 2) {
+		const dec = config.decidingSetPoints ?? 15;
+		return `Best of ${config.setsToWin} (${config.pointsToWin}pt, deciding: ${dec}pt)`;
+	}
 	return `1 set to ${cap}`;
 }
 
@@ -763,23 +763,33 @@ export function estimateCourtDurationMinutes(
 	setsToWin: number,
 	durationConfig: DurationConfig
 ): number {
-	const gameTimeMin = 18 * (pointsToWin / 21);
 	const courtPointTarget = courtSize >= 5 ? 15 : pointsToWin;
 	const courtGameTime = 18 * (courtPointTarget / 21);
 
 	let matches: number;
 	switch (courtSize) {
-		case 3: matches = 3; break;
-		case 4: matches = 3; break;
-		case 5: matches = 4; break;
-		case 6: matches = 4; break;
-		default: matches = 3;
+		case 3:
+			matches = 3;
+			break;
+		case 4:
+			matches = 3;
+			break;
+		case 5:
+			matches = 4;
+			break;
+		case 6:
+			matches = 4;
+			break;
+		default:
+			matches = 3;
 	}
 
 	const gamesPerMatch = setsToWin === 1 ? 1 : setsToWin * 1.5;
 	const perGame = courtSize === 3 ? courtGameTime * 0.8 : courtGameTime;
 	const matchTimeMin = gamesPerMatch * perGame;
-	return Math.round(matches * matchTimeMin + (matches - 1) * durationConfig.timeBetweenMatchesMinutes);
+	return Math.round(
+		matches * matchTimeMin + (matches - 1) * durationConfig.timeBetweenMatchesMinutes
+	);
 }
 
 export function estimateRoundDurationMinutes(

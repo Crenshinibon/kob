@@ -6,19 +6,19 @@ Extend KoB Tracker to support 8-64 players (currently only 16/32). Implement rec
 
 ## What Changed in the Spec
 
-| Old Spec                                     | New Spec                                                        | Spec |
-| -------------------------------------------- | --------------------------------------------------------------- | ---- |
-| Player count: 16 or 32 only                  | Player count: 8-64                                              | 610  |
-| Preseed: power-of-2 only (2, 4, 8 courts)    | Preseed: any court count via recursive splitting                | 620  |
-| Option C: Rotating sit-outs                  | **Removed** — one non-standard bottom court for leftovers       | 620  |
-| Option E: Single cut to top 16               | Generalized to recursive splitting for any court count          | 620  |
-| No physical/virtual court distinction        | Physical vs virtual courts with UI support                      | 610  |
-| No per-round strategy override               | Include/exclude leftovers before starting tournament            | 610  |
-| Preseed "not possible" for 3, 5, 6, 7 courts | Preseed works for all via recursive splitting                   | 620  |
-| No scoring mode selection                    | Scoring modes (single-21, best-of-3-15), configurable params    | 650  |
-| No duration estimation                       | Court/round/tournament duration estimation, configurable timing | 650  |
-| No wait time forecasting for players         | Batch shift wait time per virtual court                         | 660  |
-| No player retirement handling                | Retirement flow, redistribution after, final round elimination  | 670  |
+| Old Spec                                     | New Spec                                                          | Spec |
+| -------------------------------------------- | ----------------------------------------------------------------- | ---- |
+| Player count: 16 or 32 only                  | Player count: 8-64                                                | 610  |
+| Preseed: power-of-2 only (2, 4, 8 courts)    | Preseed: any court count via recursive splitting                  | 620  |
+| Option C: Rotating sit-outs                  | **Removed** — one non-standard bottom court for leftovers         | 620  |
+| Option E: Single cut to top 16               | Generalized to recursive splitting for any court count            | 620  |
+| No physical/virtual court distinction        | Physical vs virtual courts with UI support                        | 610  |
+| No per-round strategy override               | Include/exclude leftovers before starting tournament              | 610  |
+| Preseed "not possible" for 3, 5, 6, 7 courts | Preseed works for all via recursive splitting                     | 620  |
+| No scoring mode selection                    | Scoring modes (single-21, best-of-3, custom), configurable params | 650  |
+| No duration estimation                       | Court/round/tournament duration estimation, configurable timing   | 650  |
+| No wait time forecasting for players         | Batch shift wait time per virtual court                           | 660  |
+| No player retirement handling                | Retirement flow, redistribution after, final round elimination    | 670  |
 
 ## Implementation Phases
 
@@ -164,15 +164,18 @@ All redistribution algorithms implemented as pure functions with immutable state
 - Activation logic respects physical court limit
 
 **What's remaining** (future enhancement):
+
 - ~~Waiting player view with estimated wait time countdown~~ → Moved to Phase 10
 - Real-time court completion notification (requires WebSocket/polling)
 
 ---
 
 ### Phase 8: Game Rules & Scoring Modes (spec 650) ✅ COMPLETE
+
 **Actual effort**: 1 day
 
 **Files modified**:
+
 - `src/lib/server/db/schema.ts` — added `scoring_mode`, `points_to_win`, `win_by`, `sets_to_win`, `deciding_set_points` columns
 - `src/lib/server/tournament-logic.ts` — extended `TournamentConfig` with scoring fields, added `getScoreCap()` and `getScoringLabel()` helpers
 - `src/routes/tournament/create/+page.server.ts` — accepts scoring mode and params from form
@@ -187,9 +190,11 @@ All redistribution algorithms implemented as pure functions with immutable state
 ---
 
 ### Phase 9: Duration Estimation (spec 650) ✅ COMPLETE
+
 **Actual effort**: 0.5 day
 
 **Files modified**:
+
 - `src/lib/server/db/schema.ts` — added `setup_time_minutes`, `transition_time_minutes`, `avg_rally_duration_seconds`, `time_between_rallies_seconds`, `time_between_matches_minutes` columns
 - `src/lib/server/tournament-logic.ts` — added `estimateCourtDurationMinutes()`, `estimateRoundDurationMinutes()`, `estimateTournamentDuration()`, `DurationConfig` type
 - `src/routes/tournament/create/+page.svelte` — live duration estimate display with breakdown, updates on settings change
@@ -199,9 +204,11 @@ All redistribution algorithms implemented as pure functions with immutable state
 ---
 
 ### Phase 10: Wait Time Forecasting (spec 660) ✅ COMPLETE
+
 **Actual effort**: 0.5 day
 
 **Files modified**:
+
 - `src/lib/server/tournament-logic.ts` — added `getBatchShifts()`, `getShiftForCourt()`, `estimateWaitTimeMinutes()`, `formatDuration()` functions
 - `src/routes/tournament/[id]/+page.server.ts` — computes shift assignments and wait estimates per court, returns `shifts` and `roundDuration`
 - `src/routes/tournament/[id]/+page.svelte` — shift schedule display with active/waiting badges, per-court wait time labels
@@ -209,9 +216,11 @@ All redistribution algorithms implemented as pure functions with immutable state
 ---
 
 ### Phase 11: Player Retirement (spec 670) ✅ COMPLETE
+
 **Actual effort**: 1 day
 
 **Files modified**:
+
 - `src/lib/server/db/schema.ts` — added `retired_at`, `retired_round`, `retirement_reason`, `final_standing` columns to `player` table
 - `src/lib/server/tournament-logic.ts` — added `recalculateCourtConfigAfterRetirement()`, `calculateRetiredStanding()`, `getFinalRoundCourtConfig()`
 - `src/routes/tournament/[id]/+page.server.ts` — added `retirePlayer` action with redistribution after retirement, recalculates court config and regenerates assignments
@@ -226,6 +235,7 @@ All redistribution algorithms implemented as pure functions with immutable state
 ## Total Estimated Remaining Effort: 0 (all phases complete)
 
 ### Revised Timeline
+
 - ~~Phase 1: Tournament Logic~~ ✅
 - ~~Phase 2: Database Schema~~ ✅
 - ~~Phase 3: Player Input & Creation~~ ✅

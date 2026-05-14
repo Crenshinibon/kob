@@ -16,38 +16,47 @@ Each court plays 3 matches per round. Every player partners with every other pla
 
 The organizer chooses a scoring mode when creating the tournament:
 
-| Mode                 | Description                                         | Default for          |
-| -------------------- | --------------------------------------------------- | -------------------- |
-| **Single Set to 21** | One set, first to 21, win by 2                      | 4p courts (standard) |
-| **Best of 3**        | Up to 3 sets, first to win 2. Regular sets to 21, deciding set (3rd) to 15 | Optional longer format |
+| Mode              | Description                                                         |
+| ----------------- | ------------------------------------------------------------------- |
+| **One Set to 21** | Single set, first to 21, win by 2 (default)                         |
+| **Best of 3**     | First to 2 sets. Regular sets to 21, deciding set to 15, win by 2   |
+| **Custom**        | Organizer sets regular set points, deciding set points, sets to win |
 
-#### Single Set to 21 (Default)
+Picking "One Set to 21" or "Best of 3" uses the defaults above with no further configuration.
+Picking "Custom" reveals editable fields for points and match length.
 
-- 1 game per match
+#### One Set to 21 (Default)
+
+- 1 set per match
 - Rally scoring: every rally = point
 - First to 21 points, must win by 2
-- Each player's points = their team's score in each match
+- Each player's points = their team's score
 
 #### Best of 3
 
-- Up to 3 games per match
-- First to win 2 games wins the match
-- Regular sets (1st, 2nd): first to `pointsToWin` (default 21), win by `winBy`
-- Deciding set (3rd, if tied 1-1): first to `decidingSetPoints` (default 15), win by `winBy`
-- All non-deciding sets play to the **same** point target — the deciding set is the only one that is shorter
-- If a match ends 2-0, the 3rd game is not played (no points for game 3)
-- Each player's points = sum of their team's scores across all games they played
+- Up to 3 sets per match. First to win 2 sets wins.
+- Regular sets (1st, 2nd): first to `pointsToWin` (default 21), win by 2
+- Deciding set (3rd): first to `decidingSetPoints` (default 15), win by 2
+- All regular sets play to the **same** point target — only the deciding set is shorter
+- If a match ends 2-0 the 3rd set is not played
 
-**Rationale**: In FIVB beach volleyball (and indoor), all regular sets play to the same point target (21 for beach, 25 for indoor). Only the deciding set is shorter (15 points). This keeps scoring consistent across regular sets and provides a dramatic shorter finale.
+#### Custom
+
+Organizer can adjust:
+
+- **Regular set points** (9–21, default 21)
+- **Deciding set points** (9–21, default 15) — only relevant if best-of-3
+- **Win by** margin (1 or 2, default 2)
+- **Sets to win**: 1 (single set) or 2 (best-of-3)
 
 ### Configurable Parameters
 
-| Parameter           | Default | Range  | Notes                                                  |
-| ------------------- | ------- | ------ | ------------------------------------------------------ |
-| `pointsToWin`       | 21      | 15-25  | Points needed to win a regular set                     |
-| `winBy`             | 2       | 1-3    | Minimum point margin to win                            |
-| `setsToWin`         | 1       | 1-2    | Number of sets needed to win match (1 = single set)    |
-| `decidingSetPoints` | 15      | 11-21  | Points for the deciding set only (last possible set)   |
+| Parameter           | Default | Range | Notes                                                |
+| ------------------- | ------- | ----- | ---------------------------------------------------- |
+| `pointsToWin`       | 21      | 9-21  | Points needed to win a regular set                   |
+| `winBy`             | 2       | 1-2   | Minimum point margin to win                          |
+| `setsToWin`         | 1       | 1-2   | Sets needed to win match (1 = single, 2 = best-of-3) |
+| `decidingSetPoints` | 15      | 9-21  | Points for the deciding set only (if best-of-3)      |
 
 ### Special Court Rules (3p, 5p, 6p)
 
@@ -139,18 +148,19 @@ Court Duration    = Matches × Game Duration
 ```
 
 Where:
+
 - `pointsToWin` = points needed to win a game (21 for 4p/3p, 15 for 5p/6p)
 - `Time between Matches` = 3 minutes (score recording)
 
 #### Court Duration Defaults
 
-| Court Type           | Games | Point Target | Court Duration                        |
-| -------------------- | ----- | ------------ | ------------------------------------- |
-| 4p (single set to 21)| 3     | 21           | ~60 min (3 × 18 + 2 × 3)             |
-| 4p (best-of-3 to 15) | ≤9    | 15           | ~55 min (avg 4.5 games × 13 + 2 × 3) |
-| 3p (single set to 21)| 3     | 21           | ~48 min (3 × 14 + 2 × 3)             |
-| 5p (single set to 15)| 4     | 15           | ~60 min (4 × 13 + 3 × 3) × 1.1       |
-| 6p (single set to 15)| 4     | 15           | ~60 min (4 × 13 + 3 × 3) × 1.1       |
+| Court Type            | Games | Point Target | Court Duration                       |
+| --------------------- | ----- | ------------ | ------------------------------------ |
+| 4p (single set to 21) | 3     | 21           | ~60 min (3 × 18 + 2 × 3)             |
+| 4p (best-of-3 to 15)  | ≤9    | 15           | ~55 min (avg 4.5 games × 13 + 2 × 3) |
+| 3p (single set to 21) | 3     | 21           | ~48 min (3 × 14 + 2 × 3)             |
+| 5p (single set to 15) | 4     | 15           | ~60 min (4 × 13 + 3 × 3) × 1.1       |
+| 6p (single set to 15) | 4     | 15           | ~60 min (4 × 13 + 3 × 3) × 1.1       |
 
 3p courts: 80% of 4p game duration (faster rallies in 2v1).
 
@@ -176,15 +186,15 @@ Round Duration = Shifts per round × Max Court Duration per Shift + (Shifts - 1)
 Total = Setup + (Rounds × Round Duration) + ((Rounds - 1) × Transition) + Buffer
 ```
 
-| Tournament Size             | Courts     | Rounds | Est. Round Duration | Total (with transitions) |
-| --------------------------- | ---------- | ------ | ------------------- | ------------------------ |
-| 16p (4 courts, 4 physical)  | 4          | 3      | 60 min              | ~3h 30min                |
-| 32p (8 courts, 8 physical)  | 8          | 4      | 60 min              | ~4h 45min                |
-| 24p (6 courts, 6 physical)  | 6          | 4      | 60 min              | ~4h 30min                |
-| 32p (8 courts, 4 physical)  | 2×2 shifts | 4      | 125 min             | ~9h 0min                 |
-| 30p (8 courts, 4 physical)  | 2×2 shifts | 4      | 125 min             | ~9h 0min                 |
-| 20p (5 courts, 5 physical)  | 5          | 4      | 60 min              | ~4h 30min                |
-| 8p (2 courts, 2 physical)   | 2          | 2      | 60 min              | ~2h 15min                |
+| Tournament Size            | Courts     | Rounds | Est. Round Duration | Total (with transitions) |
+| -------------------------- | ---------- | ------ | ------------------- | ------------------------ |
+| 16p (4 courts, 4 physical) | 4          | 3      | 60 min              | ~3h 30min                |
+| 32p (8 courts, 8 physical) | 8          | 4      | 60 min              | ~4h 45min                |
+| 24p (6 courts, 6 physical) | 6          | 4      | 60 min              | ~4h 30min                |
+| 32p (8 courts, 4 physical) | 2×2 shifts | 4      | 125 min             | ~9h 0min                 |
+| 30p (8 courts, 4 physical) | 2×2 shifts | 4      | 125 min             | ~9h 0min                 |
+| 20p (5 courts, 5 physical) | 5          | 4      | 60 min              | ~4h 30min                |
+| 8p (2 courts, 2 physical)  | 2          | 2      | 60 min              | ~2h 15min                |
 
 ### UI: Duration Estimate Display
 
@@ -239,7 +249,7 @@ The system should show the estimate as "~3h 15min" (with tilde) to indicate appr
 
 ```typescript
 // New columns:
-scoringMode: text('scoring_mode').default('single-21'); // 'single-21' | 'best-of-3-15'
+scoringMode: text('scoring_mode').default('single-21'); // 'single-21' | 'best-of-3' | 'custom'
 pointsToWin: integer('points_to_win').default(21);
 winBy: integer('win_by').default(2);
 setsToWin: integer('sets_to_win').default(1);

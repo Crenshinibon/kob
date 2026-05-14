@@ -66,12 +66,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			playerIds.length)
 		: playerIds.length;
 
-	const scoringMode = tourney.scoringMode ?? 'single-21';
 	const pointsToWin = tourney.pointsToWin ?? 21;
 	const decidingSetPoints = tourney.decidingSetPoints ?? 15;
+	const setsToWin = tourney.setsToWin ?? 1;
 
 	let scoreCap: number;
-	if (scoringMode === 'best-of-3-15') {
+	if (setsToWin >= 2) {
 		scoreCap = Math.min(pointsToWin, decidingSetPoints);
 	} else if (courtSize >= 5) {
 		scoreCap = pointsToWin === 21 ? 15 : pointsToWin;
@@ -80,8 +80,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	const scoringLabel =
-		scoringMode === 'best-of-3-15'
-			? `Best of ${tourney.setsToWin ?? 1} (reg: ${pointsToWin}pt, deciding: ${decidingSetPoints}pt)`
+		setsToWin >= 2
+			? `Best of ${setsToWin} (${pointsToWin}pt, deciding: ${decidingSetPoints}pt)`
 			: `1 set to ${scoreCap}`;
 
 	return {
@@ -151,12 +151,12 @@ export const actions: Actions = {
 		const courtSizes: number[] = tourney.courtSizes ? JSON.parse(tourney.courtSizes) : [];
 		const courtSize = courtSizes[rotation.courtNumber - 1] ?? 4;
 
-		const scoringMode = tourney.scoringMode ?? 'single-21';
 		const pointsToWin = tourney.pointsToWin ?? 21;
 		const decidingSetPoints = tourney.decidingSetPoints ?? 15;
+		const setsToWin = tourney.setsToWin ?? 1;
 
 		let scoreCap: number;
-		if (scoringMode === 'best-of-3-15') {
+		if (setsToWin >= 2) {
 			scoreCap = Math.min(pointsToWin, decidingSetPoints);
 		} else if (courtSize >= 5) {
 			scoreCap = pointsToWin === 21 ? 15 : pointsToWin;

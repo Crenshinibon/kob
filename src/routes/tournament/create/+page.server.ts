@@ -41,10 +41,26 @@ export const actions = {
 		const namesText = formData.get('names')?.toString() || '';
 		const physicalCourtCount = parseInt(formData.get('physicalCourts')?.toString() || '4');
 		const scoringMode = formData.get('scoringMode')?.toString() || 'single-21';
-		const pointsToWin = parseInt(formData.get('pointsToWin')?.toString() || '21');
-		const winBy = parseInt(formData.get('winBy')?.toString() || '2');
-		const setsToWin = parseInt(formData.get('setsToWin')?.toString() || '1');
-		const decidingSetPoints = parseInt(formData.get('decidingSetPoints')?.toString() || '15');
+		const pointsToWinRaw = parseInt(formData.get('pointsToWin')?.toString() || '21');
+		const winByRaw = parseInt(formData.get('winBy')?.toString() || '2');
+		const setsToWinRaw = parseInt(formData.get('setsToWin')?.toString() || '1');
+		const decidingSetPointsRaw = parseInt(formData.get('decidingSetPoints')?.toString() || '15');
+
+		let pointsToWin = pointsToWinRaw;
+		let winBy = winByRaw;
+		let setsToWin = setsToWinRaw;
+		let decidingSetPoints = decidingSetPointsRaw;
+
+		if (scoringMode === 'single-21') {
+			pointsToWin = 21;
+			winBy = 2;
+			setsToWin = 1;
+		} else if (scoringMode === 'best-of-3') {
+			pointsToWin = 21;
+			winBy = 2;
+			setsToWin = 2;
+			decidingSetPoints = 15;
+		}
 		if (!name) {
 			return { error: 'Tournament name is required' };
 		}

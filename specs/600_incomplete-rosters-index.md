@@ -10,7 +10,7 @@ Replaces the original `600_incomplete-rosters.md` (deleted). Split into focused 
 | `620_incomplete-options.md`        | Options A (recursive preseed), parallel games for 5/6p (Option D removed), E (generalized recursive split). One non-standard bottom court for leftovers. |
 | `630_incomplete-implementation.md` | Implementation phases, unit testing strategy (~50+ test cases), 13 open questions                                                                        |
 | `640_incomplete-devplan.md`        | Development plan summary: 7 phases, effort estimates (10-16 days), risks, out-of-scope                                                                   |
-| `650_game-rules-and-duration.md`   | Scoring modes (single-21, best-of-3-15), special court rules (3p/5p/6p), duration estimation, configurable timing                                        |
+| `650_game-rules-and-duration.md`   | Scoring modes (one set, best-of-3, custom), special court rules (3p/5p/6p), duration estimation, configurable timing                                     |
 | `660_virtual-court-scheduling.md`  | Scheduling modes (batch/rolling), shift scheduling, wait time forecasting, court reassignment, player-facing estimates                                   |
 | `670_player-retirement.md`         | Player bailout handling, redistribution after retirement, final round elimination rule                                                                   |
 
