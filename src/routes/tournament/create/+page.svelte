@@ -10,6 +10,7 @@
 	let customPointsToWin = $state(21);
 	let customWinBy = $state(2);
 	let customDecidingPoints = $state(15);
+	let numRounds = $state(3);
 
 	const minPlayers = 8;
 	const maxPlayers = 64;
@@ -83,6 +84,12 @@
 		return null;
 	});
 
+	$effect(() => {
+		if (formatType === 'random-seed' && computedPlayerCount >= minPlayers) {
+			numRounds = roundCounts();
+		}
+	});
+
 	const roundCounts = $derived(() => {
 		const courts = Math.ceil(computedPlayerCount / 4);
 		if (formatType === 'preseed') {
@@ -93,6 +100,10 @@
 		if (courts <= 16) return 5;
 		return 6;
 	});
+
+	const effectiveRounds = $derived(
+		formatType === 'preseed' ? roundCounts() : Math.max(1, numRounds)
+	);
 
 	const basePtTarget = $derived(scoringMode === 'custom' ? customPointsToWin : 21);
 	const setsToWin = $derived(
@@ -125,8 +136,8 @@
 		}
 
 		const roundDur = shiftsPerRound * maxCourtDur;
-		const transitions = (roundCounts() - 1) * 10;
-		const total = 15 + roundCounts() * roundDur + transitions;
+		const transitions = (effectiveRounds - 1) * 10;
+		const total = 15 + effectiveRounds * roundDur + transitions;
 
 		return { total, roundDur, maxCourtDur, courts: courtSizes.length, shiftsPerRound };
 	});
@@ -350,8 +361,23 @@
 
 		<div class="field">
 			<span class="label">Number of Rounds</span>
-			<div class="info-box">{roundCounts()} rounds (auto-calculated)</div>
-			<input type="hidden" name="numRounds" value={roundCounts()} />
+			{#if formatType === 'preseed'}
+				<div class="info-box">{roundCounts()} rounds (auto-calculated)</div>
+				<input type="hidden" name="numRounds" value={roundCounts()} />
+			{:else}
+				<div class="rounds-config">
+					<input
+						type="number"
+						id="numRounds"
+						name="numRounds"
+						bind:value={numRounds}
+						min="1"
+						max="10"
+						class="rounds-input"
+					/>
+					<span class="rounds-hint">rounds (flexible — adjust as needed)</span>
+				</div>
+			{/if}
 		</div>
 
 		{#if durationEstimate() && computedPlayerCount >= minPlayers}
@@ -363,7 +389,7 @@
 					</p>
 					<div class="duration-breakdown">
 						<span>Setup: 15 min</span>
-						{#each Array(roundCounts()) as _, r}
+						{#each Array(effectiveRounds) as _, r}
 							<span>Round {r + 1}: {durationEstimate()!.roundDur} min</span>
 						{/each}
 						<span
@@ -773,6 +799,36 @@
 		flex-direction: column;
 		gap: 2px;
 		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+	}
+
+	.rounds-config {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+	}
+
+	.rounds-input {
+		width: 60px;
+		min-height: 40px;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		font-size: var(--font-size-base);
+		background-color: var(--bg-input);
+		color: var(--text-input);
+		border: 2px solid var(--border-strong);
+		border-radius: var(--radius-sm);
+		font-weight: 600;
+		text-align: center;
+	}
+
+	.rounds-input:focus {
+		outline: none;
+		border-color: var(--border-focus);
+		box-shadow: var(--shadow-focus);
+	}
+
+	.rounds-hint {
+		font-size: var(--font-size-sm);
 		color: var(--text-muted);
 	}
 </style>
