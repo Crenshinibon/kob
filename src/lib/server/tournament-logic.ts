@@ -760,47 +760,34 @@ export function estimateCourtDurationMinutes(
 	setsToWin: number,
 	durationConfig: DurationConfig
 ): number {
-	const avgRalliesPerGame = pointsToWin * 1.5;
-	const rallyTimeSec =
-		avgRalliesPerGame *
-		(durationConfig.avgRallyDurationSeconds + durationConfig.timeBetweenRalliesSeconds);
-	const gameTimeMin = rallyTimeSec / 60;
+	const gameTimeMin = 18 * (pointsToWin / 21);
+	const courtPointTarget = courtSize >= 5 ? 15 : pointsToWin;
+	const courtGameTime = 18 * (courtPointTarget / 21);
 
 	let matches: number;
 	switch (courtSize) {
-		case 3:
-			matches = 3;
-			break;
-		case 4:
-			matches = 3;
-			break;
-		case 5:
-			matches = 4;
-			break;
-		case 6:
-			matches = 4;
-			break;
-		default:
-			matches = 3;
+		case 3: matches = 3; break;
+		case 4: matches = 3; break;
+		case 5: matches = 4; break;
+		case 6: matches = 4; break;
+		default: matches = 3;
 	}
 
 	const gamesPerMatch = setsToWin === 1 ? 1 : setsToWin * 1.5;
-	const matchTimeMin = gamesPerMatch * gameTimeMin;
-	const total = matches * matchTimeMin + (matches - 1) * durationConfig.timeBetweenMatchesMinutes;
-
-	if (courtSize >= 5) return Math.round(total * 1.1);
-	return Math.round(total);
+	const perGame = courtSize === 3 ? courtGameTime * 0.8 : courtGameTime;
+	const matchTimeMin = gamesPerMatch * perGame;
+	return Math.round(matches * matchTimeMin + (matches - 1) * durationConfig.timeBetweenMatchesMinutes);
 }
 
 export function estimateRoundDurationMinutes(
-	activeCourtSizes: readonly number[],
+	courtSizes: readonly number[],
 	pointsToWin: number,
 	setsToWin: number,
 	durationConfig: DurationConfig
 ): number {
-	if (activeCourtSizes.length === 0) return 0;
+	if (courtSizes.length === 0) return 0;
 	let max = 0;
-	for (const size of activeCourtSizes) {
+	for (const size of courtSizes) {
 		const d = estimateCourtDurationMinutes(size, pointsToWin, setsToWin, durationConfig);
 		if (d > max) max = d;
 	}
@@ -824,8 +811,7 @@ export function estimateTournamentDuration(
 	const setup = durationConfig.setupTimeMinutes;
 	const shiftsPerRound = Math.ceil(courtSizes.length / physicalCourtCount);
 	const roundDur = estimateRoundDurationMinutes(courtSizes, pointsToWin, setsToWin, durationConfig);
-	const adjustedRound =
-		shiftsPerRound * roundDur + (shiftsPerRound - 1) * durationConfig.transitionTimeMinutes;
+	const adjustedRound = shiftsPerRound * roundDur;
 
 	const rounds: number[] = [];
 	for (let r = 0; r < totalRounds; r++) rounds.push(adjustedRound);

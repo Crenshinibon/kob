@@ -29,37 +29,35 @@
 	const durationEstimate = $derived(() => {
 		if (computedPlayerCount < minPlayers) return null;
 
-		const courtSizes: number[] = [];
-		const courts = Math.ceil(computedPlayerCount / 4);
 		const leftover = computedPlayerCount % 4;
-		for (let i = 0; i < courts; i++) {
-			if (i === courts - 1 && leftover !== 0) {
-				courtSizes.push(leftover === 1 ? 5 : leftover === 2 ? 6 : 3);
-			} else {
-				courtSizes.push(4);
-			}
-		}
+		const bottomSize = leftover === 1 ? 5 : leftover === 2 ? 6 : leftover === 3 ? 3 : null;
+		const standardCourts = bottomSize
+			? Math.floor((computedPlayerCount - bottomSize) / 4)
+			: computedPlayerCount / 4;
 
-		const shiftsPerRound = Math.ceil(courts / physicalCourts);
-		const pointsToWin = 21;
+		const courtSizes: number[] = Array(standardCourts).fill(4);
+		if (bottomSize) courtSizes.push(bottomSize);
+
+		const shiftsPerRound = Math.ceil(courtSizes.length / physicalCourts);
 		const setsToWin = scoringMode === 'best-of-3-15' ? 2 : 1;
-		const avgSec = 35 + 8; // rally + between
-		const ralliesPerGame = pointsToWin * 1.5;
+
+		const gameMinutes = (pts: number) => Math.round(18 * (pts / 21));
 
 		let maxCourtDur = 0;
 		for (const size of courtSizes) {
+			const ptTarget = size >= 5 ? 15 : 21;
+			const gm = gameMinutes(ptTarget);
+			const perGame = size === 3 ? gm * 0.8 : gm;
 			const matches = size >= 5 ? 4 : 3;
-			const gamesPerMatch = setsToWin === 1 ? 1 : setsToWin * 1.5;
-			const ct = matches * gamesPerMatch * ((ralliesPerGame * avgSec) / 60) + (matches - 1) * 3;
-			const dur = size >= 5 ? Math.round(ct * 1.1) : Math.round(ct);
+			const dur = Math.round(matches * perGame + (matches - 1) * 3);
 			if (dur > maxCourtDur) maxCourtDur = dur;
 		}
 
-		const roundDur = shiftsPerRound * maxCourtDur + (shiftsPerRound - 1) * 10;
+		const roundDur = shiftsPerRound * maxCourtDur;
 		const transitions = (roundCounts() - 1) * 10;
 		const total = 15 + roundCounts() * roundDur + transitions;
 
-		return { total, roundDur, maxCourtDur, courts, shiftsPerRound };
+		return { total, roundDur, maxCourtDur, courts: courtSizes.length, shiftsPerRound };
 	});
 </script>
 

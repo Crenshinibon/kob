@@ -114,53 +114,42 @@ Total Duration = (Rounds × Round Duration) + ((Rounds - 1) × Transition Time) 
 
 ### Round Duration Calculation
 
-Round duration depends on the **bottleneck** — the slowest court to finish:
+Round duration depends on the **bottleneck** — the slowest court among the active courts in one shift:
 
 ```
-Round Duration = max(Court Duration for each active court)
+Shift Duration    = max(Court Duration for courts in one shift)
+Round Duration    = Shifts × Shift Duration + (Shifts - 1) × Shift Transition
+Shift Transition  = 5 min (players swap, score posting)
 ```
 
-#### Court Duration by Type
-
-| Court Type    | Games       | Points/Game | Est. Court Duration |
-| ------------- | ----------- | ----------- | ------------------- |
-| 4p (21pt)     | 3           | 21          | ~45 min             |
-| 4p (15pt BO3) | up to 3×3=9 | 15          | ~55 min             |
-| 3p (21pt)     | 3           | 21          | ~35 min             |
-| 5p (15pt)     | 4           | 15          | ~45 min             |
-| 6p (15pt)     | 4           | 15          | ~45 min             |
-
-**Note on 5p/6p courts**: The parallel games are not truly parallel — they alternate points with player switches. Duration is approximately the same as a single game with the same total points, plus ~10% overhead for switching players in and out.
-
-**Rally duration estimates** are configurable defaults. The system uses:
-
-- Average rallies per game ≈ pointsToWin × 1.5 (accounts for side-outs)
-- Average rally duration ≈ 30-45 seconds (depends on court size and skill level)
+Courts per shift = physical court count. Only active (physical-many) courts are considered; the shift runs as long as the slowest court in that shift.
 
 #### Court Duration Formula
 
+Simple linear scaling model: **a single game to 21 points takes ~18 minutes**. Other point targets scale proportionally.
+
 ```
-Court Duration = Matches × Games per Match × (Avg Rallies per Game × Avg Rally Duration + Time between Rallies)
+Game Duration     = 18 × (pointsToWin / 21) minutes
+Court Duration    = Matches × Game Duration
+                    + (Matches - 1) × Time between Matches
+                    × (1.1 if 5p/6p court, else 1.0)
 ```
 
 Where:
-
-- `Avg Rallies per Game` = `pointsToWin × 1.5` (heuristic)
-- `Avg Rally Duration` = 35 seconds (default, configurable)
-- `Time between Rallies` = 8 seconds (serve setup, whistle)
-- `Time between Matches` = 3 minutes (score recording, team rotation)
-
-#### Example Calculations
+- `pointsToWin` = points needed to win a game (21 for 4p/3p, 15 for 5p/6p)
+- `Time between Matches` = 3 minutes (score recording)
 
 #### Court Duration Defaults
 
-| Court Type           | Default Duration | Notes                            |
-| -------------------- | ---------------- | -------------------------------- |
-| 4p (21pt single set) | 45 min           | 3 games, ~15 min each            |
-| 4p (15pt best-of-3)  | 55 min           | Up to 9 games                    |
-| 3p (21pt)            | 35 min           | 3 games, faster rallies (2v1)    |
-| 5p (15pt)            | 45 min           | 4 games + 10% switching overhead |
-| 6p (15pt)            | 45 min           | 4 games + 10% switching overhead |
+| Court Type           | Games | Point Target | Court Duration                        |
+| -------------------- | ----- | ------------ | ------------------------------------- |
+| 4p (single set to 21)| 3     | 21           | ~60 min (3 × 18 + 2 × 3)             |
+| 4p (best-of-3 to 15) | ≤9    | 15           | ~55 min (avg 4.5 games × 13 + 2 × 3) |
+| 3p (single set to 21)| 3     | 21           | ~48 min (3 × 14 + 2 × 3)             |
+| 5p (single set to 15)| 4     | 15           | ~60 min (4 × 13 + 3 × 3) × 1.1       |
+| 6p (single set to 15)| 4     | 15           | ~60 min (4 × 13 + 3 × 3) × 1.1       |
+
+3p courts: 80% of 4p game duration (faster rallies in 2v1).
 
 ### Virtual Court Scheduling
 
@@ -174,9 +163,9 @@ Round Duration = Shifts per round × Max Court Duration per Shift + (Shifts - 1)
 **Example**: 8 virtual courts, 4 physical courts
 
 - 2 shifts per round
-- Each shift: 4 courts play simultaneously, max 45 min
-- Shift transition: 10 min
-- Round Duration = 2 × 45 + 1 × 10 = 100 minutes
+- Each shift: 4 courts play simultaneously, max 60 min
+- Shift transition: 5 min
+- Round Duration = 2 × 60 + 1 × 5 = 125 minutes
 
 ### Total Tournament Duration
 
@@ -186,12 +175,13 @@ Total = Setup + (Rounds × Round Duration) + ((Rounds - 1) × Transition) + Buff
 
 | Tournament Size             | Courts     | Rounds | Est. Round Duration | Total (with transitions) |
 | --------------------------- | ---------- | ------ | ------------------- | ------------------------ |
-| 16p (4 courts)              | 4          | 3      | 45 min              | ~2h 45min                |
-| 32p (8 courts)              | 8          | 4      | 45 min              | ~3h 45min                |
-| 24p (6 courts)              | 6          | 4      | 45 min              | ~3h 30min                |
-| 16p (2 physical, 4 virtual) | 2×2 shifts | 3      | 100 min             | ~5h 40min                |
-| 20p (5 courts, preseed)     | 5          | 4      | 45 min              | ~3h 30min                |
-| 8p (2 courts)               | 2          | 2      | 45 min              | ~1h 45min                |
+| 16p (4 courts, 4 physical)  | 4          | 3      | 60 min              | ~3h 30min                |
+| 32p (8 courts, 8 physical)  | 8          | 4      | 60 min              | ~4h 45min                |
+| 24p (6 courts, 6 physical)  | 6          | 4      | 60 min              | ~4h 30min                |
+| 32p (8 courts, 4 physical)  | 2×2 shifts | 4      | 125 min             | ~9h 0min                 |
+| 30p (8 courts, 4 physical)  | 2×2 shifts | 4      | 125 min             | ~9h 0min                 |
+| 20p (5 courts, 5 physical)  | 5          | 4      | 60 min              | ~4h 30min                |
+| 8p (2 courts, 2 physical)   | 2          | 2      | 60 min              | ~2h 15min                |
 
 ### UI: Duration Estimate Display
 
