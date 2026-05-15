@@ -92,11 +92,13 @@ test.describe('Tournament Format Selection', () => {
 			// Set rounds using the number input
 			await page.fill('input[name="numRounds"]', '2');
 
+			// Enter players on the create page
+			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+\/players/);
-			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
-			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button:has-text("Add Players")');
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
@@ -122,14 +124,14 @@ test.describe('Tournament Format Selection', () => {
 			await expect(page.locator('input[name="numRounds"]')).not.toBeVisible();
 			await expect(page.locator('.info-box:has-text("rounds")')).toBeVisible();
 
+			// Enter players with points on the create page
+			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1} ${100 - i * 5}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1} ${100 - i * 5}`);
-			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button:has-text("Add Players")');
-
 			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
@@ -146,14 +148,14 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.click('input[value="preseed"]');
 
+			// Enter players with points on the create page
+			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1} ${200 - i * 5}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1} ${200 - i * 5}`);
-			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button:has-text("Add Players")');
-
 			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
@@ -192,9 +194,6 @@ test.describe('Tournament Format Selection', () => {
 			await page.fill('input[name="name"]', tournamentName);
 
 			await page.click('input[value="preseed"]');
-			await page.click('button[type="submit"]');
-
-			await page.waitForURL(/\/tournament\/\d+\/players/);
 
 			const players = [
 				'Nicholas Borchart\t142',
@@ -215,6 +214,10 @@ test.describe('Tournament Format Selection', () => {
 				'Malte Koppelin 0'
 			];
 			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
 			await page.click('button:has-text("Add Players")');
 
 			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
@@ -233,11 +236,8 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			// 11 players = 2×4p + 3 leftover → 3p court
+			// Enter 11 players on the create page
 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 
@@ -258,11 +258,8 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			// 25 players = 5×4p + 1 leftover → 5p court
+			// Enter 25 players on the create page
 			const players = Array.from({ length: 25 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 
@@ -279,11 +276,8 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			// 26 players = 4×4p + 2 leftover → 6p court
+			// Enter 26 players on the create page
 			const players = Array.from({ length: 26 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 
@@ -300,11 +294,8 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			// 24 players = 6×4p, no leftovers
+			// Enter 24 players on the create page
 			const players = Array.from({ length: 24 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 
@@ -318,11 +309,8 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			// 17 players = 4×4p + 1 leftover → 5p court
+			// Enter 17 players on the create page
 			const players = Array.from({ length: 17 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 
@@ -344,13 +332,14 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
+
+			// Enter 11 players on the create page
+			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			// 11 players = 2×4p + 1×3p
-			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
-			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button:has-text("Add Players")');
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
@@ -381,13 +370,14 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
+
+			// Enter 21 players on the create page
+			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			// 21 players = 4×4p + 1×5p
-			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
-			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button:has-text("Add Players")');
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
@@ -418,13 +408,14 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
+
+			// Enter 22 players on the create page
+			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			// 22 players = 4×4p + 1×6p
-			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
-			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button:has-text("Add Players")');
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
@@ -457,12 +448,14 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
+
+			// Enter 8 players on the create page
+			const players = Array.from({ length: 8 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			const players = Array.from({ length: 8 }, (_, i) => `Player${i + 1}`);
-			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button:has-text("Add Players")');
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
@@ -471,16 +464,15 @@ test.describe('Tournament Format Selection', () => {
 			expect(courtCards).toBe(2);
 		});
 
-		test('below 8 players shows minimum warning', async ({ page }) => {
+		test('below 8 players shows minimum warning and button is disabled', async ({ page }) => {
 			await page.click('text=+ New Tournament');
-			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-
+			// Enter 7 players on the create page
 			const players = Array.from({ length: 7 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 
 			await expect(page.locator('.warn:has-text("Minimum 8 players")')).toBeVisible();
+			await expect(page.locator('button[type="submit"]')).toBeDisabled();
 		});
 
 		test('64 players creates 16 courts', async ({ page }) => {
@@ -490,12 +482,14 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
+
+			// Enter 64 players on the create page
+			const players = Array.from({ length: 64 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			const players = Array.from({ length: 64 }, (_, i) => `Player${i + 1}`);
-			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button:has-text("Add Players")');
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
@@ -504,16 +498,15 @@ test.describe('Tournament Format Selection', () => {
 			expect(courtCards).toBe(16);
 		});
 
-		test('above 64 players shows maximum warning', async ({ page }) => {
+		test('above 64 players shows maximum warning and button is disabled', async ({ page }) => {
 			await page.click('text=+ New Tournament');
-			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-
+			// Enter 65 players on the create page
 			const players = Array.from({ length: 65 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 
 			await expect(page.locator('.warn:has-text("Maximum 64 players")')).toBeVisible();
+			await expect(page.locator('button[type="submit"]')).toBeDisabled();
 		});
 	});
 });

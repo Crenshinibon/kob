@@ -1,87 +1,80 @@
 $ playwright test --last-failed "--workers=1" "--reporter=list"
 
-Running 42 tests using 1 worker
+Running 51 tests using 1 worker
 
-[2m[WebServer] [22m[2m2026-05-15T17:59:52.505Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
-  ✘   1 e2e/format.spec.ts:85:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (30.8s)
-  ✘   2 e2e/format.spec.ts:112:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (30.7s)
-  ✘   3 e2e/format.spec.ts:140:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (30.8s)
-  ✘   4 e2e/format.spec.ts:187:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (30.8s)
-  ✘   5 e2e/format.spec.ts:230:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description (30.8s)
-  ✘   6 e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description (30.8s)
-  ✘   7 e2e/format.spec.ts:276:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description (30.8s)
-  ✘   8 e2e/format.spec.ts:297:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) (30.8s)
-  ✘   9 e2e/format.spec.ts:315:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (30.8s)
-  ✘  10 e2e/format.spec.ts:340:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches (30.8s)
-  ✘  11 e2e/format.spec.ts:377:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games (30.8s)
-  ✘  12 e2e/format.spec.ts:414:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games (30.8s)
-  ✘  13 e2e/format.spec.ts:453:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts (30.8s)
-  ✘  14 e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › below 8 players shows minimum warning (30.0s)
-  ✘  15 e2e/format.spec.ts:486:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (30.8s)
-  ✘  16 e2e/format.spec.ts:507:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning (30.0s)
-  ✘  17 e2e/promotion.spec.ts:71:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (30.8s)
-  ✘  18 e2e/promotion.spec.ts:176:2 › Promotion and Relegation › close round button is disabled until all matches complete (30.8s)
-  ✘  19 e2e/promotion.spec.ts:269:2 › Promotion and Relegation › final round completion marks tournament as completed (30.8s)
-  ✘  20 e2e/promotion.spec.ts:341:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution (30.9s)
-  ✘  21 e2e/promotion.spec.ts:424:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution (30.8s)
-  ✘  22 e2e/promotion.spec.ts:490:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court maintains 5 players after redistribution (30.8s)
-  ✘  23 e2e/promotion.spec.ts:556:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court maintains 6 players after redistribution (30.8s)
-  ✘  24 e2e/standings.spec.ts:53:2 › Standings Calculation › calculates correct points for all players in a match (30.8s)
-  ✘  25 e2e/standings.spec.ts:92:2 › Standings Calculation › sorts players by total points in descending order (30.8s)
-  ✘  26 e2e/standings.spec.ts:131:2 › Standings Calculation › breaks ties using point differential (30.8s)
-  ✘  27 e2e/standings.spec.ts:165:2 › Standings Calculation › awards points correctly across multiple matches per player (30.8s)
-  ✘  28 e2e/standings.spec.ts:215:2 › Standings Calculation › validates score entry rules (min 21, win by 2) (30.8s)
-  ✘  29 e2e/standings.spec.ts:265:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking (30.8s)
-  ✘  30 e2e/standings.spec.ts:297:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking (30.8s)
-  ✘  31 e2e/standings.spec.ts:329:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking (30.8s)
-  ✘  32 e2e/standings.spec.ts:361:3 › Standings Calculation › Non-Standard Court Standings › 5p court accepts 15-point scores (30.8s)
-  ✘  33 e2e/standings.spec.ts:398:3 › Standings Calculation › Non-Standard Court Standings › 3p court accepts 21-point scores (same as 4p) (30.8s)
-  ✘  34 e2e/tournament.spec.ts:71:2 › Tournament Integration Tests › complete 2-round tournament with score entry (30.8s)
-  ✘  35 e2e/tournament.spec.ts:230:2 › Tournament Integration Tests › players can access court via direct URL without login (30.8s)
-  ✘  36 e2e/tournament.spec.ts:287:2 › Tournament Integration Tests › dashboard shows tournaments in correct sections (31.4s)
-  ✘  37 e2e/tournament.spec.ts:335:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines (30.8s)
-  ✘  38 e2e/tournament.spec.ts:407:3 › Tournament Integration Tests › Scoring Modes › duration estimate updates based on scoring mode (30.0s)
-  ✘  39 e2e/tournament.spec.ts:422:3 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default (30.8s)
-  ✘  40 e2e/tournament.spec.ts:451:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › shows virtual court info when physical courts < virtual courts (30.0s)
-  ✘  41 e2e/tournament.spec.ts:469:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › physical courts slider ranges from 1 to 16 (30.0s)
-  ✘  42 e2e/tournament.spec.ts:480:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › duration estimate accounts for physical court shifts (30.0s)
+  ✓   1 e2e/demo.test.ts:3:1 › home page has expected h1 (198ms)
+[2m[WebServer] [22m[2m2026-05-15T18:47:39.605Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
+  ✓   2 e2e/format.spec.ts:54:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) (1.5s)
+  ✓   3 e2e/format.spec.ts:68:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range (538ms)
+  ✓   4 e2e/format.spec.ts:77:3 › Tournament Format Selection › Random Format › rounds input is editable (544ms)
+  ✘   5 e2e/format.spec.ts:85:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (30.8s)
+  ✘   6 e2e/format.spec.ts:112:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (30.8s)
+  ✘   7 e2e/format.spec.ts:140:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (30.8s)
+  ✓   8 e2e/format.spec.ts:167:3 › Tournament Format Selection › Pre-Seed Format › switching player count updates fixed rounds (703ms)
+  ✓   9 e2e/format.spec.ts:177:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again (646ms)
+  ✘  10 e2e/format.spec.ts:187:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (30.8s)
+  ✘  11 e2e/format.spec.ts:230:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description (30.9s)
+  ✘  12 e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description (30.8s)
+  ✘  13 e2e/format.spec.ts:276:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description (30.8s)
+  ✘  14 e2e/format.spec.ts:297:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) (30.9s)
+  ✘  15 e2e/format.spec.ts:315:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (30.8s)
+  ✘  16 e2e/format.spec.ts:340:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches (30.8s)
+  ✘  17 e2e/format.spec.ts:377:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games (30.9s)
+  ✘  18 e2e/format.spec.ts:414:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games (30.9s)
+  ✘  19 e2e/format.spec.ts:453:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts (30.9s)
+  ✘  20 e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › below 8 players shows minimum warning (30.1s)
+  ✘  21 e2e/format.spec.ts:486:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (30.8s)
+  ✘  22 e2e/format.spec.ts:507:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning (30.1s)
+  ✘  23 e2e/promotion.spec.ts:71:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (30.9s)
+  ✘  24 e2e/promotion.spec.ts:176:2 › Promotion and Relegation › close round button is disabled until all matches complete (30.9s)
+  ✘  25 e2e/promotion.spec.ts:269:2 › Promotion and Relegation › final round completion marks tournament as completed (30.9s)
+  ✘  26 e2e/promotion.spec.ts:341:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution (30.9s)
+  ✘  27 e2e/promotion.spec.ts:424:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution (30.9s)
+  ✘  28 e2e/promotion.spec.ts:490:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court maintains 5 players after redistribution (30.9s)
+  ✘  29 e2e/promotion.spec.ts:556:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court maintains 6 players after redistribution (30.9s)
+  ✘  30 e2e/standings.spec.ts:53:2 › Standings Calculation › calculates correct points for all players in a match (30.9s)
+  ✘  31 e2e/standings.spec.ts:92:2 › Standings Calculation › sorts players by total points in descending order (30.9s)
+  ✘  32 e2e/standings.spec.ts:131:2 › Standings Calculation › breaks ties using point differential (30.9s)
+  ✘  33 e2e/standings.spec.ts:165:2 › Standings Calculation › awards points correctly across multiple matches per player (30.9s)
+  ✘  34 e2e/standings.spec.ts:215:2 › Standings Calculation › validates score entry rules (min 21, win by 2) (30.9s)
+  ✘  35 e2e/standings.spec.ts:265:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking (30.9s)
+  ✘  36 e2e/standings.spec.ts:297:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking (30.9s)
+  ✘  37 e2e/standings.spec.ts:329:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking (31.0s)
+  ✘  38 e2e/standings.spec.ts:361:3 › Standings Calculation › Non-Standard Court Standings › 5p court accepts 15-point scores (30.9s)
+  ✘  39 e2e/standings.spec.ts:398:3 › Standings Calculation › Non-Standard Court Standings › 3p court accepts 21-point scores (same as 4p) (30.9s)
+  ✘  40 e2e/tournament.spec.ts:71:2 › Tournament Integration Tests › complete 2-round tournament with score entry (30.9s)
+  ✘  41 e2e/tournament.spec.ts:230:2 › Tournament Integration Tests › players can access court via direct URL without login (30.9s)
+  ✘  42 e2e/tournament.spec.ts:287:2 › Tournament Integration Tests › dashboard shows tournaments in correct sections (31.6s)
+  ✘  43 e2e/tournament.spec.ts:335:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines (30.8s)
+  ✓  44 e2e/tournament.spec.ts:369:3 › Tournament Integration Tests › Scoring Modes › best-of-3 scoring mode is selectable (906ms)
+  ✓  45 e2e/tournament.spec.ts:377:3 › Tournament Integration Tests › Scoring Modes › custom scoring mode reveals advanced options (799ms)
+  ✓  46 e2e/tournament.spec.ts:396:3 › Tournament Integration Tests › Scoring Modes › custom best-of-3 shows deciding set points (751ms)
+  ✘  47 e2e/tournament.spec.ts:407:3 › Tournament Integration Tests › Scoring Modes › duration estimate updates based on scoring mode (30.1s)
+  ✘  48 e2e/tournament.spec.ts:422:3 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default (30.9s)
+  ✘  49 e2e/tournament.spec.ts:451:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › shows virtual court info when physical courts < virtual courts (30.0s)
+  ✘  50 e2e/tournament.spec.ts:469:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › physical courts slider ranges from 1 to 16 (30.0s)
+  ✘  51 e2e/tournament.spec.ts:480:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › duration estimate accounts for physical court shifts (30.0s)
 
 
   1) e2e/format.spec.ts:85:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    56 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
-    [2m    - navigated to "http://localhost:4173/"[22m
-    [2m    - waiting for element to be visible, enabled and stable[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      93 | 			await page.fill('input[name="numRounds"]', '2');
-      94 |
-    > 95 | 			await page.click('button[type="submit"]');
-         | 			           ^
-      96 |
-      97 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-      98 | 			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:95:15
+       95 | 			await page.click('button[type="submit"]');
+       96 |
+    >  97 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
+       98 | 			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
+       99 | 			await page.fill('textarea[name="names"]', players.join('\n'));
+      100 | 			await page.click('button:has-text("Add Players")');
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:97:15
 
     Error Context: test-results/format-Tournament-Format-S-38d0b-32-players-creates-8-courts/error-context.md
 
@@ -89,34 +82,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      123 | 			await expect(page.locator('.info-box:has-text("rounds")')).toBeVisible();
-      124 |
-    > 125 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      125 | 			await page.click('button[type="submit"]');
       126 |
-      127 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 127 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       128 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:125:15
+      129 | 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1} ${100 - i * 5}`);
+      130 | 			await page.fill('textarea[name="names"]', players.join('\n'));
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:127:15
 
     Error Context: test-results/format-Tournament-Format-S-95dea-layers-shows-3-fixed-rounds/error-context.md
 
@@ -124,34 +104,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      147 | 			await page.click('input[value="preseed"]');
-      148 |
-    > 149 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      149 | 			await page.click('button[type="submit"]');
       150 |
-      151 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 151 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       152 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:149:15
+      153 | 			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1} ${200 - i * 5}`);
+      154 | 			await page.fill('textarea[name="names"]', players.join('\n'));
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:151:15
 
     Error Context: test-results/format-Tournament-Format-S-db64d-layers-shows-4-fixed-rounds/error-context.md
 
@@ -159,34 +126,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      193 |
-      194 | 			await page.click('input[value="preseed"]');
-    > 195 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      195 | 			await page.click('button[type="submit"]');
       196 |
-      197 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 197 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       198 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:195:15
+      199 | 			const players = [
+      200 | 				'Nicholas Borchart\t142',
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:197:15
 
     Error Context: test-results/format-Tournament-Format-S-57f6f-ible-name-with-points-input/error-context.md
 
@@ -194,34 +148,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      234 | 			await page.click('text=+ New Tournament');
-      235 | 			await page.fill('input[name="name"]', tournamentName);
-    > 236 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      236 | 			await page.click('button[type="submit"]');
       237 |
-      238 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 238 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       239 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:236:15
+      240 | 			// 11 players = 2×4p + 3 leftover → 3p court
+      241 | 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:238:15
 
     Error Context: test-results/format-Tournament-Format-S-18dac-rt-warning-with-description/error-context.md
 
@@ -229,34 +170,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      259 | 			await page.click('text=+ New Tournament');
-      260 | 			await page.fill('input[name="name"]', tournamentName);
-    > 261 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      261 | 			await page.click('button[type="submit"]');
       262 |
-      263 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 263 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       264 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:261:15
+      265 | 			// 25 players = 5×4p + 1 leftover → 5p court
+      266 | 			const players = Array.from({ length: 25 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:263:15
 
     Error Context: test-results/format-Tournament-Format-S-750b1-rt-warning-with-description/error-context.md
 
@@ -264,34 +192,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      280 | 			await page.click('text=+ New Tournament');
-      281 | 			await page.fill('input[name="name"]', tournamentName);
-    > 282 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      282 | 			await page.click('button[type="submit"]');
       283 |
-      284 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 284 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       285 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:282:15
+      286 | 			// 26 players = 4×4p + 2 leftover → 6p court
+      287 | 			const players = Array.from({ length: 26 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:284:15
 
     Error Context: test-results/format-Tournament-Format-S-53ad7-rt-warning-with-description/error-context.md
 
@@ -299,34 +214,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      301 | 			await page.click('text=+ New Tournament');
-      302 | 			await page.fill('input[name="name"]', tournamentName);
-    > 303 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      303 | 			await page.click('button[type="submit"]');
       304 |
-      305 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 305 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       306 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:303:15
+      307 | 			// 24 players = 6×4p, no leftovers
+      308 | 			const players = Array.from({ length: 24 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:305:15
 
     Error Context: test-results/format-Tournament-Format-S-7023c-ourts-message-no-leftovers-/error-context.md
 
@@ -334,34 +236,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      319 | 			await page.click('text=+ New Tournament');
-      320 | 			await page.fill('input[name="name"]', tournamentName);
-    > 321 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      321 | 			await page.click('button[type="submit"]');
       322 |
-      323 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 323 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       324 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:321:15
+      325 | 			// 17 players = 4×4p + 1 leftover → 5p court
+      326 | 			const players = Array.from({ length: 17 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:323:15
 
     Error Context: test-results/format-Tournament-Format-S-e9162-layers-to-make-clean-courts/error-context.md
 
@@ -369,34 +258,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      345 | 			await page.fill('input[name="name"]', tournamentName);
-      346 | 			await page.fill('input[name="numRounds"]', '1');
-    > 347 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      347 | 			await page.click('button[type="submit"]');
       348 |
-      349 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 349 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       350 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:347:15
+      351 | 			// 11 players = 2×4p + 1×3p
+      352 | 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:349:15
 
     Error Context: test-results/format-Tournament-Format-S-550e9-s-correct-number-of-matches/error-context.md
 
@@ -404,34 +280,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      382 | 			await page.fill('input[name="name"]', tournamentName);
-      383 | 			await page.fill('input[name="numRounds"]', '1');
-    > 384 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      384 | 			await page.click('button[type="submit"]');
       385 |
-      386 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 386 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       387 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:384:15
+      388 | 			// 21 players = 4×4p + 1×5p
+      389 | 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:386:15
 
     Error Context: test-results/format-Tournament-Format-S-9ccd5--tournament-creates-4-games/error-context.md
 
@@ -439,34 +302,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      419 | 			await page.fill('input[name="name"]', tournamentName);
-      420 | 			await page.fill('input[name="numRounds"]', '1');
-    > 421 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      421 | 			await page.click('button[type="submit"]');
       422 |
-      423 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 423 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       424 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:421:15
+      425 | 			// 22 players = 4×4p + 1×6p
+      426 | 			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:423:15
 
     Error Context: test-results/format-Tournament-Format-S-69304--tournament-creates-4-games/error-context.md
 
@@ -474,34 +324,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      458 | 			await page.fill('input[name="name"]', tournamentName);
-      459 | 			await page.fill('input[name="numRounds"]', '1');
-    > 460 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      460 | 			await page.click('button[type="submit"]');
       461 |
-      462 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 462 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       463 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:460:15
+      464 | 			const players = Array.from({ length: 8 }, (_, i) => `Player${i + 1}`);
+      465 | 			await page.fill('textarea[name="names"]', players.join('\n'));
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:462:15
 
     Error Context: test-results/format-Tournament-Format-S-61c1c--8-players-creates-2-courts/error-context.md
 
@@ -509,33 +346,19 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+    ============================================================
 
-
-      474 | 		test('below 8 players shows minimum warning', async ({ page }) => {
-      475 | 			await page.click('text=+ New Tournament');
-    > 476 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      476 | 			await page.click('button[type="submit"]');
       477 |
-      478 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 478 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       479 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:476:15
+      480 | 			const players = Array.from({ length: 7 }, (_, i) => `Player${i + 1}`);
+      481 | 			await page.fill('textarea[name="names"]', players.join('\n'));
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:478:15
 
     Error Context: test-results/format-Tournament-Format-S-6ec69-ayers-shows-minimum-warning/error-context.md
 
@@ -543,37 +366,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    56 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
-    [2m    - navigated to "http://localhost:4173/"[22m
-    [2m    - waiting for element to be visible, enabled and stable[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      491 | 			await page.fill('input[name="name"]', tournamentName);
-      492 | 			await page.fill('input[name="numRounds"]', '1');
-    > 493 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      493 | 			await page.click('button[type="submit"]');
       494 |
-      495 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 495 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       496 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:493:15
+      497 | 			const players = Array.from({ length: 64 }, (_, i) => `Player${i + 1}`);
+      498 | 			await page.fill('textarea[name="names"]', players.join('\n'));
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:495:15
 
     Error Context: test-results/format-Tournament-Format-S-4f48d-4-players-creates-16-courts/error-context.md
 
@@ -581,33 +388,19 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+    ============================================================
 
-
-      507 | 		test('above 64 players shows maximum warning', async ({ page }) => {
-      508 | 			await page.click('text=+ New Tournament');
-    > 509 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      509 | 			await page.click('button[type="submit"]');
       510 |
-      511 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 511 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       512 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:509:15
+      513 | 			const players = Array.from({ length: 65 }, (_, i) => `Player${i + 1}`);
+      514 | 			await page.fill('textarea[name="names"]', players.join('\n'));
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:511:15
 
     Error Context: test-results/format-Tournament-Format-S-4d75c-ayers-shows-maximum-warning/error-context.md
 
@@ -615,37 +408,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    56 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
-    [2m    - navigated to "http://localhost:4173/"[22m
-    [2m    - waiting for element to be visible, enabled and stable[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      78 | 		await page.fill('input[name="name"]', tournamentName);
-      79 | 		await page.fill('input[name="numRounds"]', '3');
-    > 80 | 		await page.click('button[type="submit"]');
-         | 		           ^
       81 |
       82 | 		// Add 16 players with predictable names
-      83 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:80:14
+    > 83 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+         | 		           ^
+      84 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${String(i + 1).padStart(2, '0')}`);
+      85 | 		await page.fill('textarea[name="names"]', players.join('\n'));
+      86 | 		await page.click('button:has-text("Add Players")');
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:83:14
 
     Error Context: test-results/promotion-Promotion-and-Re-b274e-ding-redistribution-by-rank/error-context.md
 
@@ -653,34 +430,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      183 | 		await page.fill('input[name="name"]', tournamentName);
-      184 | 		await page.fill('input[name="numRounds"]', '2');
-    > 185 | 		await page.click('button[type="submit"]');
-          | 		           ^
       186 |
       187 | 		// Add 16 players
-      188 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:185:14
+    > 188 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 		           ^
+      189 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+      190 | 		await page.fill('textarea[name="names"]', players.join('\n'));
+      191 | 		await page.click('button:has-text("Add Players")');
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:188:14
 
     Error Context: test-results/promotion-Promotion-and-Re-bd942--until-all-matches-complete/error-context.md
 
@@ -688,34 +452,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      276 | 		await page.fill('input[name="name"]', tournamentName);
-      277 | 		await page.fill('input[name="numRounds"]', '1');
-    > 278 | 		await page.click('button[type="submit"]');
-          | 		           ^
       279 |
       280 | 		// Add 16 players
-      281 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:278:14
+    > 281 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 		           ^
+      282 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+      283 | 		await page.fill('textarea[name="names"]', players.join('\n'));
+      284 | 		await page.click('button:has-text("Add Players")');
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:281:14
 
     Error Context: test-results/promotion-Promotion-and-Re-d4e1e-rks-tournament-as-completed/error-context.md
 
@@ -723,34 +474,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      348 | 		await page.fill('input[name="name"]', tournamentName);
-      349 | 		await page.fill('input[name="numRounds"]', '3');
-    > 350 | 		await page.click('button[type="submit"]');
-          | 		           ^
       351 |
       352 | 		// Add 16 players
-      353 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:350:14
+    > 353 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 		           ^
+      354 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+      355 | 		await page.fill('textarea[name="names"]', players.join('\n'));
+      356 | 		await page.click('button:has-text("Add Players")');
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:353:14
 
     Error Context: test-results/promotion-Promotion-and-Re-26658--court-after-redistribution/error-context.md
 
@@ -758,34 +496,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      429 | 			await page.fill('input[name="name"]', tournamentName);
-      430 | 			await page.fill('input[name="numRounds"]', '2');
-    > 431 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      431 | 			await page.click('button[type="submit"]');
       432 |
-      433 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 433 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       434 |
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:431:15
+      435 | 			// 11 players = 2×4p + 1×3p
+      436 | 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:433:15
 
     Error Context: test-results/promotion-Promotion-and-Re-92a3f-layers-after-redistribution/error-context.md
 
@@ -793,34 +518,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      495 | 			await page.fill('input[name="name"]', tournamentName);
-      496 | 			await page.fill('input[name="numRounds"]', '2');
-    > 497 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      497 | 			await page.click('button[type="submit"]');
       498 |
-      499 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 499 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       500 |
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:497:15
+      501 | 			// 21 players = 4×4p + 1×5p
+      502 | 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:499:15
 
     Error Context: test-results/promotion-Promotion-and-Re-a4977-layers-after-redistribution/error-context.md
 
@@ -828,34 +540,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      561 | 			await page.fill('input[name="name"]', tournamentName);
-      562 | 			await page.fill('input[name="numRounds"]', '2');
-    > 563 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      563 | 			await page.click('button[type="submit"]');
       564 |
-      565 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 565 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       566 |
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:563:15
+      567 | 			// 22 players = 4×4p + 1×6p
+      568 | 			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:565:15
 
     Error Context: test-results/promotion-Promotion-and-Re-7b953-layers-after-redistribution/error-context.md
 
@@ -863,34 +562,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      58 | 		await page.fill('input[name="name"]', tournamentName);
-      59 | 		await page.fill('input[name="numRounds"]', '3');
-    > 60 | 		await page.click('button[type="submit"]');
-         | 		           ^
+      60 | 		await page.click('button[type="submit"]');
       61 |
-      62 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 62 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+         | 		           ^
       63 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:60:14
+      64 | 		await page.fill('textarea[name="names"]', players.join('\n'));
+      65 | 		await page.click('button:has-text("Add Players")');
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:62:14
 
     Error Context: test-results/standings-Standings-Calcul-8008c--for-all-players-in-a-match/error-context.md
 
@@ -898,34 +584,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-       96 | 		await page.click('text=+ New Tournament');
-       97 | 		await page.fill('input[name="name"]', tournamentName);
-    >  98 | 		await page.click('button[type="submit"]');
-          | 		           ^
+       98 | 		await page.click('button[type="submit"]');
        99 |
-      100 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 100 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 		           ^
       101 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:98:14
+      102 | 		await page.fill('textarea[name="names"]', players.join('\n'));
+      103 | 		await page.click('button:has-text("Add Players")');
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:100:14
 
     Error Context: test-results/standings-Standings-Calcul-b651b--points-in-descending-order/error-context.md
 
@@ -933,34 +606,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      135 | 		await page.click('text=+ New Tournament');
-      136 | 		await page.fill('input[name="name"]', tournamentName);
-    > 137 | 		await page.click('button[type="submit"]');
-          | 		           ^
+      137 | 		await page.click('button[type="submit"]');
       138 |
-      139 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 139 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 		           ^
       140 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:137:14
+      141 | 		await page.fill('textarea[name="names"]', players.join('\n'));
+      142 | 		await page.click('button:has-text("Add Players")');
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:139:14
 
     Error Context: test-results/standings-Standings-Calcul-32cf9-es-using-point-differential/error-context.md
 
@@ -968,34 +628,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      169 | 		await page.click('text=+ New Tournament');
-      170 | 		await page.fill('input[name="name"]', tournamentName);
-    > 171 | 		await page.click('button[type="submit"]');
-          | 		           ^
+      171 | 		await page.click('button[type="submit"]');
       172 |
-      173 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 173 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 		           ^
       174 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:171:14
+      175 | 		await page.fill('textarea[name="names"]', players.join('\n'));
+      176 | 		await page.click('button:has-text("Add Players")');
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:173:14
 
     Error Context: test-results/standings-Standings-Calcul-1c265-multiple-matches-per-player/error-context.md
 
@@ -1003,34 +650,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      219 | 		await page.click('text=+ New Tournament');
-      220 | 		await page.fill('input[name="name"]', tournamentName);
-    > 221 | 		await page.click('button[type="submit"]');
-          | 		           ^
+      221 | 		await page.click('button[type="submit"]');
       222 |
-      223 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 223 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 		           ^
       224 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:221:14
+      225 | 		await page.fill('textarea[name="names"]', players.join('\n'));
+      226 | 		await page.click('button:has-text("Add Players")');
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:223:14
 
     Error Context: test-results/standings-Standings-Calcul-7c30a-ntry-rules-min-21-win-by-2-/error-context.md
 
@@ -1038,37 +672,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    56 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
-    [2m    - navigated to "http://localhost:4173/"[22m
-    [2m    - waiting for element to be visible, enabled and stable[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      270 | 			await page.fill('input[name="name"]', tournamentName);
-      271 | 			await page.fill('input[name="numRounds"]', '1');
-    > 272 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      272 | 			await page.click('button[type="submit"]');
       273 |
-      274 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 274 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       275 |
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:272:15
+      276 | 			// 11 players = 2×4p + 1×3p
+      277 | 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:274:15
 
     Error Context: test-results/standings-Standings-Calcul-a68b7-s-show-total-points-ranking/error-context.md
 
@@ -1076,34 +694,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      302 | 			await page.fill('input[name="name"]', tournamentName);
-      303 | 			await page.fill('input[name="numRounds"]', '1');
-    > 304 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      304 | 			await page.click('button[type="submit"]');
       305 |
-      306 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 306 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       307 |
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:304:15
+      308 | 			// 21 players = 4×4p + 1×5p
+      309 | 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:306:15
 
     Error Context: test-results/standings-Standings-Calcul-6b1da-show-average-points-ranking/error-context.md
 
@@ -1111,34 +716,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      334 | 			await page.fill('input[name="name"]', tournamentName);
-      335 | 			await page.fill('input[name="numRounds"]', '1');
-    > 336 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      336 | 			await page.click('button[type="submit"]');
       337 |
-      338 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 338 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       339 |
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:336:15
+      340 | 			// 22 players = 4×4p + 1×6p
+      341 | 			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:338:15
 
     Error Context: test-results/standings-Standings-Calcul-565f3-show-average-points-ranking/error-context.md
 
@@ -1146,34 +738,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      366 | 			await page.fill('input[name="name"]', tournamentName);
-      367 | 			await page.fill('input[name="numRounds"]', '1');
-    > 368 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      368 | 			await page.click('button[type="submit"]');
       369 |
-      370 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 370 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       371 |
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:368:15
+      372 | 			// 21 players = 4×4p + 1×5p
+      373 | 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:370:15
 
     Error Context: test-results/standings-Standings-Calcul-5a98f-urt-accepts-15-point-scores/error-context.md
 
@@ -1181,34 +760,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      403 | 			await page.fill('input[name="name"]', tournamentName);
-      404 | 			await page.fill('input[name="numRounds"]', '1');
-    > 405 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      405 | 			await page.click('button[type="submit"]');
       406 |
-      407 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 407 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       408 |
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:405:15
+      409 | 			// 11 players = 2×4p + 1×3p
+      410 | 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:407:15
 
     Error Context: test-results/standings-Standings-Calcul-ccfbc-21-point-scores-same-as-4p-/error-context.md
 
@@ -1216,37 +782,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    56 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
-    [2m    - navigated to "http://localhost:4173/"[22m
-    [2m    - waiting for element to be visible, enabled and stable[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      78 | 		await page.fill('input[name="name"]', tournamentName);
-      79 | 		await page.fill('input[name="numRounds"]', '2');
-    > 80 | 		await page.click('button[type="submit"]');
-         | 		           ^
       81 |
       82 | 		// 2. Add 16 players
-      83 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:80:14
+    > 83 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+         | 		           ^
+      84 | 		const players = [
+      85 | 			'Alice',
+      86 | 			'Bob',
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:83:14
 
     Error Context: test-results/tournament-Tournament-Inte-59e69-tournament-with-score-entry/error-context.md
 
@@ -1254,34 +804,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      236 | 		await page.click('text=+ New Tournament');
-      237 | 		await page.fill('input[name="name"]', tournamentName);
-    > 238 | 		await page.click('button[type="submit"]');
-          | 		           ^
+      238 | 		await page.click('button[type="submit"]');
       239 |
-      240 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 240 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 		           ^
       241 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:238:14
+      242 | 		await page.fill('textarea[name="names"]', players.join('\n'));
+      243 | 		await page.click('button:has-text("Add Players")');
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:240:14
 
     Error Context: test-results/tournament-Tournament-Inte-d59a0-ia-direct-URL-without-login/error-context.md
 
@@ -1289,34 +826,22 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      294 | 		await page.click('text=+ New Tournament');
-      295 | 		await page.fill('input[name="name"]', activeTournamentName);
-    > 296 | 		await page.click('button[type="submit"]');
-          | 		           ^
+      296 | 		await page.click('button[type="submit"]');
       297 |
-      298 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 298 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 		           ^
       299 | 		const players1 = Array.from({ length: 16 }, (_, i) => `A${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:296:14
+      300 | 		await page.fill('textarea[name="names"]', players1.join('\n'));
+      301 | 		await page.click('button:has-text("Add Players")');
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:298:14
 
     Error Context: test-results/tournament-Tournament-Inte-9b43c-naments-in-correct-sections/error-context.md
 
@@ -1324,34 +849,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      343 | 		await page.click('text=+ New Tournament');
-      344 | 		await page.fill('input[name="name"]', tournamentName);
-    > 345 | 		await page.click('button[type="submit"]');
-          | 		           ^
+      345 | 		await page.click('button[type="submit"]');
       346 |
-      347 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 347 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 		           ^
       348 |
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:345:14
+      349 | 		// Test comma-separated paste
+      350 | 		const commaSeparated = 'Alice, Bob, Carol, David, Eve, Frank, Grace, Henry';
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:347:14
 
     Error Context: test-results/tournament-Tournament-Inte-6633c-ma-separated-names-to-lines/error-context.md
 
@@ -1359,33 +871,19 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+    ============================================================
 
-
-      407 | 		test('duration estimate updates based on scoring mode', async ({ page }) => {
-      408 | 			await page.click('text=+ New Tournament');
-    > 409 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      409 | 			await page.click('button[type="submit"]');
       410 |
-      411 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 411 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       412 |
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:409:15
+      413 | 			// Add 16 players to trigger duration estimate
+      414 | 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:411:15
 
     Error Context: test-results/tournament-Tournament-Inte-edc8d-dates-based-on-scoring-mode/error-context.md
 
@@ -1393,37 +891,21 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    56 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
-    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
-    [2m    - navigated to "http://localhost:4173/"[22m
-    [2m    - waiting for element to be visible, enabled and stable[22m
-    [2m  - element was detached from the DOM, retrying[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+      navigated to "http://localhost:4173/"
+      navigated to "http://localhost:4173/"
+    ============================================================
 
-
-      427 | 			await page.fill('input[name="name"]', tournamentName);
-      428 | 			await page.fill('input[name="numRounds"]', '1');
-    > 429 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      429 | 			await page.click('button[type="submit"]');
       430 |
-      431 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 431 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       432 |
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:429:15
+      433 | 			// 21 players = 4×4p + 1×5p
+      434 | 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:431:15
 
     Error Context: test-results/tournament-Tournament-Inte-f5590-15-point-scoring-by-default/error-context.md
 
@@ -1431,33 +913,19 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+    ============================================================
 
-
-      451 | 		test('shows virtual court info when physical courts < virtual courts', async ({ page }) => {
-      452 | 			await page.click('text=+ New Tournament');
-    > 453 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      453 | 			await page.click('button[type="submit"]');
       454 |
-      455 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 455 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       456 |
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:453:15
+      457 | 			// Add 32 players (8 virtual courts)
+      458 | 			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:455:15
 
     Error Context: test-results/tournament-Tournament-Inte-83b81-sical-courts-virtual-courts/error-context.md
 
@@ -1465,33 +933,19 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+    ============================================================
 
-
-      469 | 		test('physical courts slider ranges from 1 to 16', async ({ page }) => {
-      470 | 			await page.click('text=+ New Tournament');
-    > 471 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      471 | 			await page.click('button[type="submit"]');
       472 |
-      473 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 473 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       474 |
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:471:15
+      475 | 			const slider = page.locator('input[name="physicalCourts"]');
+      476 | 			await expect(slider).toHaveAttribute('min', '1');
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:473:15
 
     Error Context: test-results/tournament-Tournament-Inte-22a33--slider-ranges-from-1-to-16/error-context.md
 
@@ -1499,33 +953,19 @@ Running 42 tests using 1 worker
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.click: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button[type="submit"]')[22m
-    [2m    - locator resolved to <button disabled type="submit" class="btn-primary svelte-1h1bjzz">Create Tournament</button>[22m
-    [2m  - attempting click action[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m    - waiting 20ms[22m
-    [2m    2 × waiting for element to be visible, enabled and stable[22m
-    [2m      - element is not enabled[22m
-    [2m    - retrying click action[22m
-    [2m      - waiting 100ms[22m
-    [2m    57 × waiting for element to be visible, enabled and stable[22m
-    [2m       - element is not enabled[22m
-    [2m     - retrying click action[22m
-    [2m       - waiting 500ms[22m
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+    ============================================================
 
-
-      480 | 		test('duration estimate accounts for physical court shifts', async ({ page }) => {
-      481 | 			await page.click('text=+ New Tournament');
-    > 482 | 			await page.click('button[type="submit"]');
-          | 			           ^
+      482 | 			await page.click('button[type="submit"]');
       483 |
-      484 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 484 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+          | 			           ^
       485 |
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:482:15
+      486 | 			// Add 32 players (8 virtual courts)
+      487 | 			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:484:15
 
     Error Context: test-results/tournament-Tournament-Inte-d5ea7-s-for-physical-court-shifts/error-context.md
 
@@ -1572,4 +1012,5 @@ Running 42 tests using 1 worker
     e2e/tournament.spec.ts:451:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › shows virtual court info when physical courts < virtual courts 
     e2e/tournament.spec.ts:469:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › physical courts slider ranges from 1 to 16 
     e2e/tournament.spec.ts:480:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › duration estimate accounts for physical court shifts 
+  9 passed (22.4m)
 error: script "playwright" exited with code 1

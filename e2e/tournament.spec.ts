@@ -73,14 +73,10 @@ test.describe('Tournament Integration Tests', () => {
 		const tournamentName = `Integration Test Tournament ${Date.now()}`;
 		testTournamentNames.push(tournamentName);
 
-		// 1. Create tournament
+		// 1. Create tournament with players
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		await page.fill('input[name="numRounds"]', '2');
-		await page.click('button[type="submit"]');
-
-		// 2. Add 16 players
-		await page.waitForURL(/\/tournament\/\d+\/players/);
 		const players = [
 			'Alice',
 			'Bob',
@@ -100,6 +96,10 @@ test.describe('Tournament Integration Tests', () => {
 			'Paul'
 		];
 		await page.fill('textarea[name="names"]', players.join('\n'));
+		await page.click('button[type="submit"]');
+
+		// 2. Add players and start
+		await page.waitForURL(/\/tournament\/\d+\/players/);
 		await page.click('button:has-text("Add Players")');
 
 		// 3. Start tournament
@@ -232,14 +232,14 @@ test.describe('Tournament Integration Tests', () => {
 		const tournamentName = `Public Access Test ${Date.now()}`;
 		testTournamentNames.push(tournamentName);
 
-		// Create tournament as logged-in user
+		// Create tournament with players
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
+		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+\/players/);
-		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button:has-text("Add Players")');
 		await page.click('button:has-text("Start Tournament")');
 		await page.waitForURL(/\/tournament\/\d+/);
@@ -290,25 +290,28 @@ test.describe('Tournament Integration Tests', () => {
 		const draftTournamentName = `Draft Tournament ${Date.now()}`;
 		testTournamentNames.push(activeTournamentName, draftTournamentName);
 
-		// Create active tournament
+		// Create active tournament with players
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', activeTournamentName);
+		const players1 = Array.from({ length: 16 }, (_, i) => `A${i + 1}`);
+		await page.fill('textarea[name="names"]', players1.join('\n'));
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+\/players/);
-		const players1 = Array.from({ length: 16 }, (_, i) => `A${i + 1}`);
-		await page.fill('textarea[name="names"]', players1.join('\n'));
 		await page.click('button:has-text("Add Players")');
 		await page.click('button:has-text("Start Tournament")');
 
 		// Go back to dashboard
 		await page.goto('/');
 
-		// Create draft tournament
+		// Create draft tournament (no players added)
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', draftTournamentName);
+		// Enter minimum players so form can submit, but don't add them on next page
+		const players2 = Array.from({ length: 8 }, (_, i) => `D${i + 1}`);
+		await page.fill('textarea[name="names"]', players2.join('\n'));
 		await page.click('button[type="submit"]');
-		// Don't add players - leave it in draft
+		// Don't click "Add Players" - leave it in draft
 
 		// Go back to dashboard
 		await page.goto('/');
@@ -342,9 +345,6 @@ test.describe('Tournament Integration Tests', () => {
 
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.click('button[type="submit"]');
-
-		await page.waitForURL(/\/tournament\/\d+\/players/);
 
 		// Test comma-separated paste
 		const commaSeparated = 'Alice, Bob, Carol, David, Eve, Frank, Grace, Henry';
@@ -406,9 +406,6 @@ test.describe('Tournament Integration Tests', () => {
 
 		test('duration estimate updates based on scoring mode', async ({ page }) => {
 			await page.click('text=+ New Tournament');
-			await page.click('button[type="submit"]');
-
-			await page.waitForURL(/\/tournament\/\d+\/players/);
 
 			// Add 16 players to trigger duration estimate
 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
@@ -426,13 +423,14 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
+
+			// Enter 21 players on the create page
+			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+\/players/);
-
-			// 21 players = 4×4p + 1×5p
-			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
-			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button:has-text("Add Players")');
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
@@ -450,9 +448,6 @@ test.describe('Tournament Integration Tests', () => {
 	test.describe('Virtual Courts (Physical < Virtual)', () => {
 		test('shows virtual court info when physical courts < virtual courts', async ({ page }) => {
 			await page.click('text=+ New Tournament');
-			await page.click('button[type="submit"]');
-
-			await page.waitForURL(/\/tournament\/\d+\/players/);
 
 			// Add 32 players (8 virtual courts)
 			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
@@ -468,9 +463,6 @@ test.describe('Tournament Integration Tests', () => {
 
 		test('physical courts slider ranges from 1 to 16', async ({ page }) => {
 			await page.click('text=+ New Tournament');
-			await page.click('button[type="submit"]');
-
-			await page.waitForURL(/\/tournament\/\d+\/players/);
 
 			const slider = page.locator('input[name="physicalCourts"]');
 			await expect(slider).toHaveAttribute('min', '1');
@@ -479,9 +471,6 @@ test.describe('Tournament Integration Tests', () => {
 
 		test('duration estimate accounts for physical court shifts', async ({ page }) => {
 			await page.click('text=+ New Tournament');
-			await page.click('button[type="submit"]');
-
-			await page.waitForURL(/\/tournament\/\d+\/players/);
 
 			// Add 32 players (8 virtual courts)
 			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);

@@ -73,16 +73,17 @@ test.describe('Promotion and Relegation', () => {
 		const tournamentName = `Seeding Test ${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 		testTournamentNames.push(tournamentName);
 
-		// Create a 3-round tournament
+		// Create a 3-round tournament with players
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		await page.fill('input[name="numRounds"]', '3');
-		await page.click('button[type="submit"]');
 
 		// Add 16 players with predictable names
-		await page.waitForURL(/\/tournament\/\d+\/players/);
 		const players = Array.from({ length: 16 }, (_, i) => `Player${String(i + 1).padStart(2, '0')}`);
 		await page.fill('textarea[name="names"]', players.join('\n'));
+		await page.click('button[type="submit"]');
+
+		await page.waitForURL(/\/tournament\/\d+\/players/);
 		await page.click('button:has-text("Add Players")');
 		await page.click('button:has-text("Start Tournament")');
 		await page.waitForURL(/\/tournament\/\d+/);
@@ -178,16 +179,17 @@ test.describe('Promotion and Relegation', () => {
 		const tournamentName = `Close Round Test ${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 		testTournamentNames.push(tournamentName);
 
-		// Create tournament
+		// Create tournament with players
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		await page.fill('input[name="numRounds"]', '2');
-		await page.click('button[type="submit"]');
 
 		// Add 16 players
-		await page.waitForURL(/\/tournament\/\d+\/players/);
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 		await page.fill('textarea[name="names"]', players.join('\n'));
+		await page.click('button[type="submit"]');
+
+		await page.waitForURL(/\/tournament\/\d+\/players/);
 		await page.click('button:has-text("Add Players")');
 		await page.click('button:has-text("Start Tournament")');
 		await page.waitForURL(/\/tournament\/\d+/);
@@ -271,16 +273,17 @@ test.describe('Promotion and Relegation', () => {
 		const tournamentName = `Final Round Test ${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 		testTournamentNames.push(tournamentName);
 
-		// Create a 1-round tournament (ends after first round)
+		// Create a 1-round tournament (ends after first round) with players
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		await page.fill('input[name="numRounds"]', '1');
-		await page.click('button[type="submit"]');
 
 		// Add 16 players
-		await page.waitForURL(/\/tournament\/\d+\/players/);
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 		await page.fill('textarea[name="names"]', players.join('\n'));
+		await page.click('button[type="submit"]');
+
+		await page.waitForURL(/\/tournament\/\d+\/players/);
 		await page.click('button:has-text("Add Players")');
 		await page.click('button:has-text("Start Tournament")');
 		await page.waitForURL(/\/tournament\/\d+/);
@@ -343,16 +346,17 @@ test.describe('Promotion and Relegation', () => {
 		const tournamentName = `Player Count Test ${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 		testTournamentNames.push(tournamentName);
 
-		// Create a 3-round tournament
+		// Create a 3-round tournament with players
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		await page.fill('input[name="numRounds"]', '3');
-		await page.click('button[type="submit"]');
 
 		// Add 16 players
-		await page.waitForURL(/\/tournament\/\d+\/players/);
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 		await page.fill('textarea[name="names"]', players.join('\n'));
+		await page.click('button[type="submit"]');
+
+		await page.waitForURL(/\/tournament\/\d+\/players/);
 		await page.click('button:has-text("Add Players")');
 		await page.click('button:has-text("Start Tournament")');
 		await page.waitForURL(/\/tournament\/\d+/);
@@ -428,13 +432,14 @@ test.describe('Promotion and Relegation', () => {
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '2');
-			await page.click('button[type="submit"]');
-
-			await page.waitForURL(/\/tournament\/\d+\/players/);
 
 			// 11 players = 2×4p + 1×3p
 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
 			await page.click('button:has-text("Add Players")');
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
@@ -494,13 +499,14 @@ test.describe('Promotion and Relegation', () => {
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '2');
-			await page.click('button[type="submit"]');
-
-			await page.waitForURL(/\/tournament\/\d+\/players/);
 
 			// 21 players = 4×4p + 1×5p
 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
 			await page.click('button:has-text("Add Players")');
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
@@ -560,13 +566,14 @@ test.describe('Promotion and Relegation', () => {
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '2');
-			await page.click('button[type="submit"]');
-
-			await page.waitForURL(/\/tournament\/\d+\/players/);
 
 			// 22 players = 4×4p + 1×6p
 			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
 			await page.click('button:has-text("Add Players")');
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
