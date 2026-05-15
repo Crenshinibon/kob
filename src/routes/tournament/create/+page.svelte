@@ -408,7 +408,7 @@
 		<button
 			type="submit"
 			class="btn-primary"
-			disabled={computedPlayerCount < minPlayers || computedPlayerCount > maxPlayers}
+			disabled={computedPlayerCount > maxPlayers}
 		>
 			Create Tournament
 		</button>
