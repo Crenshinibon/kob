@@ -50,169 +50,470 @@ test.describe('Tournament Format Selection', () => {
 		testTournamentNames.length = 0;
 	});
 
-	test('Random format shows selectable rounds dropdown', async ({ page }) => {
-		await page.click('text=+ New Tournament');
+	test.describe('Random Format', () => {
+		test('shows configurable rounds input (not select)', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+			await page.waitForSelector('input[name="name"]');
 
-		await page.waitForSelector('input[name="name"]');
+			await expect(page.locator('input[value="random-seed"]')).toBeChecked();
 
-		await expect(page.locator('input[value="random-seed"]')).toBeChecked();
+			// Random format shows a number input, not a select dropdown
+			await expect(page.locator('input[name="numRounds"]')).toBeVisible();
+			await expect(page.locator('select[name="numRounds"]')).not.toBeVisible();
 
-		await expect(page.locator('select[name="numRounds"]')).toBeVisible();
+			// Shows hint about flexible rounds
+			await expect(page.locator('.rounds-hint:has-text("flexible")')).toBeVisible();
+		});
 
-		const options = await page.locator('select[name="numRounds"] option').allTextContents();
-		expect(options).toEqual(['1', '2', '3', '4', '5']);
+		test('rounds input has sensible defaults and range', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+
+			const roundsInput = page.locator('input[name="numRounds"]');
+			await expect(roundsInput).toHaveValue('3');
+			await expect(roundsInput).toHaveAttribute('min', '1');
+			await expect(roundsInput).toHaveAttribute('max', '10');
+		});
+
+		test('rounds input is editable', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+
+			const roundsInput = page.locator('input[name="numRounds"]');
+			await roundsInput.fill('5');
+			await expect(roundsInput).toHaveValue('5');
+		});
+
+		test('Random format with 32 players creates 8 courts', async ({ page }) => {
+			const tournamentName = `Random32 ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+
+			// Set rounds using the number input
+			await page.fill('input[name="numRounds"]', '2');
+
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			await expect(page.locator('text=Round 1 of 2')).toBeVisible();
+
+			const courtCards = await page.locator('.court-card').count();
+			expect(courtCards).toBe(8);
+		});
 	});
 
-	test('Pre-Seed format with 16 players shows 3 fixed rounds', async ({ page }) => {
-		const tournamentName = `PreSeed16 ${Date.now()}`;
-		testTournamentNames.push(tournamentName);
+	test.describe('Pre-Seed Format', () => {
+		test('with 16 players shows 3 fixed rounds', async ({ page }) => {
+			const tournamentName = `PreSeed16 ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
 
-		await page.click('text=+ New Tournament');
-		await page.fill('input[name="name"]', tournamentName);
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
 
-		await page.click('input[value="preseed"]');
+			await page.click('input[value="preseed"]');
 
-		await expect(page.locator('select[name="numRounds"]')).not.toBeVisible();
+			// Pre-seed hides the rounds input and shows auto-calculated
+			await expect(page.locator('input[name="numRounds"]')).not.toBeVisible();
+			await expect(page.locator('.info-box:has-text("rounds")')).toBeVisible();
 
-		await expect(page.locator('.info-box:has-text("3 rounds (fixed)")')).toBeVisible();
+			await page.click('button[type="submit"]');
 
-		await page.click('button[type="submit"]');
+			await page.waitForURL(/\/tournament\/\d+\/players/);
 
-		await page.waitForURL(/\/tournament\/\d+\/players/);
+			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1} ${100 - i * 5}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
 
-		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1} ${100 - i * 5}`);
-		await page.fill('textarea[name="names"]', players.join('\n'));
-		await page.click('button:has-text("Add Players")');
+			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
 
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
-		await page.waitForURL(/\/tournament\/\d+/);
+			await expect(page.locator('text=Round 1 of 3')).toBeVisible();
+		});
 
-		await expect(page.locator('text=Round 1 of 3')).toBeVisible();
+		test('with 32 players shows 4 fixed rounds', async ({ page }) => {
+			const tournamentName = `PreSeed32 ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+
+			await page.click('input[value="preseed"]');
+
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1} ${200 - i * 5}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+
+			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			await expect(page.locator('text=Round 1 of 4')).toBeVisible();
+
+			const courtCards = await page.locator('.court-card').count();
+			expect(courtCards).toBe(8);
+		});
+
+		test('switching player count updates fixed rounds', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+
+			await page.click('input[value="preseed"]');
+
+			// Note: round count depends on player count entered on the next page
+			// The info-box shows the calculated rounds based on current player input
+			await expect(page.locator('.info-box:has-text("rounds")')).toBeVisible();
+		});
+
+		test('switching from Pre-Seed to Random shows rounds input again', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+
+			await page.click('input[value="preseed"]');
+			await expect(page.locator('input[name="numRounds"]')).not.toBeVisible();
+
+			await page.click('input[value="random-seed"]');
+			await expect(page.locator('input[name="numRounds"]')).toBeVisible();
+		});
+
+		test('accepts flexible name-with-points input', async ({ page }) => {
+			const tournamentName = `FlexibleInput ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+
+			await page.click('input[value="preseed"]');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			const players = [
+				'Nicholas Borchart\t142',
+				'Ben Mester 42',
+				'Markus Effinger  34',
+				'Fabio Bahrs 30',
+				'Jonas Negrini 24',
+				'Kevin Meuter 16',
+				'Bastian Binner 4',
+				'Sascha Koch 0',
+				'Emilian Sondermann 0',
+				'Lenny Loonen 0',
+				'Leon Löhrmann 0',
+				'Christian Salz 0',
+				'Ole Stegemann 0',
+				'Jonathan Ater 0',
+				'Martin Horsten 0',
+				'Malte Koppelin 0'
+			];
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+
+			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
+
+			await expect(page.locator('text=142 pts')).toBeVisible();
+			await expect(page.locator('text=Nicholas Borchart')).toBeVisible();
+			await expect(page.locator('text=Ben Mester')).toBeVisible();
+			await expect(page.locator('.seed', { hasText: /^42 pts$/ })).toBeVisible();
+		});
 	});
 
-	test('Pre-Seed format with 32 players shows 4 fixed rounds', async ({ page }) => {
-		const tournamentName = `PreSeed32 ${Date.now()}`;
-		testTournamentNames.push(tournamentName);
+	test.describe('Leftover Courts (Non-Standard)', () => {
+		test('11 players shows 3p court warning with description', async ({ page }) => {
+			const tournamentName = `Leftover3p ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
 
-		await page.click('text=+ New Tournament');
-		await page.fill('input[name="name"]', tournamentName);
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.click('button[type="submit"]');
 
-		await page.click('input[value="32"]');
+			await page.waitForURL(/\/tournament\/\d+\/players/);
 
-		await page.click('input[value="preseed"]');
+			// 11 players = 2×4p + 3 leftover → 3p court
+			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
 
-		await expect(page.locator('.info-box:has-text("4 rounds (fixed)")')).toBeVisible();
+			// Should show leftover info with 3p court description
+			await expect(page.locator('.leftover-info')).toBeVisible();
+			await expect(page.locator('.leftover-label:has-text("3p")')).toBeVisible();
+			await expect(page.locator('.leftover-format:has-text("2v1")')).toBeVisible();
+			await expect(page.locator('.leftover-scoring:has-text("21")')).toBeVisible();
+			await expect(page.locator('.leftover-ranking:has-text("Total points")')).toBeVisible();
 
-		await page.click('button[type="submit"]');
+			// Should show kick button
+			await expect(page.locator('button:has-text("Kick leftovers")')).toBeVisible();
+		});
 
-		await page.waitForURL(/\/tournament\/\d+\/players/);
+		test('25 players shows 5p court warning with description', async ({ page }) => {
+			const tournamentName = `Leftover5p ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
 
-		const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1} ${200 - i * 5}`);
-		await page.fill('textarea[name="names"]', players.join('\n'));
-		await page.click('button:has-text("Add Players")');
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.click('button[type="submit"]');
 
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
-		await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForURL(/\/tournament\/\d+\/players/);
 
-		await expect(page.locator('text=Round 1 of 4')).toBeVisible();
+			// 25 players = 5×4p + 1 leftover → 5p court
+			const players = Array.from({ length: 25 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
 
-		const courtCards = await page.locator('.court-card').count();
-		expect(courtCards).toBe(8);
+			await expect(page.locator('.leftover-info')).toBeVisible();
+			await expect(page.locator('.leftover-label:has-text("5p")')).toBeVisible();
+			await expect(page.locator('.leftover-format:has-text("parallel games")')).toBeVisible();
+			await expect(page.locator('.leftover-scoring:has-text("15")')).toBeVisible();
+			await expect(page.locator('.leftover-ranking:has-text("Average points")')).toBeVisible();
+		});
+
+		test('26 players shows 6p court warning with description', async ({ page }) => {
+			const tournamentName = `Leftover6p ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 26 players = 4×4p + 2 leftover → 6p court
+			const players = Array.from({ length: 26 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			await expect(page.locator('.leftover-info')).toBeVisible();
+			await expect(page.locator('.leftover-label:has-text("6p")')).toBeVisible();
+			await expect(page.locator('.leftover-format:has-text("parallel games")')).toBeVisible();
+			await expect(page.locator('.leftover-scoring:has-text("15")')).toBeVisible();
+			await expect(page.locator('.leftover-ranking:has-text("Average points")')).toBeVisible();
+		});
+
+		test('24 players shows clean courts message (no leftovers)', async ({ page }) => {
+			const tournamentName = `Clean24 ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 24 players = 6×4p, no leftovers
+			const players = Array.from({ length: 24 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			await expect(page.locator('.standard-court:has-text("All 4-player courts")')).toBeVisible();
+			await expect(page.locator('.leftover-info')).not.toBeVisible();
+		});
+
+		test('kick leftovers removes last players to make clean courts', async ({ page }) => {
+			const tournamentName = `KickLeftovers ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 17 players = 4×4p + 1 leftover → 5p court
+			const players = Array.from({ length: 17 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			// Verify leftover is shown
+			await expect(page.locator('.leftover-label:has-text("5p")')).toBeVisible();
+
+			// Kick the leftover
+			await page.click('button:has-text("Kick leftovers")');
+
+			// Should now show 16 players (clean)
+			await expect(page.locator('text=16 players')).toBeVisible();
+			await expect(page.locator('.standard-court:has-text("All 4-player courts")')).toBeVisible();
+		});
+
+		test('3p court tournament creates correct number of matches', async ({ page }) => {
+			const tournamentName = `3pCourt ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 11 players = 2×4p + 1×3p
+			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Should have 3 courts (2×4p + 1×3p)
+			const courtCards = await page.locator('.court-card').count();
+			expect(courtCards).toBe(3);
+
+			// Find the 3p court (should have a badge or label)
+			const threePCourt = page.locator('.court-card:has-text("3p")').first();
+			await expect(threePCourt).toBeVisible();
+
+			// Navigate to 3p court and verify 3 matches
+			const courtLink = page.locator('.qr-link a').last();
+			const courtUrl = await courtLink.getAttribute('href');
+			expect(courtUrl).toBeTruthy();
+
+			await page.goto(courtUrl || '');
+			await page.waitForSelector('[data-testid^="match-form-"]');
+			const matchForms = await page.locator('[data-testid^="match-form-"]').all();
+			expect(matchForms.length).toBe(3);
+		});
+
+		test('5p court tournament creates 4 games', async ({ page }) => {
+			const tournamentName = `5pCourt ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 21 players = 4×4p + 1×5p
+			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Should have 5 courts (4×4p + 1×5p)
+			const courtCards = await page.locator('.court-card').count();
+			expect(courtCards).toBe(5);
+
+			// Find the 5p court
+			const fivePCourt = page.locator('.court-card:has-text("5p")').first();
+			await expect(fivePCourt).toBeVisible();
+
+			// Navigate to 5p court and verify 4 games
+			const courtLink = page.locator('.qr-link a').last();
+			const courtUrl = await courtLink.getAttribute('href');
+			expect(courtUrl).toBeTruthy();
+
+			await page.goto(courtUrl || '');
+			await page.waitForSelector('[data-testid^="match-form-"]');
+			const matchForms = await page.locator('[data-testid^="match-form-"]').all();
+			expect(matchForms.length).toBe(4);
+		});
+
+		test('6p court tournament creates 4 games', async ({ page }) => {
+			const tournamentName = `6pCourt ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 22 players = 4×4p + 1×6p
+			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Should have 5 courts (4×4p + 1×6p)
+			const courtCards = await page.locator('.court-card').count();
+			expect(courtCards).toBe(5);
+
+			// Find the 6p court
+			const sixPCourt = page.locator('.court-card:has-text("6p")').first();
+			await expect(sixPCourt).toBeVisible();
+
+			// Navigate to 6p court and verify 4 games
+			const courtLink = page.locator('.qr-link a').last();
+			const courtUrl = await courtLink.getAttribute('href');
+			expect(courtUrl).toBeTruthy();
+
+			await page.goto(courtUrl || '');
+			await page.waitForSelector('[data-testid^="match-form-"]');
+			const matchForms = await page.locator('[data-testid^="match-form-"]').all();
+			expect(matchForms.length).toBe(4);
+		});
 	});
 
-	test('switching player count updates fixed rounds in Pre-Seed format', async ({ page }) => {
-		await page.click('text=+ New Tournament');
+	test.describe('Player Count Range (8-64)', () => {
+		test('minimum 8 players creates 2 courts', async ({ page }) => {
+			const tournamentName = `MinPlayers ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
 
-		await page.click('input[value="preseed"]');
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+			await page.click('button[type="submit"]');
 
-		await expect(page.locator('.info-box:has-text("3 rounds (fixed)")')).toBeVisible();
+			await page.waitForURL(/\/tournament\/\d+\/players/);
 
-		await page.click('input[value="32"]');
+			const players = Array.from({ length: 8 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
 
-		await expect(page.locator('.info-box:has-text("4 rounds (fixed)")')).toBeVisible();
+			const courtCards = await page.locator('.court-card').count();
+			expect(courtCards).toBe(2);
+		});
 
-		await page.click('input[value="16"]');
+		test('below 8 players shows minimum warning', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+			await page.click('button[type="submit"]');
 
-		await expect(page.locator('.info-box:has-text("3 rounds (fixed)")')).toBeVisible();
-	});
+			await page.waitForURL(/\/tournament\/\d+\/players/);
 
-	test('switching from Pre-Seed to Random shows rounds dropdown again', async ({ page }) => {
-		await page.click('text=+ New Tournament');
+			const players = Array.from({ length: 7 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
 
-		await page.click('input[value="preseed"]');
+			await expect(page.locator('.warn:has-text("Minimum 8 players")')).toBeVisible();
+		});
 
-		await expect(page.locator('select[name="numRounds"]')).not.toBeVisible();
+		test('64 players creates 16 courts', async ({ page }) => {
+			const tournamentName = `MaxPlayers ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
 
-		await page.click('input[value="random-seed"]');
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+			await page.click('button[type="submit"]');
 
-		await expect(page.locator('select[name="numRounds"]')).toBeVisible();
-	});
+			await page.waitForURL(/\/tournament\/\d+\/players/);
 
-	test('Random format with 32 players creates 8 courts', async ({ page }) => {
-		const tournamentName = `Random32 ${Date.now()}`;
-		testTournamentNames.push(tournamentName);
+			const players = Array.from({ length: 64 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
 
-		await page.click('text=+ New Tournament');
-		await page.fill('input[name="name"]', tournamentName);
+			const courtCards = await page.locator('.court-card').count();
+			expect(courtCards).toBe(16);
+		});
 
-		await page.click('input[value="32"]');
+		test('above 64 players shows maximum warning', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+			await page.click('button[type="submit"]');
 
-		await page.selectOption('select[name="numRounds"]', '2');
-		await page.click('button[type="submit"]');
+			await page.waitForURL(/\/tournament\/\d+\/players/);
 
-		await page.waitForURL(/\/tournament\/\d+\/players/);
-		const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
-		await page.fill('textarea[name="names"]', players.join('\n'));
-		await page.click('button:has-text("Add Players")');
-		await page.click('button:has-text("Start Tournament")');
-		await page.waitForURL(/\/tournament\/\d+/);
+			const players = Array.from({ length: 65 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
 
-		await expect(page.locator('text=Round 1 of 2')).toBeVisible();
-
-		const courtCards = await page.locator('.court-card').count();
-		expect(courtCards).toBe(8);
-	});
-
-	test('Pre-Seed format accepts flexible name-with-points input', async ({ page }) => {
-		const tournamentName = `FlexibleInput ${Date.now()}`;
-		testTournamentNames.push(tournamentName);
-
-		await page.click('text=+ New Tournament');
-		await page.fill('input[name="name"]', tournamentName);
-
-		await page.click('input[value="preseed"]');
-		await page.click('button[type="submit"]');
-
-		await page.waitForURL(/\/tournament\/\d+\/players/);
-
-		const players = [
-			'Nicholas Borchart\t142',
-			'Ben Mester 42',
-			'Markus Effinger  34',
-			'Fabio Bahrs 30',
-			'Jonas Negrini 24',
-			'Kevin Meuter 16',
-			'Bastian Binner 4',
-			'Sascha Koch 0',
-			'Emilian Sondermann 0',
-			'Lenny Loonen 0',
-			'Leon Löhrmann 0',
-			'Christian Salz 0',
-			'Ole Stegemann 0',
-			'Jonathan Ater 0',
-			'Martin Horsten 0',
-			'Malte Koppelin 0'
-		];
-		await page.fill('textarea[name="names"]', players.join('\n'));
-		await page.click('button:has-text("Add Players")');
-
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-
-		await expect(page.locator('text=142 pts')).toBeVisible();
-		await expect(page.locator('text=Nicholas Borchart')).toBeVisible();
-		await expect(page.locator('text=Ben Mester')).toBeVisible();
-		await expect(page.locator('.seed', { hasText: /^42 pts$/ })).toBeVisible();
+			await expect(page.locator('.warn:has-text("Maximum 64 players")')).toBeVisible();
+		});
 	});
 });

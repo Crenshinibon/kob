@@ -8,6 +8,7 @@ import { test, expect } from '@playwright/test';
  * 2. Round 2+ uses ladder system (2 up, 2 down)
  * 3. Players are correctly redistributed between courts
  * 4. Court assignments are maintained correctly across rounds
+ * 5. Non-standard courts (3p/5p/6p) handle redistribution correctly
  */
 
 test.describe('Promotion and Relegation', () => {
@@ -75,7 +76,7 @@ test.describe('Promotion and Relegation', () => {
 		// Create a 3-round tournament
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.selectOption('select[name="numRounds"]', '3');
+		await page.fill('input[name="numRounds"]', '3');
 		await page.click('button[type="submit"]');
 
 		// Add 16 players with predictable names
@@ -180,7 +181,7 @@ test.describe('Promotion and Relegation', () => {
 		// Create tournament
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.selectOption('select[name="numRounds"]', '2');
+		await page.fill('input[name="numRounds"]', '2');
 		await page.click('button[type="submit"]');
 
 		// Add 16 players
@@ -273,7 +274,7 @@ test.describe('Promotion and Relegation', () => {
 		// Create a 1-round tournament (ends after first round)
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.selectOption('select[name="numRounds"]', '1');
+		await page.fill('input[name="numRounds"]', '1');
 		await page.click('button[type="submit"]');
 
 		// Add 16 players
@@ -345,7 +346,7 @@ test.describe('Promotion and Relegation', () => {
 		// Create a 3-round tournament
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.selectOption('select[name="numRounds"]', '3');
+		await page.fill('input[name="numRounds"]', '3');
 		await page.click('button[type="submit"]');
 
 		// Add 16 players
@@ -417,5 +418,205 @@ test.describe('Promotion and Relegation', () => {
 			const playerCount = await page.locator('.standings tbody tr').count();
 			expect(playerCount).toBe(4);
 		}
+	});
+
+	test.describe('Non-Standard Court Redistribution', () => {
+		test('3p court maintains 3 players after redistribution', async ({ page }) => {
+			const tournamentName = `3pRedist ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '2');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 11 players = 2×4p + 1×3p
+			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Complete Round 1 on all courts
+			const courtLinksSel = await page.locator('.qr-link a').all();
+			const courtLinks: string[] = [];
+			for (const cl of courtLinksSel) {
+				const url = await cl.getAttribute('href');
+				if (url) courtLinks.push(url);
+			}
+
+			for (const courtUrl of courtLinks) {
+				await page.goto(courtUrl);
+				await page.waitForSelector('[data-testid^="match-form-"]');
+				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
+				const matchIds = await Promise.all(
+					matchForms.map(async (form) => {
+						const testId = await form.getAttribute('data-testid');
+						return testId?.replace('match-form-', '');
+					})
+				);
+
+				for (let i = 0; i < matchIds.length; i++) {
+					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');
+					await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '19');
+					await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
+				}
+				await page.waitForLoadState('networkidle');
+			}
+
+			// Close Round 1
+			const tournamentUrl = page.url();
+			const tournamentMatch = tournamentUrl.match(/\/tournament\/(\d+)/);
+			const tournamentId = tournamentMatch ? tournamentMatch[1] : null;
+			await page.goto(`/tournament/${tournamentId}`);
+			await page.waitForSelector('button:has-text("Close Round")');
+			await page.click('button:has-text("Close Round")');
+			await page.waitForTimeout(1000);
+
+			// Verify Round 2 started
+			await page.waitForSelector('text=Round 2 of 2');
+
+			// Check that 3p court still has 3 players
+			const threePCourtLink = page.locator('.qr-link a:has-text("3p")').first();
+			const threePCourtUrl = await threePCourtLink.getAttribute('href');
+			await page.goto(threePCourtUrl || '');
+			await page.waitForSelector('.standings tbody tr');
+			const playerCount = await page.locator('.standings tbody tr').count();
+			expect(playerCount).toBe(3);
+		});
+
+		test('5p court maintains 5 players after redistribution', async ({ page }) => {
+			const tournamentName = `5pRedist ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '2');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 21 players = 4×4p + 1×5p
+			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Complete Round 1 on all courts
+			const courtLinksSel = await page.locator('.qr-link a').all();
+			const courtLinks: string[] = [];
+			for (const cl of courtLinksSel) {
+				const url = await cl.getAttribute('href');
+				if (url) courtLinks.push(url);
+			}
+
+			for (const courtUrl of courtLinks) {
+				await page.goto(courtUrl);
+				await page.waitForSelector('[data-testid^="match-form-"]');
+				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
+				const matchIds = await Promise.all(
+					matchForms.map(async (form) => {
+						const testId = await form.getAttribute('data-testid');
+						return testId?.replace('match-form-', '');
+					})
+				);
+
+				for (let i = 0; i < matchIds.length; i++) {
+					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '15');
+					await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '13');
+					await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
+				}
+				await page.waitForLoadState('networkidle');
+			}
+
+			// Close Round 1
+			const tournamentUrl = page.url();
+			const tournamentMatch = tournamentUrl.match(/\/tournament\/(\d+)/);
+			const tournamentId = tournamentMatch ? tournamentMatch[1] : null;
+			await page.goto(`/tournament/${tournamentId}`);
+			await page.waitForSelector('button:has-text("Close Round")');
+			await page.click('button:has-text("Close Round")');
+			await page.waitForTimeout(1000);
+
+			// Verify Round 2 started
+			await page.waitForSelector('text=Round 2 of 2');
+
+			// Check that 5p court still has 5 players
+			const fivePCourtLink = page.locator('.qr-link a:has-text("5p")').first();
+			const fivePCourtUrl = await fivePCourtLink.getAttribute('href');
+			await page.goto(fivePCourtUrl || '');
+			await page.waitForSelector('.standings tbody tr');
+			const playerCount = await page.locator('.standings tbody tr').count();
+			expect(playerCount).toBe(5);
+		});
+
+		test('6p court maintains 6 players after redistribution', async ({ page }) => {
+			const tournamentName = `6pRedist ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '2');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 22 players = 4×4p + 1×6p
+			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Complete Round 1 on all courts
+			const courtLinksSel = await page.locator('.qr-link a').all();
+			const courtLinks: string[] = [];
+			for (const cl of courtLinksSel) {
+				const url = await cl.getAttribute('href');
+				if (url) courtLinks.push(url);
+			}
+
+			for (const courtUrl of courtLinks) {
+				await page.goto(courtUrl);
+				await page.waitForSelector('[data-testid^="match-form-"]');
+				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
+				const matchIds = await Promise.all(
+					matchForms.map(async (form) => {
+						const testId = await form.getAttribute('data-testid');
+						return testId?.replace('match-form-', '');
+					})
+				);
+
+				for (let i = 0; i < matchIds.length; i++) {
+					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '15');
+					await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '13');
+					await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
+				}
+				await page.waitForLoadState('networkidle');
+			}
+
+			// Close Round 1
+			const tournamentUrl = page.url();
+			const tournamentMatch = tournamentUrl.match(/\/tournament\/(\d+)/);
+			const tournamentId = tournamentMatch ? tournamentMatch[1] : null;
+			await page.goto(`/tournament/${tournamentId}`);
+			await page.waitForSelector('button:has-text("Close Round")');
+			await page.click('button:has-text("Close Round")');
+			await page.waitForTimeout(1000);
+
+			// Verify Round 2 started
+			await page.waitForSelector('text=Round 2 of 2');
+
+			// Check that 6p court still has 6 players
+			const sixPCourtLink = page.locator('.qr-link a:has-text("6p")').first();
+			const sixPCourtUrl = await sixPCourtLink.getAttribute('href');
+			await page.goto(sixPCourtUrl || '');
+			await page.waitForSelector('.standings tbody tr');
+			const playerCount = await page.locator('.standings tbody tr').count();
+			expect(playerCount).toBe(6);
+		});
 	});
 });

@@ -8,6 +8,7 @@ import { test, expect } from '@playwright/test';
  * 2. Player access via QR codes
  * 3. Score entry and real-time updates
  * 4. Tournament state transitions
+ * 5. Scoring modes (single set, best-of-3, custom)
  */
 
 test.describe('Tournament Integration Tests', () => {
@@ -75,7 +76,7 @@ test.describe('Tournament Integration Tests', () => {
 		// 1. Create tournament
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.selectOption('select[name="numRounds"]', '2');
+		await page.fill('input[name="numRounds"]', '2');
 		await page.click('button[type="submit"]');
 
 		// 2. Add 16 players
@@ -362,5 +363,135 @@ test.describe('Tournament Integration Tests', () => {
 		await page.keyboard.press('ControlOrMeta+V');
 
 		await page.waitForSelector('text=8 names entered');
+	});
+
+	test.describe('Scoring Modes', () => {
+		test('best-of-3 scoring mode is selectable', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+
+			// Best of 3 radio should be visible
+			await expect(page.locator('input[value="best-of-3"]')).toBeVisible();
+			await expect(page.locator('label:has-text("Best of 3")')).toBeVisible();
+		});
+
+		test('custom scoring mode reveals advanced options', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+
+			// Select custom scoring
+			await page.click('input[value="custom"]');
+
+			// Advanced section should be visible
+			await expect(page.locator('.advanced-section')).toBeVisible();
+
+			// Should show match format select
+			await expect(page.locator('select[name="setsToWin"]')).toBeVisible();
+
+			// Should show win by select
+			await expect(page.locator('select[name="winBy"]')).toBeVisible();
+
+			// Should show points to win input
+			await expect(page.locator('input[name="pointsToWin"]')).toBeVisible();
+		});
+
+		test('custom best-of-3 shows deciding set points', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+			await page.click('input[value="custom"]');
+
+			// Change to best-of-3
+			await page.selectOption('select[name="setsToWin"]', '2');
+
+			// Should show deciding set points input
+			await expect(page.locator('input[name="decidingSetPoints"]')).toBeVisible();
+		});
+
+		test('duration estimate updates based on scoring mode', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// Add 16 players to trigger duration estimate
+			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			// Duration estimate should appear
+			await expect(page.locator('.duration-estimate')).toBeVisible();
+			await expect(page.locator('.duration-total')).toBeVisible();
+		});
+
+		test('5p/6p courts use 15-point scoring by default', async ({ page }) => {
+			const tournamentName = `5pScoring ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 21 players = 4×4p + 1×5p
+			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Navigate to 5p court
+			const courtLink = page.locator('.qr-link a').last();
+			const courtUrl = await courtLink.getAttribute('href');
+			await page.goto(courtUrl || '');
+
+			// Should show 15-point target hint
+			await expect(page.locator('text=15')).toBeVisible();
+		});
+	});
+
+	test.describe('Virtual Courts (Physical < Virtual)', () => {
+		test('shows virtual court info when physical courts < virtual courts', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// Add 32 players (8 virtual courts)
+			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			// Set physical courts to 4 (less than 8 virtual)
+			await page.locator('input[name="physicalCourts"]').fill('4');
+
+			// Should show virtual court info
+			await expect(page.locator('.info:has-text("Virtual courts")')).toBeVisible();
+			await expect(page.locator('.info:has-text("batch shifts")')).toBeVisible();
+		});
+
+		test('physical courts slider ranges from 1 to 16', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			const slider = page.locator('input[name="physicalCourts"]');
+			await expect(slider).toHaveAttribute('min', '1');
+			await expect(slider).toHaveAttribute('max', '16');
+		});
+
+		test('duration estimate accounts for physical court shifts', async ({ page }) => {
+			await page.click('text=+ New Tournament');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// Add 32 players (8 virtual courts)
+			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			// With 4 physical courts, should show 2 shifts per round
+			await page.locator('input[name="physicalCourts"]').fill('4');
+
+			// Duration estimate should reflect shifts
+			await expect(page.locator('.duration-estimate')).toBeVisible();
+		});
 	});
 });

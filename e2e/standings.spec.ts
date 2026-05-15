@@ -56,7 +56,7 @@ test.describe('Standings Calculation', () => {
 
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.selectOption('select[name="numRounds"]', '3');
+		await page.fill('input[name="numRounds"]', '3');
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+\/players/);
@@ -259,5 +259,177 @@ test.describe('Standings Calculation', () => {
 		await page.waitForSelector('.error');
 		const errorText3 = await page.locator('.error').textContent();
 		expect(errorText3).toContain('2');
+	});
+
+	test.describe('Non-Standard Court Standings', () => {
+		test('3p court standings show total points ranking', async ({ page }) => {
+			const tournamentName = `3pStandings ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 11 players = 2×4p + 1×3p
+			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Navigate to 3p court
+			const courtLink = page.locator('.qr-link a').last();
+			const courtUrl = await courtLink.getAttribute('href');
+			await page.goto(courtUrl || '');
+
+			// 3p court should have 3 players in standings
+			await page.waitForSelector('.standings tbody tr');
+			const playerCount = await page.locator('.standings tbody tr').count();
+			expect(playerCount).toBe(3);
+
+			// Should show total points column
+			await expect(page.locator('.standings th:has-text("Points")')).toBeVisible();
+		});
+
+		test('5p court standings show average points ranking', async ({ page }) => {
+			const tournamentName = `5pStandings ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 21 players = 4×4p + 1×5p
+			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Navigate to 5p court
+			const courtLink = page.locator('.qr-link a').last();
+			const courtUrl = await courtLink.getAttribute('href');
+			await page.goto(courtUrl || '');
+
+			// 5p court should have 5 players in standings
+			await page.waitForSelector('.standings tbody tr');
+			const playerCount = await page.locator('.standings tbody tr').count();
+			expect(playerCount).toBe(5);
+
+			// Should show average points column
+			await expect(page.locator('.standings th:has-text("Avg")')).toBeVisible();
+		});
+
+		test('6p court standings show average points ranking', async ({ page }) => {
+			const tournamentName = `6pStandings ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 22 players = 4×4p + 1×6p
+			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Navigate to 6p court
+			const courtLink = page.locator('.qr-link a').last();
+			const courtUrl = await courtLink.getAttribute('href');
+			await page.goto(courtUrl || '');
+
+			// 6p court should have 6 players in standings
+			await page.waitForSelector('.standings tbody tr');
+			const playerCount = await page.locator('.standings tbody tr').count();
+			expect(playerCount).toBe(6);
+
+			// Should show average points column
+			await expect(page.locator('.standings th:has-text("Avg")')).toBeVisible();
+		});
+
+		test('5p court accepts 15-point scores', async ({ page }) => {
+			const tournamentName = `5pScore ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 21 players = 4×4p + 1×5p
+			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Navigate to 5p court
+			const courtLink = page.locator('.qr-link a').last();
+			const courtUrl = await courtLink.getAttribute('href');
+			await page.goto(courtUrl || '');
+
+			// Enter a valid 15-point score
+			await page.waitForSelector('[data-testid^="match-form-"]');
+			const firstMatchForm = page.locator('[data-testid^="match-form-"]').first();
+			const testId = await firstMatchForm.getAttribute('data-testid');
+			const matchId = testId?.replace('match-form-', '');
+
+			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '15');
+			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '13');
+			await page.click(`[data-testid="save-score-${matchId}"]`);
+
+			// Should save successfully
+			await page.waitForSelector('.saved');
+		});
+
+		test('3p court accepts 21-point scores (same as 4p)', async ({ page }) => {
+			const tournamentName = `3pScore ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+			// 11 players = 2×4p + 1×3p
+			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button:has-text("Add Players")');
+			await page.click('button:has-text("Start Tournament")');
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Navigate to 3p court
+			const courtLink = page.locator('.qr-link a').last();
+			const courtUrl = await courtLink.getAttribute('href');
+			await page.goto(courtUrl || '');
+
+			// Enter a valid 21-point score
+			await page.waitForSelector('[data-testid^="match-form-"]');
+			const firstMatchForm = page.locator('[data-testid^="match-form-"]').first();
+			const testId = await firstMatchForm.getAttribute('data-testid');
+			const matchId = testId?.replace('match-form-', '');
+
+			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
+			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
+			await page.click(`[data-testid="save-score-${matchId}"]`);
+
+			// Should save successfully
+			await page.waitForSelector('.saved');
+		});
 	});
 });
