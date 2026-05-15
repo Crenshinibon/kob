@@ -1,5 +1,7 @@
 # KoB Tracker
 
+Trigger
+
 A mobile-first web application for managing King of the Beach beach volleyball tournaments with 4-8 courts and 16-32 players.
 
 ## What is KoB?
