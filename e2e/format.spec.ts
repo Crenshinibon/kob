@@ -92,7 +92,6 @@ test.describe('Tournament Format Selection', () => {
       // Set rounds using the number input
       await page.locator('#numRounds').fill('2');
 
-
       // Enter players on the create page
       const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
       await page.fill('textarea[name="names"]', players.join('\n'));
