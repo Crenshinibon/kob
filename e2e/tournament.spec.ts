@@ -98,11 +98,9 @@ test.describe('Tournament Integration Tests', () => {
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 
-		// 2. Add players and start
-		await page.waitForURL(/\/tournament\/\d+\/players/);
-		await page.click('button:has-text("Add Players")');
-
-		// 3. Start tournament
+		// 2. Start tournament
+		await page.waitForURL(/\/tournament\/\d+/);
+		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
 		await page.click('button:has-text("Start Tournament")');
 		await page.waitForURL(/\/tournament\/\d+/);
 
@@ -239,8 +237,8 @@ test.describe('Tournament Integration Tests', () => {
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 
-		await page.waitForURL(/\/tournament\/\d+\/players/);
-		await page.click('button:has-text("Add Players")');
+		await page.waitForURL(/\/tournament\/\d+/);
+		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
 		await page.click('button:has-text("Start Tournament")');
 		await page.waitForURL(/\/tournament\/\d+/);
 
@@ -297,8 +295,8 @@ test.describe('Tournament Integration Tests', () => {
 		await page.fill('textarea[name="names"]', players1.join('\n'));
 		await page.click('button[type="submit"]');
 
-		await page.waitForURL(/\/tournament\/\d+\/players/);
-		await page.click('button:has-text("Add Players")');
+		await page.waitForURL(/\/tournament\/\d+/);
+		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
 		await page.click('button:has-text("Start Tournament")');
 
 		// Go back to dashboard
@@ -307,11 +305,11 @@ test.describe('Tournament Integration Tests', () => {
 		// Create draft tournament (no players added)
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', draftTournamentName);
-		// Enter minimum players so form can submit, but don't add them on next page
+		// Enter minimum players so form can submit, but don't start it
 		const players2 = Array.from({ length: 8 }, (_, i) => `D${i + 1}`);
 		await page.fill('textarea[name="names"]', players2.join('\n'));
 		await page.click('button[type="submit"]');
-		// Don't click "Add Players" - leave it in draft
+		// Don't click "Start Tournament" - leave it in draft
 
 		// Go back to dashboard
 		await page.goto('/');
@@ -430,8 +428,8 @@ test.describe('Tournament Integration Tests', () => {
 
 			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-			await page.click('button:has-text("Add Players")');
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
 

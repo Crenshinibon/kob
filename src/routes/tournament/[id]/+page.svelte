@@ -1,8 +1,9 @@
 <script lang="ts">
 	import QRCode from 'qrcode';
 	import { browser } from '$app/environment';
+	import { getTournamentDataLive } from './tournament-data.remote';
 
-	let { data } = $props<{
+	let { data, form } = $props<{
 		data: {
 			tournament: any;
 			courts: any[];
@@ -13,8 +14,56 @@
 			physicalCourtCount: number;
 			shifts?: number[][];
 			roundDuration?: number;
+			currentPlayerCount: number;
 		};
+		form?: { error?: string; success?: string };
 	}>();
+
+	let playerNames = $state('');
+	let playerCount = $derived(playerNames.split('\n').filter((n) => n.trim()).length);
+	let textareaEl: HTMLTextAreaElement | undefined = $state();
+
+	const maxPlayers = $derived(data.tournament.playerCount);
+	const isPreseed = $derived(data.tournament.formatType === 'preseed');
+	const playersReady = $derived(data.currentPlayerCount >= maxPlayers);
+
+	// Live query for auto-refresh when tournament is active
+	const liveQuery = $derived(
+		browser && data.tournament.status === 'active'
+			? getTournamentDataLive(data.tournament.id)
+			: null
+	);
+	const liveData = $derived(liveQuery ? await liveQuery : null);
+
+	// Use live data if available, otherwise fall back to initial data
+	const effectiveData = $derived(liveData && !liveData.error ? liveData : data);
+
+	function handlePaste(e: ClipboardEvent) {
+		const pastedText = e.clipboardData?.getData('text') || '';
+
+		if (textareaEl && (pastedText.includes(',') || pastedText.includes(';'))) {
+			e.preventDefault();
+
+			const names = pastedText
+				.split(/[,;]+/)
+				.map((n) => n.trim())
+				.filter((n) => n.length > 0);
+
+			const formattedNames = names.join('\n');
+
+			const start = textareaEl.selectionStart;
+			const end = textareaEl.selectionEnd;
+			const before = playerNames.substring(0, start);
+			const after = playerNames.substring(end);
+
+			playerNames = before + formattedNames + (after ? '\n' + after : '');
+
+			setTimeout(() => {
+				if (textareaEl)
+					textareaEl.selectionStart = textareaEl.selectionEnd = start + formattedNames.length;
+			}, 0);
+		}
+	}
 
 	function getMatchStatus(matches: any[]) {
 		const completed = matches.filter((m) => m.teamAScore !== null).length;
@@ -48,28 +97,28 @@
 		}
 	}
 
-	const gridClass = $derived(data.courts.length > 4 ? 'courts courts-8' : 'courts');
+	const gridClass = $derived(effectiveData.courts.length > 4 ? 'courts courts-8' : 'courts');
 	const totalPlayers = $derived(
-		data.courts.reduce((sum: number, c: any) => sum + c.players.length, 0)
+		effectiveData.courts.reduce((sum: number, c: any) => sum + c.players.length, 0)
 	);
-	const expectedPlayers = $derived(data.courtSizes.reduce((sum: number, s: number) => sum + s, 0));
-	const isWaiting = $derived(totalPlayers < expectedPlayers && data.currentRound === 0);
-	const virtualCourtCount = $derived(data.courtSizes.length);
-	const showScheduling = $derived(data.tournament.status === 'active');
+	const expectedPlayers = $derived(effectiveData.courtSizes.reduce((sum: number, s: number) => sum + s, 0));
+	const isWaiting = $derived(totalPlayers < expectedPlayers && effectiveData.currentRound === 0);
+	const virtualCourtCount = $derived(effectiveData.courtSizes.length);
+	const showScheduling = $derived(effectiveData.tournament.status === 'active');
 </script>
 
 <main>
 	<header>
 		<a href="/">← Dashboard</a>
-		<h1>{data.tournament.name}</h1>
-		{#if data.tournament.status === 'draft'}
+		<h1>{effectiveData.tournament.name}</h1>
+		{#if effectiveData.tournament.status === 'draft'}
 			<p class="status-draft">Draft — waiting for players</p>
-		{:else if data.tournament.status === 'active'}
-			<p>Round {data.currentRound} of {data.tournament.numRounds}</p>
+		{:else if effectiveData.tournament.status === 'active'}
+			<p>Round {effectiveData.currentRound} of {effectiveData.tournament.numRounds}</p>
 		{:else}
 			<p class="status-completed">Completed</p>
 		{/if}
-		<a href="/tournament/{data.tournament.id}/standings" class="standings-link">📊 View Standings</a
+		<a href="/tournament/{effectiveData.tournament.id}/standings" class="standings-link">📊 View Standings</a
 		>
 	</header>
 
@@ -82,26 +131,94 @@
 		</div>
 	{/if}
 
-	{#if showScheduling && data.currentRound > 0}
+	{#if effectiveData.tournament.status === 'draft'}
+		{#if form?.error}
+			<div class="error">{form.error}</div>
+		{/if}
+
+		{#if form?.success}
+			<div class="success">{form.success}</div>
+		{/if}
+
+		<section class="current-players">
+			<h2>Current Players ({effectiveData.currentPlayerCount}/{maxPlayers})</h2>
+			{#if effectiveData.currentPlayerCount > 0}
+				<ul class="player-list">
+					{#each effectiveData.courts.length > 0 ? [] : Array.from({ length: effectiveData.currentPlayerCount }, (_, i) => i) as _}
+						<!-- Players will be shown after tournament starts -->
+					{/each}
+				</ul>
+				<p class="player-count-info">{effectiveData.currentPlayerCount} player{effectiveData.currentPlayerCount !== 1 ? 's' : ''} registered</p>
+			{:else}
+				<p class="empty">No players added yet.</p>
+			{/if}
+		</section>
+
+		{#if !playersReady}
+			<form method="POST" action="?/addPlayers">
+				<div class="field">
+					{#if isPreseed}
+						<label for="names"
+							>Player Names with Points (Name followed by points - one per line)</label
+						>
+						<textarea
+							id="names"
+							name="names"
+							bind:this={textareaEl}
+							bind:value={playerNames}
+							onpaste={handlePaste}
+							rows="10"
+							placeholder="Alice 1250..."
+						></textarea>
+						<p class="count">{playerCount} names entered</p>
+						<p class="hint">Format: Player Name Points (e.g., "Alice 1250" or "Carol Chen 1150")</p>
+					{:else}
+						<label for="names">Player Names (one per line)</label>
+						<textarea
+							id="names"
+							name="names"
+							bind:this={textareaEl}
+							bind:value={playerNames}
+							onpaste={handlePaste}
+							rows="10"
+							placeholder="Alice..."
+						></textarea>
+						<p class="count">{playerCount} names entered</p>
+					{/if}
+				</div>
+
+				<button type="submit" class="btn-primary">Add Players</button>
+			</form>
+		{:else}
+			<div class="ready">
+				<p>All {maxPlayers} players added!</p>
+				<form method="POST" action="?/start">
+					<button type="submit" class="btn-primary btn-large">Start Tournament</button>
+				</form>
+			</div>
+		{/if}
+	{/if}
+
+	{#if showScheduling && effectiveData.currentRound > 0}
 		<div class="scheduling-info">
-			<h3>Court Scheduling (Round {data.currentRound})</h3>
+			<h3>Court Scheduling (Round {effectiveData.currentRound})</h3>
 			<p>
-				Batch shifts · {data.physicalCourtCount} physical court{data.physicalCourtCount !== 1
+				Batch shifts · {effectiveData.physicalCourtCount} physical court{effectiveData.physicalCourtCount !== 1
 					? 's'
 					: ''}
 				· {virtualCourtCount} virtual court{virtualCourtCount !== 1 ? 's' : ''}
-				· {Math.ceil(virtualCourtCount / data.physicalCourtCount)} shift{Math.ceil(
-					virtualCourtCount / data.physicalCourtCount
+				· {Math.ceil(virtualCourtCount / effectiveData.physicalCourtCount)} shift{Math.ceil(
+					virtualCourtCount / effectiveData.physicalCourtCount
 				) !== 1
 					? 's'
 					: ''}
 			</p>
-			{#if data.roundDuration}
-				<p class="round-dur">Est. round duration: ~{data.roundDuration} min per shift</p>
+			{#if effectiveData.roundDuration}
+				<p class="round-dur">Est. round duration: ~{effectiveData.roundDuration} min per shift</p>
 			{/if}
-			{#if data.shifts && data.shifts.length > 1}
+			{#if effectiveData.shifts && effectiveData.shifts.length > 1}
 				<div class="shift-list">
-					{#each data.shifts as shift, si}
+					{#each effectiveData.shifts as shift, si}
 						<span class="shift-badge" class:active={si === 0}
 							>Shift {si + 1}: C{shift.join(', C')}</span
 						>
@@ -112,7 +229,7 @@
 	{/if}
 
 	<section class={gridClass}>
-		{#each data.courts as court (court.courtNumber)}
+		{#each effectiveData.courts as court (court.courtNumber)}
 			<div class="court-card">
 				<div class="court-header">
 					<h2>Court {court.courtNumber}</h2>
@@ -172,17 +289,17 @@
 	</section>
 
 	<section class="actions">
-		{#if data.canCloseRound}
+		{#if effectiveData.canCloseRound}
 			<form method="POST" action="?/closeRound">
 				<button type="submit" class="btn-primary">
-					{data.isFinalRound ? 'Finalize Tournament' : 'Close Round & Advance'}
+					{effectiveData.isFinalRound ? 'Finalize Tournament' : 'Close Round & Advance'}
 				</button>
 			</form>
-		{:else if data.tournament.status === 'active'}
+		{:else if effectiveData.tournament.status === 'active'}
 			<button disabled class="btn-primary btn-disabled"> ⏳ Waiting for all scores... </button>
 		{/if}
 
-		{#if data.tournament.status === 'draft'}
+		{#if effectiveData.tournament.status === 'draft'}
 			<form method="POST" action="?/startTournament" class="start-form">
 				<button
 					type="submit"
@@ -194,14 +311,14 @@
 			</form>
 		{/if}
 
-		{#if data.tournament.status !== 'completed'}
+		{#if effectiveData.tournament.status !== 'completed'}
 			<form method="POST" action="?/deleteTournament" class="delete-form">
 				<button type="submit" class="btn-danger" onclick={confirmDelete}>Delete</button>
 			</form>
 		{/if}
 	</section>
 
-	{#if data.tournament.status === 'active' && data.currentRound > 0}
+	{#if effectiveData.tournament.status === 'active' && effectiveData.currentRound > 0}
 		<section class="retire-section">
 			<details>
 				<summary class="btn-retire-header">Retire a Player</summary>
@@ -210,7 +327,7 @@
 						<label for="retirePlayerId">Select player to retire</label>
 						<select id="retirePlayerId" name="playerId" required>
 							<option value="">— Select player —</option>
-							{#each data.courts as court}
+							{#each effectiveData.courts as court}
 								{#each court.players as p}
 									<option value={p.id}>{p.name} (Court {court.courtNumber})</option>
 								{/each}

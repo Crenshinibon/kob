@@ -134,6 +134,6 @@ export const actions = {
       });
     }
 
-    throw redirect(302, `/tournament/${newTournament.id}/players`);
+    throw redirect(302, `/tournament/${newTournament.id}`);
   }
 };
