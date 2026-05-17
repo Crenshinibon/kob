@@ -275,8 +275,8 @@ test.describe('Standings Calculation', () => {
 
 			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-			await page.click('button:has-text("Add Players")');
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
 
@@ -308,8 +308,8 @@ test.describe('Standings Calculation', () => {
 
 			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-			await page.click('button:has-text("Add Players")');
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
 
@@ -341,8 +341,8 @@ test.describe('Standings Calculation', () => {
 
 			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-			await page.click('button:has-text("Add Players")');
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
 
@@ -374,8 +374,8 @@ test.describe('Standings Calculation', () => {
 
 			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-			await page.click('button:has-text("Add Players")');
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
 
@@ -412,8 +412,8 @@ test.describe('Standings Calculation', () => {
 
 			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+\/players/);
-			await page.click('button:has-text("Add Players")');
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
 			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
 

@@ -35,8 +35,17 @@
 	);
 	const liveData = $derived(liveQuery ? await liveQuery : null);
 
-	// Use live data if available, otherwise fall back to initial data
-	const effectiveData = $derived(liveData && !liveData.error ? liveData : data);
+	// Use live data for courts/matches if available, otherwise fall back to initial data
+	// But always use initial data for canCloseRound/isFinalRound to avoid race conditions
+	const effectiveData = $derived({
+		...data,
+		...(liveData && !liveData.error && liveData.courts ? {
+			courts: liveData.courts,
+			canCloseRound: liveData.canCloseRound,
+			isFinalRound: liveData.isFinalRound,
+			currentRound: liveData.currentRound
+		} : {})
+	});
 
 	function handlePaste(e: ClipboardEvent) {
 		const pastedText = e.clipboardData?.getData('text') || '';

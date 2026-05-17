@@ -220,7 +220,7 @@ test.describe('Tournament Format Selection', () => {
       await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
 
       // Verify tournament was created with correct player count
-      await expect(page.locator('text=16 players')).toBeVisible();
+      await expect(page.getByText('16 players registered', { exact: true })).toBeVisible();
     });
   });
 
@@ -303,6 +303,7 @@ test.describe('Tournament Format Selection', () => {
       testTournamentNames.push(tournamentName);
 
       await page.click('text=+ New Tournament');
+      await page.waitForSelector('input[name="name"]');
       await page.fill('input[name="name"]', tournamentName);
 
       // Enter 17 players on the create page
@@ -316,7 +317,7 @@ test.describe('Tournament Format Selection', () => {
       await page.click('button:has-text("Kick leftovers")');
 
       // Should now show 16 players (clean)
-      await expect(page.locator('text=16 players')).toBeVisible();
+      await expect(page.getByText('16 players detected')).toBeVisible();
       await expect(page.locator('.standard-court:has-text("All 4-player courts")')).toBeVisible();
     });
 

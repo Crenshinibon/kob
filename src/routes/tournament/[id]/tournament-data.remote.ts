@@ -56,7 +56,7 @@ async function fetchTournamentData(tournamentId: number) {
     const rotationIds = await db
       .select({ id: courtRotation.id })
       .from(courtRotation)
-      .where(eq(courtRotation.roundNumber, currentRound));
+      .where(and(eq(courtRotation.tournamentId, tournamentId), eq(courtRotation.roundNumber, currentRound)));
 
     const rotationIdList = rotationIds.map((r: any) => r.id);
 

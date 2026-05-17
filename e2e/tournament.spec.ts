@@ -342,6 +342,7 @@ test.describe('Tournament Integration Tests', () => {
 		testTournamentNames.push(tournamentName);
 
 		await page.click('text=+ New Tournament');
+		await page.waitForSelector('input[name="name"]');
 		await page.fill('input[name="name"]', tournamentName);
 
 		// Test comma-separated paste
