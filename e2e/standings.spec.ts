@@ -62,9 +62,6 @@ test.describe('Standings Calculation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
-		await page.waitForURL(/\/tournament\/\d+/);
 
 		const courtLink = await page.locator('.qr-link a').first();
 		const courtUrl = await courtLink.getAttribute('href');
@@ -98,9 +95,6 @@ test.describe('Standings Calculation', () => {
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 
-		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
 		await page.waitForURL(/\/tournament\/\d+/);
 
 		const courtLink = await page.locator('.qr-link a').first();
@@ -138,9 +132,6 @@ test.describe('Standings Calculation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
-		await page.waitForURL(/\/tournament\/\d+/);
 
 		const courtLink = await page.locator('.qr-link a').first();
 		const courtUrl = await courtLink.getAttribute('href');
@@ -171,9 +162,6 @@ test.describe('Standings Calculation', () => {
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 
-		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
 		await page.waitForURL(/\/tournament\/\d+/);
 
 		const courtLink = await page.locator('.qr-link a').first();
@@ -221,9 +209,6 @@ test.describe('Standings Calculation', () => {
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 
-		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
 		await page.waitForURL(/\/tournament\/\d+/);
 
 		const courtLink = await page.locator('.qr-link a').first();
@@ -276,9 +261,6 @@ test.describe('Standings Calculation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-			await page.click('button:has-text("Start Tournament")');
-			await page.waitForURL(/\/tournament\/\d+/);
 
 			// Navigate to 3p court
 			const courtLink = page.locator('.qr-link a').last();
@@ -308,9 +290,6 @@ test.describe('Standings Calculation', () => {
 
 			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
 
 			// Navigate to 5p court
@@ -342,9 +321,6 @@ test.describe('Standings Calculation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-			await page.click('button:has-text("Start Tournament")');
-			await page.waitForURL(/\/tournament\/\d+/);
 
 			// Navigate to 6p court
 			const courtLink = page.locator('.qr-link a').last();
@@ -374,9 +350,6 @@ test.describe('Standings Calculation', () => {
 
 			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
 
 			// Navigate to 5p court
@@ -412,9 +385,6 @@ test.describe('Standings Calculation', () => {
 
 			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
 
 			// Navigate to 3p court

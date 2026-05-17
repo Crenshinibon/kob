@@ -84,9 +84,6 @@ test.describe('Promotion and Relegation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
-		await page.waitForURL(/\/tournament\/\d+/);
 
 		// Capture tournament ID for later navigation
 		const tournamentUrl = page.url();
@@ -190,9 +187,6 @@ test.describe('Promotion and Relegation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
-		await page.waitForURL(/\/tournament\/\d+/);
 
 		// Capture tournament ID for later navigation
 		const tournamentUrl = page.url();
@@ -284,9 +278,6 @@ test.describe('Promotion and Relegation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
-		await page.waitForURL(/\/tournament\/\d+/);
 
 		// Capture tournament ID for later navigation
 		const tournamentUrl = page.url();
@@ -356,9 +347,6 @@ test.describe('Promotion and Relegation', () => {
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 
-		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
 		await page.waitForURL(/\/tournament\/\d+/);
 
 		// Capture tournament ID for later navigation
@@ -440,9 +428,6 @@ test.describe('Promotion and Relegation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-			await page.click('button:has-text("Start Tournament")');
-			await page.waitForURL(/\/tournament\/\d+/);
 
 			// Complete Round 1 on all courts
 			const courtLinksSel = await page.locator('.qr-link a').all();
@@ -507,9 +492,6 @@ test.describe('Promotion and Relegation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-			await page.click('button:has-text("Start Tournament")');
-			await page.waitForURL(/\/tournament\/\d+/);
 
 			// Complete Round 1 on all courts
 			const courtLinksSel = await page.locator('.qr-link a').all();
@@ -573,9 +555,6 @@ test.describe('Promotion and Relegation', () => {
 
 			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
 
 			// Complete Round 1 on all courts

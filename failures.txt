@@ -1,376 +1,288 @@
 $ playwright test --last-failed "--workers=1" "--reporter=list"
 
-Running 32 tests using 1 worker
+Running 16 tests using 1 worker
 
-[2m[WebServer] [22m[2m2026-05-17T19:05:47.902Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
-  ✓   1 e2e/format.spec.ts:68:5 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range (867ms)
-  ✓   2 e2e/format.spec.ts:114:5 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (3.6s)
-  ✓   3 e2e/format.spec.ts:141:5 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (4.9s)
-  ✘   4 e2e/format.spec.ts:187:5 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (2.1s)
-  ✘   5 e2e/format.spec.ts:301:5 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (30.9s)
-  ✓   6 e2e/format.spec.ts:323:5 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches (3.1s)
-  ✓   7 e2e/format.spec.ts:361:5 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games (3.5s)
-  ✓   8 e2e/format.spec.ts:399:5 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games (3.6s)
-  ✓   9 e2e/format.spec.ts:439:5 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts (2.4s)
-  ✓  10 e2e/format.spec.ts:473:5 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (6.3s)
-  ✘  11 e2e/promotion.spec.ts:71:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (30.7s)
-  ✘  12 e2e/promotion.spec.ts:177:2 › Promotion and Relegation › close round button is disabled until all matches complete (30.7s)
-  ✘  13 e2e/promotion.spec.ts:271:2 › Promotion and Relegation › final round completion marks tournament as completed (30.7s)
-  ✘  14 e2e/promotion.spec.ts:344:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution (30.7s)
-  ✘  15 e2e/promotion.spec.ts:428:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution (30.9s)
-  ✘  16 e2e/promotion.spec.ts:495:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court maintains 5 players after redistribution (30.9s)
-  ✘  17 e2e/promotion.spec.ts:562:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court maintains 6 players after redistribution (30.9s)
-  ✓  18 e2e/standings.spec.ts:53:2 › Standings Calculation › calculates correct points for all players in a match (4.4s)
-  ✓  19 e2e/standings.spec.ts:91:2 › Standings Calculation › sorts players by total points in descending order (4.2s)
-  ✓  20 e2e/standings.spec.ts:130:2 › Standings Calculation › breaks ties using point differential (4.2s)
-  ✓  21 e2e/standings.spec.ts:164:2 › Standings Calculation › awards points correctly across multiple matches per player (4.6s)
-  ✓  22 e2e/standings.spec.ts:214:2 › Standings Calculation › validates score entry rules (min 21, win by 2) (3.9s)
-  ✘  23 e2e/standings.spec.ts:264:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking (30.9s)
-  ✘  24 e2e/standings.spec.ts:297:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking (30.9s)
-  ✘  25 e2e/standings.spec.ts:330:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking (30.8s)
-  ✘  26 e2e/standings.spec.ts:363:3 › Standings Calculation › Non-Standard Court Standings › 5p court accepts 15-point scores (30.9s)
-  ✘  27 e2e/standings.spec.ts:401:3 › Standings Calculation › Non-Standard Court Standings › 3p court accepts 21-point scores (same as 4p) (30.9s)
-  ✘  28 e2e/tournament.spec.ts:71:2 › Tournament Integration Tests › complete 2-round tournament with score entry (30.7s)
-  ✓  29 e2e/tournament.spec.ts:228:2 › Tournament Integration Tests › players can access court via direct URL without login (3.8s)
-  ✓  30 e2e/tournament.spec.ts:285:2 › Tournament Integration Tests › dashboard shows tournaments in correct sections (4.7s)
-  ✘  31 e2e/tournament.spec.ts:336:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines (30.8s)
-  ✓  32 e2e/tournament.spec.ts:417:3 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default (3.7s)
+[2m[WebServer] [22m[2m2026-05-17T19:46:17.320Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
+  ✓   1 e2e/format.spec.ts:187:5 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (3.5s)
+  ✘   2 e2e/format.spec.ts:301:5 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (30.8s)
+[2m[WebServer] [22m
+[2m[WebServer] [22m[1;31m[500] POST /tournament/225[0m
+[2m[WebServer] [22mTypeError: Cannot read properties of undefined (reading 'points')
+[2m[WebServer] [22m    at file:///home/dirk/Dev/kob/.svelte-kit/output/server/chunks/tournament-logic.js:265:8
+[2m[WebServer] [22m    at Array.forEach (<anonymous>)
+[2m[WebServer] [22m    at calculateCourtStandings (file:///home/dirk/Dev/kob/.svelte-kit/output/server/chunks/tournament-logic.js:263:10)
+[2m[WebServer] [22m    at file:///home/dirk/Dev/kob/.svelte-kit/output/server/chunks/tournament-logic.js:224:15
+[2m[WebServer] [22m    at Array.map (<anonymous>)
+[2m[WebServer] [22m    at closeRound (file:///home/dirk/Dev/kob/.svelte-kit/output/server/chunks/tournament-logic.js:220:48)
+[2m[WebServer] [22m    at closeRound (file:///home/dirk/Dev/kob/.svelte-kit/output/server/entries/pages/tournament/_id_/_page.server.ts.js:339:23)
+[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2m[WebServer] [22m    at async fn (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:266:19)
+[2m[WebServer] [22m    at async handle_action_request (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:211:16)
+  ✘   3 e2e/promotion.spec.ts:71:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (30.8s)
+  ✓   4 e2e/promotion.spec.ts:177:2 › Promotion and Relegation › close round button is disabled until all matches complete (6.5s)
+  ✓   5 e2e/promotion.spec.ts:271:2 › Promotion and Relegation › final round completion marks tournament as completed (11.0s)
+[2m[WebServer] [22m
+[2m[WebServer] [22m[1;31m[500] POST /tournament/228[0m
+[2m[WebServer] [22mTypeError: Cannot read properties of undefined (reading 'points')
+[2m[WebServer] [22m    at file:///home/dirk/Dev/kob/.svelte-kit/output/server/chunks/tournament-logic.js:265:8
+[2m[WebServer] [22m    at Array.forEach (<anonymous>)
+[2m[WebServer] [22m    at calculateCourtStandings (file:///home/dirk/Dev/kob/.svelte-kit/output/server/chunks/tournament-logic.js:263:10)
+[2m[WebServer] [22m    at file:///home/dirk/Dev/kob/.svelte-kit/output/server/chunks/tournament-logic.js:224:15
+[2m[WebServer] [22m    at Array.map (<anonymous>)
+[2m[WebServer] [22m    at closeRound (file:///home/dirk/Dev/kob/.svelte-kit/output/server/chunks/tournament-logic.js:220:48)
+[2m[WebServer] [22m    at closeRound (file:///home/dirk/Dev/kob/.svelte-kit/output/server/entries/pages/tournament/_id_/_page.server.ts.js:339:23)
+[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2m[WebServer] [22m    at async fn (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:266:19)
+[2m[WebServer] [22m    at async handle_action_request (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:211:16)
+  ✘   6 e2e/promotion.spec.ts:344:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution (30.8s)
+[2m[WebServer] [22m
+[2m[WebServer] [22m[1;31m[500] GET /tournament/null[0m
+[2m[WebServer] [22mError: Failed query: select "id", "org_id", "name", "status", "current_round", "num_rounds", "format_type", "scoring_mode", "points_to_win", "win_by", "sets_to_win", "deciding_set_points", "scheduling_mode", "physical_court_count", "player_count", "court_sizes", "setup_time_minutes", "transition_time_minutes", "avg_rally_duration_seconds", "time_between_rallies_seconds", "time_between_matches_minutes", "created_at" from "tournament" where ("tournament"."id" = $1 and "tournament"."org_id" = $2)
+[2m[WebServer] [22mparams: NaN,zG8iWt2QsbM8IfleR2XCIdW5laTCI5Uw
+[2m[WebServer] [22m    at NeonHttpPreparedQuery.queryWithCache (file:///home/dirk/Dev/kob/node_modules/drizzle-orm/pg-core/session.js:41:15)
+[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2m[WebServer] [22m    at async NeonHttpPreparedQuery.execute (file:///home/dirk/Dev/kob/node_modules/drizzle-orm/neon-http/session.js:45:20)
+[2m[WebServer] [22m    at async load (file:///home/dirk/Dev/kob/.svelte-kit/output/server/entries/pages/tournament/_id_/_page.server.ts.js:18:20)
+[2m[WebServer] [22m    at async fn (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:570:12)
+[2m[WebServer] [22m    at async load_server_data (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:560:9)
+[2m[WebServer] [22m    at async file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2280:26
+  ✘   7 e2e/promotion.spec.ts:428:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution (30.8s)
+[2m[WebServer] [22m
+[2m[WebServer] [22m[1;31m[500] GET /tournament/null[0m
+[2m[WebServer] [22mError: Failed query: select "id", "org_id", "name", "status", "current_round", "num_rounds", "format_type", "scoring_mode", "points_to_win", "win_by", "sets_to_win", "deciding_set_points", "scheduling_mode", "physical_court_count", "player_count", "court_sizes", "setup_time_minutes", "transition_time_minutes", "avg_rally_duration_seconds", "time_between_rallies_seconds", "time_between_matches_minutes", "created_at" from "tournament" where ("tournament"."id" = $1 and "tournament"."org_id" = $2)
+[2m[WebServer] [22mparams: NaN,zG8iWt2QsbM8IfleR2XCIdW5laTCI5Uw
+[2m[WebServer] [22m    at NeonHttpPreparedQuery.queryWithCache (file:///home/dirk/Dev/kob/node_modules/drizzle-orm/pg-core/session.js:41:15)
+[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2m[WebServer] [22m    at async NeonHttpPreparedQuery.execute (file:///home/dirk/Dev/kob/node_modules/drizzle-orm/neon-http/session.js:45:20)
+[2m[WebServer] [22m    at async load (file:///home/dirk/Dev/kob/.svelte-kit/output/server/entries/pages/tournament/_id_/_page.server.ts.js:18:20)
+[2m[WebServer] [22m    at async fn (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:570:12)
+[2m[WebServer] [22m    at async load_server_data (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:560:9)
+[2m[WebServer] [22m    at async file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2280:26
+  ✘   8 e2e/promotion.spec.ts:495:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court maintains 5 players after redistribution (30.8s)
+[2m[WebServer] [22m
+[2m[WebServer] [22m[1;31m[500] GET /tournament/null[0m
+[2m[WebServer] [22mError: Failed query: select "id", "org_id", "name", "status", "current_round", "num_rounds", "format_type", "scoring_mode", "points_to_win", "win_by", "sets_to_win", "deciding_set_points", "scheduling_mode", "physical_court_count", "player_count", "court_sizes", "setup_time_minutes", "transition_time_minutes", "avg_rally_duration_seconds", "time_between_rallies_seconds", "time_between_matches_minutes", "created_at" from "tournament" where ("tournament"."id" = $1 and "tournament"."org_id" = $2)
+[2m[WebServer] [22mparams: NaN,zG8iWt2QsbM8IfleR2XCIdW5laTCI5Uw
+[2m[WebServer] [22m    at NeonHttpPreparedQuery.queryWithCache (file:///home/dirk/Dev/kob/node_modules/drizzle-orm/pg-core/session.js:41:15)
+[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2m[WebServer] [22m    at async NeonHttpPreparedQuery.execute (file:///home/dirk/Dev/kob/node_modules/drizzle-orm/neon-http/session.js:45:20)
+[2m[WebServer] [22m    at async load (file:///home/dirk/Dev/kob/.svelte-kit/output/server/entries/pages/tournament/_id_/_page.server.ts.js:18:20)
+[2m[WebServer] [22m    at async fn (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:570:12)
+[2m[WebServer] [22m    at async load_server_data (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:560:9)
+[2m[WebServer] [22m    at async file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2280:26
+  ✘   9 e2e/promotion.spec.ts:562:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court maintains 6 players after redistribution (30.9s)
+  ✓  10 e2e/standings.spec.ts:264:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking (3.0s)
+  ✘  11 e2e/standings.spec.ts:297:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking (8.6s)
+  ✘  12 e2e/standings.spec.ts:330:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking (8.8s)
+  ✓  13 e2e/standings.spec.ts:363:3 › Standings Calculation › Non-Standard Court Standings › 5p court accepts 15-point scores (4.4s)
+  ✓  14 e2e/standings.spec.ts:401:3 › Standings Calculation › Non-Standard Court Standings › 3p court accepts 21-point scores (same as 4p) (3.8s)
+[2m[WebServer] [22m
+[2m[WebServer] [22m[1;31m[500] POST /tournament/238[0m
+[2m[WebServer] [22mTypeError: Cannot read properties of undefined (reading 'points')
+[2m[WebServer] [22m    at file:///home/dirk/Dev/kob/.svelte-kit/output/server/chunks/tournament-logic.js:268:8
+[2m[WebServer] [22m    at Array.forEach (<anonymous>)
+[2m[WebServer] [22m    at calculateCourtStandings (file:///home/dirk/Dev/kob/.svelte-kit/output/server/chunks/tournament-logic.js:263:10)
+[2m[WebServer] [22m    at file:///home/dirk/Dev/kob/.svelte-kit/output/server/chunks/tournament-logic.js:224:15
+[2m[WebServer] [22m    at Array.map (<anonymous>)
+[2m[WebServer] [22m    at closeRound (file:///home/dirk/Dev/kob/.svelte-kit/output/server/chunks/tournament-logic.js:220:48)
+[2m[WebServer] [22m    at closeRound (file:///home/dirk/Dev/kob/.svelte-kit/output/server/entries/pages/tournament/_id_/_page.server.ts.js:339:23)
+[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2m[WebServer] [22m    at async fn (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:266:19)
+[2m[WebServer] [22m    at async handle_action_request (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:211:16)
+  ✘  15 e2e/tournament.spec.ts:71:2 › Tournament Integration Tests › complete 2-round tournament with score entry (30.9s)
+  ✘  16 e2e/tournament.spec.ts:336:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines (30.9s)
 
 
-  1) e2e/format.spec.ts:187:5 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input 
-
-    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
-
-    Locator: locator('text=16 players')
-    Expected: visible
-    Error: strict mode violation: locator('text=16 players') resolved to 3 elements:
-        1) <p>⏳ 0/16 players registered — waiting for 16 more b…</p> aka getByText('⏳ 0/16 players registered —')
-        2) <p class="player-count-info">16 players registered</p> aka getByText('16 players registered', { exact: true })
-        3) <p>All 16 players added!</p> aka getByText('All 16 players added!')
-
-    Call log:
-    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
-    [2m  - waiting for locator('text=16 players')[22m
-
-
-      221 |
-      222 |       // Verify tournament was created with correct player count
-    > 223 |       await expect(page.locator('text=16 players')).toBeVisible();
-          |                                                     ^
-      224 |     });
-      225 |   });
-      226 |
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:223:53
-
-    Error Context: test-results/format-Tournament-Format-S-57f6f-ible-name-with-points-input/error-context.md
-
-  2) e2e/format.spec.ts:301:5 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts 
+  1) e2e/format.spec.ts:301:5 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
     Error: page.click: Test timeout of 30000ms exceeded.
     Call log:
     [2m  - waiting for locator('button:has-text("Kick leftovers")')[22m
+
+
+      315 |
+      316 |       // Kick the leftover
+    > 317 |       await page.click('button:has-text("Kick leftovers")');
+          |                  ^
+      318 |
+      319 |       // Should now show 16 players (clean)
+      320 |       await expect(page.getByText('16 players detected')).toBeVisible();
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:317:18
+
+    Error Context: test-results/format-Tournament-Format-S-e9162-layers-to-make-clean-courts/error-context.md
+
+  2) e2e/promotion.spec.ts:71:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.goto: url: expected string, got undefined
+
+      153 |
+      154 | 		for (let i = 0; i < 4; i++) {
+    > 155 | 			await page.goto(round2Links[i]);
+          | 			           ^
+      156 | 			await page.waitForSelector('.standings tbody tr');
+      157 | 			const rows = await page.locator('.standings tbody tr').all();
+      158 | 			const playerNames: string[] = [];
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:155:15
+
+    Error Context: test-results/promotion-Promotion-and-Re-b274e-ding-redistribution-by-rank/error-context.md
+
+  3) e2e/promotion.spec.ts:344:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m4[39m
+    Received: [31m0[39m
+
+      415 | 			if (url) round2Links.push(url);
+      416 | 		}
+    > 417 | 		expect(round2Links.length).toBe(4);
+          | 		                           ^
+      418 |
+      419 | 		for (let i = 0; i < 4; i++) {
+      420 | 			await page.goto(round2Links[i]);
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:417:30
+
+    Error Context: test-results/promotion-Promotion-and-Re-26658--court-after-redistribution/error-context.md
+
+  4) e2e/promotion.spec.ts:428:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Close Round")') to be visible[22m
+
+
+      477 | 			const tournamentId = tournamentMatch ? tournamentMatch[1] : null;
+      478 | 			await page.goto(`/tournament/${tournamentId}`);
+    > 479 | 			await page.waitForSelector('button:has-text("Close Round")');
+          | 			           ^
+      480 | 			await page.click('button:has-text("Close Round")');
+      481 | 			await page.waitForTimeout(1000);
+      482 |
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:479:15
+
+    Error Context: test-results/promotion-Promotion-and-Re-92a3f-layers-after-redistribution/error-context.md
+
+  5) e2e/promotion.spec.ts:495:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court maintains 5 players after redistribution 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Close Round")') to be visible[22m
+
+
+      544 | 			const tournamentId = tournamentMatch ? tournamentMatch[1] : null;
+      545 | 			await page.goto(`/tournament/${tournamentId}`);
+    > 546 | 			await page.waitForSelector('button:has-text("Close Round")');
+          | 			           ^
+      547 | 			await page.click('button:has-text("Close Round")');
+      548 | 			await page.waitForTimeout(1000);
+      549 |
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:546:15
+
+    Error Context: test-results/promotion-Promotion-and-Re-a4977-layers-after-redistribution/error-context.md
+
+  6) e2e/promotion.spec.ts:562:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court maintains 6 players after redistribution 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Close Round")') to be visible[22m
     [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
     [2m    - navigated to "http://localhost:4173/"[22m
 
 
-      314 |
-      315 |       // Kick the leftover
-    > 316 |       await page.click('button:has-text("Kick leftovers")');
-          |                  ^
-      317 |
-      318 |       // Should now show 16 players (clean)
-      319 |       await expect(page.locator('text=16 players')).toBeVisible();
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:316:18
-
-    Error Context: test-results/format-Tournament-Format-S-e9162-layers-to-make-clean-courts/error-context.md
-
-  3) e2e/promotion.spec.ts:71:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button:has-text("Close Round")') to be visible[22m
-
-
-      135 | 		// Navigate to tournament page and close Round 1
-      136 | 		await page.goto(`/tournament/${tournamentId}`);
-    > 137 | 		await page.waitForSelector('button:has-text("Close Round")');
-          | 		           ^
-      138 | 		await page.click('button:has-text("Close Round")');
-      139 | 		await page.waitForTimeout(1000);
-      140 |
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:137:14
-
-    Error Context: test-results/promotion-Promotion-and-Re-b274e-ding-redistribution-by-rank/error-context.md
-
-  4) e2e/promotion.spec.ts:177:2 › Promotion and Relegation › close round button is disabled until all matches complete 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button:has-text("Close Round")') to be visible[22m
-
-
-      264 | 		// Navigate to tournament page and close round button should be enabled
-      265 | 		await page.goto(`/tournament/${tournamentId}`);
-    > 266 | 		await page.waitForSelector('button:has-text("Close Round")');
-          | 		           ^
-      267 | 		const enabledButton = await page.locator('button:has-text("Close Round")');
-      268 | 		await expect(enabledButton).toBeEnabled();
-      269 | 	});
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:266:14
-
-    Error Context: test-results/promotion-Promotion-and-Re-bd942--until-all-matches-complete/error-context.md
-
-  5) e2e/promotion.spec.ts:271:2 › Promotion and Relegation › final round completion marks tournament as completed 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button:has-text("Finalize Tournament")') to be visible[22m
-
-
-      329 | 		// Close the only round
-      330 | 		await page.goto(`/tournament/${tournamentId}`);
-    > 331 | 		await page.waitForSelector('button:has-text("Finalize Tournament")');
-          | 		           ^
-      332 | 		await page.click('button:has-text("Finalize Tournament")');
-      333 | 		await page.waitForTimeout(1000);
-      334 |
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:331:14
-
-    Error Context: test-results/promotion-Promotion-and-Re-d4e1e-rks-tournament-as-completed/error-context.md
-
-  6) e2e/promotion.spec.ts:344:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button:has-text("Close Round")') to be visible[22m
-
-
-      401 |
-      402 | 		await page.goto(`/tournament/${tournamentId}`);
-    > 403 | 		await page.waitForSelector('button:has-text("Close Round")');
-          | 		           ^
-      404 | 		await page.click('button:has-text("Close Round")');
-      405 | 		await page.waitForTimeout(1000);
-      406 |
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:403:14
-
-    Error Context: test-results/promotion-Promotion-and-Re-26658--court-after-redistribution/error-context.md
-
-  7) e2e/promotion.spec.ts:428:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/tournament/206"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      440 | 			await page.click('button[type="submit"]');
-      441 |
-    > 442 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+      611 | 			const tournamentId = tournamentMatch ? tournamentMatch[1] : null;
+      612 | 			await page.goto(`/tournament/${tournamentId}`);
+    > 613 | 			await page.waitForSelector('button:has-text("Close Round")');
           | 			           ^
-      443 | 			await page.click('button:has-text("Add Players")');
-      444 | 			await page.click('button:has-text("Start Tournament")');
-      445 | 			await page.waitForURL(/\/tournament\/\d+/);
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:442:15
-
-    Error Context: test-results/promotion-Promotion-and-Re-92a3f-layers-after-redistribution/error-context.md
-
-  8) e2e/promotion.spec.ts:495:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court maintains 5 players after redistribution 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/tournament/207"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      507 | 			await page.click('button[type="submit"]');
-      508 |
-    > 509 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      510 | 			await page.click('button:has-text("Add Players")');
-      511 | 			await page.click('button:has-text("Start Tournament")');
-      512 | 			await page.waitForURL(/\/tournament\/\d+/);
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:509:15
-
-    Error Context: test-results/promotion-Promotion-and-Re-a4977-layers-after-redistribution/error-context.md
-
-  9) e2e/promotion.spec.ts:562:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court maintains 6 players after redistribution 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/tournament/208"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      574 | 			await page.click('button[type="submit"]');
-      575 |
-    > 576 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      577 | 			await page.click('button:has-text("Add Players")');
-      578 | 			await page.click('button:has-text("Start Tournament")');
-      579 | 			await page.waitForURL(/\/tournament\/\d+/);
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:576:15
+      614 | 			await page.click('button:has-text("Close Round")');
+      615 | 			await page.waitForTimeout(1000);
+      616 |
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:613:15
 
     Error Context: test-results/promotion-Promotion-and-Re-7b953-layers-after-redistribution/error-context.md
 
-  10) e2e/standings.spec.ts:264:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking 
+  7) e2e/standings.spec.ts:297:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking 
 
-    [31mTest timeout of 30000ms exceeded.[39m
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/tournament/214"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
+    Locator: locator('.standings th:has-text("Avg")')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
 
-      276 | 			await page.click('button[type="submit"]');
-      277 |
-    > 278 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      279 | 			await page.click('button:has-text("Add Players")');
-      280 | 			await page.click('button:has-text("Start Tournament")');
-      281 | 			await page.waitForURL(/\/tournament\/\d+/);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:278:15
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.standings th:has-text("Avg")')[22m
 
-    Error Context: test-results/standings-Standings-Calcul-a68b7-s-show-total-points-ranking/error-context.md
 
-  11) e2e/standings.spec.ts:297:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/tournament/215"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      309 | 			await page.click('button[type="submit"]');
-      310 |
-    > 311 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      312 | 			await page.click('button:has-text("Add Players")');
-      313 | 			await page.click('button:has-text("Start Tournament")');
-      314 | 			await page.waitForURL(/\/tournament\/\d+/);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:311:15
+      325 |
+      326 | 			// Should show average points column
+    > 327 | 			await expect(page.locator('.standings th:has-text("Avg")')).toBeVisible();
+          | 			                                                            ^
+      328 | 		});
+      329 |
+      330 | 		test('6p court standings show average points ranking', async ({ page }) => {
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:327:64
 
     Error Context: test-results/standings-Standings-Calcul-6b1da-show-average-points-ranking/error-context.md
 
-  12) e2e/standings.spec.ts:330:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking 
+  8) e2e/standings.spec.ts:330:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking 
 
-    [31mTest timeout of 30000ms exceeded.[39m
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/tournament/216"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
+    Locator: locator('.standings th:has-text("Avg")')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
 
-      342 | 			await page.click('button[type="submit"]');
-      343 |
-    > 344 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      345 | 			await page.click('button:has-text("Add Players")');
-      346 | 			await page.click('button:has-text("Start Tournament")');
-      347 | 			await page.waitForURL(/\/tournament\/\d+/);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:344:15
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('.standings th:has-text("Avg")')[22m
+
+
+      358 |
+      359 | 			// Should show average points column
+    > 360 | 			await expect(page.locator('.standings th:has-text("Avg")')).toBeVisible();
+          | 			                                                            ^
+      361 | 		});
+      362 |
+      363 | 		test('5p court accepts 15-point scores', async ({ page }) => {
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:360:64
 
     Error Context: test-results/standings-Standings-Calcul-565f3-show-average-points-ranking/error-context.md
 
-  13) e2e/standings.spec.ts:363:3 › Standings Calculation › Non-Standard Court Standings › 5p court accepts 15-point scores 
+  9) e2e/tournament.spec.ts:71:2 › Tournament Integration Tests › complete 2-round tournament with score entry 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/tournament/217"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
 
-      375 | 			await page.click('button[type="submit"]');
-      376 |
-    > 377 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      378 | 			await page.click('button:has-text("Add Players")');
-      379 | 			await page.click('button:has-text("Start Tournament")');
-      380 | 			await page.waitForURL(/\/tournament\/\d+/);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:377:15
+    Expected: [32m4[39m
+    Received: [31m0[39m
 
-    Error Context: test-results/standings-Standings-Calcul-5a98f-urt-accepts-15-point-scores/error-context.md
-
-  14) e2e/standings.spec.ts:401:3 › Standings Calculation › Non-Standard Court Standings › 3p court accepts 21-point scores (same as 4p) 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/tournament/218"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      413 | 			await page.click('button[type="submit"]');
-      414 |
-    > 415 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      416 | 			await page.click('button:has-text("Add Players")');
-      417 | 			await page.click('button:has-text("Start Tournament")');
-      418 | 			await page.waitForURL(/\/tournament\/\d+/);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:415:15
-
-    Error Context: test-results/standings-Standings-Calcul-ccfbc-21-point-scores-same-as-4p-/error-context.md
-
-  15) e2e/tournament.spec.ts:71:2 › Tournament Integration Tests › complete 2-round tournament with score entry 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
-    Call log:
-    [2m  - waiting for locator('button:has-text("Close Round")') to be visible[22m
-
-
-      170 | 		await page.goto('/');
-      171 | 		await page.click(`text=${tournamentName}`);
-    > 172 | 		await page.waitForSelector('button:has-text("Close Round")');
-          | 		           ^
-      173 | 		await page.click('button:has-text("Close Round")');
-      174 | 		await page.waitForTimeout(1000);
-      175 |
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:172:14
+      185 | 			if (url) round2Links.push(url);
+      186 | 		}
+    > 187 | 		expect(round2Links.length).toBe(4);
+          | 		                           ^
+      188 |
+      189 | 		for (const courtUrl of round2Links) {
+      190 | 			await page.goto(courtUrl);
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:187:30
 
     Error Context: test-results/tournament-Tournament-Inte-59e69-tournament-with-score-entry/error-context.md
 
-  16) e2e/tournament.spec.ts:336:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines 
+  10) e2e/tournament.spec.ts:336:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
@@ -381,33 +293,27 @@ Running 32 tests using 1 worker
     [2m    - navigated to "http://localhost:4173/"[22m
 
 
-      352 |
-      353 | 		// Check that counter shows 8 names
-    > 354 | 		await page.waitForSelector('text=8 names entered');
+      353 |
+      354 | 		// Check that counter shows 8 names
+    > 355 | 		await page.waitForSelector('text=8 names entered');
           | 		           ^
-      355 |
-      356 | 		// Clear and test semicolon-separated
-      357 | 		await page.fill('textarea[name="names"]', '');
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:354:14
+      356 |
+      357 | 		// Clear and test semicolon-separated
+      358 | 		await page.fill('textarea[name="names"]', '');
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:355:14
 
     Error Context: test-results/tournament-Tournament-Inte-6633c-ma-separated-names-to-lines/error-context.md
 
-  16 failed
-    e2e/format.spec.ts:187:5 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input 
+  10 failed
     e2e/format.spec.ts:301:5 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts 
     e2e/promotion.spec.ts:71:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank 
-    e2e/promotion.spec.ts:177:2 › Promotion and Relegation › close round button is disabled until all matches complete 
-    e2e/promotion.spec.ts:271:2 › Promotion and Relegation › final round completion marks tournament as completed 
     e2e/promotion.spec.ts:344:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution 
     e2e/promotion.spec.ts:428:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution 
     e2e/promotion.spec.ts:495:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court maintains 5 players after redistribution 
     e2e/promotion.spec.ts:562:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court maintains 6 players after redistribution 
-    e2e/standings.spec.ts:264:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking 
     e2e/standings.spec.ts:297:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking 
     e2e/standings.spec.ts:330:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking 
-    e2e/standings.spec.ts:363:3 › Standings Calculation › Non-Standard Court Standings › 5p court accepts 15-point scores 
-    e2e/standings.spec.ts:401:3 › Standings Calculation › Non-Standard Court Standings › 3p court accepts 21-point scores (same as 4p) 
     e2e/tournament.spec.ts:71:2 › Tournament Integration Tests › complete 2-round tournament with score entry 
     e2e/tournament.spec.ts:336:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines 
-  16 passed (9.0m)
+  6 passed (5.1m)
 error: script "playwright" exited with code 1

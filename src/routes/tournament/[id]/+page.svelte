@@ -3,7 +3,7 @@
 	import { browser } from '$app/environment';
 	import { getTournamentDataLive } from './tournament-data.remote';
 
-	let { data, form } = $props<{
+	let { data } = $props<{
 		data: {
 			tournament: any;
 			courts: any[];
@@ -14,18 +14,8 @@
 			physicalCourtCount: number;
 			shifts?: number[][];
 			roundDuration?: number;
-			currentPlayerCount: number;
 		};
-		form?: { error?: string; success?: string };
 	}>();
-
-	let playerNames = $state('');
-	let playerCount = $derived(playerNames.split('\n').filter((n) => n.trim()).length);
-	let textareaEl: HTMLTextAreaElement | undefined = $state();
-
-	const maxPlayers = $derived(data.tournament.playerCount);
-	const isPreseed = $derived(data.tournament.formatType === 'preseed');
-	const playersReady = $derived(data.currentPlayerCount >= maxPlayers);
 
 	// Live query for auto-refresh when tournament is active
 	const liveQuery = $derived(
@@ -36,7 +26,6 @@
 	const liveData = $derived(liveQuery ? await liveQuery : null);
 
 	// Use live data for courts/matches if available, otherwise fall back to initial data
-	// But always use initial data for canCloseRound/isFinalRound to avoid race conditions
 	const effectiveData = $derived({
 		...data,
 		...(liveData && !liveData.error && liveData.courts ? {
@@ -46,33 +35,6 @@
 			currentRound: liveData.currentRound
 		} : {})
 	});
-
-	function handlePaste(e: ClipboardEvent) {
-		const pastedText = e.clipboardData?.getData('text') || '';
-
-		if (textareaEl && (pastedText.includes(',') || pastedText.includes(';'))) {
-			e.preventDefault();
-
-			const names = pastedText
-				.split(/[,;]+/)
-				.map((n) => n.trim())
-				.filter((n) => n.length > 0);
-
-			const formattedNames = names.join('\n');
-
-			const start = textareaEl.selectionStart;
-			const end = textareaEl.selectionEnd;
-			const before = playerNames.substring(0, start);
-			const after = playerNames.substring(end);
-
-			playerNames = before + formattedNames + (after ? '\n' + after : '');
-
-			setTimeout(() => {
-				if (textareaEl)
-					textareaEl.selectionStart = textareaEl.selectionEnd = start + formattedNames.length;
-			}, 0);
-		}
-	}
 
 	function getMatchStatus(matches: any[]) {
 		const completed = matches.filter((m) => m.teamAScore !== null).length;
@@ -107,11 +69,6 @@
 	}
 
 	const gridClass = $derived(effectiveData.courts.length > 4 ? 'courts courts-8' : 'courts');
-	const totalPlayers = $derived(
-		effectiveData.courts.reduce((sum: number, c: any) => sum + c.players.length, 0)
-	);
-	const expectedPlayers = $derived(effectiveData.courtSizes.reduce((sum: number, s: number) => sum + s, 0));
-	const isWaiting = $derived(totalPlayers < expectedPlayers && effectiveData.currentRound === 0);
 	const virtualCourtCount = $derived(effectiveData.courtSizes.length);
 	const showScheduling = $derived(effectiveData.tournament.status === 'active');
 </script>
@@ -120,93 +77,13 @@
 	<header>
 		<a href="/">← Dashboard</a>
 		<h1>{effectiveData.tournament.name}</h1>
-		{#if effectiveData.tournament.status === 'draft'}
-			<p class="status-draft">Draft — waiting for players</p>
-		{:else if effectiveData.tournament.status === 'active'}
+		{#if effectiveData.tournament.status === 'active'}
 			<p>Round {effectiveData.currentRound} of {effectiveData.tournament.numRounds}</p>
 		{:else}
 			<p class="status-completed">Completed</p>
 		{/if}
-		<a href="/tournament/{effectiveData.tournament.id}/standings" class="standings-link">📊 View Standings</a
-		>
+		<a href="/tournament/{effectiveData.tournament.id}/standings" class="standings-link">📊 View Standings</a>
 	</header>
-
-	{#if isWaiting}
-		<div class="waiting-info">
-			<p>
-				⏳ {totalPlayers}/{expectedPlayers} players registered — waiting for {expectedPlayers -
-					totalPlayers} more before starting.
-			</p>
-		</div>
-	{/if}
-
-	{#if effectiveData.tournament.status === 'draft'}
-		{#if form?.error}
-			<div class="error">{form.error}</div>
-		{/if}
-
-		{#if form?.success}
-			<div class="success">{form.success}</div>
-		{/if}
-
-		<section class="current-players">
-			<h2>Current Players ({effectiveData.currentPlayerCount}/{maxPlayers})</h2>
-			{#if effectiveData.currentPlayerCount > 0}
-				<ul class="player-list">
-					{#each effectiveData.courts.length > 0 ? [] : Array.from({ length: effectiveData.currentPlayerCount }, (_, i) => i) as _}
-						<!-- Players will be shown after tournament starts -->
-					{/each}
-				</ul>
-				<p class="player-count-info">{effectiveData.currentPlayerCount} player{effectiveData.currentPlayerCount !== 1 ? 's' : ''} registered</p>
-			{:else}
-				<p class="empty">No players added yet.</p>
-			{/if}
-		</section>
-
-		{#if !playersReady}
-			<form method="POST" action="?/addPlayers">
-				<div class="field">
-					{#if isPreseed}
-						<label for="names"
-							>Player Names with Points (Name followed by points - one per line)</label
-						>
-						<textarea
-							id="names"
-							name="names"
-							bind:this={textareaEl}
-							bind:value={playerNames}
-							onpaste={handlePaste}
-							rows="10"
-							placeholder="Alice 1250..."
-						></textarea>
-						<p class="count">{playerCount} names entered</p>
-						<p class="hint">Format: Player Name Points (e.g., "Alice 1250" or "Carol Chen 1150")</p>
-					{:else}
-						<label for="names">Player Names (one per line)</label>
-						<textarea
-							id="names"
-							name="names"
-							bind:this={textareaEl}
-							bind:value={playerNames}
-							onpaste={handlePaste}
-							rows="10"
-							placeholder="Alice..."
-						></textarea>
-						<p class="count">{playerCount} names entered</p>
-					{/if}
-				</div>
-
-				<button type="submit" class="btn-primary">Add Players</button>
-			</form>
-		{:else}
-			<div class="ready">
-				<p>All {maxPlayers} players added!</p>
-				<form method="POST" action="?/start">
-					<button type="submit" class="btn-primary btn-large">Start Tournament</button>
-				</form>
-			</div>
-		{/if}
-	{/if}
 
 	{#if showScheduling && effectiveData.currentRound > 0}
 		<div class="scheduling-info">
@@ -308,18 +185,6 @@
 			<button disabled class="btn-primary btn-disabled"> ⏳ Waiting for all scores... </button>
 		{/if}
 
-		{#if effectiveData.tournament.status === 'draft'}
-			<form method="POST" action="?/startTournament" class="start-form">
-				<button
-					type="submit"
-					class="btn-success"
-					disabled={!isWaiting && totalPlayers < expectedPlayers}
-				>
-					🚀 Start Tournament
-				</button>
-			</form>
-		{/if}
-
 		{#if effectiveData.tournament.status !== 'completed'}
 			<form method="POST" action="?/deleteTournament" class="delete-form">
 				<button type="submit" class="btn-danger" onclick={confirmDelete}>Delete</button>
@@ -395,25 +260,9 @@
 		color: var(--text-secondary);
 	}
 
-	.status-draft {
-		color: var(--accent-warning);
-		font-weight: 600;
-	}
-
 	.status-completed {
 		color: var(--accent-success);
 		font-weight: 600;
-	}
-
-	.waiting-info {
-		background-color: rgba(255, 193, 7, 0.1);
-		border: 1px solid var(--accent-warning);
-		border-radius: var(--radius-sm);
-		padding: var(--spacing-sm) var(--spacing-md);
-		margin-bottom: var(--spacing-lg);
-		text-align: center;
-		color: var(--accent-warning);
-		font-weight: 500;
 	}
 
 	.scheduling-info {
@@ -625,33 +474,6 @@
 		box-shadow: var(--glow-success);
 	}
 
-	.btn-success {
-		background-color: var(--accent-primary);
-		color: var(--bg-primary);
-		padding: var(--spacing-sm) var(--spacing-lg);
-		border: 2px solid var(--accent-primary);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-base);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		cursor: pointer;
-		transition: all var(--transition-base);
-		text-decoration: none;
-	}
-
-	.btn-success:hover:not(:disabled) {
-		background-color: var(--accent-primary-hover);
-		box-shadow: var(--glow-primary);
-	}
-
-	.btn-success:disabled {
-		background-color: var(--bg-secondary);
-		color: var(--text-muted);
-		border-color: var(--border-default);
-		cursor: not-allowed;
-	}
-
 	.btn-disabled {
 		background-color: var(--bg-secondary);
 		color: var(--text-muted);
@@ -681,10 +503,6 @@
 
 	.delete-form {
 		margin-left: auto;
-	}
-
-	.start-form {
-		margin-left: var(--spacing-md);
 	}
 
 	.round-dur {

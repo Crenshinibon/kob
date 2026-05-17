@@ -1,7 +1,9 @@
 import { redirect, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { tournament, player } from '$lib/server/db/schema';
-import { getCourtConfiguration, calculateRoundCount } from '$lib/server/tournament-logic';
+import { tournament, player, courtRotation, match, courtAccess } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
+import crypto from 'crypto';
+import { getCourtConfiguration, calculateRoundCount, createInitialState, addPlayers, startRound, generate4pMatches, generate3pMatches, generateAllMatchesForAssignment, type FormatType } from '$lib/server/tournament-logic';
 
 type ParsedPlayer = { name: string; seedPoints: number | null };
 
@@ -45,7 +47,7 @@ export const actions = {
     const winByRaw = parseInt(formData.get('winBy')?.toString() || '2');
     const setsToWinRaw = parseInt(formData.get('setsToWin')?.toString() || '1');
     const decidingSetPointsRaw = parseInt(formData.get('decidingSetPoints')?.toString() || '15');
-    const submittedNumRounds = parseInt(formData.get('numRounds')?.toString() || '4')
+    const submittedNumRounds = parseInt(formData.get('numRounds')?.toString() || '3')
 
     let pointsToWin = pointsToWinRaw;
     let winBy = winByRaw;
@@ -104,6 +106,7 @@ export const actions = {
 
     const numRounds: number = formatType === 'preseed' ? calculateRoundCount(config.totalCourts, formatType) : submittedNumRounds;
 
+    // Create tournament with active status
     const [newTournament] = await db
       .insert(tournament)
       .values({
@@ -120,17 +123,148 @@ export const actions = {
         playerCount,
         physicalCourtCount,
         courtSizes: JSON.stringify(courtSizes),
-        status: 'draft',
-        currentRound: 0
+        status: 'active',
+        currentRound: 1
       })
       .returning();
 
+    // Insert players
     for (const p of parsed) {
       await db.insert(player).values({
         tournamentId: newTournament.id,
         name: p.name,
         seedPoints: p.seedPoints,
         seedRank: null
+      });
+    }
+
+    // Get all players for tournament start
+    const allPlayers = await db.select().from(player).where(eq(player.tournamentId, newTournament.id));
+
+    // Update seed ranks for preseed
+    if (formatType === 'preseed') {
+      const sorted = [...allPlayers].sort((a, b) => (b.seedPoints ?? 0) - (a.seedPoints ?? 0));
+      for (let i = 0; i < sorted.length; i++) {
+        await db
+          .update(player)
+          .set({ seedRank: i + 1 })
+          .where(eq(player.id, sorted[i].id));
+      }
+    }
+
+    // Build tournament state and generate Round 1
+    const initState = createInitialState({
+      tournamentId: newTournament.id,
+      formatType: formatType as FormatType,
+      playerCount,
+      physicalCourtCount
+    });
+
+    const players = allPlayers.map((p) => ({
+      id: p.id,
+      name: p.name,
+      seedPoints: p.seedPoints,
+      seedRank: p.seedRank
+    }));
+
+    const stateWithPlayers = addPlayers(initState, players);
+    const startedState = startRound(stateWithPlayers);
+    const assignments = startedState.currentAssignments;
+    const matches = startedState.currentMatches;
+
+    for (let courtNum = 0; courtNum < assignments.length; courtNum++) {
+      const assignment = assignments[courtNum];
+      const matchData = matches[courtNum];
+      const size = courtSizes[courtNum] ?? 4;
+
+      const [rotation] = await db
+        .insert(courtRotation)
+        .values({
+          tournamentId: newTournament.id,
+          roundNumber: 1,
+          courtNumber: assignment.courtNumber,
+          player1Id: assignment.playerIds[0],
+          player2Id: assignment.playerIds[1],
+          player3Id: assignment.playerIds.length > 2 ? assignment.playerIds[2] : 0,
+          player4Id: assignment.playerIds.length > 3 ? assignment.playerIds[3] : 0,
+          player5Id: size >= 5 ? assignment.playerIds[4] : null,
+          player6Id: size >= 6 ? assignment.playerIds[5] : null
+        })
+        .returning();
+
+      if (matchData) {
+        await db.insert(match).values({
+          courtRotationId: rotation.id,
+          matchNumber: 1,
+          teamAPlayer1Id: matchData.teamAPlayer1Id,
+          teamAPlayer2Id: matchData.teamAPlayer2Id,
+          teamBPlayer1Id: matchData.teamBPlayer1Id,
+          teamBPlayer2Id: matchData.teamBPlayer2Id
+        });
+
+        if (size === 4) {
+          const m2 = generate4pMatches(assignment.playerIds)[1];
+          const m3 = generate4pMatches(assignment.playerIds)[2];
+
+          await db.insert(match).values({
+            courtRotationId: rotation.id,
+            matchNumber: 2,
+            teamAPlayer1Id: m2.teamAPlayer1Id,
+            teamAPlayer2Id: m2.teamAPlayer2Id,
+            teamBPlayer1Id: m2.teamBPlayer1Id,
+            teamBPlayer2Id: m2.teamBPlayer2Id
+          });
+
+          await db.insert(match).values({
+            courtRotationId: rotation.id,
+            matchNumber: 3,
+            teamAPlayer1Id: m3.teamAPlayer1Id,
+            teamAPlayer2Id: m3.teamAPlayer2Id,
+            teamBPlayer1Id: m3.teamBPlayer1Id,
+            teamBPlayer2Id: m3.teamBPlayer2Id
+          });
+        } else if (size === 3) {
+          const m2 = generate3pMatches(assignment.playerIds)[1];
+          const m3 = generate3pMatches(assignment.playerIds)[2];
+
+          await db.insert(match).values({
+            courtRotationId: rotation.id,
+            matchNumber: 2,
+            teamAPlayer1Id: m2.teamAPlayer1Id,
+            teamAPlayer2Id: m2.teamAPlayer2Id,
+            teamBPlayer1Id: m2.teamBPlayer1Id,
+            teamBPlayer2Id: m2.teamBPlayer2Id
+          });
+
+          await db.insert(match).values({
+            courtRotationId: rotation.id,
+            matchNumber: 3,
+            teamAPlayer1Id: m3.teamAPlayer1Id,
+            teamAPlayer2Id: m3.teamAPlayer2Id,
+            teamBPlayer1Id: m3.teamBPlayer1Id,
+            teamBPlayer2Id: m3.teamBPlayer2Id
+          });
+        } else if (size >= 5) {
+          const extraMatches = generateAllMatchesForAssignment(assignment, courtSizes);
+          for (let mi = 1; mi < extraMatches.length; mi++) {
+            const m = extraMatches[mi];
+            await db.insert(match).values({
+              courtRotationId: rotation.id,
+              matchNumber: mi + 1,
+              teamAPlayer1Id: m.teamAPlayer1Id,
+              teamAPlayer2Id: m.teamAPlayer2Id,
+              teamBPlayer1Id: m.teamBPlayer1Id,
+              teamBPlayer2Id: m.teamBPlayer2Id
+            });
+          }
+        }
+      }
+
+      const token = crypto.randomBytes(16).toString('hex');
+      await db.insert(courtAccess).values({
+        courtRotationId: rotation.id,
+        token,
+        isActive: true
       });
     }
 

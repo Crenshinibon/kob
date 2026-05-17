@@ -98,13 +98,8 @@ test.describe('Tournament Integration Tests', () => {
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 
-		// 2. Start tournament
+		// Tournament is already started, verify it shows courts
 		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
-		await page.waitForURL(/\/tournament\/\d+/);
-
-		// 4. Verify tournament is active and shows 4 courts
 		await page.waitForSelector('text=Round 1 of 2');
 		const courtCards = await page.locator('.court-card').count();
 		expect(courtCards).toBe(4);
@@ -238,9 +233,6 @@ test.describe('Tournament Integration Tests', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
-		await page.waitForURL(/\/tournament\/\d+/);
 
 		// Get court URL
 		const courtLink = await page.locator('.qr-link a').first();
@@ -282,55 +274,31 @@ test.describe('Tournament Integration Tests', () => {
 		await publicContext!.close();
 	});
 
-	test('dashboard shows tournaments in correct sections', async ({ page }) => {
-		// Generate unique tournament names
-		const activeTournamentName = `Active Tournament ${Date.now()}`;
-		const draftTournamentName = `Draft Tournament ${Date.now()}`;
-		testTournamentNames.push(activeTournamentName, draftTournamentName);
+	test('dashboard shows active tournaments', async ({ page }) => {
+		// Generate unique tournament name
+		const tournamentName = `Active Dashboard Test ${Date.now()}`;
+		testTournamentNames.push(tournamentName);
 
-		// Create active tournament with players
+		// Create tournament with players
 		await page.click('text=+ New Tournament');
-		await page.fill('input[name="name"]', activeTournamentName);
-		const players1 = Array.from({ length: 16 }, (_, i) => `A${i + 1}`);
-		await page.fill('textarea[name="names"]', players1.join('\n'));
+		await page.fill('input[name="name"]', tournamentName);
+		const players = Array.from({ length: 16 }, (_, i) => `A${i + 1}`);
+		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-		await page.click('button:has-text("Start Tournament")');
 
 		// Go back to dashboard
 		await page.goto('/');
+		await page.waitForSelector(`text=${tournamentName}`);
 
-		// Create draft tournament (no players added)
-		await page.click('text=+ New Tournament');
-		await page.fill('input[name="name"]', draftTournamentName);
-		// Enter minimum players so form can submit, but don't start it
-		const players2 = Array.from({ length: 8 }, (_, i) => `D${i + 1}`);
-		await page.fill('textarea[name="names"]', players2.join('\n'));
-		await page.click('button[type="submit"]');
-		// Don't click "Start Tournament" - leave it in draft
-
-		// Go back to dashboard
-		await page.goto('/');
-		await page.waitForSelector(`text=${activeTournamentName}`);
-		await page.waitForSelector(`text=${draftTournamentName}`);
-
-		// Verify sections
+		// Verify tournament appears in active section
 		const activeSection = await page
 			.locator(
-				`h2:has-text("Active Tournaments") + .tournament-list .tournament-card:has-text("${activeTournamentName}")`
+				`h2:has-text("Active Tournaments") + .tournament-list .tournament-card:has-text("${tournamentName}")`
 			)
 			.count();
 		expect(activeSection).toBe(1);
-
-		// Verify draft tournament appears in draft section
-		const draftSection = await page
-			.locator(
-				`h2:has-text("Draft Tournaments") + .tournament-list .tournament-card:has-text("${draftTournamentName}")`
-			)
-			.count();
-		expect(draftSection).toBe(1);
 	});
 
 	test('smart paste converts comma-separated names to lines', async ({ page, context }) => {
@@ -429,9 +397,6 @@ test.describe('Tournament Integration Tests', () => {
 
 			await page.click('button[type="submit"]');
 
-			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-			await page.click('button:has-text("Start Tournament")');
 			await page.waitForURL(/\/tournament\/\d+/);
 
 			// Navigate to 5p court

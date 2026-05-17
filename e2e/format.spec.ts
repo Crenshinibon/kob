@@ -99,9 +99,6 @@ test.describe('Tournament Format Selection', () => {
       await page.click('button[type="submit"]');
 
       await page.waitForURL(/\/tournament\/\d+/);
-      await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-      await page.click('button:has-text("Start Tournament")');
-      await page.waitForURL(/\/tournament\/\d+/);
 
       await expect(page.locator('text=Round 1 of 2')).toBeVisible();
 
@@ -131,9 +128,6 @@ test.describe('Tournament Format Selection', () => {
       await page.click('button[type="submit"]');
 
       await page.waitForURL(/\/tournament\/\d+/);
-      await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-      await page.click('button:has-text("Start Tournament")');
-      await page.waitForURL(/\/tournament\/\d+/);
 
       await expect(page.locator('text=Round 1 of 3')).toBeVisible();
     });
@@ -153,9 +147,6 @@ test.describe('Tournament Format Selection', () => {
 
       await page.click('button[type="submit"]');
 
-      await page.waitForURL(/\/tournament\/\d+/);
-      await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-      await page.click('button:has-text("Start Tournament")');
       await page.waitForURL(/\/tournament\/\d+/);
 
       await expect(page.locator('text=Round 1 of 4')).toBeVisible();
@@ -217,10 +208,8 @@ test.describe('Tournament Format Selection', () => {
 
       await page.waitForURL(/\/tournament\/\d+/);
 
-      await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-
-      // Verify tournament was created with correct player count
-      await expect(page.getByText('16 players registered', { exact: true })).toBeVisible();
+      // Verify tournament was created and started
+      await expect(page.locator('text=Round 1')).toBeVisible();
     });
   });
 
@@ -299,12 +288,8 @@ test.describe('Tournament Format Selection', () => {
     });
 
     test('kick leftovers removes last players to make clean courts', async ({ page }) => {
-      const tournamentName = `KickLeftovers ${Date.now()}`;
-      testTournamentNames.push(tournamentName);
-
       await page.click('text=+ New Tournament');
       await page.waitForSelector('input[name="name"]');
-      await page.fill('input[name="name"]', tournamentName);
 
       // Enter 17 players on the create page
       const players = Array.from({ length: 17 }, (_, i) => `Player${i + 1}`);
@@ -335,9 +320,6 @@ test.describe('Tournament Format Selection', () => {
 
       await page.click('button[type="submit"]');
 
-      await page.waitForURL(/\/tournament\/\d+/);
-      await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-      await page.click('button:has-text("Start Tournament")');
       await page.waitForURL(/\/tournament\/\d+/);
 
       // Should have 3 courts (2×4p + 1×3p)
@@ -374,9 +356,6 @@ test.describe('Tournament Format Selection', () => {
       await page.click('button[type="submit"]');
 
       await page.waitForURL(/\/tournament\/\d+/);
-      await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-      await page.click('button:has-text("Start Tournament")');
-      await page.waitForURL(/\/tournament\/\d+/);
 
       // Should have 5 courts (4×4p + 1×5p)
       const courtCards = await page.locator('.court-card').count();
@@ -411,9 +390,6 @@ test.describe('Tournament Format Selection', () => {
 
       await page.click('button[type="submit"]');
 
-      await page.waitForURL(/\/tournament\/\d+/);
-      await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-      await page.click('button:has-text("Start Tournament")');
       await page.waitForURL(/\/tournament\/\d+/);
 
       // Should have 5 courts (4×4p + 1×6p)
@@ -452,9 +428,6 @@ test.describe('Tournament Format Selection', () => {
       await page.click('button[type="submit"]');
 
       await page.waitForURL(/\/tournament\/\d+/);
-      await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-      await page.click('button:has-text("Start Tournament")');
-      await page.waitForURL(/\/tournament\/\d+/);
 
       const courtCards = await page.locator('.court-card').count();
       expect(courtCards).toBe(2);
@@ -485,9 +458,6 @@ test.describe('Tournament Format Selection', () => {
 
       await page.click('button[type="submit"]');
 
-      await page.waitForURL(/\/tournament\/\d+/);
-      await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
-      await page.click('button:has-text("Start Tournament")');
       await page.waitForURL(/\/tournament\/\d+/);
 
       const courtCards = await page.locator('.court-card').count();
