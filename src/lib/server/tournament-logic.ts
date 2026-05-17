@@ -22,78 +22,78 @@ export type FormatType = 'preseed' | 'random-seed';
 export type ScoringMode = 'single-21' | 'best-of-3' | 'custom';
 
 export type TournamentConfig = {
-	readonly tournamentId: TournamentId;
-	readonly formatType: FormatType;
-	readonly playerCount: number;
-	readonly courtSizes: readonly number[];
-	readonly physicalCourtCount: number;
-	readonly scoringMode: ScoringMode;
-	readonly pointsToWin: number;
-	readonly winBy: number;
-	readonly setsToWin: number;
-	readonly decidingSetPoints: number;
+  readonly tournamentId: TournamentId;
+  readonly formatType: FormatType;
+  readonly playerCount: number;
+  readonly courtSizes: readonly number[];
+  readonly physicalCourtCount: number;
+  readonly scoringMode: ScoringMode;
+  readonly pointsToWin: number;
+  readonly winBy: number;
+  readonly setsToWin: number;
+  readonly decidingSetPoints: number;
 };
 
 export type Player = {
-	readonly id: number;
-	readonly name: string;
-	readonly seedPoints: number | null;
-	readonly seedRank: number | null;
+  readonly id: number;
+  readonly name: string;
+  readonly seedPoints: number | null;
+  readonly seedRank: number | null;
 };
 
 export type CourtStandings = {
-	readonly playerId: number;
-	readonly rank: number;
-	readonly points: number;
-	readonly diff: number;
+  readonly playerId: number;
+  readonly rank: number;
+  readonly points: number;
+  readonly diff: number;
 };
 
 export type CourtResult = {
-	readonly courtNumber: number;
-	readonly standings: readonly CourtStandings[];
+  readonly courtNumber: number;
+  readonly standings: readonly CourtStandings[];
 };
 
 export type CourtAssignment = {
-	readonly courtNumber: number;
-	readonly playerIds: readonly number[];
+  readonly courtNumber: number;
+  readonly playerIds: readonly number[];
 };
 
 export type MatchData = {
-	readonly teamAScore: number | null;
-	readonly teamBScore: number | null;
-	readonly teamAPlayer1Id: number;
-	readonly teamAPlayer2Id: number;
-	readonly teamBPlayer1Id: number;
-	readonly teamBPlayer2Id: number;
+  readonly teamAScore: number | null;
+  readonly teamBScore: number | null;
+  readonly teamAPlayer1Id: number;
+  readonly teamAPlayer2Id: number;
+  readonly teamBPlayer1Id: number;
+  readonly teamBPlayer2Id: number;
 };
 
 export type TournamentState = {
-	readonly config: TournamentConfig;
-	readonly players: readonly Player[];
+  readonly config: TournamentConfig;
+  readonly players: readonly Player[];
 
-	// How many rounds have been fully saved (0 = none yet)
-	readonly roundsCompleted: number;
+  // How many rounds have been fully saved (0 = none yet)
+  readonly roundsCompleted: number;
 
-	// Total rounds for this tournament
-	readonly totalRounds: number;
+  // Total rounds for this tournament
+  readonly totalRounds: number;
 
-	// Tournament fully completed
-	readonly isComplete: boolean;
+  // Tournament fully completed
+  readonly isComplete: boolean;
 
-	// Saved round results (index 0 = round 1)
-	readonly completedRounds: readonly CourtResult[][];
+  // Saved round results (index 0 = round 1)
+  readonly completedRounds: readonly CourtResult[][];
 
-	// Active round number (0 = not started, 1..N = active)
-	readonly currentRound: number;
+  // Active round number (0 = not started, 1..N = active)
+  readonly currentRound: number;
 
-	// Current round's court assignments
-	readonly currentAssignments: readonly CourtAssignment[];
+  // Current round's court assignments
+  readonly currentAssignments: readonly CourtAssignment[];
 
-	// Next round's pre-computed assignments (set by closeRound, consumed by startRound)
-	readonly nextAssignments: readonly CourtAssignment[];
+  // Next round's pre-computed assignments (set by closeRound, consumed by startRound)
+  readonly nextAssignments: readonly CourtAssignment[];
 
-	// Current round's match data
-	readonly currentMatches: readonly (MatchData | undefined)[];
+  // Current round's match data
+  readonly currentMatches: readonly (MatchData | undefined)[];
 };
 
 // ============================================================================
@@ -101,31 +101,31 @@ export type TournamentState = {
 // ============================================================================
 
 export function getCourtConfiguration(playerCount: number): {
-	totalCourts: number;
-	standardCourts: number;
-	bottomCourtSize: number | null;
+  totalCourts: number;
+  standardCourts: number;
+  bottomCourtSize: number | null;
 } {
-	if (playerCount < 8) throw new Error(`Player count must be at least 8, got ${playerCount}`);
-	if (playerCount > 64) throw new Error(`Player count must be at most 64, got ${playerCount}`);
+  if (playerCount < 8) throw new Error(`Player count must be at least 8, got ${playerCount}`);
+  if (playerCount > 64) throw new Error(`Player count must be at most 64, got ${playerCount}`);
 
-	const leftover = playerCount % 4;
-	if (leftover === 0)
-		return { totalCourts: playerCount / 4, standardCourts: playerCount / 4, bottomCourtSize: null };
+  const leftover = playerCount % 4;
+  if (leftover === 0)
+    return { totalCourts: playerCount / 4, standardCourts: playerCount / 4, bottomCourtSize: null };
 
-	const bottomSize = leftover === 1 ? 5 : leftover === 2 ? 6 : 3;
-	const standard = (playerCount - bottomSize) / 4;
-	return { totalCourts: standard + 1, standardCourts: standard, bottomCourtSize: bottomSize };
+  const bottomSize = leftover === 1 ? 5 : leftover === 2 ? 6 : 3;
+  const standard = (playerCount - bottomSize) / 4;
+  return { totalCourts: standard + 1, standardCourts: standard, bottomCourtSize: bottomSize };
 }
 
 export function calculateCourtSizes(playerCount: number): number[] {
-	const { totalCourts, standardCourts, bottomCourtSize } = getCourtConfiguration(playerCount);
-	const sizes: number[] = [];
-	for (let i = 0; i < standardCourts; i++) sizes.push(4);
-	if (bottomCourtSize !== null) sizes.push(bottomCourtSize);
-	if (sizes.reduce((a, b) => a + b, 0) !== playerCount) {
-		throw new Error(`Court sizes don't sum to ${playerCount}`);
-	}
-	return sizes;
+  const { standardCourts, bottomCourtSize } = getCourtConfiguration(playerCount);
+  const sizes: number[] = [];
+  for (let i = 0; i < standardCourts; i++) sizes.push(4);
+  if (bottomCourtSize !== null) sizes.push(bottomCourtSize);
+  if (sizes.reduce((a, b) => a + b, 0) !== playerCount) {
+    throw new Error(`Court sizes don't sum to ${playerCount}`);
+  }
+  return sizes;
 }
 
 // ============================================================================
@@ -133,12 +133,9 @@ export function calculateCourtSizes(playerCount: number): number[] {
 // ============================================================================
 
 export function calculateRoundCount(courtCount: number, formatType: FormatType): number {
-	if (courtCount < 2) throw new Error(`Court count must be at least 2, got ${courtCount}`);
-	if (formatType === 'preseed') return Math.floor(Math.log2(courtCount - 1)) + 2;
-	if (courtCount <= 4) return 3;
-	if (courtCount <= 8) return 4;
-	if (courtCount <= 16) return 5;
-	return 6;
+  if (courtCount < 2) throw new Error(`Court count must be at least 2, got ${courtCount}`);
+  if (formatType === 'preseed') return Math.floor(Math.log2(courtCount - 1)) + 2;
+  return 4;
 }
 
 // ============================================================================
@@ -146,63 +143,63 @@ export function calculateRoundCount(courtCount: number, formatType: FormatType):
 // ============================================================================
 
 export type CreateTournamentOpts = {
-	tournamentId: TournamentId;
-	formatType: FormatType;
-	playerCount: number;
-	physicalCourtCount?: number;
-	scoringMode?: ScoringMode;
-	pointsToWin?: number;
-	winBy?: number;
-	setsToWin?: number;
-	decidingSetPoints?: number;
+  tournamentId: TournamentId;
+  formatType: FormatType;
+  playerCount: number;
+  physicalCourtCount?: number;
+  scoringMode?: ScoringMode;
+  pointsToWin?: number;
+  winBy?: number;
+  setsToWin?: number;
+  decidingSetPoints?: number;
 };
 
 export function createInitialState(opts: CreateTournamentOpts): TournamentState {
-	const {
-		tournamentId,
-		formatType,
-		playerCount,
-		physicalCourtCount = 4,
-		scoringMode = 'single-21',
-		pointsToWin = 21,
-		winBy = 2,
-		setsToWin = 1,
-		decidingSetPoints = 15
-	} = opts;
-	if (playerCount < 8 || playerCount > 64)
-		throw new Error(`Player count must be 8-64, got ${playerCount}`);
-	const courtSizes = calculateCourtSizes(playerCount);
-	return {
-		config: {
-			tournamentId,
-			formatType,
-			playerCount,
-			courtSizes,
-			physicalCourtCount: Math.min(physicalCourtCount, courtSizes.length),
-			scoringMode,
-			pointsToWin,
-			winBy,
-			setsToWin,
-			decidingSetPoints
-		},
-		players: [],
-		roundsCompleted: 0,
-		currentRound: 0,
-		totalRounds: calculateRoundCount(courtSizes.length, formatType),
-		isComplete: false,
-		completedRounds: [],
-		currentAssignments: [],
-		nextAssignments: [],
-		currentMatches: []
-	};
+  const {
+    tournamentId,
+    formatType,
+    playerCount,
+    physicalCourtCount = 4,
+    scoringMode = 'single-21',
+    pointsToWin = 21,
+    winBy = 2,
+    setsToWin = 1,
+    decidingSetPoints = 15
+  } = opts;
+  if (playerCount < 8 || playerCount > 64)
+    throw new Error(`Player count must be 8-64, got ${playerCount}`);
+  const courtSizes = calculateCourtSizes(playerCount);
+  return {
+    config: {
+      tournamentId,
+      formatType,
+      playerCount,
+      courtSizes,
+      physicalCourtCount: Math.min(physicalCourtCount, courtSizes.length),
+      scoringMode,
+      pointsToWin,
+      winBy,
+      setsToWin,
+      decidingSetPoints
+    },
+    players: [],
+    roundsCompleted: 0,
+    currentRound: 0,
+    totalRounds: calculateRoundCount(courtSizes.length, formatType),
+    isComplete: false,
+    completedRounds: [],
+    currentAssignments: [],
+    nextAssignments: [],
+    currentMatches: []
+  };
 }
 
 export function addPlayers(state: TournamentState, playerList: readonly Player[]): TournamentState {
-	if (state.roundsCompleted > 0) throw new Error('Cannot add players after tournament started');
-	if (playerList.length !== state.config.playerCount) {
-		throw new Error(`Expected ${state.config.playerCount} players, got ${playerList.length}`);
-	}
-	return { ...state, players: playerList };
+  if (state.roundsCompleted > 0) throw new Error('Cannot add players after tournament started');
+  if (playerList.length !== state.config.playerCount) {
+    throw new Error(`Expected ${state.config.playerCount} players, got ${playerList.length}`);
+  }
+  return { ...state, players: playerList };
 }
 
 // ============================================================================
@@ -210,36 +207,36 @@ export function addPlayers(state: TournamentState, playerList: readonly Player[]
 // ============================================================================
 
 export function startRound(state: TournamentState): TournamentState {
-	if (state.isComplete) throw new Error('Tournament is already complete');
-	const nextRound = state.roundsCompleted + 1;
+  if (state.isComplete) throw new Error('Tournament is already complete');
+  const nextRound = state.roundsCompleted + 1;
 
-	// Round 1: generate from players
-	if (nextRound === 1) {
-		if (state.players.length === 0) throw new Error('Call addPlayers() first.');
-		const assignments =
-			state.config.formatType === 'preseed'
-				? generatePreseedRound1(state.config.courtSizes, state.players)
-				: generateRandomRound1(state.config.courtSizes, state.players);
-		return {
-			...state,
-			currentRound: 1,
-			currentAssignments: assignments,
-			currentMatches: assignments.map((a) => genMatchForAssignment(state.config.courtSizes, a))
-		};
-	}
+  // Round 1: generate from players
+  if (nextRound === 1) {
+    if (state.players.length === 0) throw new Error('Call addPlayers() first.');
+    const assignments =
+      state.config.formatType === 'preseed'
+        ? generatePreseedRound1(state.config.courtSizes, state.players)
+        : generateRandomRound1(state.config.courtSizes, state.players);
+    return {
+      ...state,
+      currentRound: 1,
+      currentAssignments: assignments,
+      currentMatches: assignments.map((a) => genMatchForAssignment(state.config.courtSizes, a))
+    };
+  }
 
-	// Subsequent rounds: use pre-computed assignments from closeRound
-	if (state.nextAssignments.length === 0) throw new Error('Call closeRound first.');
-	return {
-		...state,
-		currentRound: nextRound,
-		currentAssignments: state.nextAssignments,
-		currentMatches: state.nextAssignments.map((a) =>
-			genMatchForAssignment(state.config.courtSizes, a)
-		),
-		nextAssignments: [],
-		isComplete: nextRound >= state.totalRounds
-	};
+  // Subsequent rounds: use pre-computed assignments from closeRound
+  if (state.nextAssignments.length === 0) throw new Error('Call closeRound first.');
+  return {
+    ...state,
+    currentRound: nextRound,
+    currentAssignments: state.nextAssignments,
+    currentMatches: state.nextAssignments.map((a) =>
+      genMatchForAssignment(state.config.courtSizes, a)
+    ),
+    nextAssignments: [],
+    isComplete: nextRound >= state.totalRounds
+  };
 }
 
 // ============================================================================
@@ -247,53 +244,53 @@ export function startRound(state: TournamentState): TournamentState {
 // ============================================================================
 
 function snakeDistribute(items: number[], courtSizes: readonly number[]): CourtAssignment[] {
-	const courtCount = courtSizes.length;
-	const stdCourts = courtSizes.filter((s) => s === 4).length;
-	const courts = Array.from({ length: courtCount }, (_, i) => ({
-		courtNumber: i + 1,
-		playerIds: [] as number[]
-	}));
+  const courtCount = courtSizes.length;
+  const stdCourts = courtSizes.filter((s) => s === 4).length;
+  const courts = Array.from({ length: courtCount }, (_, i) => ({
+    courtNumber: i + 1,
+    playerIds: [] as number[]
+  }));
 
-	for (let pos = 0; pos < 4; pos++) {
-		const fwd = pos % 2 === 0;
-		for (let c = 0; c < stdCourts; c++) {
-			const idx = fwd ? c : stdCourts - 1 - c;
-			const ii = pos * stdCourts + c;
-			if (ii < items.length) courts[idx].playerIds.push(items[ii]);
-		}
-	}
+  for (let pos = 0; pos < 4; pos++) {
+    const fwd = pos % 2 === 0;
+    for (let c = 0; c < stdCourts; c++) {
+      const idx = fwd ? c : stdCourts - 1 - c;
+      const ii = pos * stdCourts + c;
+      if (ii < items.length) courts[idx].playerIds.push(items[ii]);
+    }
+  }
 
-	const leftover = items.slice(stdCourts * 4);
-	if (leftover.length) courts[courtCount - 1].playerIds.push(...leftover);
-	return courts;
+  const leftover = items.slice(stdCourts * 4);
+  if (leftover.length) courts[courtCount - 1].playerIds.push(...leftover);
+  return courts;
 }
 
 function generatePreseedRound1(
-	courtSizes: readonly number[],
-	players: readonly Player[]
+  courtSizes: readonly number[],
+  players: readonly Player[]
 ): CourtAssignment[] {
-	const sorted = [...players].sort((a, b) => {
-		if (a.seedPoints !== null && b.seedPoints !== null) return b.seedPoints - a.seedPoints;
-		if (a.seedPoints !== null) return -1;
-		if (b.seedPoints !== null) return 1;
-		return a.id - b.id;
-	});
-	return snakeDistribute(
-		sorted.map((p) => p.id),
-		courtSizes
-	);
+  const sorted = [...players].sort((a, b) => {
+    if (a.seedPoints !== null && b.seedPoints !== null) return b.seedPoints - a.seedPoints;
+    if (a.seedPoints !== null) return -1;
+    if (b.seedPoints !== null) return 1;
+    return a.id - b.id;
+  });
+  return snakeDistribute(
+    sorted.map((p) => p.id),
+    courtSizes
+  );
 }
 
 function generateRandomRound1(
-	courtSizes: readonly number[],
-	players: readonly Player[]
+  courtSizes: readonly number[],
+  players: readonly Player[]
 ): CourtAssignment[] {
-	const items = players.map((p) => p.id);
-	for (let i = items.length - 1; i > 0; i--) {
-		const j = Math.floor(Math.random() * (i + 1));
-		[items[i], items[j]] = [items[j], items[i]];
-	}
-	return snakeDistribute(items, courtSizes);
+  const items = players.map((p) => p.id);
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return snakeDistribute(items, courtSizes);
 }
 
 // ============================================================================
@@ -301,31 +298,31 @@ function generateRandomRound1(
 // ============================================================================
 
 function splitSize(n: number): number {
-	if (n <= 1) return 0;
-	const p = 1 << Math.floor(Math.log2(n));
-	return p === n ? n / 2 : p;
+  if (n <= 1) return 0;
+  const p = 1 << Math.floor(Math.log2(n));
+  return p === n ? n / 2 : p;
 }
 
 export function redistributePreseedRecursive(
-	courtResults: readonly CourtResult[]
+  courtResults: readonly CourtResult[]
 ): CourtAssignment[] {
-	const N = courtResults.length;
-	if (N === 0) return [];
-	if (N === 1)
-		return [{ courtNumber: 1, playerIds: courtResults[0].standings.map((s) => s.playerId) }];
+  const N = courtResults.length;
+  if (N === 0) return [];
+  if (N === 1)
+    return [{ courtNumber: 1, playerIds: courtResults[0].standings.map((s) => s.playerId) }];
 
-	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
-	const W = splitSize(N);
-	const winners = sorted.slice(0, W);
-	const losers = sorted.slice(W);
+  const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
+  const W = splitSize(N);
+  const winners = sorted.slice(0, W);
+  const losers = sorted.slice(W);
 
-	const w = redistributePreseedRecursive(winners);
-	const l = redistributePreseedRecursive(losers);
+  const w = redistributePreseedRecursive(winners);
+  const l = redistributePreseedRecursive(losers);
 
-	return [
-		...w.map((a, i) => ({ courtNumber: i + 1, playerIds: a.playerIds })),
-		...l.map((a, i) => ({ courtNumber: W + i + 1, playerIds: a.playerIds }))
-	];
+  return [
+    ...w.map((a, i) => ({ courtNumber: i + 1, playerIds: a.playerIds })),
+    ...l.map((a, i) => ({ courtNumber: W + i + 1, playerIds: a.playerIds }))
+  ];
 }
 
 // ============================================================================
@@ -333,38 +330,38 @@ export function redistributePreseedRecursive(
 // ============================================================================
 
 export function verticalSeeding(
-	courtResults: readonly CourtResult[],
-	targetCourtCount: number
+  courtResults: readonly CourtResult[],
+  targetCourtCount: number
 ): CourtAssignment[] {
-	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
-	const maxRank = sorted.reduce((m, c) => Math.max(m, c.standings.length), 0);
-	const groups: number[][] = [];
+  const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
+  const maxRank = sorted.reduce((m, c) => Math.max(m, c.standings.length), 0);
+  const groups: number[][] = [];
 
-	for (let r = 0; r < maxRank; r++) {
-		const g: number[] = [];
-		for (const c of sorted) if (c.standings[r]) g.push(c.standings[r].playerId);
-		g.sort((a, b) => a - b);
-		groups.push(g);
-	}
+  for (let r = 0; r < maxRank; r++) {
+    const g: number[] = [];
+    for (const c of sorted) if (c.standings[r]) g.push(c.standings[r].playerId);
+    g.sort((a, b) => a - b);
+    groups.push(g);
+  }
 
-	const assignments: CourtAssignment[] = [];
-	const pos = new Array(groups.length).fill(0);
+  const assignments: CourtAssignment[] = [];
+  const pos = new Array(groups.length).fill(0);
 
-	for (let c = 0; c < targetCourtCount; c++) {
-		const pids: number[] = [];
-		let gi = 0;
-		while (pids.length < 4 && gi < groups.length) {
-			const g = groups[gi];
-			const canTake = Math.min(4 - pids.length, g.length - pos[gi]);
-			for (let k = 0; k < canTake; k++) pids.push(g[pos[gi] + k]);
-			pos[gi] += canTake;
-			if (pos[gi] >= g.length) gi++;
-			else if (pids.length >= 4) break;
-			else gi++;
-		}
-		if (pids.length > 0) assignments.push({ courtNumber: c + 1, playerIds: pids });
-	}
-	return assignments;
+  for (let c = 0; c < targetCourtCount; c++) {
+    const pids: number[] = [];
+    let gi = 0;
+    while (pids.length < 4 && gi < groups.length) {
+      const g = groups[gi];
+      const canTake = Math.min(4 - pids.length, g.length - pos[gi]);
+      for (let k = 0; k < canTake; k++) pids.push(g[pos[gi] + k]);
+      pos[gi] += canTake;
+      if (pos[gi] >= g.length) gi++;
+      else if (pids.length >= 4) break;
+      else gi++;
+    }
+    if (pids.length > 0) assignments.push({ courtNumber: c + 1, playerIds: pids });
+  }
+  return assignments;
 }
 
 // ============================================================================
@@ -372,69 +369,69 @@ export function verticalSeeding(
 // ============================================================================
 
 export function ladderRedistribute(
-	courtResults: readonly CourtResult[],
-	targetCourtCount: number
+  courtResults: readonly CourtResult[],
+  targetCourtCount: number
 ): CourtAssignment[] {
-	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
-	const n = sorted.length;
-	const assignments: CourtAssignment[] = [];
+  const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
+  const n = sorted.length;
+  const assignments: CourtAssignment[] = [];
 
-	for (let i = 0; i < targetCourtCount; i++) {
-		const pids: number[] = [];
+  for (let i = 0; i < targetCourtCount; i++) {
+    const pids: number[] = [];
 
-		if (n === 2) {
-			if (i === 0) {
-				takeN(sorted[0], 0, 2, pids);
-				takeN(sorted[1], 0, 2, pids);
-			} else {
-				takeN(sorted[0], 2, 4, pids);
-				takeN(sorted[1], 2, 4, pids);
-			}
-		} else if (i === 0) {
-			takeN(sorted[0], 0, 2, pids);
-			if (sorted[1]) takeN(sorted[1], 0, 2, pids);
-		} else if (i === targetCourtCount - 1) {
-			if (sorted[i - 1])
-				takeN(
-					sorted[i - 1],
-					Math.max(0, sorted[i - 1].standings.length - 2),
-					sorted[i - 1].standings.length,
-					pids
-				);
-			takeN(
-				sorted[i],
-				Math.max(0, sorted[i].standings.length - 2),
-				sorted[i].standings.length,
-				pids
-			);
-		} else {
-			if (sorted[i - 1])
-				takeN(
-					sorted[i - 1],
-					Math.max(0, sorted[i - 1].standings.length - 2),
-					sorted[i - 1].standings.length,
-					pids
-				);
-			if (sorted[i + 1]) takeN(sorted[i + 1], 0, 2, pids);
-		}
+    if (n === 2) {
+      if (i === 0) {
+        takeN(sorted[0], 0, 2, pids);
+        takeN(sorted[1], 0, 2, pids);
+      } else {
+        takeN(sorted[0], 2, 4, pids);
+        takeN(sorted[1], 2, 4, pids);
+      }
+    } else if (i === 0) {
+      takeN(sorted[0], 0, 2, pids);
+      if (sorted[1]) takeN(sorted[1], 0, 2, pids);
+    } else if (i === targetCourtCount - 1) {
+      if (sorted[i - 1])
+        takeN(
+          sorted[i - 1],
+          Math.max(0, sorted[i - 1].standings.length - 2),
+          sorted[i - 1].standings.length,
+          pids
+        );
+      takeN(
+        sorted[i],
+        Math.max(0, sorted[i].standings.length - 2),
+        sorted[i].standings.length,
+        pids
+      );
+    } else {
+      if (sorted[i - 1])
+        takeN(
+          sorted[i - 1],
+          Math.max(0, sorted[i - 1].standings.length - 2),
+          sorted[i - 1].standings.length,
+          pids
+        );
+      if (sorted[i + 1]) takeN(sorted[i + 1], 0, 2, pids);
+    }
 
-		if (pids.length > 0) assignments.push({ courtNumber: i + 1, playerIds: pids });
-	}
-	return assignments;
+    if (pids.length > 0) assignments.push({ courtNumber: i + 1, playerIds: pids });
+  }
+  return assignments;
 }
 
 function takeN(court: CourtResult, from: number, to: number, target: number[]): void {
-	for (let i = from; i < Math.min(to, court.standings.length); i++)
-		target.push(court.standings[i].playerId);
+  for (let i = from; i < Math.min(to, court.standings.length); i++)
+    target.push(court.standings[i].playerId);
 }
 
 export function redistributeLadder(
-	courtResults: readonly CourtResult[],
-	isFirstRound: boolean,
-	courtCount: number
+  courtResults: readonly CourtResult[],
+  isFirstRound: boolean,
+  courtCount: number
 ): CourtAssignment[] {
-	if (isFirstRound) return verticalSeeding(courtResults, courtCount);
-	return ladderRedistribute(courtResults, courtCount);
+  if (isFirstRound) return verticalSeeding(courtResults, courtCount);
+  return ladderRedistribute(courtResults, courtCount);
 }
 
 // ============================================================================
@@ -444,102 +441,102 @@ export function redistributeLadder(
 // ============================================================================
 
 export function closeRound(state: TournamentState): TournamentState {
-	if (state.currentRound === 0) throw new Error('No active round to close');
-	if (state.currentMatches.length === 0)
-		throw new Error('No matches have been generated for this round');
-	const scoredCount = state.currentMatches.filter(
-		(m): m is MatchData => m !== undefined && m.teamAScore !== null && m.teamBScore !== null
-	).length;
-	if (scoredCount === 0) throw new Error('No scored matches in this round');
+  if (state.currentRound === 0) throw new Error('No active round to close');
+  if (state.currentMatches.length === 0)
+    throw new Error('No matches have been generated for this round');
+  const scoredCount = state.currentMatches.filter(
+    (m): m is MatchData => m !== undefined && m.teamAScore !== null && m.teamBScore !== null
+  ).length;
+  if (scoredCount === 0) throw new Error('No scored matches in this round');
 
-	// Calculate standings for each court
-	const courtResults: CourtResult[] = state.currentAssignments.map((assign) => {
-		const matches = state.currentMatches.filter(
-			(m): m is MatchData =>
-				m !== undefined &&
-				assign.playerIds.some(
-					(pid) =>
-						pid === m.teamAPlayer1Id ||
-						pid === m.teamAPlayer2Id ||
-						pid === m.teamBPlayer1Id ||
-						pid === m.teamBPlayer2Id
-				)
-		);
-		return {
-			courtNumber: assign.courtNumber,
-			standings: calculateCourtStandings(matches, assign.playerIds)
-		};
-	});
+  // Calculate standings for each court
+  const courtResults: CourtResult[] = state.currentAssignments.map((assign) => {
+    const matches = state.currentMatches.filter(
+      (m): m is MatchData =>
+        m !== undefined &&
+        assign.playerIds.some(
+          (pid) =>
+            pid === m.teamAPlayer1Id ||
+            pid === m.teamAPlayer2Id ||
+            pid === m.teamBPlayer1Id ||
+            pid === m.teamBPlayer2Id
+        )
+    );
+    return {
+      courtNumber: assign.courtNumber,
+      standings: calculateCourtStandings(matches, assign.playerIds)
+    };
+  });
 
-	const updated = [...state.completedRounds, courtResults];
-	const nextRound = state.roundsCompleted + 1;
+  const updated = [...state.completedRounds, courtResults];
+  const nextRound = state.roundsCompleted + 1;
 
-	if (nextRound >= state.totalRounds) {
-		return {
-			...state,
-			completedRounds: updated,
-			roundsCompleted: nextRound,
-			currentAssignments: [],
-			currentMatches: [],
-			isComplete: true,
-			currentRound: state.currentRound
-		};
-	}
+  if (nextRound >= state.totalRounds) {
+    return {
+      ...state,
+      completedRounds: updated,
+      roundsCompleted: nextRound,
+      currentAssignments: [],
+      currentMatches: [],
+      isComplete: true,
+      currentRound: state.currentRound
+    };
+  }
 
-	// Generate next round assignments
-	let nextAssignments: CourtAssignment[];
-	if (state.config.formatType === 'preseed') {
-		nextAssignments = redistributePreseedRecursive(courtResults);
-	} else if (state.roundsCompleted === 0) {
-		nextAssignments = verticalSeeding(courtResults, state.config.courtSizes.length);
-	} else {
-		nextAssignments = ladderRedistribute(courtResults, state.config.courtSizes.length);
-	}
+  // Generate next round assignments
+  let nextAssignments: CourtAssignment[];
+  if (state.config.formatType === 'preseed') {
+    nextAssignments = redistributePreseedRecursive(courtResults);
+  } else if (state.roundsCompleted === 0) {
+    nextAssignments = verticalSeeding(courtResults, state.config.courtSizes.length);
+  } else {
+    nextAssignments = ladderRedistribute(courtResults, state.config.courtSizes.length);
+  }
 
-	return {
-		...state,
-		completedRounds: updated,
-		roundsCompleted: nextRound,
-		isComplete: false,
-		currentAssignments: [],
-		currentMatches: [],
-		nextAssignments,
-		currentRound: state.currentRound
-	};
+  return {
+    ...state,
+    completedRounds: updated,
+    roundsCompleted: nextRound,
+    isComplete: false,
+    currentAssignments: [],
+    currentMatches: [],
+    nextAssignments,
+    currentRound: state.currentRound
+  };
 }
 
 // ============================================================================
 
 export function calculateCourtStandings(
-	matches: MatchData[],
-	playerIds: readonly number[]
+  matches: MatchData[],
+  playerIds: readonly number[]
 ): CourtStandings[] {
-	const stats: Record<number, { playerId: number; points: number; for: number; against: number }> =
-		{};
-	playerIds.forEach((id) => {
-		stats[id] = { playerId: id, points: 0, for: 0, against: 0 };
-	});
+  const stats: Record<number, { playerId: number; points: number; for: number; against: number }> =
+    {};
+  playerIds.forEach((id) => {
+    stats[id] = { playerId: id, points: 0, for: 0, against: 0 };
+  });
 
-	matches.forEach((m) => {
-		if (m.teamAScore === null || m.teamBScore === null) return;
-		stats[m.teamAPlayer1Id].points += m.teamAScore;
-		stats[m.teamAPlayer1Id].for += m.teamAScore;
-		stats[m.teamAPlayer1Id].against += m.teamBScore;
-		stats[m.teamAPlayer2Id].points += m.teamAScore;
-		stats[m.teamAPlayer2Id].for += m.teamAScore;
-		stats[m.teamAPlayer2Id].against += m.teamBScore;
-		stats[m.teamBPlayer1Id].points += m.teamBScore;
-		stats[m.teamBPlayer1Id].for += m.teamBScore;
-		stats[m.teamBPlayer1Id].against += m.teamAScore;
-		stats[m.teamBPlayer2Id].points += m.teamBScore;
-		stats[m.teamBPlayer2Id].for += m.teamBScore;
-		stats[m.teamBPlayer2Id].against += m.teamAScore;
-	});
+  matches.forEach((m) => {
+    if (m.teamAScore === null || m.teamBScore === null) return;
+    stats[m.teamAPlayer1Id].points += m.teamAScore;
+    stats[m.teamAPlayer1Id].for += m.teamAScore;
+    stats[m.teamAPlayer1Id].against += m.teamBScore;
+    stats[m.teamAPlayer2Id].points += m.teamAScore;
+    stats[m.teamAPlayer2Id].for += m.teamAScore;
+    stats[m.teamAPlayer2Id].against += m.teamBScore;
+    stats[m.teamBPlayer1Id].points += m.teamBScore;
+    stats[m.teamBPlayer1Id].for += m.teamBScore;
+    stats[m.teamBPlayer1Id].against += m.teamAScore;
+    stats[m.teamBPlayer2Id].points += m.teamBScore;
+    stats[m.teamBPlayer2Id].for += m.teamBScore;
+    stats[m.teamBPlayer2Id].against += m.teamAScore;
+  });
 
-	return Object.values(stats)
-		.map((s) => ({ ...s, diff: s.for - s.against }))
-		.sort((a, b) => b.points - a.points || b.diff - a.diff || a.playerId - b.playerId)
-		.map((s, i) => ({ ...s, rank: i + 1 }));
+  return Object.values(stats)
+    .map((s) => ({ ...s, diff: s.for - s.against }))
+    .sort((a, b) => b.points - a.points || b.diff - a.diff || a.playerId - b.playerId)
+    .map((s, i) => ({ ...s, rank: i + 1 }));
 }
 
 // ============================================================================
@@ -547,172 +544,172 @@ export function calculateCourtStandings(
 // ============================================================================
 
 export function generate4pMatches(playerIds: readonly number[]): MatchData[] {
-	if (playerIds.length !== 4) throw new Error(`Expected 4 players, got ${playerIds.length}`);
-	const [p1, p2, p3, p4] = playerIds;
-	return [
-		{
-			teamAPlayer1Id: p1,
-			teamAPlayer2Id: p2,
-			teamBPlayer1Id: p3,
-			teamBPlayer2Id: p4,
-			teamAScore: null,
-			teamBScore: null
-		},
-		{
-			teamAPlayer1Id: p1,
-			teamAPlayer2Id: p3,
-			teamBPlayer1Id: p2,
-			teamBPlayer2Id: p4,
-			teamAScore: null,
-			teamBScore: null
-		},
-		{
-			teamAPlayer1Id: p1,
-			teamAPlayer2Id: p4,
-			teamBPlayer1Id: p2,
-			teamBPlayer2Id: p3,
-			teamAScore: null,
-			teamBScore: null
-		}
-	];
+  if (playerIds.length !== 4) throw new Error(`Expected 4 players, got ${playerIds.length}`);
+  const [p1, p2, p3, p4] = playerIds;
+  return [
+    {
+      teamAPlayer1Id: p1,
+      teamAPlayer2Id: p2,
+      teamBPlayer1Id: p3,
+      teamBPlayer2Id: p4,
+      teamAScore: null,
+      teamBScore: null
+    },
+    {
+      teamAPlayer1Id: p1,
+      teamAPlayer2Id: p3,
+      teamBPlayer1Id: p2,
+      teamBPlayer2Id: p4,
+      teamAScore: null,
+      teamBScore: null
+    },
+    {
+      teamAPlayer1Id: p1,
+      teamAPlayer2Id: p4,
+      teamBPlayer1Id: p2,
+      teamBPlayer2Id: p3,
+      teamAScore: null,
+      teamBScore: null
+    }
+  ];
 }
 
 export function generate3pMatches(playerIds: readonly number[]): MatchData[] {
-	if (playerIds.length !== 3) throw new Error(`Expected 3 players, got ${playerIds.length}`);
-	const [p1, p2, p3] = playerIds;
-	return [
-		{
-			teamAPlayer1Id: p1,
-			teamAPlayer2Id: p2,
-			teamBPlayer1Id: p3,
-			teamBPlayer2Id: p3,
-			teamAScore: null,
-			teamBScore: null
-		},
-		{
-			teamAPlayer1Id: p1,
-			teamAPlayer2Id: p3,
-			teamBPlayer1Id: p2,
-			teamBPlayer2Id: p2,
-			teamAScore: null,
-			teamBScore: null
-		},
-		{
-			teamAPlayer1Id: p2,
-			teamAPlayer2Id: p3,
-			teamBPlayer1Id: p1,
-			teamBPlayer2Id: p1,
-			teamAScore: null,
-			teamBScore: null
-		}
-	];
+  if (playerIds.length !== 3) throw new Error(`Expected 3 players, got ${playerIds.length}`);
+  const [p1, p2, p3] = playerIds;
+  return [
+    {
+      teamAPlayer1Id: p1,
+      teamAPlayer2Id: p2,
+      teamBPlayer1Id: p3,
+      teamBPlayer2Id: p3,
+      teamAScore: null,
+      teamBScore: null
+    },
+    {
+      teamAPlayer1Id: p1,
+      teamAPlayer2Id: p3,
+      teamBPlayer1Id: p2,
+      teamBPlayer2Id: p2,
+      teamAScore: null,
+      teamBScore: null
+    },
+    {
+      teamAPlayer1Id: p2,
+      teamAPlayer2Id: p3,
+      teamBPlayer1Id: p1,
+      teamBPlayer2Id: p1,
+      teamAScore: null,
+      teamBScore: null
+    }
+  ];
 }
 
 function genMatchForAssignment(
-	courtSizes: readonly number[],
-	assignment: CourtAssignment
+  courtSizes: readonly number[],
+  assignment: CourtAssignment
 ): MatchData {
-	const idx = assignment.courtNumber - 1;
-	const size = courtSizes[idx] ?? 4;
-	switch (size) {
-		case 3:
-			return generate3pMatches(assignment.playerIds)[0];
-		case 4:
-			return generate4pMatches(assignment.playerIds)[0];
-		case 5:
-		case 6:
-			return {
-				teamAPlayer1Id: assignment.playerIds[0],
-				teamAPlayer2Id: assignment.playerIds[1],
-				teamBPlayer1Id: assignment.playerIds[2],
-				teamBPlayer2Id:
-					assignment.playerIds.length > 3 ? assignment.playerIds[3] : assignment.playerIds[2],
-				teamAScore: null,
-				teamBScore: null
-			};
-		default:
-			return generate4pMatches(assignment.playerIds)[0];
-	}
+  const idx = assignment.courtNumber - 1;
+  const size = courtSizes[idx] ?? 4;
+  switch (size) {
+    case 3:
+      return generate3pMatches(assignment.playerIds)[0];
+    case 4:
+      return generate4pMatches(assignment.playerIds)[0];
+    case 5:
+    case 6:
+      return {
+        teamAPlayer1Id: assignment.playerIds[0],
+        teamAPlayer2Id: assignment.playerIds[1],
+        teamBPlayer1Id: assignment.playerIds[2],
+        teamBPlayer2Id:
+          assignment.playerIds.length > 3 ? assignment.playerIds[3] : assignment.playerIds[2],
+        teamAScore: null,
+        teamBScore: null
+      };
+    default:
+      return generate4pMatches(assignment.playerIds)[0];
+  }
 }
 
 export function matchCountForCourtSize(courtSize: number): number {
-	switch (courtSize) {
-		case 3:
-			return 3;
-		case 4:
-			return 3;
-		case 5:
-		case 6:
-			return 4;
-		default:
-			throw new Error(`Invalid court size: ${courtSize}`);
-	}
+  switch (courtSize) {
+    case 3:
+      return 3;
+    case 4:
+      return 3;
+    case 5:
+    case 6:
+      return 4;
+    default:
+      throw new Error(`Invalid court size: ${courtSize}`);
+  }
 }
 
 export function generateAllMatchesForAssignment(
-	assignment: CourtAssignment,
-	courtSizes: readonly number[]
+  assignment: CourtAssignment,
+  courtSizes: readonly number[]
 ): MatchData[] {
-	const idx = assignment.courtNumber - 1;
-	const size = courtSizes[idx] ?? 4;
-	switch (size) {
-		case 3:
-			return generate3pMatches(assignment.playerIds);
-		case 4:
-			return generate4pMatches(assignment.playerIds);
-		case 5:
-		case 6: {
-			const [p1, p2, p3] = assignment.playerIds;
-			const p4 =
-				assignment.playerIds.length > 3 ? assignment.playerIds[3] : assignment.playerIds[2];
-			const p5 =
-				assignment.playerIds.length > 4 ? assignment.playerIds[4] : assignment.playerIds[0];
-			const p6 =
-				assignment.playerIds.length > 5 ? assignment.playerIds[5] : assignment.playerIds[1];
-			return [
-				{
-					teamAPlayer1Id: p1,
-					teamAPlayer2Id: p2,
-					teamBPlayer1Id: p3,
-					teamBPlayer2Id: p4,
-					teamAScore: null,
-					teamBScore: null
-				},
-				{
-					teamAPlayer1Id: p1,
-					teamAPlayer2Id: p3,
-					teamBPlayer1Id: p5,
-					teamBPlayer2Id: p6,
-					teamAScore: null,
-					teamBScore: null
-				},
-				{
-					teamAPlayer1Id: p1,
-					teamAPlayer2Id: p4,
-					teamBPlayer1Id: p5,
-					teamBPlayer2Id: p2,
-					teamAScore: null,
-					teamBScore: null
-				},
-				{
-					teamAPlayer1Id: p2,
-					teamAPlayer2Id: p6,
-					teamBPlayer1Id: p3,
-					teamBPlayer2Id: p4,
-					teamAScore: null,
-					teamBScore: null
-				}
-			];
-		}
-		default:
-			return generate4pMatches(assignment.playerIds);
-	}
+  const idx = assignment.courtNumber - 1;
+  const size = courtSizes[idx] ?? 4;
+  switch (size) {
+    case 3:
+      return generate3pMatches(assignment.playerIds);
+    case 4:
+      return generate4pMatches(assignment.playerIds);
+    case 5:
+    case 6: {
+      const [p1, p2, p3] = assignment.playerIds;
+      const p4 =
+        assignment.playerIds.length > 3 ? assignment.playerIds[3] : assignment.playerIds[2];
+      const p5 =
+        assignment.playerIds.length > 4 ? assignment.playerIds[4] : assignment.playerIds[0];
+      const p6 =
+        assignment.playerIds.length > 5 ? assignment.playerIds[5] : assignment.playerIds[1];
+      return [
+        {
+          teamAPlayer1Id: p1,
+          teamAPlayer2Id: p2,
+          teamBPlayer1Id: p3,
+          teamBPlayer2Id: p4,
+          teamAScore: null,
+          teamBScore: null
+        },
+        {
+          teamAPlayer1Id: p1,
+          teamAPlayer2Id: p3,
+          teamBPlayer1Id: p5,
+          teamBPlayer2Id: p6,
+          teamAScore: null,
+          teamBScore: null
+        },
+        {
+          teamAPlayer1Id: p1,
+          teamAPlayer2Id: p4,
+          teamBPlayer1Id: p5,
+          teamBPlayer2Id: p2,
+          teamAScore: null,
+          teamBScore: null
+        },
+        {
+          teamAPlayer1Id: p2,
+          teamAPlayer2Id: p6,
+          teamBPlayer1Id: p3,
+          teamBPlayer2Id: p4,
+          teamAScore: null,
+          teamBScore: null
+        }
+      ];
+    }
+    default:
+      return generate4pMatches(assignment.playerIds);
+  }
 }
 
 export function countScoredMatches(courtMatches: readonly (MatchData | undefined)[]): number {
-	return courtMatches.filter(
-		(m) => m !== undefined && m.teamAScore !== null && m.teamBScore !== null
-	).length;
+  return courtMatches.filter(
+    (m) => m !== undefined && m.teamAScore !== null && m.teamBScore !== null
+  ).length;
 }
 
 // ============================================================================
@@ -720,9 +717,9 @@ export function countScoredMatches(courtMatches: readonly (MatchData | undefined
 // ============================================================================
 
 export function getTop2(court: {
-	standings: readonly { playerId: number; rank: number }[];
+  standings: readonly { playerId: number; rank: number }[];
 }): number[] {
-	return court.standings.filter((s) => s.rank <= 2).map((s) => s.playerId);
+  return court.standings.filter((s) => s.rank <= 2).map((s) => s.playerId);
 }
 
 // ============================================================================
@@ -730,19 +727,19 @@ export function getTop2(court: {
 // ============================================================================
 
 export function getScoreCap(config: TournamentConfig, courtSize: number): number {
-	const base =
-		courtSize >= 5 ? (config.pointsToWin === 21 ? 15 : config.pointsToWin) : config.pointsToWin;
-	if (config.setsToWin >= 2) return Math.min(base, config.decidingSetPoints ?? 15);
-	return base;
+  const base =
+    courtSize >= 5 ? (config.pointsToWin === 21 ? 15 : config.pointsToWin) : config.pointsToWin;
+  if (config.setsToWin >= 2) return Math.min(base, config.decidingSetPoints ?? 15);
+  return base;
 }
 
 export function getScoringLabel(config: TournamentConfig, courtSize: number): string {
-	const cap = getScoreCap(config, courtSize);
-	if (config.setsToWin >= 2) {
-		const dec = config.decidingSetPoints ?? 15;
-		return `Best of ${config.setsToWin} (${config.pointsToWin}pt, deciding: ${dec}pt)`;
-	}
-	return `1 set to ${cap}`;
+  const cap = getScoreCap(config, courtSize);
+  if (config.setsToWin >= 2) {
+    const dec = config.decidingSetPoints ?? 15;
+    return `Best of ${config.setsToWin} (${config.pointsToWin}pt, deciding: ${dec}pt)`;
+  }
+  return `1 set to ${cap}`;
 }
 
 // ============================================================================
@@ -750,95 +747,95 @@ export function getScoringLabel(config: TournamentConfig, courtSize: number): st
 // ============================================================================
 
 export type DurationConfig = {
-	readonly setupTimeMinutes: number;
-	readonly transitionTimeMinutes: number;
-	readonly avgRallyDurationSeconds: number;
-	readonly timeBetweenRalliesSeconds: number;
-	readonly timeBetweenMatchesMinutes: number;
+  readonly setupTimeMinutes: number;
+  readonly transitionTimeMinutes: number;
+  readonly avgRallyDurationSeconds: number;
+  readonly timeBetweenRalliesSeconds: number;
+  readonly timeBetweenMatchesMinutes: number;
 };
 
 export function estimateCourtDurationMinutes(
-	courtSize: number,
-	pointsToWin: number,
-	setsToWin: number,
-	durationConfig: DurationConfig
+  courtSize: number,
+  pointsToWin: number,
+  setsToWin: number,
+  durationConfig: DurationConfig
 ): number {
-	const courtPointTarget = courtSize >= 5 ? 15 : pointsToWin;
-	const courtGameTime = 18 * (courtPointTarget / 21);
+  const courtPointTarget = courtSize >= 5 ? 15 : pointsToWin;
+  const courtGameTime = 18 * (courtPointTarget / 21);
 
-	let matches: number;
-	switch (courtSize) {
-		case 3:
-			matches = 3;
-			break;
-		case 4:
-			matches = 3;
-			break;
-		case 5:
-			matches = 4;
-			break;
-		case 6:
-			matches = 4;
-			break;
-		default:
-			matches = 3;
-	}
+  let matches: number;
+  switch (courtSize) {
+    case 3:
+      matches = 3;
+      break;
+    case 4:
+      matches = 3;
+      break;
+    case 5:
+      matches = 4;
+      break;
+    case 6:
+      matches = 4;
+      break;
+    default:
+      matches = 3;
+  }
 
-	const perGame = courtSize === 3 ? courtGameTime * 0.8 : courtGameTime;
-	const matchFactor = setsToWin >= 2 ? 1.4 : 1;
-	return Math.round(
-		(matches * perGame + (matches - 1) * durationConfig.timeBetweenMatchesMinutes) * matchFactor
-	);
+  const perGame = courtSize === 3 ? courtGameTime * 0.8 : courtGameTime;
+  const matchFactor = setsToWin >= 2 ? 1.4 : 1;
+  return Math.round(
+    (matches * perGame + (matches - 1) * durationConfig.timeBetweenMatchesMinutes) * matchFactor
+  );
 }
 
 export function estimateRoundDurationMinutes(
-	courtSizes: readonly number[],
-	pointsToWin: number,
-	setsToWin: number,
-	durationConfig: DurationConfig
+  courtSizes: readonly number[],
+  pointsToWin: number,
+  setsToWin: number,
+  durationConfig: DurationConfig
 ): number {
-	if (courtSizes.length === 0) return 0;
-	let max = 0;
-	for (const size of courtSizes) {
-		const d = estimateCourtDurationMinutes(size, pointsToWin, setsToWin, durationConfig);
-		if (d > max) max = d;
-	}
-	return max;
+  if (courtSizes.length === 0) return 0;
+  let max = 0;
+  for (const size of courtSizes) {
+    const d = estimateCourtDurationMinutes(size, pointsToWin, setsToWin, durationConfig);
+    if (d > max) max = d;
+  }
+  return max;
 }
 
 export function estimateTournamentDuration(
-	totalRounds: number,
-	courtSizes: readonly number[],
-	physicalCourtCount: number,
-	pointsToWin: number,
-	setsToWin: number,
-	durationConfig: DurationConfig
+  totalRounds: number,
+  courtSizes: readonly number[],
+  physicalCourtCount: number,
+  pointsToWin: number,
+  setsToWin: number,
+  durationConfig: DurationConfig
 ): {
-	total: number;
-	setup: number;
-	rounds: number[];
-	transitions: number;
-	breakdown: string;
+  total: number;
+  setup: number;
+  rounds: number[];
+  transitions: number;
+  breakdown: string;
 } {
-	const setup = durationConfig.setupTimeMinutes;
-	const shiftsPerRound = Math.ceil(courtSizes.length / physicalCourtCount);
-	const roundDur = estimateRoundDurationMinutes(courtSizes, pointsToWin, setsToWin, durationConfig);
-	const adjustedRound = shiftsPerRound * roundDur;
+  const setup = durationConfig.setupTimeMinutes;
+  const shiftsPerRound = Math.ceil(courtSizes.length / physicalCourtCount);
+  const roundDur = estimateRoundDurationMinutes(courtSizes, pointsToWin, setsToWin, durationConfig);
+  const adjustedRound = shiftsPerRound * roundDur;
 
-	const rounds: number[] = [];
-	for (let r = 0; r < totalRounds; r++) rounds.push(adjustedRound);
+  const rounds: number[] = [];
+  for (let r = 0; r < totalRounds; r++) rounds.push(adjustedRound);
 
-	const transitionCount = totalRounds - 1;
-	const transitions = transitionCount * durationConfig.transitionTimeMinutes;
-	const total = setup + rounds.reduce((a, b) => a + b, 0) + transitions;
+  const transitionCount = totalRounds - 1;
+  const transitions = transitionCount * durationConfig.transitionTimeMinutes;
+  const total = setup + rounds.reduce((a, b) => a + b, 0) + transitions;
 
-	return {
-		total,
-		setup,
-		rounds,
-		transitions,
-		breakdown: `Setup: ${setup} min, ${totalRounds} rounds x ${adjustedRound} min, ${transitionCount} transitions x ${durationConfig.transitionTimeMinutes} min`
-	};
+  return {
+    total,
+    setup,
+    rounds,
+    transitions,
+    breakdown: `Setup: ${setup} min, ${totalRounds} rounds x ${adjustedRound} min, ${transitionCount} transitions x ${durationConfig.transitionTimeMinutes} min`
+  };
 }
 
 // ============================================================================
@@ -846,45 +843,45 @@ export function estimateTournamentDuration(
 // ============================================================================
 
 export function getBatchShifts(virtualCourtCount: number, physicalCourtCount: number): number[][] {
-	const shifts: number[][] = [];
-	const queue: number[] = [];
-	for (let i = virtualCourtCount; i >= 1; i--) queue.push(i);
+  const shifts: number[][] = [];
+  const queue: number[] = [];
+  for (let i = virtualCourtCount; i >= 1; i--) queue.push(i);
 
-	while (queue.length > 0) {
-		const shift: number[] = [];
-		for (let i = 0; i < physicalCourtCount && queue.length > 0; i++) {
-			shift.push(queue.pop()!);
-		}
-		shifts.push(shift);
-	}
-	return shifts;
+  while (queue.length > 0) {
+    const shift: number[] = [];
+    for (let i = 0; i < physicalCourtCount && queue.length > 0; i++) {
+      shift.push(queue.pop()!);
+    }
+    shifts.push(shift);
+  }
+  return shifts;
 }
 
 export function getShiftForCourt(
-	virtualCourtNumber: number,
-	shifts: number[][]
+  virtualCourtNumber: number,
+  shifts: number[][]
 ): { shift: number; total: number } {
-	for (let i = 0; i < shifts.length; i++) {
-		if (shifts[i].includes(virtualCourtNumber)) return { shift: i + 1, total: shifts.length };
-	}
-	return { shift: 0, total: shifts.length };
+  for (let i = 0; i < shifts.length; i++) {
+    if (shifts[i].includes(virtualCourtNumber)) return { shift: i + 1, total: shifts.length };
+  }
+  return { shift: 0, total: shifts.length };
 }
 
 export function estimateWaitTimeMinutes(
-	shiftIndex: number,
-	totalShifts: number,
-	roundDurationMinutes: number,
-	transitionTimeMinutes: number
+  shiftIndex: number,
+  totalShifts: number,
+  roundDurationMinutes: number,
+  transitionTimeMinutes: number
 ): number {
-	const remaining = totalShifts - shiftIndex;
-	return remaining * roundDurationMinutes + remaining * transitionTimeMinutes;
+  const remaining = totalShifts - shiftIndex;
+  return remaining * roundDurationMinutes + remaining * transitionTimeMinutes;
 }
 
 export function formatDuration(totalMinutes: number): string {
-	const h = Math.floor(totalMinutes / 60);
-	const m = totalMinutes % 60;
-	if (h > 0) return `~${h}h ${m}min`;
-	return `~${m}min`;
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h > 0) return `~${h}h ${m}min`;
+  return `~${m}min`;
 }
 
 // ============================================================================
@@ -892,65 +889,65 @@ export function formatDuration(totalMinutes: number): string {
 // ============================================================================
 
 export function recalculateCourtConfigAfterRetirement(newPlayerCount: number): {
-	courtSizes: number[];
-	totalCourts: number;
+  courtSizes: number[];
+  totalCourts: number;
 } {
-	if (newPlayerCount < 3) return { courtSizes: [newPlayerCount], totalCourts: 1 };
-	const leftover = newPlayerCount % 4;
-	if (leftover === 0) {
-		const count = newPlayerCount / 4;
-		return { courtSizes: Array(count).fill(4), totalCourts: count };
-	}
-	const bottomSize = leftover === 1 ? 5 : leftover === 2 ? 6 : 3;
-	const standard = (newPlayerCount - bottomSize) / 4;
-	const sizes: number[] = [];
-	for (let i = 0; i < standard; i++) sizes.push(4);
-	sizes.push(bottomSize);
-	return { courtSizes: sizes, totalCourts: standard + 1 };
+  if (newPlayerCount < 3) return { courtSizes: [newPlayerCount], totalCourts: 1 };
+  const leftover = newPlayerCount % 4;
+  if (leftover === 0) {
+    const count = newPlayerCount / 4;
+    return { courtSizes: Array(count).fill(4), totalCourts: count };
+  }
+  const bottomSize = leftover === 1 ? 5 : leftover === 2 ? 6 : 3;
+  const standard = (newPlayerCount - bottomSize) / 4;
+  const sizes: number[] = [];
+  for (let i = 0; i < standard; i++) sizes.push(4);
+  sizes.push(bottomSize);
+  return { courtSizes: sizes, totalCourts: standard + 1 };
 }
 
 export function calculateRetiredStanding(
-	currentCourt: number,
-	currentCourtSize: number,
-	totalCourts: number,
-	remainingRounds: number,
-	formatType: FormatType,
-	courtSizes: readonly number[]
+  currentCourt: number,
+  currentCourtSize: number,
+  totalCourts: number,
+  remainingRounds: number,
+  formatType: FormatType,
+  courtSizes: readonly number[]
 ): number {
-	if (formatType === 'preseed') {
-		let place = 0;
-		for (let i = 0; i < totalCourts; i++) {
-			const size = courtSizes[i] ?? 4;
-			place += i < currentCourt - 1 ? 4 : 0;
-		}
-		return place + currentCourtSize;
-	}
+  if (formatType === 'preseed') {
+    let place = 0;
+    for (let i = 0; i < totalCourts; i++) {
+      const size = courtSizes[i] ?? 4;
+      place += i < currentCourt - 1 ? 4 : 0;
+    }
+    return place + currentCourtSize;
+  }
 
-	const worstCourt = Math.min(currentCourt + remainingRounds, totalCourts);
-	let place = 0;
-	for (let i = 0; i < worstCourt - 1; i++) {
-		place += 4;
-	}
-	const lastCourtSize = courtSizes[worstCourt - 1] ?? 4;
-	return place + lastCourtSize;
+  const worstCourt = Math.min(currentCourt + remainingRounds, totalCourts);
+  let place = 0;
+  for (let i = 0; i < worstCourt - 1; i++) {
+    place += 4;
+  }
+  const lastCourtSize = courtSizes[worstCourt - 1] ?? 4;
+  return place + lastCourtSize;
 }
 
 export function getFinalRoundCourtConfig(courtSizes: readonly number[]): {
-	courtSizes: number[];
-	eliminatedPlayerIds: number[];
+  courtSizes: number[];
+  eliminatedPlayerIds: number[];
 } {
-	const playerCount = courtSizes.reduce((a, b) => a + b, 0);
+  const playerCount = courtSizes.reduce((a, b) => a + b, 0);
 
-	if (courtSizes.length === 1) {
-		const size = courtSizes[0];
-		if (size === 5) return { courtSizes: [4], eliminatedPlayerIds: [] };
-		if (size === 6) return { courtSizes: [4], eliminatedPlayerIds: [] };
-		return { courtSizes: [...courtSizes], eliminatedPlayerIds: [] };
-	}
+  if (courtSizes.length === 1) {
+    const size = courtSizes[0];
+    if (size === 5) return { courtSizes: [4], eliminatedPlayerIds: [] };
+    if (size === 6) return { courtSizes: [4], eliminatedPlayerIds: [] };
+    return { courtSizes: [...courtSizes], eliminatedPlayerIds: [] };
+  }
 
-	if (playerCount % 4 === 0 || courtSizes.length >= 2) {
-		return { courtSizes: [...courtSizes], eliminatedPlayerIds: [] };
-	}
+  if (playerCount % 4 === 0 || courtSizes.length >= 2) {
+    return { courtSizes: [...courtSizes], eliminatedPlayerIds: [] };
+  }
 
-	return { courtSizes: [...courtSizes], eliminatedPlayerIds: [] };
+  return { courtSizes: [...courtSizes], eliminatedPlayerIds: [] };
 }

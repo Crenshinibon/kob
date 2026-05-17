@@ -86,23 +86,21 @@
 
 	$effect(() => {
 		if (formatType === 'preseed' && computedPlayerCount >= minPlayers) {
-			numRounds = roundCounts();
+			numRounds = preseedRoundCounts();
 		}
 	});
 
-	const roundCounts = $derived(() => {
+	const preseedRoundCounts = $derived(() => {
 		const courts = Math.ceil(computedPlayerCount / 4);
 		if (formatType === 'preseed') {
 			return Math.max(1, Math.floor(Math.log2(courts <= 1 ? 1 : courts - 1)) + 2);
+		} else {
+			throw Error('Only used for preseed tournaments');
 		}
-		if (courts <= 4) return 3;
-		if (courts <= 8) return 4;
-		if (courts <= 16) return 5;
-		return 6;
 	});
 
 	const effectiveRounds = $derived(
-		formatType === 'preseed' ? roundCounts() : Math.max(1, numRounds)
+		formatType === 'preseed' ? preseedRoundCounts() : Math.max(1, numRounds)
 	);
 
 	const basePtTarget = $derived(scoringMode === 'custom' ? customPointsToWin : 21);
@@ -362,8 +360,8 @@
 		<div class="field">
 			<span class="label">Number of Rounds</span>
 			{#if formatType === 'preseed'}
-				<div class="info-box">{roundCounts()} rounds (auto-calculated)</div>
-				<input type="hidden" name="numRounds" value={roundCounts()} />
+				<div class="info-box">{preseedRoundCounts()} rounds (auto-calculated)</div>
+				<input type="hidden" name="numRounds" value={preseedRoundCounts()} />
 			{:else}
 				<div class="rounds-config">
 					<input
