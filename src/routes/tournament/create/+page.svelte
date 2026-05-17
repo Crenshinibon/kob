@@ -10,7 +10,7 @@
 	let customPointsToWin = $state(21);
 	let customWinBy = $state(2);
 	let customDecidingPoints = $state(15);
-	let numRounds = $state(3);
+	let numRounds = $state(4);
 
 	const minPlayers = 8;
 	const maxPlayers = 64;
@@ -85,7 +85,7 @@
 	});
 
 	$effect(() => {
-		if (formatType === 'random-seed' && computedPlayerCount >= minPlayers) {
+		if (formatType === 'preseed' && computedPlayerCount >= minPlayers) {
 			numRounds = roundCounts();
 		}
 	});

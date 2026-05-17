@@ -1,1016 +1,299 @@
 $ playwright test --last-failed "--workers=1" "--reporter=list"
 
-Running 51 tests using 1 worker
+Running 29 tests using 1 worker
 
-  ✓   1 e2e/demo.test.ts:3:1 › home page has expected h1 (198ms)
-[2m[WebServer] [22m[2m2026-05-15T18:47:39.605Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
-  ✓   2 e2e/format.spec.ts:54:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) (1.5s)
-  ✓   3 e2e/format.spec.ts:68:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range (538ms)
-  ✓   4 e2e/format.spec.ts:77:3 › Tournament Format Selection › Random Format › rounds input is editable (544ms)
-  ✘   5 e2e/format.spec.ts:85:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (30.8s)
-  ✘   6 e2e/format.spec.ts:112:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (30.8s)
-  ✘   7 e2e/format.spec.ts:140:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (30.8s)
-  ✓   8 e2e/format.spec.ts:167:3 › Tournament Format Selection › Pre-Seed Format › switching player count updates fixed rounds (703ms)
-  ✓   9 e2e/format.spec.ts:177:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again (646ms)
-  ✘  10 e2e/format.spec.ts:187:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (30.8s)
-  ✘  11 e2e/format.spec.ts:230:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description (30.9s)
-  ✘  12 e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description (30.8s)
-  ✘  13 e2e/format.spec.ts:276:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description (30.8s)
-  ✘  14 e2e/format.spec.ts:297:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) (30.9s)
-  ✘  15 e2e/format.spec.ts:315:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (30.8s)
-  ✘  16 e2e/format.spec.ts:340:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches (30.8s)
-  ✘  17 e2e/format.spec.ts:377:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games (30.9s)
-  ✘  18 e2e/format.spec.ts:414:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games (30.9s)
-  ✘  19 e2e/format.spec.ts:453:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts (30.9s)
-  ✘  20 e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › below 8 players shows minimum warning (30.1s)
-  ✘  21 e2e/format.spec.ts:486:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (30.8s)
-  ✘  22 e2e/format.spec.ts:507:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning (30.1s)
-  ✘  23 e2e/promotion.spec.ts:71:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (30.9s)
-  ✘  24 e2e/promotion.spec.ts:176:2 › Promotion and Relegation › close round button is disabled until all matches complete (30.9s)
-  ✘  25 e2e/promotion.spec.ts:269:2 › Promotion and Relegation › final round completion marks tournament as completed (30.9s)
-  ✘  26 e2e/promotion.spec.ts:341:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution (30.9s)
-  ✘  27 e2e/promotion.spec.ts:424:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution (30.9s)
-  ✘  28 e2e/promotion.spec.ts:490:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court maintains 5 players after redistribution (30.9s)
-  ✘  29 e2e/promotion.spec.ts:556:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court maintains 6 players after redistribution (30.9s)
-  ✘  30 e2e/standings.spec.ts:53:2 › Standings Calculation › calculates correct points for all players in a match (30.9s)
-  ✘  31 e2e/standings.spec.ts:92:2 › Standings Calculation › sorts players by total points in descending order (30.9s)
-  ✘  32 e2e/standings.spec.ts:131:2 › Standings Calculation › breaks ties using point differential (30.9s)
-  ✘  33 e2e/standings.spec.ts:165:2 › Standings Calculation › awards points correctly across multiple matches per player (30.9s)
-  ✘  34 e2e/standings.spec.ts:215:2 › Standings Calculation › validates score entry rules (min 21, win by 2) (30.9s)
-  ✘  35 e2e/standings.spec.ts:265:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking (30.9s)
-  ✘  36 e2e/standings.spec.ts:297:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking (30.9s)
-  ✘  37 e2e/standings.spec.ts:329:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking (31.0s)
-  ✘  38 e2e/standings.spec.ts:361:3 › Standings Calculation › Non-Standard Court Standings › 5p court accepts 15-point scores (30.9s)
-  ✘  39 e2e/standings.spec.ts:398:3 › Standings Calculation › Non-Standard Court Standings › 3p court accepts 21-point scores (same as 4p) (30.9s)
-  ✘  40 e2e/tournament.spec.ts:71:2 › Tournament Integration Tests › complete 2-round tournament with score entry (30.9s)
-  ✘  41 e2e/tournament.spec.ts:230:2 › Tournament Integration Tests › players can access court via direct URL without login (30.9s)
-  ✘  42 e2e/tournament.spec.ts:287:2 › Tournament Integration Tests › dashboard shows tournaments in correct sections (31.6s)
-  ✘  43 e2e/tournament.spec.ts:335:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines (30.8s)
-  ✓  44 e2e/tournament.spec.ts:369:3 › Tournament Integration Tests › Scoring Modes › best-of-3 scoring mode is selectable (906ms)
-  ✓  45 e2e/tournament.spec.ts:377:3 › Tournament Integration Tests › Scoring Modes › custom scoring mode reveals advanced options (799ms)
-  ✓  46 e2e/tournament.spec.ts:396:3 › Tournament Integration Tests › Scoring Modes › custom best-of-3 shows deciding set points (751ms)
-  ✘  47 e2e/tournament.spec.ts:407:3 › Tournament Integration Tests › Scoring Modes › duration estimate updates based on scoring mode (30.1s)
-  ✘  48 e2e/tournament.spec.ts:422:3 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default (30.9s)
-  ✘  49 e2e/tournament.spec.ts:451:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › shows virtual court info when physical courts < virtual courts (30.0s)
-  ✘  50 e2e/tournament.spec.ts:469:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › physical courts slider ranges from 1 to 16 (30.0s)
-  ✘  51 e2e/tournament.spec.ts:480:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › duration estimate accounts for physical court shifts (30.0s)
+[2m[WebServer] [22m[2m2026-05-17T15:03:17.567Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
+  ✘   1 e2e/format.spec.ts:85:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (30.0s)
+  ✘   2 e2e/format.spec.ts:114:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (30.8s)
+  ✘   3 e2e/format.spec.ts:142:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (30.8s)
+  ✘   4 e2e/format.spec.ts:189:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (30.9s)
+  ✘   5 e2e/format.spec.ts:306:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (30.8s)
+  ✘   6 e2e/format.spec.ts:328:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches (30.9s)
+  ✘   7 e2e/format.spec.ts:366:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games (30.8s)
+  ✘   8 e2e/format.spec.ts:404:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games (30.8s)
+  ✘   9 e2e/format.spec.ts:444:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts (30.8s)
+  ✘  10 e2e/format.spec.ts:478:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (30.8s)
+  ✘  11 e2e/promotion.spec.ts:71:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (30.8s)
+  ✘  12 e2e/promotion.spec.ts:177:2 › Promotion and Relegation › close round button is disabled until all matches complete (30.6s)
 
 
   1) e2e/format.spec.ts:85:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts 
 
-    [31mTest timeout of 30000ms exceeded.[39m
+    [31mTest timeout of 30000ms exceeded while running "beforeEach" hook.[39m
+
+      4 | 	const testTournamentNames: string[] = [];
+      5 |
+    > 6 | 	test.beforeEach(async ({ page }) => {
+        | 	     ^
+      7 | 		await page.goto('/login');
+      8 | 		await page.fill('input[type="email"]', 'test@example.com');
+      9 | 		await page.fill('input[type="password"]', 'password123');
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:6:7
 
     Error: page.waitForURL: Test timeout of 30000ms exceeded.
     =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
+    waiting for navigation to "/" until "load"
     ============================================================
 
-       95 | 			await page.click('button[type="submit"]');
-       96 |
-    >  97 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-       98 | 			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
-       99 | 			await page.fill('textarea[name="names"]', players.join('\n'));
-      100 | 			await page.click('button:has-text("Add Players")');
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:97:15
+      18 | 			await page.fill('input#confirmPassword', 'password123');
+      19 | 			await page.click('button[type="submit"]');
+    > 20 | 			await page.waitForURL('/');
+         | 			           ^
+      21 | 		}
+      22 | 	});
+      23 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:20:15
 
     Error Context: test-results/format-Tournament-Format-S-38d0b-32-players-creates-8-courts/error-context.md
 
-  2) e2e/format.spec.ts:112:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds 
+  2) e2e/format.spec.ts:114:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Add Players")')[22m
+    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:4173/"[22m
 
-      125 | 			await page.click('button[type="submit"]');
-      126 |
-    > 127 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+      132 |
+      133 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 134 | 			await page.click('button:has-text("Add Players")');
           | 			           ^
-      128 |
-      129 | 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1} ${100 - i * 5}`);
-      130 | 			await page.fill('textarea[name="names"]', players.join('\n'));
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:127:15
+      135 | 			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
+      136 | 			await page.click('button:has-text("Start Tournament")');
+      137 | 			await page.waitForURL(/\/tournament\/\d+/);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:134:15
 
     Error Context: test-results/format-Tournament-Format-S-95dea-layers-shows-3-fixed-rounds/error-context.md
 
-  3) e2e/format.spec.ts:140:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds 
+  3) e2e/format.spec.ts:142:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Add Players")')[22m
 
-      149 | 			await page.click('button[type="submit"]');
-      150 |
-    > 151 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+      156 |
+      157 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 158 | 			await page.click('button:has-text("Add Players")');
           | 			           ^
-      152 |
-      153 | 			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1} ${200 - i * 5}`);
-      154 | 			await page.fill('textarea[name="names"]', players.join('\n'));
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:151:15
+      159 | 			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
+      160 | 			await page.click('button:has-text("Start Tournament")');
+      161 | 			await page.waitForURL(/\/tournament\/\d+/);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:158:15
 
     Error Context: test-results/format-Tournament-Format-S-db64d-layers-shows-4-fixed-rounds/error-context.md
 
-  4) e2e/format.spec.ts:187:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input 
+  4) e2e/format.spec.ts:189:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Add Players")')[22m
 
-      195 | 			await page.click('button[type="submit"]');
-      196 |
-    > 197 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+      219 |
+      220 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 221 | 			await page.click('button:has-text("Add Players")');
           | 			           ^
-      198 |
-      199 | 			const players = [
-      200 | 				'Nicholas Borchart\t142',
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:197:15
+      222 |
+      223 | 			await page.waitForSelector('button:has-text("Start Tournament")', { timeout: 5000 });
+      224 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:221:15
 
     Error Context: test-results/format-Tournament-Format-S-57f6f-ible-name-with-points-input/error-context.md
 
-  5) e2e/format.spec.ts:230:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description 
+  5) e2e/format.spec.ts:306:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Kick leftovers")')[22m
+    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:4173/"[22m
 
-      236 | 			await page.click('button[type="submit"]');
-      237 |
-    > 238 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+      319 |
+      320 | 			// Kick the leftover
+    > 321 | 			await page.click('button:has-text("Kick leftovers")');
           | 			           ^
-      239 |
-      240 | 			// 11 players = 2×4p + 3 leftover → 3p court
-      241 | 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:238:15
-
-    Error Context: test-results/format-Tournament-Format-S-18dac-rt-warning-with-description/error-context.md
-
-  6) e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      261 | 			await page.click('button[type="submit"]');
-      262 |
-    > 263 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      264 |
-      265 | 			// 25 players = 5×4p + 1 leftover → 5p court
-      266 | 			const players = Array.from({ length: 25 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:263:15
-
-    Error Context: test-results/format-Tournament-Format-S-750b1-rt-warning-with-description/error-context.md
-
-  7) e2e/format.spec.ts:276:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      282 | 			await page.click('button[type="submit"]');
-      283 |
-    > 284 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      285 |
-      286 | 			// 26 players = 4×4p + 2 leftover → 6p court
-      287 | 			const players = Array.from({ length: 26 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:284:15
-
-    Error Context: test-results/format-Tournament-Format-S-53ad7-rt-warning-with-description/error-context.md
-
-  8) e2e/format.spec.ts:297:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      303 | 			await page.click('button[type="submit"]');
-      304 |
-    > 305 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      306 |
-      307 | 			// 24 players = 6×4p, no leftovers
-      308 | 			const players = Array.from({ length: 24 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:305:15
-
-    Error Context: test-results/format-Tournament-Format-S-7023c-ourts-message-no-leftovers-/error-context.md
-
-  9) e2e/format.spec.ts:315:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      321 | 			await page.click('button[type="submit"]');
       322 |
-    > 323 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      324 |
-      325 | 			// 17 players = 4×4p + 1 leftover → 5p court
-      326 | 			const players = Array.from({ length: 17 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:323:15
+      323 | 			// Should now show 16 players (clean)
+      324 | 			await expect(page.locator('text=16 players')).toBeVisible();
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:321:15
 
     Error Context: test-results/format-Tournament-Format-S-e9162-layers-to-make-clean-courts/error-context.md
 
-  10) e2e/format.spec.ts:340:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches 
+  6) e2e/format.spec.ts:328:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Add Players")')[22m
+    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:4173/"[22m
 
-      347 | 			await page.click('button[type="submit"]');
-      348 |
-    > 349 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+      341 |
+      342 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 343 | 			await page.click('button:has-text("Add Players")');
           | 			           ^
-      350 |
-      351 | 			// 11 players = 2×4p + 1×3p
-      352 | 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:349:15
+      344 | 			await page.click('button:has-text("Start Tournament")');
+      345 | 			await page.waitForURL(/\/tournament\/\d+/);
+      346 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:343:15
 
     Error Context: test-results/format-Tournament-Format-S-550e9-s-correct-number-of-matches/error-context.md
 
-  11) e2e/format.spec.ts:377:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games 
+  7) e2e/format.spec.ts:366:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Add Players")')[22m
+    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:4173/"[22m
 
-      384 | 			await page.click('button[type="submit"]');
-      385 |
-    > 386 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+      379 |
+      380 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 381 | 			await page.click('button:has-text("Add Players")');
           | 			           ^
-      387 |
-      388 | 			// 21 players = 4×4p + 1×5p
-      389 | 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:386:15
+      382 | 			await page.click('button:has-text("Start Tournament")');
+      383 | 			await page.waitForURL(/\/tournament\/\d+/);
+      384 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:381:15
 
     Error Context: test-results/format-Tournament-Format-S-9ccd5--tournament-creates-4-games/error-context.md
 
-  12) e2e/format.spec.ts:414:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games 
+  8) e2e/format.spec.ts:404:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Add Players")')[22m
+    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:4173/"[22m
 
-      421 | 			await page.click('button[type="submit"]');
-      422 |
-    > 423 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+      417 |
+      418 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 419 | 			await page.click('button:has-text("Add Players")');
           | 			           ^
-      424 |
-      425 | 			// 22 players = 4×4p + 1×6p
-      426 | 			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:423:15
+      420 | 			await page.click('button:has-text("Start Tournament")');
+      421 | 			await page.waitForURL(/\/tournament\/\d+/);
+      422 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:419:15
 
     Error Context: test-results/format-Tournament-Format-S-69304--tournament-creates-4-games/error-context.md
 
-  13) e2e/format.spec.ts:453:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts 
+  9) e2e/format.spec.ts:444:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Add Players")')[22m
+    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:4173/"[22m
 
-      460 | 			await page.click('button[type="submit"]');
-      461 |
-    > 462 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+      457 |
+      458 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 459 | 			await page.click('button:has-text("Add Players")');
           | 			           ^
-      463 |
-      464 | 			const players = Array.from({ length: 8 }, (_, i) => `Player${i + 1}`);
-      465 | 			await page.fill('textarea[name="names"]', players.join('\n'));
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:462:15
+      460 | 			await page.click('button:has-text("Start Tournament")');
+      461 | 			await page.waitForURL(/\/tournament\/\d+/);
+      462 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:459:15
 
     Error Context: test-results/format-Tournament-Format-S-61c1c--8-players-creates-2-courts/error-context.md
 
-  14) e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › below 8 players shows minimum warning 
+  10) e2e/format.spec.ts:478:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-    ============================================================
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Add Players")')[22m
+    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:4173/"[22m
 
-      476 | 			await page.click('button[type="submit"]');
-      477 |
-    > 478 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+
+      491 |
+      492 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 493 | 			await page.click('button:has-text("Add Players")');
           | 			           ^
-      479 |
-      480 | 			const players = Array.from({ length: 7 }, (_, i) => `Player${i + 1}`);
-      481 | 			await page.fill('textarea[name="names"]', players.join('\n'));
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:478:15
-
-    Error Context: test-results/format-Tournament-Format-S-6ec69-ayers-shows-minimum-warning/error-context.md
-
-  15) e2e/format.spec.ts:486:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      493 | 			await page.click('button[type="submit"]');
-      494 |
-    > 495 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
+      494 | 			await page.click('button:has-text("Start Tournament")');
+      495 | 			await page.waitForURL(/\/tournament\/\d+/);
       496 |
-      497 | 			const players = Array.from({ length: 64 }, (_, i) => `Player${i + 1}`);
-      498 | 			await page.fill('textarea[name="names"]', players.join('\n'));
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:495:15
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:493:15
 
     Error Context: test-results/format-Tournament-Format-S-4f48d-4-players-creates-16-courts/error-context.md
 
-  16) e2e/format.spec.ts:507:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning 
+  11) e2e/promotion.spec.ts:71:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-    ============================================================
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Add Players")')[22m
 
-      509 | 			await page.click('button[type="submit"]');
-      510 |
-    > 511 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      512 |
-      513 | 			const players = Array.from({ length: 65 }, (_, i) => `Player${i + 1}`);
-      514 | 			await page.fill('textarea[name="names"]', players.join('\n'));
-        at /home/dirk/Dev/kob/e2e/format.spec.ts:511:15
 
-    Error Context: test-results/format-Tournament-Format-S-4d75c-ayers-shows-maximum-warning/error-context.md
-
-  17) e2e/promotion.spec.ts:71:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      81 |
-      82 | 		// Add 16 players with predictable names
-    > 83 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+      85 |
+      86 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 87 | 		await page.click('button:has-text("Add Players")');
          | 		           ^
-      84 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${String(i + 1).padStart(2, '0')}`);
-      85 | 		await page.fill('textarea[name="names"]', players.join('\n'));
-      86 | 		await page.click('button:has-text("Add Players")');
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:83:14
+      88 | 		await page.click('button:has-text("Start Tournament")');
+      89 | 		await page.waitForURL(/\/tournament\/\d+/);
+      90 |
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:87:14
 
     Error Context: test-results/promotion-Promotion-and-Re-b274e-ding-redistribution-by-rank/error-context.md
 
-  18) e2e/promotion.spec.ts:176:2 › Promotion and Relegation › close round button is disabled until all matches complete 
+  12) e2e/promotion.spec.ts:177:2 › Promotion and Relegation › close round button is disabled until all matches complete 
 
-    [31mTest timeout of 30000ms exceeded.[39m
+    Test was interrupted.
 
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
+    Error: page.click: Test ended.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Add Players")')[22m
+    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:4173/"[22m
 
-      186 |
-      187 | 		// Add 16 players
-    > 188 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+
+      191 |
+      192 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
+    > 193 | 		await page.click('button:has-text("Add Players")');
           | 		           ^
-      189 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-      190 | 		await page.fill('textarea[name="names"]', players.join('\n'));
-      191 | 		await page.click('button:has-text("Add Players")');
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:188:14
+      194 | 		await page.click('button:has-text("Start Tournament")');
+      195 | 		await page.waitForURL(/\/tournament\/\d+/);
+      196 |
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:193:14
 
     Error Context: test-results/promotion-Promotion-and-Re-bd942--until-all-matches-complete/error-context.md
 
-  19) e2e/promotion.spec.ts:269:2 › Promotion and Relegation › final round completion marks tournament as completed 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      279 |
-      280 | 		// Add 16 players
-    > 281 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 		           ^
-      282 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-      283 | 		await page.fill('textarea[name="names"]', players.join('\n'));
-      284 | 		await page.click('button:has-text("Add Players")');
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:281:14
-
-    Error Context: test-results/promotion-Promotion-and-Re-d4e1e-rks-tournament-as-completed/error-context.md
-
-  20) e2e/promotion.spec.ts:341:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      351 |
-      352 | 		// Add 16 players
-    > 353 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 		           ^
-      354 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-      355 | 		await page.fill('textarea[name="names"]', players.join('\n'));
-      356 | 		await page.click('button:has-text("Add Players")');
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:353:14
-
-    Error Context: test-results/promotion-Promotion-and-Re-26658--court-after-redistribution/error-context.md
-
-  21) e2e/promotion.spec.ts:424:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      431 | 			await page.click('button[type="submit"]');
-      432 |
-    > 433 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      434 |
-      435 | 			// 11 players = 2×4p + 1×3p
-      436 | 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:433:15
-
-    Error Context: test-results/promotion-Promotion-and-Re-92a3f-layers-after-redistribution/error-context.md
-
-  22) e2e/promotion.spec.ts:490:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court maintains 5 players after redistribution 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      497 | 			await page.click('button[type="submit"]');
-      498 |
-    > 499 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      500 |
-      501 | 			// 21 players = 4×4p + 1×5p
-      502 | 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:499:15
-
-    Error Context: test-results/promotion-Promotion-and-Re-a4977-layers-after-redistribution/error-context.md
-
-  23) e2e/promotion.spec.ts:556:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court maintains 6 players after redistribution 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      563 | 			await page.click('button[type="submit"]');
-      564 |
-    > 565 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      566 |
-      567 | 			// 22 players = 4×4p + 1×6p
-      568 | 			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:565:15
-
-    Error Context: test-results/promotion-Promotion-and-Re-7b953-layers-after-redistribution/error-context.md
-
-  24) e2e/standings.spec.ts:53:2 › Standings Calculation › calculates correct points for all players in a match 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      60 | 		await page.click('button[type="submit"]');
-      61 |
-    > 62 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-         | 		           ^
-      63 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-      64 | 		await page.fill('textarea[name="names"]', players.join('\n'));
-      65 | 		await page.click('button:has-text("Add Players")');
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:62:14
-
-    Error Context: test-results/standings-Standings-Calcul-8008c--for-all-players-in-a-match/error-context.md
-
-  25) e2e/standings.spec.ts:92:2 › Standings Calculation › sorts players by total points in descending order 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-       98 | 		await page.click('button[type="submit"]');
-       99 |
-    > 100 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 		           ^
-      101 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-      102 | 		await page.fill('textarea[name="names"]', players.join('\n'));
-      103 | 		await page.click('button:has-text("Add Players")');
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:100:14
-
-    Error Context: test-results/standings-Standings-Calcul-b651b--points-in-descending-order/error-context.md
-
-  26) e2e/standings.spec.ts:131:2 › Standings Calculation › breaks ties using point differential ───
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      137 | 		await page.click('button[type="submit"]');
-      138 |
-    > 139 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 		           ^
-      140 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-      141 | 		await page.fill('textarea[name="names"]', players.join('\n'));
-      142 | 		await page.click('button:has-text("Add Players")');
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:139:14
-
-    Error Context: test-results/standings-Standings-Calcul-32cf9-es-using-point-differential/error-context.md
-
-  27) e2e/standings.spec.ts:165:2 › Standings Calculation › awards points correctly across multiple matches per player 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      171 | 		await page.click('button[type="submit"]');
-      172 |
-    > 173 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 		           ^
-      174 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-      175 | 		await page.fill('textarea[name="names"]', players.join('\n'));
-      176 | 		await page.click('button:has-text("Add Players")');
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:173:14
-
-    Error Context: test-results/standings-Standings-Calcul-1c265-multiple-matches-per-player/error-context.md
-
-  28) e2e/standings.spec.ts:215:2 › Standings Calculation › validates score entry rules (min 21, win by 2) 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      221 | 		await page.click('button[type="submit"]');
-      222 |
-    > 223 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 		           ^
-      224 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-      225 | 		await page.fill('textarea[name="names"]', players.join('\n'));
-      226 | 		await page.click('button:has-text("Add Players")');
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:223:14
-
-    Error Context: test-results/standings-Standings-Calcul-7c30a-ntry-rules-min-21-win-by-2-/error-context.md
-
-  29) e2e/standings.spec.ts:265:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      272 | 			await page.click('button[type="submit"]');
-      273 |
-    > 274 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      275 |
-      276 | 			// 11 players = 2×4p + 1×3p
-      277 | 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:274:15
-
-    Error Context: test-results/standings-Standings-Calcul-a68b7-s-show-total-points-ranking/error-context.md
-
-  30) e2e/standings.spec.ts:297:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      304 | 			await page.click('button[type="submit"]');
-      305 |
-    > 306 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      307 |
-      308 | 			// 21 players = 4×4p + 1×5p
-      309 | 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:306:15
-
-    Error Context: test-results/standings-Standings-Calcul-6b1da-show-average-points-ranking/error-context.md
-
-  31) e2e/standings.spec.ts:329:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      336 | 			await page.click('button[type="submit"]');
-      337 |
-    > 338 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      339 |
-      340 | 			// 22 players = 4×4p + 1×6p
-      341 | 			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:338:15
-
-    Error Context: test-results/standings-Standings-Calcul-565f3-show-average-points-ranking/error-context.md
-
-  32) e2e/standings.spec.ts:361:3 › Standings Calculation › Non-Standard Court Standings › 5p court accepts 15-point scores 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      368 | 			await page.click('button[type="submit"]');
-      369 |
-    > 370 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      371 |
-      372 | 			// 21 players = 4×4p + 1×5p
-      373 | 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:370:15
-
-    Error Context: test-results/standings-Standings-Calcul-5a98f-urt-accepts-15-point-scores/error-context.md
-
-  33) e2e/standings.spec.ts:398:3 › Standings Calculation › Non-Standard Court Standings › 3p court accepts 21-point scores (same as 4p) 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      405 | 			await page.click('button[type="submit"]');
-      406 |
-    > 407 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      408 |
-      409 | 			// 11 players = 2×4p + 1×3p
-      410 | 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/standings.spec.ts:407:15
-
-    Error Context: test-results/standings-Standings-Calcul-ccfbc-21-point-scores-same-as-4p-/error-context.md
-
-  34) e2e/tournament.spec.ts:71:2 › Tournament Integration Tests › complete 2-round tournament with score entry 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      81 |
-      82 | 		// 2. Add 16 players
-    > 83 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-         | 		           ^
-      84 | 		const players = [
-      85 | 			'Alice',
-      86 | 			'Bob',
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:83:14
-
-    Error Context: test-results/tournament-Tournament-Inte-59e69-tournament-with-score-entry/error-context.md
-
-  35) e2e/tournament.spec.ts:230:2 › Tournament Integration Tests › players can access court via direct URL without login 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      238 | 		await page.click('button[type="submit"]');
-      239 |
-    > 240 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 		           ^
-      241 | 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-      242 | 		await page.fill('textarea[name="names"]', players.join('\n'));
-      243 | 		await page.click('button:has-text("Add Players")');
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:240:14
-
-    Error Context: test-results/tournament-Tournament-Inte-d59a0-ia-direct-URL-without-login/error-context.md
-
-  36) e2e/tournament.spec.ts:287:2 › Tournament Integration Tests › dashboard shows tournaments in correct sections 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      296 | 		await page.click('button[type="submit"]');
-      297 |
-    > 298 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 		           ^
-      299 | 		const players1 = Array.from({ length: 16 }, (_, i) => `A${i + 1}`);
-      300 | 		await page.fill('textarea[name="names"]', players1.join('\n'));
-      301 | 		await page.click('button:has-text("Add Players")');
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:298:14
-
-    Error Context: test-results/tournament-Tournament-Inte-9b43c-naments-in-correct-sections/error-context.md
-
-  37) e2e/tournament.spec.ts:335:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      345 | 		await page.click('button[type="submit"]');
-      346 |
-    > 347 | 		await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 		           ^
-      348 |
-      349 | 		// Test comma-separated paste
-      350 | 		const commaSeparated = 'Alice, Bob, Carol, David, Eve, Frank, Grace, Henry';
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:347:14
-
-    Error Context: test-results/tournament-Tournament-Inte-6633c-ma-separated-names-to-lines/error-context.md
-
-  38) e2e/tournament.spec.ts:407:3 › Tournament Integration Tests › Scoring Modes › duration estimate updates based on scoring mode 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-    ============================================================
-
-      409 | 			await page.click('button[type="submit"]');
-      410 |
-    > 411 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      412 |
-      413 | 			// Add 16 players to trigger duration estimate
-      414 | 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:411:15
-
-    Error Context: test-results/tournament-Tournament-Inte-edc8d-dates-based-on-scoring-mode/error-context.md
-
-  39) e2e/tournament.spec.ts:422:3 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-      navigated to "http://localhost:4173/"
-      navigated to "http://localhost:4173/"
-    ============================================================
-
-      429 | 			await page.click('button[type="submit"]');
-      430 |
-    > 431 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      432 |
-      433 | 			// 21 players = 4×4p + 1×5p
-      434 | 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:431:15
-
-    Error Context: test-results/tournament-Tournament-Inte-f5590-15-point-scoring-by-default/error-context.md
-
-  40) e2e/tournament.spec.ts:451:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › shows virtual court info when physical courts < virtual courts 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-    ============================================================
-
-      453 | 			await page.click('button[type="submit"]');
-      454 |
-    > 455 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      456 |
-      457 | 			// Add 32 players (8 virtual courts)
-      458 | 			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:455:15
-
-    Error Context: test-results/tournament-Tournament-Inte-83b81-sical-courts-virtual-courts/error-context.md
-
-  41) e2e/tournament.spec.ts:469:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › physical courts slider ranges from 1 to 16 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-    ============================================================
-
-      471 | 			await page.click('button[type="submit"]');
-      472 |
-    > 473 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      474 |
-      475 | 			const slider = page.locator('input[name="physicalCourts"]');
-      476 | 			await expect(slider).toHaveAttribute('min', '1');
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:473:15
-
-    Error Context: test-results/tournament-Tournament-Inte-22a33--slider-ranges-from-1-to-16/error-context.md
-
-  42) e2e/tournament.spec.ts:480:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › duration estimate accounts for physical court shifts 
-
-    [31mTest timeout of 30000ms exceeded.[39m
-
-    Error: page.waitForURL: Test timeout of 30000ms exceeded.
-    =========================== logs ===========================
-    waiting for navigation until "load"
-    ============================================================
-
-      482 | 			await page.click('button[type="submit"]');
-      483 |
-    > 484 | 			await page.waitForURL(/\/tournament\/\d+\/players/);
-          | 			           ^
-      485 |
-      486 | 			// Add 32 players (8 virtual courts)
-      487 | 			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:484:15
-
-    Error Context: test-results/tournament-Tournament-Inte-d5ea7-s-for-physical-court-shifts/error-context.md
-
-  42 failed
+  11 failed
     e2e/format.spec.ts:85:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts 
-    e2e/format.spec.ts:112:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds 
-    e2e/format.spec.ts:140:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds 
-    e2e/format.spec.ts:187:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input 
-    e2e/format.spec.ts:230:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description 
-    e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description 
-    e2e/format.spec.ts:276:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description 
-    e2e/format.spec.ts:297:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) 
-    e2e/format.spec.ts:315:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts 
-    e2e/format.spec.ts:340:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches 
-    e2e/format.spec.ts:377:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games 
-    e2e/format.spec.ts:414:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games 
-    e2e/format.spec.ts:453:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts 
-    e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › below 8 players shows minimum warning 
-    e2e/format.spec.ts:486:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts 
-    e2e/format.spec.ts:507:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning 
+    e2e/format.spec.ts:114:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds 
+    e2e/format.spec.ts:142:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds 
+    e2e/format.spec.ts:189:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input 
+    e2e/format.spec.ts:306:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts 
+    e2e/format.spec.ts:328:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches 
+    e2e/format.spec.ts:366:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games 
+    e2e/format.spec.ts:404:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games 
+    e2e/format.spec.ts:444:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts 
+    e2e/format.spec.ts:478:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts 
     e2e/promotion.spec.ts:71:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank 
-    e2e/promotion.spec.ts:176:2 › Promotion and Relegation › close round button is disabled until all matches complete 
-    e2e/promotion.spec.ts:269:2 › Promotion and Relegation › final round completion marks tournament as completed 
-    e2e/promotion.spec.ts:341:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution 
-    e2e/promotion.spec.ts:424:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution 
-    e2e/promotion.spec.ts:490:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court maintains 5 players after redistribution 
-    e2e/promotion.spec.ts:556:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court maintains 6 players after redistribution 
-    e2e/standings.spec.ts:53:2 › Standings Calculation › calculates correct points for all players in a match 
-    e2e/standings.spec.ts:92:2 › Standings Calculation › sorts players by total points in descending order 
-    e2e/standings.spec.ts:131:2 › Standings Calculation › breaks ties using point differential ─────
-    e2e/standings.spec.ts:165:2 › Standings Calculation › awards points correctly across multiple matches per player 
-    e2e/standings.spec.ts:215:2 › Standings Calculation › validates score entry rules (min 21, win by 2) 
-    e2e/standings.spec.ts:265:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking 
-    e2e/standings.spec.ts:297:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking 
-    e2e/standings.spec.ts:329:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking 
-    e2e/standings.spec.ts:361:3 › Standings Calculation › Non-Standard Court Standings › 5p court accepts 15-point scores 
-    e2e/standings.spec.ts:398:3 › Standings Calculation › Non-Standard Court Standings › 3p court accepts 21-point scores (same as 4p) 
-    e2e/tournament.spec.ts:71:2 › Tournament Integration Tests › complete 2-round tournament with score entry 
-    e2e/tournament.spec.ts:230:2 › Tournament Integration Tests › players can access court via direct URL without login 
-    e2e/tournament.spec.ts:287:2 › Tournament Integration Tests › dashboard shows tournaments in correct sections 
-    e2e/tournament.spec.ts:335:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines 
-    e2e/tournament.spec.ts:407:3 › Tournament Integration Tests › Scoring Modes › duration estimate updates based on scoring mode 
-    e2e/tournament.spec.ts:422:3 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default 
-    e2e/tournament.spec.ts:451:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › shows virtual court info when physical courts < virtual courts 
-    e2e/tournament.spec.ts:469:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › physical courts slider ranges from 1 to 16 
-    e2e/tournament.spec.ts:480:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › duration estimate accounts for physical court shifts 
-  9 passed (22.4m)
-error: script "playwright" exited with code 1
+  1 interrupted
+    e2e/promotion.spec.ts:177:2 › Promotion and Relegation › close round button is disabled until all matches complete 
+  17 did not run
