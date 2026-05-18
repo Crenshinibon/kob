@@ -1,4 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
+import { requested } from '$app/server';
 import { db } from '$lib/server/db';
 import { tournament, courtRotation, match, courtAccess, player } from '$lib/server/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
@@ -23,6 +24,7 @@ import {
   type CourtResult,
   type DurationConfig
 } from '$lib/server/tournament-logic';
+import { getTournamentDataLive } from './tournament-data.remote';
 
 function parseCourtSizes(tourney: any): number[] {
   return tourney.courtSizes
@@ -263,20 +265,6 @@ export const actions = {
     // Build state with current round's results, then close it
     const startedState = startRound(stateWithPlayers);
 
-    // Build scored matches from DB data — one scored match per court
-    const scoredMatches: (MatchData | undefined)[] = await Promise.all(
-      currentRotations.map(async (rotation) => {
-        const rotationMatches = await db
-          .select()
-          .from(match)
-          .where(eq(match.courtRotationId, rotation.id));
-        const scored = (rotationMatches as MatchData[]).filter(
-          (m) => m.teamAScore !== null && m.teamBScore !== null
-        );
-        return scored.length > 0 ? scored[0] : undefined;
-      })
-    );
-
     // Build actual current assignments from DB rotations (not freshly generated ones)
     const currentAssignmentsFromDb = currentRotations.map((rotation) => ({
       courtNumber: rotation.courtNumber,
@@ -290,10 +278,23 @@ export const actions = {
       ].filter((id): id is number => id !== null)
     }));
 
+    // Build ALL scored matches from DB data (not just one per court)
+    const allMatches: MatchData[] = [];
+    for (const rotation of currentRotations) {
+      const rotationMatches = await db
+        .select()
+        .from(match)
+        .where(eq(match.courtRotationId, rotation.id));
+      const scored = (rotationMatches as MatchData[]).filter(
+        (m) => m.teamAScore !== null && m.teamBScore !== null
+      );
+      allMatches.push(...scored);
+    }
+
     const closedState = closeRound({
       ...startedState,
       currentAssignments: currentAssignmentsFromDb,
-      currentMatches: scoredMatches
+      currentMatches: allMatches
     });
 
     if (closedState.isComplete) {
@@ -306,7 +307,7 @@ export const actions = {
 
     // Get the next round assignments from closed state
     const nextAssignments = closedState.nextAssignments;
-    const nextRound = closedState.roundsCompleted;
+    const nextRoundNumber = closedState.roundsCompleted + 1;
 
     // Save next round's rotations and matches
     for (const assignment of nextAssignments) {
@@ -317,7 +318,7 @@ export const actions = {
         .insert(courtRotation)
         .values({
           tournamentId: tournamentId,
-          roundNumber: nextRound as any,
+          roundNumber: nextRoundNumber as any,
           courtNumber: assignment.courtNumber,
           player1Id: assignment.playerIds[0],
           player2Id: assignment.playerIds[1],
@@ -363,7 +364,7 @@ export const actions = {
     const newRotations = await db
       .select()
       .from(courtRotation)
-      .where(eq(courtRotation.roundNumber, nextRound));
+      .where(eq(courtRotation.roundNumber, nextRoundNumber));
 
     const activeCount = Math.min(physicalCourtCount, newRotations.length);
     for (let i = 0; i < activeCount; i++) {
@@ -382,8 +383,10 @@ export const actions = {
 
     await db
       .update(tournament)
-      .set({ currentRound: nextRound })
+      .set({ currentRound: nextRoundNumber })
       .where(eq(tournament.id, tournamentId));
+
+    await requested(getTournamentDataLive, 1).reconnectAll();
 
     return { success: true };
   },

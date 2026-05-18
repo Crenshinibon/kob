@@ -2,6 +2,7 @@
 	import QRCode from 'qrcode';
 	import { browser } from '$app/environment';
 	import { getTournamentDataLive } from './tournament-data.remote';
+	import { enhance } from '$app/forms';
 
 	let { data } = $props<{
 		data: {
@@ -28,12 +29,14 @@
 	// Use live data for courts/matches if available, otherwise fall back to initial data
 	const effectiveData = $derived({
 		...data,
-		...(liveData && !liveData.error && liveData.courts ? {
-			courts: liveData.courts,
-			canCloseRound: liveData.canCloseRound,
-			isFinalRound: liveData.isFinalRound,
-			currentRound: liveData.currentRound
-		} : {})
+		...(liveData && !liveData.error && liveData.courts
+			? {
+					courts: liveData.courts,
+					canCloseRound: liveData.canCloseRound,
+					isFinalRound: liveData.isFinalRound,
+					currentRound: liveData.currentRound
+				}
+			: {})
 	});
 
 	function getMatchStatus(matches: any[]) {
@@ -82,14 +85,17 @@
 		{:else}
 			<p class="status-completed">Completed</p>
 		{/if}
-		<a href="/tournament/{effectiveData.tournament.id}/standings" class="standings-link">📊 View Standings</a>
+		<a href="/tournament/{effectiveData.tournament.id}/standings" class="standings-link"
+			>📊 View Standings</a
+		>
 	</header>
 
 	{#if showScheduling && effectiveData.currentRound > 0}
 		<div class="scheduling-info">
 			<h3>Court Scheduling (Round {effectiveData.currentRound})</h3>
 			<p>
-				Batch shifts · {effectiveData.physicalCourtCount} physical court{effectiveData.physicalCourtCount !== 1
+				Batch shifts · {effectiveData.physicalCourtCount} physical court{effectiveData.physicalCourtCount !==
+				1
 					? 's'
 					: ''}
 				· {virtualCourtCount} virtual court{virtualCourtCount !== 1 ? 's' : ''}
@@ -176,7 +182,7 @@
 
 	<section class="actions">
 		{#if effectiveData.canCloseRound}
-			<form method="POST" action="?/closeRound">
+			<form method="POST" action="?/closeRound" use:enhance>
 				<button type="submit" class="btn-primary">
 					{effectiveData.isFinalRound ? 'Finalize Tournament' : 'Close Round & Advance'}
 				</button>

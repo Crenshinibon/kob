@@ -11,12 +11,40 @@
 	let customWinBy = $state(2);
 	let customDecidingPoints = $state(15);
 	let numRounds = $state(3);
+	let textareaEl: HTMLTextAreaElement | undefined = $state();
 
 	const minPlayers = 8;
 	const maxPlayers = 64;
 
 	const computedPlayerCount = $derived(playerNames.split('\n').filter((n) => n.trim()).length);
 	const leftoverCount = $derived(computedPlayerCount % 4);
+
+	function handlePaste(e: ClipboardEvent) {
+		const pastedText = e.clipboardData?.getData('text') || '';
+
+		if (textareaEl && (pastedText.includes(',') || pastedText.includes(';'))) {
+			e.preventDefault();
+
+			const names = pastedText
+				.split(/[,;]+/)
+				.map((n) => n.trim())
+				.filter((n) => n.length > 0);
+
+			const formattedNames = names.join('\n');
+
+			const start = textareaEl.selectionStart;
+			const end = textareaEl.selectionEnd;
+			const before = playerNames.substring(0, start);
+			const after = playerNames.substring(end);
+
+			playerNames = before + formattedNames + (after ? '\n' + after : '');
+
+			setTimeout(() => {
+				if (textareaEl)
+					textareaEl.selectionStart = textareaEl.selectionEnd = start + formattedNames.length;
+			}, 0);
+		}
+	}
 
 	function removeLastPlayers() {
 		const lines = playerNames.split('\n');
@@ -293,6 +321,8 @@
 				id="names"
 				name="names"
 				bind:value={playerNames}
+				bind:this={textareaEl}
+				onpaste={handlePaste}
 				rows="10"
 				placeholder="Alice 1250&#10;Bob 1100&#10;Carol 950&#10;..."
 				required

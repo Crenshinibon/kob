@@ -299,10 +299,10 @@ test.describe('Tournament Format Selection', () => {
       await expect(page.locator('.leftover-label:has-text("5p")')).toBeVisible();
 
       // Kick the leftover
-      await page.click('button:has-text("Kick leftovers")');
+      await page.click('button:has-text("Kick leftover")');
 
       // Should now show 16 players (clean)
-      await expect(page.getByText('16 players detected')).toBeVisible();
+      await expect(page.getByText('16 names entered')).toBeVisible();
       await expect(page.locator('.standard-court:has-text("All 4-player courts")')).toBeVisible();
     });
 
