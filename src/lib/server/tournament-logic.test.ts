@@ -735,7 +735,7 @@ describe('Full 16-player preseed tournament', () => {
 });
 
 describe('Full 8-player random seed tournament', () => {
-  it('completes 3 rounds', () => {
+  it('completes 4 rounds', () => {
     let s = createInitialState({ tournamentId: 2, formatType: 'random-seed', playerCount: 8 });
     s = addPlayers(
       s,
@@ -758,12 +758,22 @@ describe('Full 8-player random seed tournament', () => {
 
     s = startRound(s);
     expect(s.currentRound).toBe(3);
-    expect(s.isComplete).toBe(true);
+    expect(s.isComplete).toBe(false);
     s = closeRound({
       ...s,
       currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 19 })
     });
+    expect(s.isComplete).toBe(false);
+
+    s = startRound(s);
+    expect(s.currentRound).toBe(4);
     expect(s.isComplete).toBe(true);
+    s = closeRound({
+      ...s,
+      currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 17 })
+    });
+    expect(s.isComplete).toBe(true);
+    expect(s.completedRounds).toHaveLength(4);
   });
 });
 

@@ -183,7 +183,7 @@ interface Actions {
 }
 
 function calculateStandings(matches: MatchData[], playerNames: Record<number, string>) {
-	const stats: Record<number, { id: number; points: number; for: number; against: number }> = {};
+	const stats: Record<number, { id: number; points: number; for: number; against: number; matchesPlayed: number }> = {};
 
 	// Get all player IDs from matches
 	const allPlayerIds = new Set<number>();
@@ -196,7 +196,7 @@ function calculateStandings(matches: MatchData[], playerNames: Record<number, st
 
 	// Initialize stats
 	allPlayerIds.forEach((id) => {
-		stats[id] = { id, points: 0, for: 0, against: 0 };
+		stats[id] = { id, points: 0, for: 0, against: 0, matchesPlayed: 0 };
 	});
 
 	// Calculate stats from completed matches
@@ -207,19 +207,23 @@ function calculateStandings(matches: MatchData[], playerNames: Record<number, st
 		stats[m.teamAPlayer1Id].points += m.teamAScore;
 		stats[m.teamAPlayer1Id].for += m.teamAScore;
 		stats[m.teamAPlayer1Id].against += m.teamBScore;
+		stats[m.teamAPlayer1Id].matchesPlayed += 1;
 
 		stats[m.teamAPlayer2Id].points += m.teamAScore;
 		stats[m.teamAPlayer2Id].for += m.teamAScore;
 		stats[m.teamAPlayer2Id].against += m.teamBScore;
+		stats[m.teamAPlayer2Id].matchesPlayed += 1;
 
 		// Team B players
 		stats[m.teamBPlayer1Id].points += m.teamBScore;
 		stats[m.teamBPlayer1Id].for += m.teamBScore;
 		stats[m.teamBPlayer1Id].against += m.teamAScore;
+		stats[m.teamBPlayer1Id].matchesPlayed += 1;
 
 		stats[m.teamBPlayer2Id].points += m.teamBScore;
 		stats[m.teamBPlayer2Id].for += m.teamBScore;
 		stats[m.teamBPlayer2Id].against += m.teamAScore;
+		stats[m.teamBPlayer2Id].matchesPlayed += 1;
 	});
 
 	// Convert to array and sort
@@ -227,7 +231,8 @@ function calculateStandings(matches: MatchData[], playerNames: Record<number, st
 		.map((s) => ({
 			...s,
 			name: playerNames[s.id] || 'Unknown',
-			diff: s.for - s.against
+			diff: s.for - s.against,
+			avgPoints: s.matchesPlayed > 0 ? s.points / s.matchesPlayed : 0
 		}))
 		.sort((a, b) => {
 			if (b.points !== a.points) return b.points - a.points;

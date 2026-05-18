@@ -277,8 +277,22 @@ export const actions = {
       })
     );
 
+    // Build actual current assignments from DB rotations (not freshly generated ones)
+    const currentAssignmentsFromDb = currentRotations.map((rotation) => ({
+      courtNumber: rotation.courtNumber,
+      playerIds: [
+        rotation.player1Id,
+        rotation.player2Id,
+        ...(rotation.player3Id !== null ? [rotation.player3Id] : []),
+        ...(rotation.player4Id !== null ? [rotation.player4Id] : []),
+        ...(rotation.player5Id !== null ? [rotation.player5Id] : []),
+        ...(rotation.player6Id !== null ? [rotation.player6Id] : [])
+      ].filter((id): id is number => id !== null)
+    }));
+
     const closedState = closeRound({
       ...startedState,
+      currentAssignments: currentAssignmentsFromDb,
       currentMatches: scoredMatches
     });
 

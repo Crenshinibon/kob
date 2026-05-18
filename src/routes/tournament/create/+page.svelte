@@ -297,7 +297,7 @@
 				placeholder="Alice 1250&#10;Bob 1100&#10;Carol 950&#10;..."
 				required
 			></textarea>
-			<p class="count">{computedPlayerCount} players detected</p>
+			<p class="count">{computedPlayerCount} names entered</p>
 			{#if computedPlayerCount > 0 && computedPlayerCount < minPlayers}
 				<p class="info warn">Minimum {minPlayers} players required</p>
 			{:else if computedPlayerCount > maxPlayers}

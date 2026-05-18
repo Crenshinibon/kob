@@ -8,7 +8,9 @@ const config = {
 		experimental: {
 			remoteFunctions: true
 		},
-		adapter: adapter()
+		adapter: adapter({
+			runtime: 'nodejs22.x'
+		})
 	},
 	compilerOptions: {
 		experimental: {
