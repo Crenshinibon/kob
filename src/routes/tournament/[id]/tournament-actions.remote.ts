@@ -111,6 +111,7 @@ export const closeRoundForm = form(
 
 		const closedState = closeRound({
 			...startedState,
+			roundsCompleted: currentRound - 1,
 			currentAssignments: currentAssignmentsFromDb,
 			currentMatches: allMatches
 		});

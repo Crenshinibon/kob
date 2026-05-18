@@ -9,8 +9,6 @@ import {
 	createInitialState,
 	addPlayers,
 	startRound,
-	generate4pMatches,
-	generate3pMatches,
 	generateAllMatchesForAssignment,
 	type FormatType
 } from '$lib/server/tournament-logic';
@@ -186,11 +184,9 @@ export const actions = {
 		const stateWithPlayers = addPlayers(initState, players);
 		const startedState = startRound(stateWithPlayers);
 		const assignments = startedState.currentAssignments;
-		const matches = startedState.currentMatches;
 
 		for (let courtNum = 0; courtNum < assignments.length; courtNum++) {
 			const assignment = assignments[courtNum];
-			const matchData = matches[courtNum];
 			const size = courtSizes[courtNum] ?? 4;
 
 			const [rotation] = await db
@@ -208,72 +204,17 @@ export const actions = {
 				})
 				.returning();
 
-			if (matchData) {
+			const allMatchesForCourt = generateAllMatchesForAssignment(assignment, courtSizes);
+			for (let mi = 0; mi < allMatchesForCourt.length; mi++) {
+				const m = allMatchesForCourt[mi];
 				await db.insert(match).values({
 					courtRotationId: rotation.id,
-					matchNumber: 1,
-					teamAPlayer1Id: matchData.teamAPlayer1Id,
-					teamAPlayer2Id: matchData.teamAPlayer2Id,
-					teamBPlayer1Id: matchData.teamBPlayer1Id,
-					teamBPlayer2Id: matchData.teamBPlayer2Id
+					matchNumber: mi + 1,
+					teamAPlayer1Id: m.teamAPlayer1Id,
+					teamAPlayer2Id: m.teamAPlayer2Id,
+					teamBPlayer1Id: m.teamBPlayer1Id,
+					teamBPlayer2Id: m.teamBPlayer2Id
 				});
-
-				if (size === 4) {
-					const m2 = generate4pMatches(assignment.playerIds)[1];
-					const m3 = generate4pMatches(assignment.playerIds)[2];
-
-					await db.insert(match).values({
-						courtRotationId: rotation.id,
-						matchNumber: 2,
-						teamAPlayer1Id: m2.teamAPlayer1Id,
-						teamAPlayer2Id: m2.teamAPlayer2Id,
-						teamBPlayer1Id: m2.teamBPlayer1Id,
-						teamBPlayer2Id: m2.teamBPlayer2Id
-					});
-
-					await db.insert(match).values({
-						courtRotationId: rotation.id,
-						matchNumber: 3,
-						teamAPlayer1Id: m3.teamAPlayer1Id,
-						teamAPlayer2Id: m3.teamAPlayer2Id,
-						teamBPlayer1Id: m3.teamBPlayer1Id,
-						teamBPlayer2Id: m3.teamBPlayer2Id
-					});
-				} else if (size === 3) {
-					const m2 = generate3pMatches(assignment.playerIds)[1];
-					const m3 = generate3pMatches(assignment.playerIds)[2];
-
-					await db.insert(match).values({
-						courtRotationId: rotation.id,
-						matchNumber: 2,
-						teamAPlayer1Id: m2.teamAPlayer1Id,
-						teamAPlayer2Id: m2.teamAPlayer2Id,
-						teamBPlayer1Id: m2.teamBPlayer1Id,
-						teamBPlayer2Id: m2.teamBPlayer2Id
-					});
-
-					await db.insert(match).values({
-						courtRotationId: rotation.id,
-						matchNumber: 3,
-						teamAPlayer1Id: m3.teamAPlayer1Id,
-						teamAPlayer2Id: m3.teamAPlayer2Id,
-						teamBPlayer1Id: m3.teamBPlayer1Id,
-						teamBPlayer2Id: m3.teamBPlayer2Id
-					});
-				} else if (size >= 5) {
-					const extraMatches = generateAllMatchesForAssignment(assignment, courtSizes);
-					for (let mi = 1; mi < extraMatches.length; mi++) {
-						const m = extraMatches[mi];
-						await db.insert(match).values({
-							courtRotationId: rotation.id,
-							matchNumber: mi + 1,
-							teamAPlayer1Id: m.teamAPlayer1Id,
-							teamAPlayer2Id: m.teamAPlayer2Id,
-							teamBPlayer1Id: m.teamBPlayer1Id,
-							teamBPlayer2Id: m.teamBPlayer2Id
-						});
-					}
-				}
 			}
 
 			const token = crypto.randomBytes(16).toString('hex');

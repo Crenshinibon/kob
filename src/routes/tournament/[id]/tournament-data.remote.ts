@@ -81,7 +81,8 @@ async function fetchTournamentData(tournamentId: number) {
 		.from(courtRotation)
 		.where(
 			and(eq(courtRotation.tournamentId, tournamentId), eq(courtRotation.roundNumber, displayRound))
-		);
+		)
+		.orderBy(courtRotation.courtNumber);
 
 	const playerMap = new Map(players.map((p: any) => [p.id, p]));
 

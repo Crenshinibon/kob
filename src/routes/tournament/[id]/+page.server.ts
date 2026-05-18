@@ -79,7 +79,8 @@ export const load = async ({ params, locals }: any) => {
 		.from(courtRotation)
 		.where(
 			and(eq(courtRotation.tournamentId, tournamentId), eq(courtRotation.roundNumber, currentRound))
-		);
+		)
+		.orderBy(courtRotation.courtNumber);
 
 	const playerMap = new Map(players.map((p: any) => [p.id, p]));
 

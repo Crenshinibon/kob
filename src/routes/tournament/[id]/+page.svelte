@@ -189,8 +189,16 @@
 
 	<section class="actions">
 		{#if effectiveData.canCloseRound}
-			<form {...closeRoundForm} onsubmit={(e) => e.preventDefault()}>
-				<input type="hidden" name="tournamentId" value={data.tournament.id} />
+			<form
+				{...closeRoundForm.enhance(async ({ form, submit }) => {
+					if (await submit()) {
+						form.reset();
+					}
+				})}
+			>
+				<input
+					{...closeRoundForm.fields.tournamentId.as('hidden', data.tournament.id)}
+				/>
 				<button type="submit" class="btn-primary">
 					{effectiveData.isFinalRound ? 'Finalize Tournament' : 'Close Round & Advance'}
 				</button>
@@ -200,8 +208,17 @@
 		{/if}
 
 		{#if effectiveData.tournament.status !== 'completed'}
-			<form {...deleteTournamentForm} class="delete-form" onsubmit={(e) => e.preventDefault()}>
-				<input type="hidden" name="tournamentId" value={data.tournament.id} />
+			<form
+				{...deleteTournamentForm.enhance(async ({ form, submit }) => {
+					if (await submit()) {
+						form.reset();
+					}
+				})}
+				class="delete-form"
+			>
+				<input
+					{...deleteTournamentForm.fields.tournamentId.as('hidden', data.tournament.id)}
+				/>
 				<button type="submit" class="btn-danger" onclick={confirmDelete}>Delete</button>
 			</form>
 		{/if}
