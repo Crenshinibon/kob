@@ -5,7 +5,7 @@
 		estimateTournamentDuration,
 		estimateRoundDurationMinutes,
 		type DurationConfig
-	} from '$lib/server/tournament-logic';
+	} from '$lib/tournament-logic';
 
 	let { form } = $props<{ form?: { error?: string } }>();
 
