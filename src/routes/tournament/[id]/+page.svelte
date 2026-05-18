@@ -2,7 +2,7 @@
 	import QRCode from 'qrcode';
 	import { browser } from '$app/environment';
 	import { getTournamentDataLive } from './tournament-data.remote';
-	import { enhance } from '$app/forms';
+	import { closeRoundForm, deleteTournamentForm } from './tournament-actions.remote';
 
 	let { data } = $props<{
 		data: {
@@ -18,7 +18,7 @@
 		};
 	}>();
 
-	// Live query for auto-refresh when tournament is active
+	// Live query for auto-refresh of match scores when tournament is active
 	const liveQuery = $derived(
 		browser && data.tournament.status === 'active'
 			? getTournamentDataLive(data.tournament.id)
@@ -26,12 +26,19 @@
 	);
 	const liveData = $derived(liveQuery ? await liveQuery : null);
 
-	// Use live data for courts/matches if available, otherwise fall back to initial data
+	// Merge live data for match scores and flags, keep server-loaded court structure
+	// (court structure changes on round transitions, so we don't override it with live data)
 	const effectiveData = $derived({
 		...data,
-		...(liveData && !liveData.error && liveData.courts
+		...(liveData &&
+		!liveData.error &&
+		liveData.courts &&
+		liveData.courts.length === data.courts.length
 			? {
-					courts: liveData.courts,
+					courts: data.courts.map((serverCourt: any, i: number) => ({
+						...serverCourt,
+						matches: liveData.courts[i]?.matches ?? serverCourt.matches
+					})),
 					canCloseRound: liveData.canCloseRound,
 					isFinalRound: liveData.isFinalRound,
 					currentRound: liveData.currentRound
@@ -182,7 +189,8 @@
 
 	<section class="actions">
 		{#if effectiveData.canCloseRound}
-			<form method="POST" action="?/closeRound" use:enhance>
+			<form {...closeRoundForm} onsubmit={(e) => e.preventDefault()}>
+				<input type="hidden" name="tournamentId" value={data.tournament.id} />
 				<button type="submit" class="btn-primary">
 					{effectiveData.isFinalRound ? 'Finalize Tournament' : 'Close Round & Advance'}
 				</button>
@@ -192,7 +200,8 @@
 		{/if}
 
 		{#if effectiveData.tournament.status !== 'completed'}
-			<form method="POST" action="?/deleteTournament" class="delete-form">
+			<form {...deleteTournamentForm} class="delete-form" onsubmit={(e) => e.preventDefault()}>
+				<input type="hidden" name="tournamentId" value={data.tournament.id} />
 				<button type="submit" class="btn-danger" onclick={confirmDelete}>Delete</button>
 			</form>
 		{/if}

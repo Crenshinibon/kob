@@ -1,0 +1,243 @@
+import * as v from 'valibot';
+import { error, redirect } from '@sveltejs/kit';
+import { form, getRequestEvent } from '$app/server';
+import { db } from '$lib/server/db';
+import { tournament, courtRotation, match, courtAccess, player } from '$lib/server/db/schema';
+import { eq, and } from 'drizzle-orm';
+import crypto from 'crypto';
+import {
+	createInitialState,
+	addPlayers,
+	startRound,
+	closeRound,
+	calculateCourtSizes,
+	generateAllMatchesForAssignment,
+	type FormatType,
+	type MatchData
+} from '$lib/server/tournament-logic';
+import { getTournamentDataLive } from './tournament-data.remote';
+
+function parseCourtSizes(tourney: any): number[] {
+	return tourney.courtSizes
+		? JSON.parse(tourney.courtSizes)
+		: calculateCourtSizes(tourney.playerCount);
+}
+
+export const closeRoundForm = form(
+	v.object({
+		tournamentId: v.pipe(v.number(), v.minValue(1))
+	}),
+	async ({ tournamentId }) => {
+		const event = getRequestEvent();
+		const user = event.locals.user;
+		if (!user) error(401, 'Unauthorized');
+
+		const [tourney] = await db
+			.select()
+			.from(tournament)
+			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
+
+		if (!tourney) error(404, 'Not found');
+		if (tourney.status !== 'active') error(400, 'Tournament not active');
+
+		const currentRound = tourney.currentRound || 1;
+
+		if (currentRound >= tourney.numRounds) {
+			await db
+				.update(tournament)
+				.set({ status: 'completed' })
+				.where(eq(tournament.id, tournamentId));
+
+			getTournamentDataLive(tournamentId).reconnect();
+
+			redirect(303, `/tournament/${tournamentId}/standings`);
+		}
+
+		const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
+		const players = dbPlayers.map((p: any) => ({
+			id: p.id,
+			name: p.name,
+			seedPoints: p.seedPoints,
+			seedRank: p.seedRank
+		}));
+
+		const courtSizes: number[] = parseCourtSizes(tourney);
+		const physicalCourtCount = tourney.physicalCourtCount ?? 4;
+
+		const initState = createInitialState({
+			tournamentId: tourney.id,
+			formatType: tourney.formatType as FormatType,
+			playerCount: tourney.playerCount,
+			physicalCourtCount
+		});
+
+		const stateWithPlayers = addPlayers(initState, players);
+
+		const currentRotations = await db
+			.select()
+			.from(courtRotation)
+			.where(
+				and(
+					eq(courtRotation.tournamentId, tournamentId),
+					eq(courtRotation.roundNumber, currentRound)
+				)
+			);
+
+		const currentAssignmentsFromDb = currentRotations.map((rotation) => ({
+			courtNumber: rotation.courtNumber,
+			playerIds: [
+				rotation.player1Id,
+				rotation.player2Id,
+				...(rotation.player3Id !== null ? [rotation.player3Id] : []),
+				...(rotation.player4Id !== null ? [rotation.player4Id] : []),
+				...(rotation.player5Id !== null ? [rotation.player5Id] : []),
+				...(rotation.player6Id !== null ? [rotation.player6Id] : [])
+			].filter((id): id is number => id !== null)
+		}));
+
+		const allMatches: MatchData[] = [];
+		for (const rotation of currentRotations) {
+			const rotationMatches = await db
+				.select()
+				.from(match)
+				.where(eq(match.courtRotationId, rotation.id));
+			const scored = (rotationMatches as MatchData[]).filter(
+				(m) => m.teamAScore !== null && m.teamBScore !== null
+			);
+			allMatches.push(...scored);
+		}
+
+		const startedState = startRound(stateWithPlayers);
+
+		const closedState = closeRound({
+			...startedState,
+			currentAssignments: currentAssignmentsFromDb,
+			currentMatches: allMatches
+		});
+
+		if (closedState.isComplete) {
+			await db
+				.update(tournament)
+				.set({ status: 'completed', currentRound: closedState.roundsCompleted })
+				.where(eq(tournament.id, tournamentId));
+
+			getTournamentDataLive(tournamentId).reconnect();
+
+			redirect(303, `/tournament/${tournamentId}/standings`);
+		}
+
+		const nextAssignments = closedState.nextAssignments;
+		const nextRoundNumber = closedState.roundsCompleted + 1;
+
+		for (const assignment of nextAssignments) {
+			const idx = assignment.courtNumber - 1;
+			const size = courtSizes[idx] ?? 4;
+
+			const [rotation] = await db
+				.insert(courtRotation)
+				.values({
+					tournamentId: tournamentId,
+					roundNumber: nextRoundNumber as any,
+					courtNumber: assignment.courtNumber,
+					player1Id: assignment.playerIds[0],
+					player2Id: assignment.playerIds[1],
+					player3Id: (assignment.playerIds.length > 2 ? assignment.playerIds[2] : null) as any,
+					player4Id: (assignment.playerIds.length > 3 ? assignment.playerIds[3] : null) as any,
+					player5Id: (size >= 5 ? assignment.playerIds[4] : null) as any,
+					player6Id: (size >= 6 ? assignment.playerIds[5] : null) as any
+				})
+				.returning();
+
+			const allMatchesForCourt = generateAllMatchesForAssignment(assignment, courtSizes);
+
+			for (let mi = 0; mi < allMatchesForCourt.length; mi++) {
+				const m = allMatchesForCourt[mi];
+				await db.insert(match).values({
+					courtRotationId: rotation.id,
+					matchNumber: mi + 1,
+					teamAPlayer1Id: m.teamAPlayer1Id,
+					teamAPlayer2Id: m.teamAPlayer2Id,
+					teamBPlayer1Id: m.teamBPlayer1Id,
+					teamBPlayer2Id: m.teamBPlayer2Id
+				});
+			}
+
+			const token = crypto.randomBytes(16).toString('hex');
+			await db.insert(courtAccess).values({
+				courtRotationId: rotation.id,
+				token,
+				isActive: false
+			});
+		}
+
+		for (const rotation of currentRotations) {
+			await db
+				.update(courtAccess)
+				.set({ isActive: false })
+				.where(eq(courtAccess.courtRotationId, rotation.id));
+		}
+
+		const newRotations = await db
+			.select()
+			.from(courtRotation)
+			.where(eq(courtRotation.roundNumber, nextRoundNumber));
+
+		const activeCount = Math.min(physicalCourtCount, newRotations.length);
+		for (let i = 0; i < activeCount; i++) {
+			const accessRecords = await db
+				.select()
+				.from(courtAccess)
+				.where(eq(courtAccess.courtRotationId, newRotations[i].id));
+
+			if (accessRecords.length > 0) {
+				await db
+					.update(courtAccess)
+					.set({ isActive: true })
+					.where(eq(courtAccess.id, accessRecords[0].id));
+			}
+		}
+
+		await db
+			.update(tournament)
+			.set({ currentRound: nextRoundNumber })
+			.where(eq(tournament.id, tournamentId));
+
+		getTournamentDataLive(tournamentId).reconnect();
+
+		return { success: true, nextRound: nextRoundNumber };
+	}
+);
+
+export const deleteTournamentForm = form(
+	v.object({
+		tournamentId: v.pipe(v.number(), v.minValue(1))
+	}),
+	async ({ tournamentId }) => {
+		const event = getRequestEvent();
+		const user = event.locals.user;
+		if (!user) error(401, 'Unauthorized');
+
+		const [tourney] = await db
+			.select()
+			.from(tournament)
+			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
+
+		if (!tourney) error(404, 'Tournament not found');
+
+		const rotations = await db
+			.select()
+			.from(courtRotation)
+			.where(eq(courtRotation.tournamentId, tournamentId));
+
+		for (const rotation of rotations) {
+			await db.delete(match).where(eq(match.courtRotationId, rotation.id));
+			await db.delete(courtAccess).where(eq(courtAccess.courtRotationId, rotation.id));
+		}
+
+		await db.delete(courtRotation).where(eq(courtRotation.tournamentId, tournamentId));
+		await db.delete(player).where(eq(player.tournamentId, tournamentId));
+		await db.delete(tournament).where(eq(tournament.id, tournamentId));
+
+		redirect(303, '/');
+	}
+);

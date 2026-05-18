@@ -10,7 +10,12 @@
 - [] QR codes in round overview are broken currently
 - [] Round overview live query is not working also
 - [] Don't use server actions, but RemoteFunctions command or form
-- [] Use proper live() query from RemoteFunctions, not polling
-
+- [] Use proper live() query from RemoteFunctions (https://svelte.dev/docs/kit/remote-functions#query.live) with server-side polling or realtime queries from db
+- [] closeRound errors hard:
+  [500] POST /tournament/292
+  Error: requested(...) can only be called in the context of a command/form remote function
+  at requested (node_modules/@sveltejs/kit/src/runtime/app/server/remote/requested.js?v=4f175350:127:9)
+  at closeRound (src/routes/tournament/[id]/+page.server.ts:389:11)
+- [] Standings after round 1 in random seed are wrong. The players should be ranked by their current round court position and the reason why the earned the spot, court rank and then points from first round. Also never rank on points first. It's always court position first.
 
 ## Done

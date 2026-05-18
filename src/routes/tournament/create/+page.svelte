@@ -1,4 +1,12 @@
 <script lang="ts">
+	import {
+		calculateCourtSizes,
+		calculateRoundCount,
+		estimateTournamentDuration,
+		estimateRoundDurationMinutes,
+		type DurationConfig
+	} from '$lib/server/tournament-logic';
+
 	let { form } = $props<{ form?: { error?: string } }>();
 
 	let tournamentName = $state('');
@@ -114,21 +122,15 @@
 
 	$effect(() => {
 		if (formatType === 'preseed' && computedPlayerCount >= minPlayers) {
-			numRounds = preseedRoundCounts();
-		}
-	});
-
-	const preseedRoundCounts = $derived(() => {
-		const courts = Math.ceil(computedPlayerCount / 4);
-		if (formatType === 'preseed') {
-			return Math.max(1, Math.floor(Math.log2(courts <= 1 ? 1 : courts - 1)) + 2);
-		} else {
-			throw Error('Only used for preseed tournaments');
+			const courtCount = Math.ceil(computedPlayerCount / 4);
+			numRounds = calculateRoundCount(courtCount, 'preseed');
 		}
 	});
 
 	const effectiveRounds = $derived(
-		formatType === 'preseed' ? preseedRoundCounts() : Math.max(1, numRounds)
+		formatType === 'preseed' && computedPlayerCount >= minPlayers
+			? calculateRoundCount(Math.ceil(computedPlayerCount / 4), 'preseed')
+			: Math.max(1, numRounds)
 	);
 
 	const basePtTarget = $derived(scoringMode === 'custom' ? customPointsToWin : 21);
@@ -136,36 +138,46 @@
 		scoringMode === 'custom' ? parseInt(customFormat) : scoringMode !== 'single-21' ? 2 : 1
 	);
 
+	const defaultDurationConfig: DurationConfig = {
+		setupTimeMinutes: 15,
+		transitionTimeMinutes: 10,
+		avgRallyDurationSeconds: 35,
+		timeBetweenRalliesSeconds: 8,
+		timeBetweenMatchesMinutes: 3
+	};
+
+	const courtSizes = $derived(
+		computedPlayerCount >= minPlayers ? calculateCourtSizes(computedPlayerCount) : []
+	);
+
 	const durationEstimate = $derived(() => {
 		if (computedPlayerCount < minPlayers) return null;
 
-		const leftover = computedPlayerCount % 4;
-		const bottomSize = leftover === 1 ? 5 : leftover === 2 ? 6 : leftover === 3 ? 3 : null;
-		const standardCourts = bottomSize
-			? Math.floor((computedPlayerCount - bottomSize) / 4)
-			: computedPlayerCount / 4;
+		const dur = estimateTournamentDuration(
+			effectiveRounds,
+			courtSizes,
+			physicalCourts,
+			basePtTarget,
+			setsToWin,
+			defaultDurationConfig
+		);
 
-		const courtSizes: number[] = Array(standardCourts).fill(4);
-		if (bottomSize) courtSizes.push(bottomSize);
+		const roundDur = estimateRoundDurationMinutes(
+			courtSizes,
+			basePtTarget,
+			setsToWin,
+			defaultDurationConfig
+		);
 
 		const shiftsPerRound = Math.ceil(courtSizes.length / physicalCourts);
-		const matchFactor = setsToWin >= 2 ? 1.4 : 1;
 
-		let maxCourtDur = 0;
-		for (const size of courtSizes) {
-			const ptTarget = size >= 5 ? 15 : basePtTarget;
-			const gm = 18 * (ptTarget / 21);
-			const perGame = size === 3 ? gm * 0.8 : gm;
-			const matches = size >= 5 ? 4 : 3;
-			const dur = Math.round((matches * perGame + (matches - 1) * 3) * matchFactor);
-			if (dur > maxCourtDur) maxCourtDur = dur;
-		}
-
-		const roundDur = shiftsPerRound * maxCourtDur;
-		const transitions = (effectiveRounds - 1) * 10;
-		const total = 15 + effectiveRounds * roundDur + transitions;
-
-		return { total, roundDur, maxCourtDur, courts: courtSizes.length, shiftsPerRound };
+		return {
+			total: dur.total,
+			roundDur: roundDur * shiftsPerRound,
+			maxCourtDur: roundDur,
+			courts: courtSizes.length,
+			shiftsPerRound
+		};
 	});
 </script>
 
@@ -390,8 +402,8 @@
 		<div class="field">
 			<span class="label">Number of Rounds</span>
 			{#if formatType === 'preseed'}
-				<div class="info-box">{preseedRoundCounts()} rounds (auto-calculated)</div>
-				<input type="hidden" name="numRounds" value={preseedRoundCounts()} />
+				<div class="info-box">{effectiveRounds} rounds (auto-calculated)</div>
+				<input type="hidden" name="numRounds" value={effectiveRounds} />
 			{:else}
 				<div class="rounds-config">
 					<input

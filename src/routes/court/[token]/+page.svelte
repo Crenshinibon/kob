@@ -268,32 +268,32 @@
 					3-player court: solo rotation format — each player takes a turn solo
 				</p>
 			{/if}
-		<table>
-			<thead>
-				<tr>
-					<th>#</th>
-					<th>Player</th>
-					{#if data.court.courtSize === 5 || data.court.courtSize === 6}
-						<th>Avg</th>
-					{/if}
-					<th>Points</th>
-					<th>Diff</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each data.standings as s (s.id)}
-					<tr transition:slide>
-						<td>{s.rank}</td>
-						<td>{s.name}</td>
+			<table>
+				<thead>
+					<tr>
+						<th>#</th>
+						<th>Player</th>
 						{#if data.court.courtSize === 5 || data.court.courtSize === 6}
-							<td>{s.avgPoints?.toFixed(1) ?? '—'}</td>
+							<th>Avg</th>
 						{/if}
-						<td>{s.points}</td>
-						<td>{s.diff > 0 ? '+' : ''}{s.diff}</td>
+						<th>Points</th>
+						<th>Diff</th>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{#each data.standings as s (s.id)}
+						<tr transition:slide>
+							<td>{s.rank}</td>
+							<td>{s.name}</td>
+							{#if data.court.courtSize === 5 || data.court.courtSize === 6}
+								<td>{s.avgPoints?.toFixed(1) ?? '—'}</td>
+							{/if}
+							<td>{s.points}</td>
+							<td>{s.diff > 0 ? '+' : ''}{s.diff}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
 		</section>
 	{/if}
 </main>

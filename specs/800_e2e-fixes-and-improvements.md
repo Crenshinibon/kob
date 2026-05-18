@@ -15,6 +15,7 @@ E2E tests were failing due to several issues:
 ## Solution: Single-Step Tournament Creation
 
 The user requested a simplified flow:
+
 1. Create tournament form (name, format, players, etc.) → Submit → Immediately go to courts overview page (first round)
 2. No intermediate players page
 3. No draft tournament details page
@@ -24,6 +25,7 @@ The user requested a simplified flow:
 ### 1. Single-Step Tournament Creation ✅
 
 **Files modified:**
+
 - `src/routes/tournament/create/+page.server.ts` - Completely rewritten to:
   - Create tournament with `status: 'active'` and `currentRound: 1`
   - Add players immediately
@@ -47,9 +49,11 @@ The user requested a simplified flow:
 ### 2. Auto-Refresh with `query.live` ✅
 
 **New file:**
+
 - `src/routes/tournament/[id]/tournament-data.remote.ts` - Contains `getTournamentDataLive` query that polls every 3 seconds
 
 **Files modified:**
+
 - `src/routes/tournament/[id]/+page.svelte` - Uses `getTournamentDataLive` for active tournaments
 - Uses `effectiveData` derived value that merges live data with initial data
 - Only activates when tournament status is 'active' and running in browser
@@ -59,6 +63,7 @@ The user requested a simplified flow:
 **Root cause:** The rotation query wasn't filtering by `tournamentId`, causing it to return matches from other tournaments.
 
 **Files modified:**
+
 - `src/routes/tournament/[id]/tournament-data.remote.ts` - Fixed rotation query to filter by `tournamentId`
 - `src/routes/tournament/[id]/+page.server.ts` - Fixed rotation query to filter by `tournamentId`
 
@@ -67,11 +72,13 @@ The user requested a simplified flow:
 **Changed:** `numRounds` default from `4` to `3`
 
 **Files modified:**
+
 - `src/routes/tournament/create/+page.svelte`
 
 ### 5. E2E Test Updates ✅
 
 **Files modified:**
+
 - `e2e/format.spec.ts` - Rewritten to match new flow
 - `e2e/promotion.spec.ts` - Removed all "Add Players" and "Start Tournament" steps
 - `e2e/standings.spec.ts` - Removed all "Add Players" and "Start Tournament" steps

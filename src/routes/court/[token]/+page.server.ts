@@ -183,7 +183,10 @@ interface Actions {
 }
 
 function calculateStandings(matches: MatchData[], playerNames: Record<number, string>) {
-	const stats: Record<number, { id: number; points: number; for: number; against: number; matchesPlayed: number }> = {};
+	const stats: Record<
+		number,
+		{ id: number; points: number; for: number; against: number; matchesPlayed: number }
+	> = {};
 
 	// Get all player IDs from matches
 	const allPlayerIds = new Set<number>();
