@@ -39,7 +39,6 @@ test.describe('Promotion and Relegation', () => {
 		for (const tournamentName of testTournamentNames) {
 			try {
 				await page.goto('/');
-				await page.waitForLoadState('networkidle');
 
 				// Find and click on the tournament card to go to its detail page
 				const tournamentCard = page
@@ -47,7 +46,6 @@ test.describe('Promotion and Relegation', () => {
 					.first();
 				if (await tournamentCard.isVisible().catch(() => false)) {
 					await tournamentCard.click();
-					await page.waitForLoadState('networkidle');
 
 					// Try to find and click a delete button if it exists
 					const deleteButton = page.locator('button:has-text("Delete")');
@@ -128,14 +126,11 @@ test.describe('Promotion and Relegation', () => {
 			await page.fill(`[data-testid="team-b-score-${matchIds[2]}"]`, '20');
 			await page.click(`[data-testid="save-score-${matchIds[2]}"]`);
 			await page.waitForSelector('.saved');
-
-			await page.waitForLoadState('networkidle');
 		}
 
 		// Navigate to tournament page and close Round 1
 		await page.goto(`/tournament/${tournamentId}`);
 		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForLoadState('networkidle');
 		// Wait for the tournament page to fully render
 		await page.waitForSelector('h1');
 		await page.waitForSelector('.court-card');
@@ -144,7 +139,8 @@ test.describe('Promotion and Relegation', () => {
 
 		// Verify Round 2 started
 		await page.waitForSelector('text=Round 2 of 3');
-		await page.waitForLoadState('networkidle');
+		// Wait for QR links to render for Round 2
+		await page.waitForSelector('.qr-link a');
 
 		// Get player assignments for Round 2
 		const round2LinksSel = await page.locator('.qr-link a').all();
@@ -235,7 +231,6 @@ test.describe('Promotion and Relegation', () => {
 			await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '19');
 			await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
 		}
-		await page.waitForLoadState('networkidle');
 
 		// Navigate to tournament page - button should still show waiting
 		await page.goto(`/tournament/${tournamentId}`);
@@ -322,7 +317,6 @@ test.describe('Promotion and Relegation', () => {
 				await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '19');
 				await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
 			}
-			await page.waitForLoadState('networkidle');
 		}
 
 		// Close the only round
@@ -332,7 +326,6 @@ test.describe('Promotion and Relegation', () => {
 
 		// Tournament should be marked as completed
 		await page.goto('/');
-		await page.waitForLoadState('networkidle');
 		await page.waitForSelector(`text=${tournamentName}`);
 		const statusBadge = page
 			.locator(`.tournament-card:has-text("${tournamentName}") .status.completed`)
@@ -392,7 +385,6 @@ test.describe('Promotion and Relegation', () => {
 				await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '19');
 				await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
 			}
-			await page.waitForLoadState('networkidle');
 		}
 
 		await page.goto(`/tournament/${tournamentId}`);
@@ -401,7 +393,6 @@ test.describe('Promotion and Relegation', () => {
 
 		// Verify Round 2
 		await page.waitForSelector('text=Round 2 of 3');
-		await page.waitForLoadState('networkidle');
 
 		// Check each court has exactly 4 players
 		const round2LinksSel = await page.locator('.qr-link a').all();
@@ -470,7 +461,6 @@ test.describe('Promotion and Relegation', () => {
 					// Wait for save to complete
 					await page.waitForSelector('.saved');
 				}
-				await page.waitForLoadState('networkidle');
 			}
 
 			// Close Round 1
@@ -480,7 +470,6 @@ test.describe('Promotion and Relegation', () => {
 
 			// Verify Round 2 started - live query updates automatically
 			await page.waitForSelector('text=Round 2 of 2');
-			await page.waitForLoadState('networkidle');
 			// Wait for court cards to render
 			await page.waitForSelector('.court-card');
 

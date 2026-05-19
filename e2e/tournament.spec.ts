@@ -39,7 +39,6 @@ test.describe('Tournament Integration Tests', () => {
 		for (const tournamentName of testTournamentNames) {
 			try {
 				await page.goto('/');
-				await page.waitForLoadState('networkidle');
 
 				// Find and click on the tournament card to go to its detail page
 				const tournamentCard = page
@@ -47,7 +46,6 @@ test.describe('Tournament Integration Tests', () => {
 					.first();
 				if (await tournamentCard.isVisible().catch(() => false)) {
 					await tournamentCard.click();
-					await page.waitForLoadState('networkidle');
 
 					// Try to find and click a delete button if it exists
 					const deleteButton = page.locator('button:has-text("Delete")');
@@ -153,7 +151,6 @@ test.describe('Tournament Integration Tests', () => {
 				// Wait for success message
 				await page.waitForSelector('.saved');
 			}
-			await page.waitForLoadState('networkidle');
 
 			// Verify standings are calculated
 			await page.waitForSelector('.standings tbody tr');
@@ -163,17 +160,14 @@ test.describe('Tournament Integration Tests', () => {
 
 		// 6. Close Round 1
 		await page.goto('/');
-		await page.waitForLoadState('networkidle');
 		await page.click(`text=${tournamentName}`);
 		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForLoadState('networkidle');
 		// Wait for the close round button to be enabled (not the disabled waiting button)
 		await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)');
 		await page.click('button:has-text("Close Round & Advance")');
 
 		// 7. Verify Round 2 started - live query updates automatically
 		await page.waitForSelector('text=Round 2 of 2');
-		await page.waitForLoadState('networkidle');
 		// Wait for court cards with QR links to render
 		await page.waitForSelector('.qr-link a', { timeout: 10000 });
 

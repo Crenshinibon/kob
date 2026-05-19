@@ -182,21 +182,22 @@ export const closeRoundForm = form(
 		const newRotations = await db
 			.select()
 			.from(courtRotation)
-			.where(eq(courtRotation.roundNumber, nextRoundNumber));
+			.where(
+				and(
+					eq(courtRotation.tournamentId, tournamentId),
+					eq(courtRotation.roundNumber, nextRoundNumber)
+				)
+			)
+			.orderBy(courtRotation.courtNumber);
 
 		const activeCount = Math.min(physicalCourtCount, newRotations.length);
 		for (let i = 0; i < activeCount; i++) {
-			const accessRecords = await db
-				.select()
-				.from(courtAccess)
-				.where(eq(courtAccess.courtRotationId, newRotations[i].id));
-
-			if (accessRecords.length > 0) {
-				await db
-					.update(courtAccess)
-					.set({ isActive: true })
-					.where(eq(courtAccess.id, accessRecords[0].id));
-			}
+			const rotation = newRotations[i];
+			// Update all access records for this rotation to active
+			await db
+				.update(courtAccess)
+				.set({ isActive: true })
+				.where(eq(courtAccess.courtRotationId, rotation.id));
 		}
 
 		await db

@@ -1,17 +1,13 @@
 <script lang="ts">
 	import QRCode from 'qrcode';
-	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
-	import { getTournamentData } from './tournament-data.remote';
+	import { getTournamentDataLive } from './tournament-data.remote';
 	import { closeRoundForm, deleteTournamentForm } from './tournament-actions.remote';
 	import type { TournamentDisplayData, CourtDisplayData } from './tournament-data.remote';
 
 	let { data } = $props<{ data: { tournamentId: number; tournament: any } }>();
 
-	const queryInstance = $derived(browser ? getTournamentData(data.tournamentId) : null);
-	const state = $derived<Awaited<ReturnType<typeof getTournamentData>> | null>(
-		queryInstance ? await queryInstance : null
-	);
+	const state = $derived(await getTournamentDataLive(data.tournamentId));
 
 	const tournament = $derived(state?.tournament);
 	const courts = $derived(state?.courts ?? []);

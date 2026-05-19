@@ -25,14 +25,12 @@ test.describe('Tournament Format Selection', () => {
 		for (const tournamentName of testTournamentNames) {
 			try {
 				await page.goto('/');
-				await page.waitForLoadState('networkidle');
 
 				const tournamentCard = page
 					.locator(`.tournament-card:has-text("${tournamentName}")`)
 					.first();
 				if (await tournamentCard.isVisible().catch(() => false)) {
 					await tournamentCard.click();
-					await page.waitForLoadState('networkidle');
 
 					const deleteButton = page.locator('button:has-text("Delete")');
 					if (await deleteButton.isVisible().catch(() => false)) {
@@ -312,7 +310,6 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.waitForURL('/tournament/create');
-			await page.waitForLoadState('networkidle');
 
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
@@ -324,7 +321,6 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForLoadState('networkidle');
 
 			// Should have 3 courts (2×4p + 1×3p)
 			const courtCards = await page.locator('.court-card').count();
@@ -351,7 +347,6 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.waitForURL('/tournament/create');
-			await page.waitForLoadState('networkidle');
 
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
@@ -363,7 +358,6 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForLoadState('networkidle');
 
 			// Should have 5 courts (4×4p + 1×5p)
 			const courtCards = await page.locator('.court-card').count();
@@ -390,7 +384,6 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.waitForURL('/tournament/create');
-			await page.waitForLoadState('networkidle');
 
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
@@ -402,7 +395,6 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForLoadState('networkidle');
 
 			// Should have 5 courts (4×4p + 1×6p)
 			const courtCards = await page.locator('.court-card').count();
@@ -431,7 +423,6 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.waitForURL('/tournament/create');
-			await page.waitForLoadState('networkidle');
 
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
@@ -443,7 +434,6 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForLoadState('networkidle');
 
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBe(2);
@@ -466,7 +456,6 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.waitForURL('/tournament/create');
-			await page.waitForLoadState('networkidle');
 
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
@@ -478,7 +467,6 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForLoadState('networkidle');
 
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBe(16);
