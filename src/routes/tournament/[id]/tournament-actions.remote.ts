@@ -190,14 +190,22 @@ export const closeRoundForm = form(
 			)
 			.orderBy(courtRotation.courtNumber);
 
+		console.log('[closeRound] Tournament:', tournamentId, 'Next round:', nextRoundNumber);
+		console.log('[closeRound] Found', newRotations.length, 'new rotations, physicalCourtCount:', physicalCourtCount);
+
 		const activeCount = Math.min(physicalCourtCount, newRotations.length);
 		for (let i = 0; i < activeCount; i++) {
 			const rotation = newRotations[i];
+			console.log('[closeRound] Activating court', rotation.courtNumber, 'rotation ID:', rotation.id);
+			
 			// Update all access records for this rotation to active
-			await db
+			const result = await db
 				.update(courtAccess)
 				.set({ isActive: true })
-				.where(eq(courtAccess.courtRotationId, rotation.id));
+				.where(eq(courtAccess.courtRotationId, rotation.id))
+				.returning();
+			
+			console.log('[closeRound] Updated', result.length, 'access records for court', rotation.courtNumber);
 		}
 
 		await db

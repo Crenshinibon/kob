@@ -4,6 +4,7 @@
 	import { getTournamentDataLive } from './tournament-data.remote';
 	import { closeRoundForm, deleteTournamentForm } from './tournament-actions.remote';
 	import type { TournamentDisplayData, CourtDisplayData } from './tournament-data.remote';
+	import { browser } from '$app/environment';
 
 	let { data } = $props<{ data: { tournamentId: number; tournament: any } }>();
 
@@ -65,9 +66,7 @@
 			{:else}
 				<p class="status-completed">Completed</p>
 			{/if}
-			<a href="/tournament/{tournament.id}/standings" class="standings-link"
-				>📊 View Standings</a
-			>
+			<a href="/tournament/{tournament.id}/standings" class="standings-link">📊 View Standings</a>
 		</header>
 
 		{#if isActive && currentRound > 0}
@@ -105,9 +104,9 @@
 						<div class="court-meta">
 							<span
 								class="court-size-badge"
-								style="border-color: {getCourtSizeColor(court.courtSize)}; color: {getCourtSizeColor(
+								style="border-color: {getCourtSizeColor(
 									court.courtSize
-								)}"
+								)}; color: {getCourtSizeColor(court.courtSize)}"
 							>
 								{getCourtSizeLabel(court.courtSize)}
 							</span>
@@ -165,9 +164,7 @@
 						await goto(`/tournament/${data.tournamentId}`);
 					})}
 				>
-					<input
-						{...closeRoundForm.fields.tournamentId.as('hidden', tournament.id)}
-					/>
+					<input {...closeRoundForm.fields.tournamentId.as('hidden', tournament.id)} />
 					<button type="submit" class="btn-primary">
 						{isFinalRound ? 'Finalize Tournament' : 'Close Round & Advance'}
 					</button>
@@ -183,9 +180,7 @@
 					})}
 					class="delete-form"
 				>
-					<input
-						{...deleteTournamentForm.fields.tournamentId.as('hidden', tournament.id)}
-					/>
+					<input {...deleteTournamentForm.fields.tournamentId.as('hidden', tournament.id)} />
 					<button type="submit" class="btn-danger" onclick={confirmDelete}>Delete</button>
 				</form>
 			{/if}

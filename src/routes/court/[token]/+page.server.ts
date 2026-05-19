@@ -97,7 +97,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		matches,
 		standings,
 		isActive: access.isActive && tourney.status === 'active',
-		isAuthenticated: !!locals.user
+		isAuthenticated: !!locals.user,
+		_debug: {
+			accessIsActive: access.isActive,
+			tourneyStatus: tourney.status,
+			rotationId: rotation.id,
+			roundNumber: rotation.roundNumber
+		}
 	};
 };
 
