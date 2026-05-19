@@ -2,8 +2,9 @@ import { error, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { tournament } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
+import type { PageServerLoad } from './$types';
 
-export const load = async ({ params, locals }: any) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
 	const user = locals.user;
 	if (!user) throw redirect(302, '/login');
 

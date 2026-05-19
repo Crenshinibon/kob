@@ -13,25 +13,50 @@ import {
 	type DurationConfig
 } from '$lib/server/tournament-logic';
 
-function parseCourtSizes(tourney: any): number[] {
+export interface CourtDisplayData {
+	courtNumber: number;
+	courtSize: number;
+	matches: typeof match.$inferSelect[];
+	token: string | null;
+	players: { id: number; name: string }[];
+	shift?: number;
+	totalShifts?: number;
+	waitMinutes?: number;
+	waitLabel?: string;
+}
+
+export interface TournamentDisplayData {
+	tournament: typeof tournament.$inferSelect;
+	courts: CourtDisplayData[];
+	canCloseRound: boolean;
+	isFinalRound: boolean;
+	courtSizes: number[];
+	currentRound: number;
+	physicalCourtCount: number;
+	shifts: number[][];
+	roundDuration: number;
+	currentPlayerCount: number;
+	error?: string;
+}
+
+function parseCourtSizes(tourney: typeof tournament.$inferSelect): number[] {
 	return tourney.courtSizes
 		? JSON.parse(tourney.courtSizes)
 		: calculateCourtSizes(tourney.playerCount);
 }
 
-async function fetchTournamentData(tournamentId: number) {
+async function fetchTournamentData(tournamentId: number): Promise<TournamentDisplayData> {
 	const [tourney] = await db.select().from(tournament).where(eq(tournament.id, tournamentId));
 
 	if (!tourney) {
-		return { error: 'Tournament not found' };
+		return { error: 'Tournament not found' } as TournamentDisplayData;
 	}
 
 	const currentRound = tourney.currentRound || 0;
 	const courtSizes: number[] = parseCourtSizes(tourney);
 
-	// Load players
 	const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
-	const players = dbPlayers.map((p: any) => ({
+	const players = dbPlayers.map((p) => ({
 		id: p.id,
 		name: p.name,
 		seedPoints: p.seedPoints,
@@ -42,7 +67,6 @@ async function fetchTournamentData(tournamentId: number) {
 	let isFinalRound = false;
 
 	if (currentRound > 0) {
-		// Check if all matches are scored for the current round
 		const rotationIds = await db
 			.select({ id: courtRotation.id })
 			.from(courtRotation)
@@ -53,7 +77,7 @@ async function fetchTournamentData(tournamentId: number) {
 				)
 			);
 
-		const rotationIdList = rotationIds.map((r: any) => r.id);
+		const rotationIdList = rotationIds.map((r) => r.id);
 
 		if (rotationIdList.length > 0) {
 			const allMatches = await db
@@ -74,7 +98,6 @@ async function fetchTournamentData(tournamentId: number) {
 		isFinalRound = currentRound >= tourney.numRounds;
 	}
 
-	// Load courts from DB rotations for the current round
 	const displayRound = currentRound === 0 ? 1 : currentRound;
 	const rotations = await db
 		.select()
@@ -84,9 +107,9 @@ async function fetchTournamentData(tournamentId: number) {
 		)
 		.orderBy(courtRotation.courtNumber);
 
-	const playerMap = new Map(players.map((p: any) => [p.id, p]));
+	const playerMap = new Map(players.map((p) => [p.id, p]));
 
-	const courts: any[] = [];
+	const courts: CourtDisplayData[] = [];
 	for (const rotation of rotations) {
 		const matches = await db.select().from(match).where(eq(match.courtRotationId, rotation.id));
 
@@ -99,21 +122,23 @@ async function fetchTournamentData(tournamentId: number) {
 		const playerIds = [
 			rotation.player1Id,
 			rotation.player2Id,
-			rotation.player3Id,
-			rotation.player4Id,
-			rotation.player5Id,
-			rotation.player6Id
+			...(rotation.player3Id !== null ? [rotation.player3Id] : []),
+			...(rotation.player4Id !== null ? [rotation.player4Id] : []),
+			...(rotation.player5Id !== null ? [rotation.player5Id] : []),
+			...(rotation.player6Id !== null ? [rotation.player6Id] : [])
 		].filter((id): id is number => id !== null);
 
-		const rotationPlayers = playerIds.map((id) => playerMap.get(id)).filter(Boolean);
+		const rotationPlayers = playerIds
+			.map((id) => playerMap.get(id))
+			.filter(Boolean) as { id: number; name: string }[];
 
-		const size = courtSizes[rotation.courtNumber - 1] ?? 4;
+		const size = rotation.courtSize ?? courtSizes[rotation.courtNumber - 1] ?? 4;
 
 		courts.push({
 			courtNumber: rotation.courtNumber,
 			courtSize: size,
 			matches,
-			token: access[0]?.token,
+			token: access[0]?.token ?? null,
 			players: rotationPlayers
 		});
 	}

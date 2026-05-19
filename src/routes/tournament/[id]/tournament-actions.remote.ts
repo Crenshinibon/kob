@@ -17,7 +17,7 @@ import {
 } from '$lib/server/tournament-logic';
 import { getTournamentDataLive } from './tournament-data.remote';
 
-function parseCourtSizes(tourney: any): number[] {
+function parseCourtSizes(tourney: typeof tournament.$inferSelect): number[] {
 	return tourney.courtSizes
 		? JSON.parse(tourney.courtSizes)
 		: calculateCourtSizes(tourney.playerCount);
@@ -54,7 +54,7 @@ export const closeRoundForm = form(
 		}
 
 		const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
-		const players = dbPlayers.map((p: any) => ({
+		const players = dbPlayers.map((p) => ({
 			id: p.id,
 			name: p.name,
 			seedPoints: p.seedPoints,
@@ -101,7 +101,7 @@ export const closeRoundForm = form(
 				.select()
 				.from(match)
 				.where(eq(match.courtRotationId, rotation.id));
-			const scored = (rotationMatches as MatchData[]).filter(
+			const scored = rotationMatches.filter(
 				(m) => m.teamAScore !== null && m.teamBScore !== null
 			);
 			allMatches.push(...scored);
@@ -140,12 +140,13 @@ export const closeRoundForm = form(
 					tournamentId: tournamentId,
 					roundNumber: nextRoundNumber as any,
 					courtNumber: assignment.courtNumber,
+					courtSize: size,
 					player1Id: assignment.playerIds[0],
 					player2Id: assignment.playerIds[1],
-					player3Id: (assignment.playerIds.length > 2 ? assignment.playerIds[2] : null) as any,
-					player4Id: (assignment.playerIds.length > 3 ? assignment.playerIds[3] : null) as any,
-					player5Id: (size >= 5 ? assignment.playerIds[4] : null) as any,
-					player6Id: (size >= 6 ? assignment.playerIds[5] : null) as any
+					player3Id: assignment.playerIds.length > 2 ? assignment.playerIds[2] : null,
+					player4Id: assignment.playerIds.length > 3 ? assignment.playerIds[3] : null,
+					player5Id: assignment.playerIds.length > 4 ? assignment.playerIds[4] : null,
+					player6Id: assignment.playerIds.length > 5 ? assignment.playerIds[5] : null
 				})
 				.returning();
 

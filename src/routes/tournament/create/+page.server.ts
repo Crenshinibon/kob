@@ -195,6 +195,7 @@ export const actions = {
 					tournamentId: newTournament.id,
 					roundNumber: 1,
 					courtNumber: assignment.courtNumber,
+					courtSize: size,
 					player1Id: assignment.playerIds[0],
 					player2Id: assignment.playerIds[1],
 					player3Id: assignment.playerIds.length > 2 ? assignment.playerIds[2] : null,

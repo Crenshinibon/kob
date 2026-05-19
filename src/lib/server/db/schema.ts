@@ -42,6 +42,7 @@ export const courtRotation = pgTable('court_rotation', {
 	tournamentId: integer('tournament_id').notNull(),
 	roundNumber: integer('round_number').notNull(),
 	courtNumber: integer('court_number').notNull(),
+	courtSize: integer('court_size').notNull().default(4),
 	player1Id: integer('player_1_id').notNull(),
 	player2Id: integer('player_2_id').notNull(),
 	player3Id: integer('player_3_id'),
@@ -60,6 +61,43 @@ export const match = pgTable('match', {
 	teamBPlayer2Id: integer('team_b_player_2_id').notNull(),
 	teamAScore: integer('team_a_score'),
 	teamBScore: integer('team_b_score')
+});
+
+export const match3Player = pgTable('match_3_player', {
+	id: serial('id').primaryKey(),
+	courtRotationId: integer('court_rotation_id').notNull(),
+	matchNumber: integer('match_number').notNull(),
+	teamOfTwoPlayer1Id: integer('team_of_two_player_1_id').notNull(),
+	teamOfTwoPlayer2Id: integer('team_of_two_player_2_id').notNull(),
+	soloPlayerId: integer('solo_player_id').notNull(),
+	teamOfTwoScore: integer('team_of_two_score'),
+	soloPlayerScore: integer('solo_player_score')
+});
+
+export const match5Player = pgTable('match_5_player', {
+	id: serial('id').primaryKey(),
+	courtRotationId: integer('court_rotation_id').notNull(),
+	gameNumber: integer('game_number').notNull(),
+	runNumber: integer('run_number').notNull(),
+	sideXPlayer1Id: integer('side_x_player_1_id').notNull(),
+	sideXPlayer2Id: integer('side_x_player_2_id').notNull(),
+	sideYFixedPlayerId: integer('side_y_fixed_player_id').notNull(),
+	sideYRotatingPlayerId: integer('side_y_rotating_player_id').notNull(),
+	sideXScore: integer('side_x_score'),
+	sideYScore: integer('side_y_score')
+});
+
+export const match6Player = pgTable('match_6_player', {
+	id: serial('id').primaryKey(),
+	courtRotationId: integer('court_rotation_id').notNull(),
+	gameNumber: integer('game_number').notNull(),
+	runNumber: integer('run_number').notNull(),
+	fixedTeamPlayer1Id: integer('fixed_team_player_1_id').notNull(),
+	fixedTeamPlayer2Id: integer('fixed_team_player_2_id').notNull(),
+	rotatingTeamPlayer1Id: integer('rotating_team_player_1_id').notNull(),
+	rotatingTeamPlayer2Id: integer('rotating_team_player_2_id').notNull(),
+	fixedTeamScore: integer('fixed_team_score'),
+	rotatingTeamScore: integer('rotating_team_score')
 });
 
 export const courtAccess = pgTable('court_access', {

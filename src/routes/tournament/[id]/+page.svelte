@@ -4,24 +4,35 @@
 	import { goto } from '$app/navigation';
 	import { getTournamentData } from './tournament-data.remote';
 	import { closeRoundForm, deleteTournamentForm } from './tournament-actions.remote';
+	import type { TournamentDisplayData, CourtDisplayData } from './tournament-data.remote';
 
 	let { data } = $props<{ data: { tournamentId: number; tournament: any } }>();
 
-	// Query handles reactive updates via refetch() after form actions
 	const queryInstance = $derived(browser ? getTournamentData(data.tournamentId) : null);
-	const effectiveData = $derived(queryInstance ? await queryInstance : { tournament: data.tournament });
+	const state = $derived<Awaited<ReturnType<typeof getTournamentData>> | null>(
+		queryInstance ? await queryInstance : null
+	);
 
-	function getMatchStatus(matches: any[]) {
+	const tournament = $derived(state?.tournament);
+	const courts = $derived(state?.courts ?? []);
+	const currentRound = $derived(state?.currentRound ?? 0);
+	const canCloseRound = $derived(state?.canCloseRound ?? false);
+	const isFinalRound = $derived(state?.isFinalRound ?? false);
+	const courtSizes = $derived(state?.courtSizes ?? []);
+	const physicalCourtCount = $derived(state?.physicalCourtCount ?? 4);
+	const shifts = $derived(state?.shifts ?? []);
+	const roundDuration = $derived(state?.roundDuration ?? 0);
+	const isActive = $derived(tournament?.status === 'active');
+
+	const gridClass = $derived(courts.length > 4 ? 'courts courts-8' : 'courts');
+	const virtualCourtCount = $derived(courtSizes.length);
+
+	function getMatchStatus(matches: { teamAScore: number | null }[]): string {
 		const completed = matches.filter((m) => m.teamAScore !== null).length;
-		const total = matches.length;
-		return `${completed}/${total}`;
+		return `${completed}/${matches.length}`;
 	}
 
 	function getCourtSizeLabel(size: number): string {
-		if (size === 3) return '3p';
-		if (size === 4) return '4p';
-		if (size === 5) return '5p';
-		if (size === 6) return '6p';
 		return `${size}p`;
 	}
 
@@ -42,189 +53,182 @@
 			e.preventDefault();
 		}
 	}
-
-	const gridClass = $derived(effectiveData.courts.length > 4 ? 'courts courts-8' : 'courts');
-	const virtualCourtCount = $derived(effectiveData.courtSizes.length);
-	const showScheduling = $derived(effectiveData.tournament.status === 'active');
 </script>
 
-	{#if !effectiveData.courts}
-		<div class="loading">Loading tournament...</div>
-	{:else if effectiveData.error}
-		<div class="error">{effectiveData.error}</div>
-	{:else}
-		<main>
-			<header>
-				<a href="/">← Dashboard</a>
-				<h1>{effectiveData.tournament.name}</h1>
-				{#if effectiveData.tournament.status === 'active'}
-					<p>Round {effectiveData.currentRound} of {effectiveData.tournament.numRounds}</p>
-				{:else}
-					<p class="status-completed">Completed</p>
+{#if !state || !tournament}
+	<div class="loading">Loading tournament...</div>
+{:else if state.error}
+	<div class="error">{state.error}</div>
+{:else}
+	<main>
+		<header>
+			<a href="/">← Dashboard</a>
+			<h1>{tournament.name}</h1>
+			{#if isActive}
+				<p>Round {currentRound} of {tournament.numRounds}</p>
+			{:else}
+				<p class="status-completed">Completed</p>
+			{/if}
+			<a href="/tournament/{tournament.id}/standings" class="standings-link"
+				>📊 View Standings</a
+			>
+		</header>
+
+		{#if isActive && currentRound > 0}
+			<div class="scheduling-info">
+				<h3>Court Scheduling (Round {currentRound})</h3>
+				<p>
+					Batch shifts · {physicalCourtCount} physical court{physicalCourtCount !== 1 ? 's' : ''}
+					· {virtualCourtCount} virtual court{virtualCourtCount !== 1 ? 's' : ''}
+					· {Math.ceil(virtualCourtCount / physicalCourtCount)} shift{Math.ceil(
+						virtualCourtCount / physicalCourtCount
+					) !== 1
+						? 's'
+						: ''}
+				</p>
+				{#if roundDuration}
+					<p class="round-dur">Est. round duration: ~{roundDuration} min per shift</p>
 				{/if}
-				<a href="/tournament/{effectiveData.tournament.id}/standings" class="standings-link"
-					>📊 View Standings</a
-				>
-			</header>
-
-	{#if showScheduling && effectiveData.currentRound > 0}
-		<div class="scheduling-info">
-			<h3>Court Scheduling (Round {effectiveData.currentRound})</h3>
-			<p>
-				Batch shifts · {effectiveData.physicalCourtCount} physical court{effectiveData.physicalCourtCount !==
-				1
-					? 's'
-					: ''}
-				· {virtualCourtCount} virtual court{virtualCourtCount !== 1 ? 's' : ''}
-				· {Math.ceil(virtualCourtCount / effectiveData.physicalCourtCount)} shift{Math.ceil(
-					virtualCourtCount / effectiveData.physicalCourtCount
-				) !== 1
-					? 's'
-					: ''}
-			</p>
-			{#if effectiveData.roundDuration}
-				<p class="round-dur">Est. round duration: ~{effectiveData.roundDuration} min per shift</p>
-			{/if}
-			{#if effectiveData.shifts && effectiveData.shifts.length > 1}
-				<div class="shift-list">
-					{#each effectiveData.shifts as shift, si}
-						<span class="shift-badge" class:active={si === 0}
-							>Shift {si + 1}: C{shift.join(', C')}</span
-						>
-					{/each}
-				</div>
-			{/if}
-		</div>
-	{/if}
-
-	<section class={gridClass}>
-		{#each effectiveData.courts as court (court.courtNumber)}
-			<div class="court-card">
-				<div class="court-header">
-					<h2>Court {court.courtNumber}</h2>
-					<div class="court-meta">
-						<span
-							class="court-size-badge"
-							style="border-color: {getCourtSizeColor(court.courtSize)}; color: {getCourtSizeColor(
-								court.courtSize
-							)}"
-						>
-							{getCourtSizeLabel(court.courtSize)}
-						</span>
-						<span class="matches">{getMatchStatus(court.matches)}</span>
-						{#if court.shift && court.totalShifts > 1}
-							<span
-								class="shift-badge"
-								class:active={court.shift === 1}
-								class:waiting={court.shift > 1}
+				{#if shifts.length > 1}
+					<div class="shift-list">
+						{#each shifts as shift, si}
+							<span class="shift-badge" class:active={si === 0}
+								>Shift {si + 1}: C{shift.join(', C')}</span
 							>
-								{court.shift === 1 ? '▶ Active' : `Shift ${court.shift}/${court.totalShifts}`}
-							</span>
-							{#if court.waitLabel}
-								<span class="wait-time">Est. wait: {court.waitLabel}</span>
-							{/if}
-						{/if}
-					</div>
-				</div>
-
-				{#if court.token}
-					<div class="qr-code">
-						{#await generateQR(court.token)}
-							<div class="qr-loading">Loading QR...</div>
-						{:then qrDataUrl}
-							<img src={qrDataUrl} alt="QR code for Court {court.courtNumber}" />
-							<p class="qr-hint">Scan to enter scores</p>
-						{:catch}
-							<div class="qr-error">Failed to load QR</div>
-						{/await}
-					</div>
-				{/if}
-
-				<div class="players">
-					{#each court.players as p, i (p.id)}
-						<span class="player">
-							{String.fromCharCode(65 + i)}: {p.name}
-						</span>
-					{/each}
-				</div>
-
-				{#if court.token}
-					<div class="qr-link">
-						<a href="/court/{court.token}" target="_blank">Open Court Page →</a>
+						{/each}
 					</div>
 				{/if}
 			</div>
-		{/each}
-	</section>
-
-	<section class="actions">
-		{#if effectiveData.canCloseRound}
-			<form
-				{...closeRoundForm.enhance(async ({ form }) => {
-					form.reset();
-					await goto(`/tournament/${data.tournamentId}`);
-				})}
-			>
-				<input
-					{...closeRoundForm.fields.tournamentId.as('hidden', effectiveData.tournament.id)}
-				/>
-				<button type="submit" class="btn-primary">
-					{effectiveData.isFinalRound ? 'Finalize Tournament' : 'Close Round & Advance'}
-				</button>
-			</form>
-		{:else if effectiveData.tournament.status === 'active'}
-			<button disabled class="btn-primary btn-disabled"> ⏳ Waiting for all scores... </button>
 		{/if}
 
-		{#if effectiveData.tournament.status !== 'completed'}
-			<form
-				{...deleteTournamentForm.enhance(async ({ form }) => {
-					form.reset();
-				})}
-				class="delete-form"
-			>
-				<input
-					{...deleteTournamentForm.fields.tournamentId.as('hidden', effectiveData.tournament.id)}
-				/>
-				<button type="submit" class="btn-danger" onclick={confirmDelete}>Delete</button>
-			</form>
-		{/if}
-	</section>
+		<section class={gridClass}>
+			{#each courts as court (court.courtNumber)}
+				<div class="court-card">
+					<div class="court-header">
+						<h2>Court {court.courtNumber}</h2>
+						<div class="court-meta">
+							<span
+								class="court-size-badge"
+								style="border-color: {getCourtSizeColor(court.courtSize)}; color: {getCourtSizeColor(
+									court.courtSize
+								)}"
+							>
+								{getCourtSizeLabel(court.courtSize)}
+							</span>
+							<span class="matches">{getMatchStatus(court.matches)}</span>
+							{#if court.shift && court.totalShifts && court.totalShifts > 1}
+								<span
+									class="shift-badge"
+									class:active={court.shift === 1}
+									class:waiting={court.shift > 1}
+								>
+									{court.shift === 1 ? '▶ Active' : `Shift ${court.shift}/${court.totalShifts}`}
+								</span>
+								{#if court.waitLabel}
+									<span class="wait-time">Est. wait: {court.waitLabel}</span>
+								{/if}
+							{/if}
+						</div>
+					</div>
 
-	{#if effectiveData.tournament.status === 'active' && effectiveData.currentRound > 0}
-		<section class="retire-section">
-			<details>
-				<summary class="btn-retire-header">Retire a Player</summary>
-				<form method="POST" action="?/retirePlayer" class="retire-form">
-					<div class="field">
-						<label for="retirePlayerId">Select player to retire</label>
-						<select id="retirePlayerId" name="playerId" required>
-							<option value="">— Select player —</option>
-							{#each effectiveData.courts as court}
-								{#each court.players as p}
-									<option value={p.id}>{p.name} (Court {court.courtNumber})</option>
-								{/each}
-							{/each}
-						</select>
+					{#if court.token}
+						<div class="qr-code">
+							{#await generateQR(court.token)}
+								<div class="qr-loading">Loading QR...</div>
+							{:then qrDataUrl}
+								<img src={qrDataUrl} alt="QR code for Court {court.courtNumber}" />
+								<p class="qr-hint">Scan to enter scores</p>
+							{:catch}
+								<div class="qr-error">Failed to load QR</div>
+							{/await}
+						</div>
+					{/if}
+
+					<div class="players">
+						{#each court.players as p, i (p.id)}
+							<span class="player">
+								{String.fromCharCode(65 + i)}: {p.name}
+							</span>
+						{/each}
 					</div>
-					<div class="field">
-						<label for="retireReason">Reason</label>
-						<select id="retireReason" name="reason">
-							<option value="">— Optional —</option>
-							<option value="injury">Injury</option>
-							<option value="schedule">Schedule</option>
-							<option value="personal">Personal</option>
-							<option value="disqualified">Disqualified</option>
-							<option value="other">Other</option>
-						</select>
-					</div>
-					<button type="submit" class="btn-danger"> Retire Player </button>
-				</form>
-			</details>
+
+					{#if court.token}
+						<div class="qr-link">
+							<a href="/court/{court.token}" target="_blank">Open Court Page →</a>
+						</div>
+					{/if}
+				</div>
+			{/each}
 		</section>
-	{/if}
+
+		<section class="actions">
+			{#if canCloseRound}
+				<form
+					{...closeRoundForm.enhance(async ({ form }) => {
+						form.reset();
+						await goto(`/tournament/${data.tournamentId}`);
+					})}
+				>
+					<input
+						{...closeRoundForm.fields.tournamentId.as('hidden', tournament.id)}
+					/>
+					<button type="submit" class="btn-primary">
+						{isFinalRound ? 'Finalize Tournament' : 'Close Round & Advance'}
+					</button>
+				</form>
+			{:else if isActive}
+				<button disabled class="btn-primary btn-disabled"> ⏳ Waiting for all scores... </button>
+			{/if}
+
+			{#if tournament.status !== 'completed'}
+				<form
+					{...deleteTournamentForm.enhance(async ({ form }) => {
+						form.reset();
+					})}
+					class="delete-form"
+				>
+					<input
+						{...deleteTournamentForm.fields.tournamentId.as('hidden', tournament.id)}
+					/>
+					<button type="submit" class="btn-danger" onclick={confirmDelete}>Delete</button>
+				</form>
+			{/if}
+		</section>
+
+		{#if isActive && currentRound > 0}
+			<section class="retire-section">
+				<details>
+					<summary class="btn-retire-header">Retire a Player</summary>
+					<form method="POST" action="?/retirePlayer" class="retire-form">
+						<div class="field">
+							<label for="retirePlayerId">Select player to retire</label>
+							<select id="retirePlayerId" name="playerId" required>
+								<option value="">— Select player —</option>
+								{#each courts as court}
+									{#each court.players as p}
+										<option value={p.id}>{p.name} (Court {court.courtNumber})</option>
+									{/each}
+								{/each}
+							</select>
+						</div>
+						<div class="field">
+							<label for="retireReason">Reason</label>
+							<select id="retireReason" name="reason">
+								<option value="">— Optional —</option>
+								<option value="injury">Injury</option>
+								<option value="schedule">Schedule</option>
+								<option value="personal">Personal</option>
+								<option value="disqualified">Disqualified</option>
+								<option value="other">Other</option>
+							</select>
+						</div>
+						<button type="submit" class="btn-danger"> Retire Player </button>
+					</form>
+				</details>
+			</section>
+		{/if}
 	</main>
-	{/if}
+{/if}
 
 <style>
 	.loading,

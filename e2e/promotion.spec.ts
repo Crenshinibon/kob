@@ -117,21 +117,28 @@ test.describe('Promotion and Relegation', () => {
 			await page.fill(`[data-testid="team-a-score-${matchIds[0]}"]`, '21');
 			await page.fill(`[data-testid="team-b-score-${matchIds[0]}"]`, '19');
 			await page.click(`[data-testid="save-score-${matchIds[0]}"]`);
+			await page.waitForSelector('.saved');
 
 			await page.fill(`[data-testid="team-a-score-${matchIds[1]}"]`, '25');
 			await page.fill(`[data-testid="team-b-score-${matchIds[1]}"]`, '23');
 			await page.click(`[data-testid="save-score-${matchIds[1]}"]`);
+			await page.waitForSelector('.saved');
 
 			await page.fill(`[data-testid="team-a-score-${matchIds[2]}"]`, '22');
 			await page.fill(`[data-testid="team-b-score-${matchIds[2]}"]`, '20');
 			await page.click(`[data-testid="save-score-${matchIds[2]}"]`);
+			await page.waitForSelector('.saved');
 
 			await page.waitForLoadState('networkidle');
 		}
 
 		// Navigate to tournament page and close Round 1
 		await page.goto(`/tournament/${tournamentId}`);
+		await page.waitForURL(/\/tournament\/\d+/);
 		await page.waitForLoadState('networkidle');
+		// Wait for the tournament page to fully render
+		await page.waitForSelector('h1');
+		await page.waitForSelector('.court-card');
 		await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)');
 		await page.click('button:has-text("Close Round & Advance")');
 
