@@ -1,50 +1,15 @@
 <script lang="ts">
 	import QRCode from 'qrcode';
 	import { browser } from '$app/environment';
-	import { getTournamentDataLive } from './tournament-data.remote';
+	import { goto } from '$app/navigation';
+	import { getTournamentData } from './tournament-data.remote';
 	import { closeRoundForm, deleteTournamentForm } from './tournament-actions.remote';
 
-	let { data } = $props<{
-		data: {
-			tournament: any;
-			courts: any[];
-			canCloseRound: boolean;
-			isFinalRound: boolean;
-			courtSizes: number[];
-			currentRound: number;
-			physicalCourtCount: number;
-			shifts?: number[][];
-			roundDuration?: number;
-		};
-	}>();
+	let { data } = $props<{ data: { tournamentId: number; tournament: any } }>();
 
-	// Live query for auto-refresh of match scores when tournament is active
-	const liveQuery = $derived(
-		browser && data.tournament.status === 'active'
-			? getTournamentDataLive(data.tournament.id)
-			: null
-	);
-	const liveData = $derived(liveQuery ? await liveQuery : null);
-
-	// Merge live data for match scores and flags, keep server-loaded court structure
-	// (court structure changes on round transitions, so we don't override it with live data)
-	const effectiveData = $derived({
-		...data,
-		...(liveData &&
-		!liveData.error &&
-		liveData.courts &&
-		liveData.courts.length === data.courts.length
-			? {
-					courts: data.courts.map((serverCourt: any, i: number) => ({
-						...serverCourt,
-						matches: liveData.courts[i]?.matches ?? serverCourt.matches
-					})),
-					canCloseRound: liveData.canCloseRound,
-					isFinalRound: liveData.isFinalRound,
-					currentRound: liveData.currentRound
-				}
-			: {})
-	});
+	// Query handles reactive updates via refetch() after form actions
+	const queryInstance = $derived(browser ? getTournamentData(data.tournamentId) : null);
+	const effectiveData = $derived(queryInstance ? await queryInstance : { tournament: data.tournament });
 
 	function getMatchStatus(matches: any[]) {
 		const completed = matches.filter((m) => m.teamAScore !== null).length;
@@ -83,19 +48,24 @@
 	const showScheduling = $derived(effectiveData.tournament.status === 'active');
 </script>
 
-<main>
-	<header>
-		<a href="/">← Dashboard</a>
-		<h1>{effectiveData.tournament.name}</h1>
-		{#if effectiveData.tournament.status === 'active'}
-			<p>Round {effectiveData.currentRound} of {effectiveData.tournament.numRounds}</p>
-		{:else}
-			<p class="status-completed">Completed</p>
-		{/if}
-		<a href="/tournament/{effectiveData.tournament.id}/standings" class="standings-link"
-			>📊 View Standings</a
-		>
-	</header>
+	{#if !effectiveData.courts}
+		<div class="loading">Loading tournament...</div>
+	{:else if effectiveData.error}
+		<div class="error">{effectiveData.error}</div>
+	{:else}
+		<main>
+			<header>
+				<a href="/">← Dashboard</a>
+				<h1>{effectiveData.tournament.name}</h1>
+				{#if effectiveData.tournament.status === 'active'}
+					<p>Round {effectiveData.currentRound} of {effectiveData.tournament.numRounds}</p>
+				{:else}
+					<p class="status-completed">Completed</p>
+				{/if}
+				<a href="/tournament/{effectiveData.tournament.id}/standings" class="standings-link"
+					>📊 View Standings</a
+				>
+			</header>
 
 	{#if showScheduling && effectiveData.currentRound > 0}
 		<div class="scheduling-info">
@@ -190,14 +160,13 @@
 	<section class="actions">
 		{#if effectiveData.canCloseRound}
 			<form
-				{...closeRoundForm.enhance(async ({ form, submit }) => {
-					if (await submit()) {
-						form.reset();
-					}
+				{...closeRoundForm.enhance(async ({ form }) => {
+					form.reset();
+					await goto(`/tournament/${data.tournamentId}`);
 				})}
 			>
 				<input
-					{...closeRoundForm.fields.tournamentId.as('hidden', data.tournament.id)}
+					{...closeRoundForm.fields.tournamentId.as('hidden', effectiveData.tournament.id)}
 				/>
 				<button type="submit" class="btn-primary">
 					{effectiveData.isFinalRound ? 'Finalize Tournament' : 'Close Round & Advance'}
@@ -209,15 +178,13 @@
 
 		{#if effectiveData.tournament.status !== 'completed'}
 			<form
-				{...deleteTournamentForm.enhance(async ({ form, submit }) => {
-					if (await submit()) {
-						form.reset();
-					}
+				{...deleteTournamentForm.enhance(async ({ form }) => {
+					form.reset();
 				})}
 				class="delete-form"
 			>
 				<input
-					{...deleteTournamentForm.fields.tournamentId.as('hidden', data.tournament.id)}
+					{...deleteTournamentForm.fields.tournamentId.as('hidden', effectiveData.tournament.id)}
 				/>
 				<button type="submit" class="btn-danger" onclick={confirmDelete}>Delete</button>
 			</form>
@@ -256,9 +223,21 @@
 			</details>
 		</section>
 	{/if}
-</main>
+	</main>
+	{/if}
 
 <style>
+	.loading,
+	.error {
+		text-align: center;
+		padding: var(--spacing-xl);
+		font-size: var(--font-size-lg);
+	}
+
+	.error {
+		color: var(--accent-error);
+	}
+
 	main {
 		max-width: 1000px;
 		margin: 0 auto;

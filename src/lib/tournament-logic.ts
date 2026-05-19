@@ -331,7 +331,8 @@ export function redistributePreseedRecursive(
 
 export function verticalSeeding(
 	courtResults: readonly CourtResult[],
-	targetCourtCount: number
+	targetCourtCount: number,
+	courtSizes?: readonly number[]
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
 	const maxRank = sorted.reduce((m, c) => Math.max(m, c.standings.length), 0);
@@ -349,14 +350,15 @@ export function verticalSeeding(
 
 	for (let c = 0; c < targetCourtCount; c++) {
 		const pids: number[] = [];
+		const targetSize = courtSizes?.[c] ?? 4;
 		let gi = 0;
-		while (pids.length < 4 && gi < groups.length) {
+		while (pids.length < targetSize && gi < groups.length) {
 			const g = groups[gi];
-			const canTake = Math.min(4 - pids.length, g.length - pos[gi]);
+			const canTake = Math.min(targetSize - pids.length, g.length - pos[gi]);
 			for (let k = 0; k < canTake; k++) pids.push(g[pos[gi] + k]);
 			pos[gi] += canTake;
 			if (pos[gi] >= g.length) gi++;
-			else if (pids.length >= 4) break;
+			else if (pids.length >= targetSize) break;
 			else gi++;
 		}
 		if (pids.length > 0) assignments.push({ courtNumber: c + 1, playerIds: pids });
@@ -370,7 +372,8 @@ export function verticalSeeding(
 
 export function ladderRedistribute(
 	courtResults: readonly CourtResult[],
-	targetCourtCount: number
+	targetCourtCount: number,
+	courtSizes?: readonly number[]
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
 	const n = sorted.length;
@@ -415,7 +418,11 @@ export function ladderRedistribute(
 			if (sorted[i + 1]) takeN(sorted[i + 1], 0, 2, pids);
 		}
 
-		if (pids.length > 0) assignments.push({ courtNumber: i + 1, playerIds: pids });
+		// Trim playerIds to match court size for non-standard courts
+		const targetSize = courtSizes?.[i] ?? 4;
+		const trimmedPids = pids.slice(0, targetSize);
+
+		if (trimmedPids.length > 0) assignments.push({ courtNumber: i + 1, playerIds: trimmedPids });
 	}
 	return assignments;
 }
@@ -428,10 +435,11 @@ function takeN(court: CourtResult, from: number, to: number, target: number[]): 
 export function redistributeLadder(
 	courtResults: readonly CourtResult[],
 	isFirstRound: boolean,
-	courtCount: number
+	courtCount: number,
+	courtSizes?: readonly number[]
 ): CourtAssignment[] {
-	if (isFirstRound) return verticalSeeding(courtResults, courtCount);
-	return ladderRedistribute(courtResults, courtCount);
+	if (isFirstRound) return verticalSeeding(courtResults, courtCount, courtSizes);
+	return ladderRedistribute(courtResults, courtCount, courtSizes);
 }
 
 // ============================================================================
@@ -488,9 +496,9 @@ export function closeRound(state: TournamentState): TournamentState {
 	if (state.config.formatType === 'preseed') {
 		nextAssignments = redistributePreseedRecursive(courtResults);
 	} else if (state.roundsCompleted === 0) {
-		nextAssignments = verticalSeeding(courtResults, state.config.courtSizes.length);
+		nextAssignments = verticalSeeding(courtResults, state.config.courtSizes.length, state.config.courtSizes);
 	} else {
-		nextAssignments = ladderRedistribute(courtResults, state.config.courtSizes.length);
+		nextAssignments = ladderRedistribute(courtResults, state.config.courtSizes.length, state.config.courtSizes);
 	}
 
 	return {

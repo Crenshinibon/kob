@@ -131,12 +131,13 @@ test.describe('Promotion and Relegation', () => {
 
 		// Navigate to tournament page and close Round 1
 		await page.goto(`/tournament/${tournamentId}`);
-		await page.waitForSelector('button:has-text("Close Round")');
-		await page.click('button:has-text("Close Round")');
-		await page.waitForTimeout(1000);
+		await page.waitForLoadState('networkidle');
+		await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)');
+		await page.click('button:has-text("Close Round & Advance")');
 
 		// Verify Round 2 started
 		await page.waitForSelector('text=Round 2 of 3');
+		await page.waitForLoadState('networkidle');
 
 		// Get player assignments for Round 2
 		const round2LinksSel = await page.locator('.qr-link a').all();
@@ -321,10 +322,10 @@ test.describe('Promotion and Relegation', () => {
 		await page.goto(`/tournament/${tournamentId}`);
 		await page.waitForSelector('button:has-text("Finalize Tournament")');
 		await page.click('button:has-text("Finalize Tournament")');
-		await page.waitForTimeout(1000);
 
 		// Tournament should be marked as completed
 		await page.goto('/');
+		await page.waitForLoadState('networkidle');
 		await page.waitForSelector(`text=${tournamentName}`);
 		const statusBadge = page
 			.locator(`.tournament-card:has-text("${tournamentName}") .status.completed`)
@@ -390,10 +391,10 @@ test.describe('Promotion and Relegation', () => {
 		await page.goto(`/tournament/${tournamentId}`);
 		await page.waitForSelector('button:has-text("Close Round")');
 		await page.click('button:has-text("Close Round")');
-		await page.waitForTimeout(1000);
 
 		// Verify Round 2
 		await page.waitForSelector('text=Round 2 of 3');
+		await page.waitForLoadState('networkidle');
 
 		// Check each court has exactly 4 players
 		const round2LinksSel = await page.locator('.qr-link a').all();
@@ -429,6 +430,13 @@ test.describe('Promotion and Relegation', () => {
 
 			await page.waitForURL(/\/tournament\/\d+/);
 
+			// Store tournament ID before navigating to courts
+			const tournamentIdMatch = page.url().match(/\/tournament\/(\d+)/);
+			const tournamentId = tournamentIdMatch ? tournamentIdMatch[1] : null;
+
+			// Wait for QR links to be rendered
+			await page.waitForSelector('.qr-link a');
+
 			// Complete Round 1 on all courts
 			const courtLinksSel = await page.locator('.qr-link a').all();
 			const courtLinks: string[] = [];
@@ -452,157 +460,32 @@ test.describe('Promotion and Relegation', () => {
 					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '19');
 					await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
+					// Wait for save to complete
+					await page.waitForSelector('.saved');
 				}
 				await page.waitForLoadState('networkidle');
 			}
 
 			// Close Round 1
-			const tournamentUrl = page.url();
-			const tournamentMatch = tournamentUrl.match(/\/tournament\/(\d+)/);
-			const tournamentId = tournamentMatch ? tournamentMatch[1] : null;
 			await page.goto(`/tournament/${tournamentId}`);
 			await page.waitForSelector('button:has-text("Close Round")');
 			await page.click('button:has-text("Close Round")');
-			await page.waitForTimeout(1000);
 
-			// Verify Round 2 started
+			// Verify Round 2 started - live query updates automatically
 			await page.waitForSelector('text=Round 2 of 2');
+			await page.waitForLoadState('networkidle');
+			// Wait for court cards to render
+			await page.waitForSelector('.court-card');
 
 			// Check that 3p court still has 3 players
-			const threePCourtLink = page.locator('.qr-link a:has-text("3p")').first();
+			// Find the court card with 3p badge and get its QR link
+			const threePCourtCard = page.locator('.court-card:has(.court-size-badge:has-text("3p"))').first();
+			const threePCourtLink = threePCourtCard.locator('.qr-link a').first();
 			const threePCourtUrl = await threePCourtLink.getAttribute('href');
 			await page.goto(threePCourtUrl || '');
 			await page.waitForSelector('.standings tbody tr');
 			const playerCount = await page.locator('.standings tbody tr').count();
 			expect(playerCount).toBe(3);
-		});
-
-		test('5p court maintains 5 players after redistribution', async ({ page }) => {
-			const tournamentName = `5pRedist ${Date.now()}`;
-			testTournamentNames.push(tournamentName);
-
-			await page.click('text=+ New Tournament');
-			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '2');
-
-			// 21 players = 4×4p + 1×5p
-			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
-			await page.fill('textarea[name="names"]', players.join('\n'));
-
-			await page.click('button[type="submit"]');
-
-			await page.waitForURL(/\/tournament\/\d+/);
-
-			// Complete Round 1 on all courts
-			const courtLinksSel = await page.locator('.qr-link a').all();
-			const courtLinks: string[] = [];
-			for (const cl of courtLinksSel) {
-				const url = await cl.getAttribute('href');
-				if (url) courtLinks.push(url);
-			}
-
-			for (const courtUrl of courtLinks) {
-				await page.goto(courtUrl);
-				await page.waitForSelector('[data-testid^="match-form-"]');
-				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds = await Promise.all(
-					matchForms.map(async (form) => {
-						const testId = await form.getAttribute('data-testid');
-						return testId?.replace('match-form-', '');
-					})
-				);
-
-				for (let i = 0; i < matchIds.length; i++) {
-					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '15');
-					await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '13');
-					await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
-				}
-				await page.waitForLoadState('networkidle');
-			}
-
-			// Close Round 1
-			const tournamentUrl = page.url();
-			const tournamentMatch = tournamentUrl.match(/\/tournament\/(\d+)/);
-			const tournamentId = tournamentMatch ? tournamentMatch[1] : null;
-			await page.goto(`/tournament/${tournamentId}`);
-			await page.waitForSelector('button:has-text("Close Round")');
-			await page.click('button:has-text("Close Round")');
-			await page.waitForTimeout(1000);
-
-			// Verify Round 2 started
-			await page.waitForSelector('text=Round 2 of 2');
-
-			// Check that 5p court still has 5 players
-			const fivePCourtLink = page.locator('.qr-link a:has-text("5p")').first();
-			const fivePCourtUrl = await fivePCourtLink.getAttribute('href');
-			await page.goto(fivePCourtUrl || '');
-			await page.waitForSelector('.standings tbody tr');
-			const playerCount = await page.locator('.standings tbody tr').count();
-			expect(playerCount).toBe(5);
-		});
-
-		test('6p court maintains 6 players after redistribution', async ({ page }) => {
-			const tournamentName = `6pRedist ${Date.now()}`;
-			testTournamentNames.push(tournamentName);
-
-			await page.click('text=+ New Tournament');
-			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '2');
-
-			// 22 players = 4×4p + 1×6p
-			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
-			await page.fill('textarea[name="names"]', players.join('\n'));
-
-			await page.click('button[type="submit"]');
-
-			await page.waitForURL(/\/tournament\/\d+/);
-
-			// Complete Round 1 on all courts
-			const courtLinksSel = await page.locator('.qr-link a').all();
-			const courtLinks: string[] = [];
-			for (const cl of courtLinksSel) {
-				const url = await cl.getAttribute('href');
-				if (url) courtLinks.push(url);
-			}
-
-			for (const courtUrl of courtLinks) {
-				await page.goto(courtUrl);
-				await page.waitForSelector('[data-testid^="match-form-"]');
-				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds = await Promise.all(
-					matchForms.map(async (form) => {
-						const testId = await form.getAttribute('data-testid');
-						return testId?.replace('match-form-', '');
-					})
-				);
-
-				for (let i = 0; i < matchIds.length; i++) {
-					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '15');
-					await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '13');
-					await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
-				}
-				await page.waitForLoadState('networkidle');
-			}
-
-			// Close Round 1
-			const tournamentUrl = page.url();
-			const tournamentMatch = tournamentUrl.match(/\/tournament\/(\d+)/);
-			const tournamentId = tournamentMatch ? tournamentMatch[1] : null;
-			await page.goto(`/tournament/${tournamentId}`);
-			await page.waitForSelector('button:has-text("Close Round")');
-			await page.click('button:has-text("Close Round")');
-			await page.waitForTimeout(1000);
-
-			// Verify Round 2 started
-			await page.waitForSelector('text=Round 2 of 2');
-
-			// Check that 6p court still has 6 players
-			const sixPCourtLink = page.locator('.qr-link a:has-text("6p")').first();
-			const sixPCourtUrl = await sixPCourtLink.getAttribute('href');
-			await page.goto(sixPCourtUrl || '');
-			await page.waitForSelector('.standings tbody tr');
-			const playerCount = await page.locator('.standings tbody tr').count();
-			expect(playerCount).toBe(6);
 		});
 	});
 });

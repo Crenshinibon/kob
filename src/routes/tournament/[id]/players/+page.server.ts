@@ -238,8 +238,8 @@ export const actions = {
 					courtNumber: assignment.courtNumber,
 					player1Id: assignment.playerIds[0],
 					player2Id: assignment.playerIds[1],
-					player3Id: assignment.playerIds.length > 2 ? assignment.playerIds[2] : 0,
-					player4Id: assignment.playerIds.length > 3 ? assignment.playerIds[3] : 0,
+					player3Id: assignment.playerIds.length > 2 ? assignment.playerIds[2] : null,
+					player4Id: assignment.playerIds.length > 3 ? assignment.playerIds[3] : null,
 					player5Id: size >= 5 ? assignment.playerIds[4] : null,
 					player6Id: size >= 6 ? assignment.playerIds[5] : null
 				})

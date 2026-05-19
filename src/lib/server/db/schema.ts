@@ -44,8 +44,8 @@ export const courtRotation = pgTable('court_rotation', {
 	courtNumber: integer('court_number').notNull(),
 	player1Id: integer('player_1_id').notNull(),
 	player2Id: integer('player_2_id').notNull(),
-	player3Id: integer('player_3_id').notNull(),
-	player4Id: integer('player_4_id').notNull(),
+	player3Id: integer('player_3_id'),
+	player4Id: integer('player_4_id'),
 	player5Id: integer('player_5_id'),
 	player6Id: integer('player_6_id')
 });
