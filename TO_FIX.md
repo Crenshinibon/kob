@@ -30,4 +30,5 @@
 - [x] tournament/[id]/players not needed
 - [x] Don't use server actions, but RemoteFunctions command or form
 - [x] Use proper live() query from RemoteFunctions (https://svelte.dev/docs/kit/remote-functions#query.live) with server-side polling or realtime queries from db
+- [x] Update database schema with set_number column for best-of-3 support (match, match_3_player, match_5_player, match_6_player tables)
 

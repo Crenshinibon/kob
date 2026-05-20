@@ -257,6 +257,19 @@ decidingSetPoints: integer('deciding_set_points').default(15);
 schedulingMode: text('scheduling_mode').default('batch'); // 'batch' | 'rolling'
 ```
 
+### Match Tables (Updated)
+
+All match tables now include a `setNumber` column to support best-of-3 scoring:
+
+```typescript
+// match, match3Player, match5Player, match6Player all have:
+setNumber: integer('set_number').notNull().default(1);
+```
+
+- For single-set matches: `setNumber = 1` (default)
+- For best-of-3: Multiple rows per match with `setNumber = 1, 2, 3`
+- Match is won when a team wins `setsToWin` sets
+
 ---
 
 ## Decisions (Previously Open Questions)

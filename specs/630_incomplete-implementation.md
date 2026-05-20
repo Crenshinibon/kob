@@ -146,7 +146,7 @@ Roles randomized each round. Some players play 3, others play 2. Ranking by aver
 
 **Schema**: Instead of reusing the existing `match` table (designed for 2v2), create separate tables per court type. This avoids if-cascades in all layers (DB queries, server logic, UI components).
 
-**Existing table** (unchanged):
+**Existing table** (updated with set_number for best-of-3 support):
 
 ```typescript
 // match — for 4-player courts (2v2)
@@ -154,6 +154,7 @@ Roles randomized each round. Some players play 3, others play 2. Ranking by aver
   id: serial('id').primaryKey(),
   courtRotationId: integer('court_rotation_id').notNull(),
   matchNumber: integer('match_number').notNull(),
+  setNumber: integer('set_number').notNull().default(1),  // NEW: for best-of-3
   teamAPlayer1Id: integer('team_a_player_1_id').notNull(),
   teamAPlayer2Id: integer('team_a_player_2_id').notNull(),
   teamBPlayer1Id: integer('team_b_player_1_id').notNull(),
@@ -163,7 +164,7 @@ Roles randomized each round. Some players play 3, others play 2. Ranking by aver
 }
 ```
 
-**New table for 3-player courts**:
+**New table for 3-player courts** (updated with set_number):
 
 ```typescript
 // match3Player — 2v1 format, 3 matches per round
@@ -171,6 +172,7 @@ Roles randomized each round. Some players play 3, others play 2. Ranking by aver
   id: serial('id').primaryKey(),
   courtRotationId: integer('court_rotation_id').notNull(),
   matchNumber: integer('match_number').notNull(),  // 1, 2, 3
+  setNumber: integer('set_number').notNull().default(1),  // NEW: for best-of-3
   teamOfTwoPlayer1Id: integer('team_of_two_player_1_id').notNull(),
   teamOfTwoPlayer2Id: integer('team_of_two_player_2_id').notNull(),
   soloPlayerId: integer('solo_player_id').notNull(),
@@ -179,7 +181,7 @@ Roles randomized each round. Some players play 3, others play 2. Ranking by aver
 }
 ```
 
-**New table for 5-player courts**:
+**New table for 5-player courts** (updated with set_number):
 
 ```typescript
 // match5Player — parallel games, 4 games per round (2 runs × 2 games)
@@ -188,6 +190,7 @@ Roles randomized each round. Some players play 3, others play 2. Ranking by aver
   courtRotationId: integer('court_rotation_id').notNull(),
   gameNumber: integer('game_number').notNull(),  // 1, 2, 3, 4
   runNumber: integer('run_number').notNull(),    // 1 or 2
+  setNumber: integer('set_number').notNull().default(1),  // NEW: for best-of-3
   sideXPlayer1Id: integer('side_x_player_1_id').notNull(),  // fixed team
   sideXPlayer2Id: integer('side_x_player_2_id').notNull(),
   sideYFixedPlayerId: integer('side_y_fixed_player_id').notNull(),
@@ -197,7 +200,7 @@ Roles randomized each round. Some players play 3, others play 2. Ranking by aver
 }
 ```
 
-**New table for 6-player courts**:
+**New table for 6-player courts** (updated with set_number):
 
 ```typescript
 // match6Player — parallel games, 4 games per round (2 runs × 2 games)
@@ -206,6 +209,7 @@ Roles randomized each round. Some players play 3, others play 2. Ranking by aver
   courtRotationId: integer('court_rotation_id').notNull(),
   gameNumber: integer('game_number').notNull(),  // 1, 2, 3, 4
   runNumber: integer('run_number').notNull(),    // 1 or 2
+  setNumber: integer('set_number').notNull().default(1),  // NEW: for best-of-3
   fixedTeamPlayer1Id: integer('fixed_team_player_1_id').notNull(),
   fixedTeamPlayer2Id: integer('fixed_team_player_2_id').notNull(),
   rotatingTeamPlayer1Id: integer('rotating_team_player_1_id').notNull(),
