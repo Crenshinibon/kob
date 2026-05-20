@@ -330,7 +330,10 @@ test.describe('Promotion and Relegation', () => {
 
 		// Tournament should be marked as completed
 		await page.goto('/?t=' + Date.now());
-		await page.waitForSelector(`section:has(h2:has-text("Finished")) .tournament-card:has-text("${tournamentName}")`, { timeout: 10000 });
+		await page.waitForSelector(
+			`section:has(h2:has-text("Finished")) .tournament-card:has-text("${tournamentName}")`,
+			{ timeout: 10000 }
+		);
 		const statusBadge = page
 			.locator(`.tournament-card:has-text("${tournamentName}") .status.completed`)
 			.first();
@@ -479,7 +482,9 @@ test.describe('Promotion and Relegation', () => {
 
 			// Check that 3p court still has 3 players
 			// Find the court card with 3p badge and get its QR link
-			const threePCourtCard = page.locator('.court-card:has(.court-size-badge:has-text("3p"))').first();
+			const threePCourtCard = page
+				.locator('.court-card:has(.court-size-badge:has-text("3p"))')
+				.first();
 			const threePCourtLink = threePCourtCard.locator('.qr-link a').first();
 			const threePCourtUrl = await threePCourtLink.getAttribute('href');
 			await page.goto(threePCourtUrl || '');

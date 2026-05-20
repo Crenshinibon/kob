@@ -16,7 +16,7 @@ import {
 export interface CourtDisplayData {
 	courtNumber: number;
 	courtSize: number;
-	matches: typeof match.$inferSelect[];
+	matches: (typeof match.$inferSelect)[];
 	token: string | null;
 	players: { id: number; name: string }[];
 	shift?: number;
@@ -128,9 +128,10 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 			...(rotation.player6Id !== null ? [rotation.player6Id] : [])
 		].filter((id): id is number => id !== null);
 
-		const rotationPlayers = playerIds
-			.map((id) => playerMap.get(id))
-			.filter(Boolean) as { id: number; name: string }[];
+		const rotationPlayers = playerIds.map((id) => playerMap.get(id)).filter(Boolean) as {
+			id: number;
+			name: string;
+		}[];
 
 		const size = rotation.courtSize ?? courtSizes[rotation.courtNumber - 1] ?? 4;
 

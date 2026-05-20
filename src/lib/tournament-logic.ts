@@ -496,9 +496,17 @@ export function closeRound(state: TournamentState): TournamentState {
 	if (state.config.formatType === 'preseed') {
 		nextAssignments = redistributePreseedRecursive(courtResults);
 	} else if (state.roundsCompleted === 0) {
-		nextAssignments = verticalSeeding(courtResults, state.config.courtSizes.length, state.config.courtSizes);
+		nextAssignments = verticalSeeding(
+			courtResults,
+			state.config.courtSizes.length,
+			state.config.courtSizes
+		);
 	} else {
-		nextAssignments = ladderRedistribute(courtResults, state.config.courtSizes.length, state.config.courtSizes);
+		nextAssignments = ladderRedistribute(
+			courtResults,
+			state.config.courtSizes.length,
+			state.config.courtSizes
+		);
 	}
 
 	return {

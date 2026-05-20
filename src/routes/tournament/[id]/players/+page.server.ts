@@ -20,7 +20,9 @@ type PlayerWithPoints = {
 	seedPoints: number | null;
 };
 
-export const load = async ({ params, locals }) => {
+import type { PageServerLoad, Actions } from './$types';
+
+export const load: PageServerLoad = async ({ params, locals }) => {
 	const user = locals.user;
 	if (!user) throw redirect(302, '/login');
 
@@ -75,7 +77,7 @@ function parsePreseedInput(text: string): PlayerWithPoints[] {
 	return result;
 }
 
-export const actions = {
+export const actions: Actions = {
 	addPlayers: async ({ request, params, locals }) => {
 		const user = locals.user;
 		if (!user) throw error(401, 'Unauthorized');
@@ -117,14 +119,14 @@ export const actions = {
 		} else {
 			const names = namesText
 				.split('\n')
-				.map((n) => n.trim())
-				.filter((n) => n.length > 0);
+				.map((n: string) => n.trim())
+				.filter((n: string) => n.length > 0);
 
 			if (names.length === 0) {
 				return { error: 'Please enter at least one player name' };
 			}
 
-			playersToAdd = names.map((name) => ({
+			playersToAdd = names.map((name: string) => ({
 				name,
 				seedPoints: null,
 				seedRank: null

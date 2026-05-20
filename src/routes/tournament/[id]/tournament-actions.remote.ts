@@ -101,9 +101,7 @@ export const closeRoundForm = form(
 				.select()
 				.from(match)
 				.where(eq(match.courtRotationId, rotation.id));
-			const scored = rotationMatches.filter(
-				(m) => m.teamAScore !== null && m.teamBScore !== null
-			);
+			const scored = rotationMatches.filter((m) => m.teamAScore !== null && m.teamBScore !== null);
 			allMatches.push(...scored);
 		}
 

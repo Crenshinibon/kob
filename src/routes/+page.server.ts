@@ -2,7 +2,9 @@ import { db } from '$lib/server/db';
 import { tournament } from '$lib/server/db/schema';
 import { eq, desc } from 'drizzle-orm';
 
-export const load = async ({ locals }) => {
+import type { PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
 
 	if (!user) {
