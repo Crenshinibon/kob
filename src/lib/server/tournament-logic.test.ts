@@ -14,6 +14,8 @@ import {
 	calculateCourtStandings,
 	generate4pMatches,
 	generate3pMatches,
+	generate5pMatches,
+	generate6pMatches,
 	matchCountForCourtSize,
 	countScoredMatches,
 	type FormatType,
@@ -670,6 +672,76 @@ describe('generate3pMatches', () => {
 		expect(m[0].teamBPlayer1Id).toBe(3);
 		expect(m[1].teamBPlayer1Id).toBe(2);
 		expect(m[2].teamBPlayer1Id).toBe(1);
+	});
+});
+
+describe('generate5pMatches', () => {
+	it('generates 4 matches for 5 players', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		expect(m).toHaveLength(4);
+	});
+
+	it('no player appears twice in the same match', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		for (const match of m) {
+			const players = new Set([
+				match.teamAPlayer1Id,
+				match.teamAPlayer2Id,
+				match.teamBPlayer1Id,
+				match.teamBPlayer2Id
+			]);
+			expect(players.size).toBe(4);
+		}
+	});
+
+	it('each player plays at least 3 matches', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		const allPlayers = [1, 2, 3, 4, 5];
+		for (const playerId of allPlayers) {
+			const matchesPlayed = m.filter(
+				(match) =>
+					match.teamAPlayer1Id === playerId ||
+					match.teamAPlayer2Id === playerId ||
+					match.teamBPlayer1Id === playerId ||
+					match.teamBPlayer2Id === playerId
+			).length;
+			expect(matchesPlayed).toBeGreaterThanOrEqual(3);
+		}
+	});
+});
+
+describe('generate6pMatches', () => {
+	it('generates 4 matches for 6 players', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		expect(m).toHaveLength(4);
+	});
+
+	it('no player appears twice in the same match', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		for (const match of m) {
+			const players = new Set([
+				match.teamAPlayer1Id,
+				match.teamAPlayer2Id,
+				match.teamBPlayer1Id,
+				match.teamBPlayer2Id
+			]);
+			expect(players.size).toBe(4);
+		}
+	});
+
+	it('each player plays at least 2 matches', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		const allPlayers = [1, 2, 3, 4, 5, 6];
+		for (const playerId of allPlayers) {
+			const matchesPlayed = m.filter(
+				(match) =>
+					match.teamAPlayer1Id === playerId ||
+					match.teamAPlayer2Id === playerId ||
+					match.teamBPlayer1Id === playerId ||
+					match.teamBPlayer2Id === playerId
+			).length;
+			expect(matchesPlayed).toBeGreaterThanOrEqual(2);
+		}
 	});
 });
 

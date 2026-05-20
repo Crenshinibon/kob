@@ -2,9 +2,6 @@
 
 ## ToDo
 
-- [] 5p court in the matchups, it should be clearer which matches "belong together", are executed simultaneously. And don't duplicate the match up in the top row.
-- [] 6p court in the matchups, it should be clearer which matches "belong together" (parallel games) and there is a bug. The first team in the first game should be the same as the first team in the second match, otherwise parallel games are not possible.
-- [] also for non-standard games we need an explanation of the format and how it should work
 - [] add job to delete tournaments that are closed and older then 14 days
 - [] add job to delete tournaments that are not updated for 31 days
 - [] add tests for 5p / 6p court redistribution
@@ -16,6 +13,9 @@
 ## Done
 
 - [x] 3p court in the matchups, the single player is shown twice
+- [x] 5p court in the matchups, it should be clearer which matches "belong together", are executed simultaneously. And don't duplicate the match up in the top row.
+- [x] 6p court in the matchups, it should be clearer which matches "belong together" (parallel games) and there is a bug. The first team in the first game should be the same as the first team in the second match, otherwise parallel games are not possible.
+- [x] also for non-standard games we need an explanation of the format and how it should work
 - [x] when we enter more than 64 names the system should raise a warning/error, that only max 64 are supported and that at least one player must be removed to proceed
 - [x] add auto cleanup after test runs
 - [x] add script to wipe all tournaments from the database (`npm run db:wipe`)

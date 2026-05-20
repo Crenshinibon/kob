@@ -633,19 +633,95 @@ function genMatchForAssignment(
 		case 4:
 			return generate4pMatches(assignment.playerIds)[0];
 		case 5:
+			return generate5pMatches(assignment.playerIds)[0];
 		case 6:
-			return {
-				teamAPlayer1Id: assignment.playerIds[0],
-				teamAPlayer2Id: assignment.playerIds[1],
-				teamBPlayer1Id: assignment.playerIds[2],
-				teamBPlayer2Id:
-					assignment.playerIds.length > 3 ? assignment.playerIds[3] : assignment.playerIds[2],
-				teamAScore: null,
-				teamBScore: null
-			};
+			return generate6pMatches(assignment.playerIds)[0];
 		default:
 			return generate4pMatches(assignment.playerIds)[0];
 	}
+}
+
+export function generate5pMatches(playerIds: readonly number[]): MatchData[] {
+	if (playerIds.length !== 5) throw new Error(`Expected 5 players, got ${playerIds.length}`);
+	const [p1, p2, p3, p4, p5] = playerIds;
+	// 5p format: 4 matches, each player sits once
+	// Each match is 2v2, one player sits
+	return [
+		{
+			teamAPlayer1Id: p1,
+			teamAPlayer2Id: p2,
+			teamBPlayer1Id: p3,
+			teamBPlayer2Id: p4,
+			teamAScore: null,
+			teamBScore: null
+		},
+		{
+			teamAPlayer1Id: p1,
+			teamAPlayer2Id: p3,
+			teamBPlayer1Id: p4,
+			teamBPlayer2Id: p5,
+			teamAScore: null,
+			teamBScore: null
+		},
+		{
+			teamAPlayer1Id: p1,
+			teamAPlayer2Id: p4,
+			teamBPlayer1Id: p2,
+			teamBPlayer2Id: p5,
+			teamAScore: null,
+			teamBScore: null
+		},
+		{
+			teamAPlayer1Id: p2,
+			teamAPlayer2Id: p3,
+			teamBPlayer1Id: p4,
+			teamBPlayer2Id: p5,
+			teamAScore: null,
+			teamBScore: null
+		}
+	];
+}
+
+export function generate6pMatches(playerIds: readonly number[]): MatchData[] {
+	if (playerIds.length !== 6) throw new Error(`Expected 6 players, got ${playerIds.length}`);
+	const [p1, p2, p3, p4, p5, p6] = playerIds;
+	// 6p format: 4 matches, each player plays 4 matches
+	// Each match is 2v2, 2 players sit each match
+	// Players rotate to ensure everyone plays together
+	return [
+		{
+			teamAPlayer1Id: p1,
+			teamAPlayer2Id: p2,
+			teamBPlayer1Id: p3,
+			teamBPlayer2Id: p4,
+			teamAScore: null,
+			teamBScore: null
+		},
+		{
+			teamAPlayer1Id: p1,
+			teamAPlayer2Id: p3,
+			teamBPlayer1Id: p5,
+			teamBPlayer2Id: p6,
+			teamAScore: null,
+			teamBScore: null
+		},
+		{
+			teamAPlayer1Id: p1,
+			teamAPlayer2Id: p4,
+			teamBPlayer1Id: p2,
+			teamBPlayer2Id: p5,
+			teamAScore: null,
+			teamBScore: null
+		},
+		{
+			teamAPlayer1Id: p2,
+			teamAPlayer2Id: p3,
+			teamBPlayer1Id: p4,
+			teamBPlayer2Id: p6,
+			teamAScore: null,
+			teamBScore: null
+		}
+	];
 }
 
 export function matchCountForCourtSize(courtSize: number): number {
@@ -674,49 +750,9 @@ export function generateAllMatchesForAssignment(
 		case 4:
 			return generate4pMatches(assignment.playerIds);
 		case 5:
-		case 6: {
-			const [p1, p2, p3] = assignment.playerIds;
-			const p4 =
-				assignment.playerIds.length > 3 ? assignment.playerIds[3] : assignment.playerIds[2];
-			const p5 =
-				assignment.playerIds.length > 4 ? assignment.playerIds[4] : assignment.playerIds[0];
-			const p6 =
-				assignment.playerIds.length > 5 ? assignment.playerIds[5] : assignment.playerIds[1];
-			return [
-				{
-					teamAPlayer1Id: p1,
-					teamAPlayer2Id: p2,
-					teamBPlayer1Id: p3,
-					teamBPlayer2Id: p4,
-					teamAScore: null,
-					teamBScore: null
-				},
-				{
-					teamAPlayer1Id: p1,
-					teamAPlayer2Id: p3,
-					teamBPlayer1Id: p5,
-					teamBPlayer2Id: p6,
-					teamAScore: null,
-					teamBScore: null
-				},
-				{
-					teamAPlayer1Id: p1,
-					teamAPlayer2Id: p4,
-					teamBPlayer1Id: p5,
-					teamBPlayer2Id: p2,
-					teamAScore: null,
-					teamBScore: null
-				},
-				{
-					teamAPlayer1Id: p2,
-					teamAPlayer2Id: p6,
-					teamBPlayer1Id: p3,
-					teamBPlayer2Id: p4,
-					teamAScore: null,
-					teamBScore: null
-				}
-			];
-		}
+			return generate5pMatches(assignment.playerIds);
+		case 6:
+			return generate6pMatches(assignment.playerIds);
 		default:
 			return generate4pMatches(assignment.playerIds);
 	}
