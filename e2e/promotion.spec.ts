@@ -316,6 +316,7 @@ test.describe('Promotion and Relegation', () => {
 				await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');
 				await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '19');
 				await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
+				await page.waitForSelector('.saved');
 			}
 		}
 
@@ -324,9 +325,12 @@ test.describe('Promotion and Relegation', () => {
 		await page.waitForSelector('button:has-text("Finalize Tournament")');
 		await page.click('button:has-text("Finalize Tournament")');
 
+		// Wait for redirect to standings
+		await page.waitForURL(/\/standings/);
+
 		// Tournament should be marked as completed
-		await page.goto('/');
-		await page.waitForSelector(`text=${tournamentName}`);
+		await page.goto('/?t=' + Date.now());
+		await page.waitForSelector(`section:has(h2:has-text("Finished")) .tournament-card:has-text("${tournamentName}")`, { timeout: 10000 });
 		const statusBadge = page
 			.locator(`.tournament-card:has-text("${tournamentName}") .status.completed`)
 			.first();

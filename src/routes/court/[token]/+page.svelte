@@ -95,12 +95,6 @@
 		<div class="closed" transition:slide>
 			<h2>This court is closed</h2>
 			<p>Scores have been finalized. Stand by for next round assignments.</p>
-			{#if data._debug}
-				<p class="debug">
-					accessIsActive: {data._debug.accessIsActive}, tourneyStatus: {data._debug.tourneyStatus},
-					rotationId: {data._debug.rotationId}, roundNumber: {data._debug.roundNumber}
-				</p>
-			{/if}
 		</div>
 	{:else}
 		<section class="players-section">

@@ -158,12 +158,7 @@
 
 		<section class="actions">
 			{#if canCloseRound}
-				<form
-					{...closeRoundForm.enhance(async ({ form }) => {
-						form.reset();
-						await goto(`/tournament/${data.tournamentId}`);
-					})}
-				>
+				<form {...closeRoundForm}>
 					<input {...closeRoundForm.fields.tournamentId.as('hidden', tournament.id)} />
 					<button type="submit" class="btn-primary">
 						{isFinalRound ? 'Finalize Tournament' : 'Close Round & Advance'}
