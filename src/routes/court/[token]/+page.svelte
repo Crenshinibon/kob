@@ -39,7 +39,10 @@
 			const nameA2 = getPlayerName(m, 'a2');
 			const nameB1 = getPlayerName(m, 'b1');
 			const nameB2 = getPlayerName(m, 'b2');
-			return { teamA: `${nameA1} & ${nameA2}`, teamB: `${nameB1} & ${nameB2}` };
+			// For 3p courts, solo player appears twice in data but should show once
+			const teamA = m.teamAPlayer1Id === m.teamAPlayer2Id ? nameA1 : `${nameA1} & ${nameA2}`;
+			const teamB = m.teamBPlayer1Id === m.teamBPlayer2Id ? nameB1 : `${nameB1} & ${nameB2}`;
+			return { teamA, teamB };
 		})
 	);
 
@@ -55,6 +58,15 @@
 			case 'b2':
 				return names[match.teamBPlayer2Id] || '—';
 		}
+	}
+
+	function getTeamDisplay(match: any, team: 'a' | 'b'): string {
+		const name1 = getPlayerName(match, team === 'a' ? 'a1' : 'b1');
+		const name2 = getPlayerName(match, team === 'a' ? 'a2' : 'b2');
+		const id1 = team === 'a' ? match.teamAPlayer1Id : match.teamBPlayer1Id;
+		const id2 = team === 'a' ? match.teamAPlayer2Id : match.teamBPlayer2Id;
+		// For 3p courts, solo player appears twice in data but should show once
+		return id1 === id2 ? name1 : `${name1} & ${name2}`;
 	}
 
 	async function generateQR(): Promise<string> {
@@ -156,11 +168,11 @@
 					{#if completedMatches.has(match.id) && !editingMatches.has(match.id)}
 						<div class="completed" transition:slide>
 							<p>
-								{getPlayerName(match, 'a1')} & {getPlayerName(match, 'a2')}:
+								{getTeamDisplay(match, 'a')}:
 								<strong>{matchData[match.id]?.teamAScore || match.teamAScore}</strong>
 							</p>
 							<p>
-								{getPlayerName(match, 'b1')} & {getPlayerName(match, 'b2')}:
+								{getTeamDisplay(match, 'b')}:
 								<strong>{matchData[match.id]?.teamBScore || match.teamBScore}</strong>
 							</p>
 							<span class="saved">✓ Saved</span>
@@ -195,7 +207,7 @@
 
 							<div class="teams">
 								<div class="team">
-									<p>{getPlayerName(match, 'a1')} & {getPlayerName(match, 'a2')}</p>
+									<p>{getTeamDisplay(match, 'a')}</p>
 									<input
 										data-testid="team-a-score-{match.id}"
 										type="number"
@@ -211,7 +223,7 @@
 								<div class="vs">vs</div>
 
 								<div class="team">
-									<p>{getPlayerName(match, 'b1')} & {getPlayerName(match, 'b2')}</p>
+									<p>{getTeamDisplay(match, 'b')}</p>
 									<input
 										data-testid="team-b-score-{match.id}"
 										type="number"

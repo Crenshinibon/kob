@@ -45,3 +45,14 @@
   - **[710_i18n-core.md](./710_i18n-core.md)**: Architecture, Paraglide library, locale structure, URL strategy, language switcher.
   - **[720_i18n-content.md](./720_i18n-content.md)**: Translation keys (~150 keys), pluralization, interpolation, format names.
   - **[730_i18n-implementation.md](./730_i18n-implementation.md)**: 7 implementation phases, file changes, testing strategy.
+
+- **[800_bug-fixes-index.md](./800_bug-fixes-index.md)**: Bug fixes from user testing and code review.
+  - **[810_match-display-bugs.md](./810_match-display-bugs.md)**: 3p/5p/6p court matchup display bugs
+  - **[811-closeRound-requested-error.md](./811-closeRound-requested-error.md)**: closeRound errors with requested() outside context
+  - **[812-standings-ranking-bug.md](./812-standings-ranking-bug.md)**: Standings ranking by court position first, not points
+  - **[813-qr-live-query-bugs.md](./813-qr-live-query-bugs.md)**: QR codes not loading/updating, live query not working
+  - **[814-fetch-errors.md](./814-fetch-errors.md)**: Failed to fetch errors in browser console
+
+- **[820_ux-improvements.md](./820_ux-improvements.md)**: UX improvements: player count validation, format explanations, v1 banner
+
+- **[830_test-improvements.md](./830_test-improvements.md)**: Test improvements: auto cleanup, 5p/6p tests, scoring mode tests
