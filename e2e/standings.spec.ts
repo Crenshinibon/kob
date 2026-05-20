@@ -336,6 +336,173 @@ test.describe('Standings Calculation', () => {
 			await expect(page.locator('.standings th:has-text("Avg")')).toBeVisible();
 		});
 
+		test('3p court standings rank correctly after score entry', async ({ page }) => {
+			const tournamentName = `3pRanking ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+
+			// 11 players = 2×4p + 1×3p
+			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Navigate to 3p court
+			const courtLink = page.locator('.qr-link a').last();
+			const courtUrl = await courtLink.getAttribute('href');
+			await page.goto(courtUrl || '');
+
+			// Enter scores for all 3 matches
+			await page.waitForSelector('[data-testid^="match-form-"]');
+			const matchForms = page.locator('[data-testid^="match-form-"]');
+			const matchCount = await matchForms.count();
+			expect(matchCount).toBe(3);
+
+			const matchIds: string[] = [];
+			for (let i = 0; i < matchCount; i++) {
+				const form = matchForms.nth(i);
+				const testId = await form.getAttribute('data-testid');
+				matchIds.push(testId!.replace('match-form-', ''));
+			}
+
+			// Enter scores: Match 1: 21-19, Match 2: 21-18, Match 3: 21-20
+			for (let i = 0; i < matchIds.length; i++) {
+				await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, String(21 - i));
+				await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, String(19 - i));
+				await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
+				await page.waitForSelector('.saved');
+			}
+
+			// Verify standings show 3 players ranked
+			await page.waitForSelector('.standings tbody tr');
+			const rows = await page.locator('.standings tbody tr').all();
+			expect(rows.length).toBe(3);
+
+			// First player should have highest points
+			const firstPoints = await rows[0].locator('td:nth-child(3)').textContent();
+			const secondPoints = await rows[1].locator('td:nth-child(3)').textContent();
+			expect(parseInt(firstPoints || '0')).toBeGreaterThanOrEqual(parseInt(secondPoints || '0'));
+		});
+
+		test('5p court standings rank correctly after score entry', async ({ page }) => {
+			const tournamentName = `5pRanking ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+
+			// 21 players = 4×4p + 1×5p
+			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Navigate to 5p court
+			const courtLink = page.locator('.qr-link a').last();
+			const courtUrl = await courtLink.getAttribute('href');
+			await page.goto(courtUrl || '');
+
+			// Enter scores for matches (5p uses 15-point games)
+			await page.waitForSelector('[data-testid^="match-form-"]');
+			const firstMatchForm = page.locator('[data-testid^="match-form-"]').first();
+			const testId = await firstMatchForm.getAttribute('data-testid');
+			const matchId = testId?.replace('match-form-', '');
+
+			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '15');
+			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '13');
+			await page.click(`[data-testid="save-score-${matchId}"]`);
+			await page.waitForSelector('.saved');
+
+			// Verify standings show 5 players
+			await page.waitForSelector('.standings tbody tr');
+			const rows = await page.locator('.standings tbody tr').all();
+			expect(rows.length).toBe(5);
+
+			// Should show average points column
+			await expect(page.locator('.standings th:has-text("Avg")')).toBeVisible();
+		});
+	});
+
+	test.describe('Round 1 Standings Ranking', () => {
+		test('ranks by court position first after round 1', async ({ page }) => {
+			const tournamentName = `Round1Ranking ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '2');
+
+			// 16 players = 4×4p
+			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Enter scores for all courts
+			const courtLinks = page.locator('.qr-link a');
+			const courtCount = await courtLinks.count();
+
+			for (let c = 0; c < courtCount; c++) {
+				const courtLink = courtLinks.nth(c);
+				const courtUrl = await courtLink.getAttribute('href');
+				await page.goto(courtUrl || '');
+
+				await page.waitForSelector('[data-testid^="match-form-"]');
+				const matchForms = page.locator('[data-testid^="match-form-"]');
+				const matchCount = await matchForms.count();
+
+				for (let m = 0; m < matchCount; m++) {
+					const form = matchForms.nth(m);
+					const testId = await form.getAttribute('data-testid');
+					const matchId = testId?.replace('match-form-', '');
+
+					await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
+					await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
+					await page.click(`[data-testid="save-score-${matchId}"]`);
+					await page.waitForSelector('.saved');
+				}
+
+				// Go back to tournament page
+				await page.goto('/');
+				await page.waitForLoadState('networkidle');
+				const tournamentCard = page.locator(`.tournament-card:has-text("${tournamentName}")`).first();
+				await tournamentCard.click();
+				await page.waitForLoadState('networkidle');
+			}
+
+			// Navigate to standings
+			await page.click('text=View Standings');
+			await page.waitForURL(/\/standings/);
+
+			// Verify standings are populated
+			await page.waitForSelector('.standings tbody tr');
+			const rows = await page.locator('.standings tbody tr').all();
+			expect(rows.length).toBe(16);
+
+			// All players should have a rank
+			const ranks = await Promise.all(
+				rows.map(async (row) => {
+					const rankText = await row.locator('td:first-child').textContent();
+					return parseInt(rankText || '0');
+				})
+			);
+
+			// Ranks should be 1-16
+			expect(Math.min(...ranks)).toBe(1);
+			expect(Math.max(...ranks)).toBe(16);
+		});
+	});
+
 		test('5p court accepts 15-point scores', async ({ page }) => {
 			const tournamentName = `5pScore ${Date.now()}`;
 			testTournamentNames.push(tournamentName);

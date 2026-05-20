@@ -7,6 +7,7 @@ export default defineConfig({
 		reuseExistingServer: true
 	},
 	testDir: 'e2e',
+	globalSetup: './e2e/global-setup.ts',
 	use: {
 		launchOptions: {
 			executablePath: '/usr/bin/chromium'

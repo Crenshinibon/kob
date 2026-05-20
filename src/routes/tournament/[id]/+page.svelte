@@ -1,10 +1,9 @@
 <script lang="ts">
-	import QRCode from 'qrcode';
 	import { goto } from '$app/navigation';
 	import { getTournamentDataLive } from './tournament-data.remote';
 	import { closeRoundForm, deleteTournamentForm } from './tournament-actions.remote';
 	import type { TournamentDisplayData, CourtDisplayData } from './tournament-data.remote';
-	import { browser } from '$app/environment';
+	import CourtQRCode from '../../../components/CourtQRCode.svelte';
 
 	let { data } = $props<{ data: { tournamentId: number; tournament: any } }>();
 
@@ -39,12 +38,6 @@
 		if (size === 3) return 'var(--accent-warning)';
 		if (size === 4) return 'var(--accent-success)';
 		return 'var(--accent-info)';
-	}
-
-	async function generateQR(token: string): Promise<string> {
-		if (!browser) return '';
-		const url = `${window.location.origin}/court/${token}`;
-		return QRCode.toDataURL(url, { width: 200, margin: 2 });
 	}
 
 	function confirmDelete(e: Event) {
@@ -134,16 +127,7 @@
 					</div>
 
 					{#if court.token}
-						<div class="qr-code">
-							{#await generateQR(court.token)}
-								<div class="qr-loading">Loading QR...</div>
-							{:then qrDataUrl}
-								<img src={qrDataUrl} alt="QR code for Court {court.courtNumber}" />
-								<p class="qr-hint">Scan to enter scores</p>
-							{:catch}
-								<div class="qr-error">Failed to load QR</div>
-							{/await}
-						</div>
+						<CourtQRCode token={court.token} courtNumber={court.courtNumber} />
 					{/if}
 
 					<div class="players">
@@ -335,15 +319,6 @@
 		padding: var(--spacing-sm);
 	}
 
-	.courts-8 .qr-code {
-		margin-bottom: var(--spacing-sm);
-		padding: var(--spacing-xs);
-	}
-
-	.courts-8 .qr-code img {
-		max-width: 150px;
-	}
-
 	.courts-8 .players {
 		margin-bottom: var(--spacing-sm);
 	}
@@ -398,43 +373,6 @@
 		padding: var(--spacing-xs) var(--spacing-sm);
 		border-radius: var(--radius-sm);
 		font-weight: 600;
-	}
-
-	.qr-code {
-		text-align: center;
-		margin-bottom: var(--spacing-md);
-		padding: var(--spacing-sm);
-		background-color: var(--bg-secondary);
-		border-radius: var(--radius-md);
-		border: 1px solid var(--border-default);
-	}
-
-	.qr-code img {
-		max-width: 100%;
-		height: auto;
-		border-radius: var(--radius-md);
-	}
-
-	.qr-hint {
-		margin: var(--spacing-sm) 0 0 0;
-		font-size: var(--font-size-xs);
-		color: var(--text-muted);
-	}
-
-	.qr-loading,
-	.qr-error {
-		padding: var(--spacing-xl);
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
-		background-color: var(--bg-secondary);
-		border-radius: var(--radius-md);
-		border: 1px solid var(--border-default);
-	}
-
-	.qr-error {
-		color: var(--accent-error);
-		border-color: var(--accent-error);
-		background-color: rgba(255, 51, 51, 0.1);
 	}
 
 	.players {
