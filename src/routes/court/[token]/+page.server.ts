@@ -84,6 +84,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			? `Best of ${setsToWin} (${pointsToWin}pt, deciding: ${decidingSetPoints}pt)`
 			: `1 set to ${scoreCap}`;
 
+	// Debug logging
+	console.log('[court load] token:', token);
+	console.log('[court load] access.isActive:', access.isActive);
+	console.log('[court load] tourney.status:', tourney.status);
+	console.log('[court load] rotation.id:', rotation.id);
+	console.log('[court load] rotation.roundNumber:', rotation.roundNumber);
+
 	return {
 		court: {
 			tournamentName: tourney.name,
@@ -97,13 +104,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		matches,
 		standings,
 		isActive: access.isActive && tourney.status === 'active',
-		isAuthenticated: !!locals.user,
-		_debug: {
-			accessIsActive: access.isActive,
-			tourneyStatus: tourney.status,
-			rotationId: rotation.id,
-			roundNumber: rotation.roundNumber
-		}
+		isAuthenticated: !!locals.user
 	};
 };
 

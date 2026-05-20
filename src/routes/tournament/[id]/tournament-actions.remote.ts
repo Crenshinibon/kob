@@ -116,6 +116,10 @@ export const closeRoundForm = form(
 			currentMatches: allMatches
 		});
 
+		// Log state
+		const logStart = `[${new Date().toISOString()}] closeRoundForm start: tournamentId=${tournamentId}, currentRound=${currentRound}, physicalCourtCount=${physicalCourtCount}\n`;
+		await import('fs').then(fs => fs.promises.appendFile('/tmp/close-round.log', logStart));
+
 		if (closedState.isComplete) {
 			await db
 				.update(tournament)
@@ -129,6 +133,9 @@ export const closeRoundForm = form(
 
 		const nextAssignments = closedState.nextAssignments;
 		const nextRoundNumber = closedState.roundsCompleted + 1;
+
+		const logNext = `  nextRoundNumber=${nextRoundNumber}, nextAssignments=${nextAssignments.length}\n`;
+		await import('fs').then(fs => fs.promises.appendFile('/tmp/close-round.log', logNext));
 
 		for (const assignment of nextAssignments) {
 			const idx = assignment.courtNumber - 1;
@@ -190,22 +197,28 @@ export const closeRoundForm = form(
 			)
 			.orderBy(courtRotation.courtNumber);
 
-		console.log('[closeRound] Tournament:', tournamentId, 'Next round:', nextRoundNumber);
-		console.log('[closeRound] Found', newRotations.length, 'new rotations, physicalCourtCount:', physicalCourtCount);
+		// Write logs to file for debugging
+		const logMsg = `[${new Date().toISOString()}] Tournament: ${tournamentId}, Next round: ${nextRoundNumber}, Found: ${newRotations.length}, physicalCourtCount: ${physicalCourtCount}\n`;
+		await import('fs').then(fs => fs.promises.appendFile('/tmp/close-round.log', logMsg));
 
-		const activeCount = Math.min(physicalCourtCount, newRotations.length);
-		for (let i = 0; i < activeCount; i++) {
-			const rotation = newRotations[i];
-			console.log('[closeRound] Activating court', rotation.courtNumber, 'rotation ID:', rotation.id);
+		try {
+			const activeCount = Math.min(physicalCourtCount, newRotations.length);
 			
-			// Update all access records for this rotation to active
-			const result = await db
-				.update(courtAccess)
-				.set({ isActive: true })
-				.where(eq(courtAccess.courtRotationId, rotation.id))
-				.returning();
-			
-			console.log('[closeRound] Updated', result.length, 'access records for court', rotation.courtNumber);
+			for (let i = 0; i < activeCount; i++) {
+				const rotation = newRotations[i];
+				
+				// Update all access records for this rotation to active
+				const result = await db
+					.update(courtAccess)
+					.set({ isActive: true })
+					.where(eq(courtAccess.courtRotationId, rotation.id));
+				
+				const logMsg2 = `  Activated court ${rotation.courtNumber}, rowCount: ${result.rowCount}\n`;
+				await import('fs').then(fs => fs.promises.appendFile('/tmp/close-round.log', logMsg2));
+			}
+		} catch (err) {
+			const logErr = `  Error: ${err}\n`;
+			await import('fs').then(fs => fs.promises.appendFile('/tmp/close-round.log', logErr));
 		}
 
 		await db
