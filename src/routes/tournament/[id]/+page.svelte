@@ -8,7 +8,9 @@
 
 	let { data } = $props<{ data: { tournamentId: number; tournament: any } }>();
 
-	const state = $derived(await getTournamentDataLive(data.tournamentId));
+	const liveQuery = getTournamentDataLive(data.tournamentId);
+	const state = $derived(await liveQuery);
+	const isConnected = $derived(liveQuery.connected);
 
 	const tournament = $derived(state?.tournament);
 	const courts = $derived(state?.courts ?? []);
@@ -67,6 +69,11 @@
 				<p class="status-completed">Completed</p>
 			{/if}
 			<a href="/tournament/{tournament.id}/standings" class="standings-link">📊 View Standings</a>
+			{#if isActive && !isConnected}
+				<button class="btn-reconnect" onclick={() => liveQuery.reconnect()}>
+					🔄 Reconnecting...
+				</button>
+			{/if}
 		</header>
 
 		{#if isActive && currentRound > 0}
@@ -300,6 +307,16 @@
 
 	.standings-link:hover {
 		background-color: var(--accent-primary);
+	}
+
+	.btn-reconnect {
+		padding: var(--spacing-xs) var(--spacing-sm);
+		background-color: var(--accent-warning);
+		color: var(--text-primary);
+		border: none;
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		font-size: 0.875rem;
 	}
 
 	.courts {
