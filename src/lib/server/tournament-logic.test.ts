@@ -18,6 +18,10 @@ import {
 	generate6pMatches,
 	matchCountForCourtSize,
 	countScoredMatches,
+	isDecidingSet,
+	getMaxSets,
+	getMinPointsForSet,
+	getScoringLabel,
 	type FormatType,
 	type TournamentState,
 	type CourtResult,
@@ -779,14 +783,15 @@ describe('generate6pMatches', () => {
 	it('game count diff is max 1', () => {
 		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
 		const allPlayers = [1, 2, 3, 4, 5, 6];
-		const counts = allPlayers.map((playerId) =>
-			m.filter(
-				(match) =>
-					match.teamAPlayer1Id === playerId ||
-					match.teamAPlayer2Id === playerId ||
-					match.teamBPlayer1Id === playerId ||
-					match.teamBPlayer2Id === playerId
-			).length
+		const counts = allPlayers.map(
+			(playerId) =>
+				m.filter(
+					(match) =>
+						match.teamAPlayer1Id === playerId ||
+						match.teamAPlayer2Id === playerId ||
+						match.teamBPlayer1Id === playerId ||
+						match.teamBPlayer2Id === playerId
+				).length
 		);
 		const max = Math.max(...counts);
 		const min = Math.min(...counts);
@@ -958,5 +963,92 @@ describe('Non-standard rosters', () => {
 	});
 	it('6 courts for 25 players', () => {
 		expect(calculateCourtSizes(25)).toEqual([4, 4, 4, 4, 4, 5]);
+	});
+});
+
+describe('Scoring logic', () => {
+	const defaultConfig = { pointsToWin: 21, setsToWin: 1, decidingSetPoints: 15 };
+	const bestOf3Config = { pointsToWin: 21, setsToWin: 2, decidingSetPoints: 15 };
+	const customConfig = { pointsToWin: 25, setsToWin: 2, decidingSetPoints: 20 };
+
+	describe('isDecidingSet', () => {
+		it('single set: no deciding set', () => {
+			expect(isDecidingSet(1, 1)).toBe(false);
+		});
+		it('best-of-3: set 3 is deciding', () => {
+			expect(isDecidingSet(1, 2)).toBe(false);
+			expect(isDecidingSet(2, 2)).toBe(false);
+			expect(isDecidingSet(3, 2)).toBe(true);
+		});
+		it('best-of-5: set 5 is deciding', () => {
+			expect(isDecidingSet(5, 3)).toBe(true);
+			expect(isDecidingSet(4, 3)).toBe(false);
+		});
+	});
+
+	describe('getMaxSets', () => {
+		it('single set returns 1', () => {
+			expect(getMaxSets(1)).toBe(1);
+		});
+		it('best-of-3 returns 3', () => {
+			expect(getMaxSets(2)).toBe(3);
+		});
+		it('best-of-5 returns 5', () => {
+			expect(getMaxSets(3)).toBe(5);
+		});
+	});
+
+	describe('getMinPointsForSet', () => {
+		it('4p single set: 21', () => {
+			expect(getMinPointsForSet(1, 4, defaultConfig)).toBe(21);
+		});
+		it('5p single set: 15 (auto-adjusted from 21)', () => {
+			expect(getMinPointsForSet(1, 5, defaultConfig)).toBe(15);
+		});
+		it('6p single set: 15', () => {
+			expect(getMinPointsForSet(1, 6, defaultConfig)).toBe(15);
+		});
+		it('3p single set: 21', () => {
+			expect(getMinPointsForSet(1, 3, defaultConfig)).toBe(21);
+		});
+		it('best-of-3 set 1: 21', () => {
+			expect(getMinPointsForSet(1, 4, bestOf3Config)).toBe(21);
+		});
+		it('best-of-3 set 2: 21', () => {
+			expect(getMinPointsForSet(2, 4, bestOf3Config)).toBe(21);
+		});
+		it('best-of-3 deciding set: 15', () => {
+			expect(getMinPointsForSet(3, 4, bestOf3Config)).toBe(15);
+		});
+		it('5p best-of-3 set 1: 21 (not auto-adjusted for best-of-3)', () => {
+			expect(getMinPointsForSet(1, 5, bestOf3Config)).toBe(21);
+		});
+		it('5p best-of-3 deciding set: 15', () => {
+			expect(getMinPointsForSet(3, 5, bestOf3Config)).toBe(15);
+		});
+		it('custom pointsToWin=25, decidingSetPoints=20', () => {
+			expect(getMinPointsForSet(1, 4, customConfig)).toBe(25);
+			expect(getMinPointsForSet(2, 4, customConfig)).toBe(25);
+			expect(getMinPointsForSet(3, 4, customConfig)).toBe(20);
+		});
+		it('custom pointsToWin=25 on 5p court, single set: 25 (not 15)', () => {
+			const customSingle = { pointsToWin: 25, setsToWin: 1, decidingSetPoints: 15 };
+			expect(getMinPointsForSet(1, 5, customSingle)).toBe(25);
+		});
+	});
+
+	describe('getScoringLabel', () => {
+		it('single set 4p', () => {
+			expect(getScoringLabel(defaultConfig, 4)).toBe('1 set to 21');
+		});
+		it('single set 5p', () => {
+			expect(getScoringLabel(defaultConfig, 5)).toBe('1 set to 15');
+		});
+		it('best-of-3', () => {
+			expect(getScoringLabel(bestOf3Config, 4)).toBe('Best of 2 (21pt, deciding: 15pt)');
+		});
+		it('custom', () => {
+			expect(getScoringLabel(customConfig, 4)).toBe('Best of 2 (25pt, deciding: 20pt)');
+		});
 	});
 });

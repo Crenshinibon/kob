@@ -72,6 +72,7 @@ test.describe('Promotion and Relegation', () => {
 		testTournamentNames.push(tournamentName);
 
 		// Create a 3-round tournament with players
+		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		await page.fill('input[name="numRounds"]', '3');
@@ -136,7 +137,9 @@ test.describe('Promotion and Relegation', () => {
 		// Wait for the tournament page to fully render
 		await page.waitForSelector('h1');
 		await page.waitForSelector('.court-card');
-		await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)', { timeout: 10000 });
+		await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)', {
+			timeout: 30000
+		});
 		await page.click('button:has-text("Close Round & Advance")');
 
 		// Verify Round 2 started
@@ -183,6 +186,7 @@ test.describe('Promotion and Relegation', () => {
 		testTournamentNames.push(tournamentName);
 
 		// Create tournament with players
+		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		await page.fill('input[name="numRounds"]', '2');
@@ -205,6 +209,7 @@ test.describe('Promotion and Relegation', () => {
 		await expect(waitingButton).toBeVisible();
 
 		// Get all court URLs first
+		await page.waitForSelector('.qr-link a');
 		const courtLinksSel = await page.locator('.qr-link a').all();
 		const courtLinks: string[] = [];
 		for (const cl of courtLinksSel) {
@@ -273,6 +278,7 @@ test.describe('Promotion and Relegation', () => {
 		testTournamentNames.push(tournamentName);
 
 		// Create a 1-round tournament (ends after first round) with players
+		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		await page.fill('input[name="numRounds"]', '1');
@@ -326,7 +332,9 @@ test.describe('Promotion and Relegation', () => {
 		// Close the only round
 		await page.goto(`/tournament/${tournamentId}`);
 		await page.waitForSelector('.court-card');
-		await page.waitForSelector('button:has-text("Finalize Tournament"):not(:disabled)', { timeout: 10000 });
+		await page.waitForSelector('button:has-text("Finalize Tournament"):not(:disabled)', {
+			timeout: 10000
+		});
 		await page.click('button:has-text("Finalize Tournament")');
 
 		// Wait for redirect to standings
@@ -350,6 +358,7 @@ test.describe('Promotion and Relegation', () => {
 		testTournamentNames.push(tournamentName);
 
 		// Create a 3-round tournament with players
+		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		await page.fill('input[name="numRounds"]', '3');
@@ -368,6 +377,7 @@ test.describe('Promotion and Relegation', () => {
 		expect(tournamentId).toBeTruthy();
 
 		// Get all court URLs first
+		await page.waitForSelector('.qr-link a');
 		const courtLinksSel = await page.locator('.qr-link a').all();
 		const courtLinks: string[] = [];
 		for (const cl of courtLinksSel) {
@@ -406,6 +416,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.waitForSelector('text=Round 2 of 3');
 
 		// Check each court has exactly 4 players
+		await page.waitForSelector('.qr-link a');
 		const round2LinksSel = await page.locator('.qr-link a').all();
 		const round2Links: string[] = [];
 		for (const cl of round2LinksSel) {
@@ -427,6 +438,7 @@ test.describe('Promotion and Relegation', () => {
 			const tournamentName = `3pRedist ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
+			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '2');

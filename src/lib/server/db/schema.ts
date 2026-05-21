@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, serial, integer, text, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core';
 
 export const tournament = pgTable('tournament', {
 	id: serial('id').primaryKey(),
@@ -13,6 +13,13 @@ export const tournament = pgTable('tournament', {
 	winBy: integer('win_by').notNull().default(2),
 	setsToWin: integer('sets_to_win').notNull().default(1),
 	decidingSetPoints: integer('deciding_set_points').default(15),
+	scoringOverrides:
+		jsonb('scoring_overrides').$type<
+			Record<
+				string,
+				{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
+			>
+		>(),
 	schedulingMode: text('scheduling_mode').notNull().default('batch'),
 	physicalCourtCount: integer('physical_court_count').notNull().default(4),
 	playerCount: integer('player_count').notNull().default(16),

@@ -5,6 +5,7 @@ Bug fixes identified from user testing and code review.
 - **[840_critical-bugs.md](./840_critical-bugs.md)**: Active critical bugs from user testing
 
 ## Archived (Completed)
+
 - **[810_match-display-bugs.md](./archive/810_match-display-bugs.md)**: 3p/5p/6p court matchup display bugs
 - **[811-closeRound-requested-error.md](./archive/811-closeRound-requested-error.md)**: closeRound errors with requested() outside context
 - **[812-standings-ranking-bug.md](./archive/812-standings-ranking-bug.md)**: Standings ranking by court position first, not points

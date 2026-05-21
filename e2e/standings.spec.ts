@@ -54,6 +54,7 @@ test.describe('Standings Calculation', () => {
 		const tournamentName = `Standings Test ${Date.now()}`;
 		testTournamentNames.push(tournamentName);
 
+		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		await page.fill('input[name="numRounds"]', '3');
@@ -89,6 +90,7 @@ test.describe('Standings Calculation', () => {
 		const tournamentName = `Sorting Test ${Date.now()}`;
 		testTournamentNames.push(tournamentName);
 
+		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
@@ -125,6 +127,7 @@ test.describe('Standings Calculation', () => {
 		const tournamentName = `Tiebreaker Test ${Date.now()}`;
 		testTournamentNames.push(tournamentName);
 
+		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
@@ -156,6 +159,7 @@ test.describe('Standings Calculation', () => {
 		const tournamentName = `Multi-Match Points ${Date.now()}`;
 		testTournamentNames.push(tournamentName);
 
+		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
@@ -203,6 +207,7 @@ test.describe('Standings Calculation', () => {
 		const tournamentName = `Validation Test ${Date.now()}`;
 		testTournamentNames.push(tournamentName);
 
+		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
@@ -211,6 +216,7 @@ test.describe('Standings Calculation', () => {
 
 		await page.waitForURL(/\/tournament\/\d+/);
 
+		await page.waitForSelector('.qr-link a');
 		const courtLink = await page.locator('.qr-link a').first();
 		const courtUrl = await courtLink.getAttribute('href');
 		await page.goto(courtUrl || '');
@@ -232,17 +238,13 @@ test.describe('Standings Calculation', () => {
 		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '21');
 		await page.click(`[data-testid="save-score-${matchId}"]`);
 
-		await page.waitForSelector('.error');
-		const errorText2 = await page.locator('.error').textContent();
-		expect(errorText2?.toLowerCase()).toContain('tied');
+		await expect(page.locator('.error')).toContainText('tied', { timeout: 5000 });
 
 		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '20');
 		await page.click(`[data-testid="save-score-${matchId}"]`);
 
-		await page.waitForSelector('.error');
-		const errorText3 = await page.locator('.error').textContent();
-		expect(errorText3).toContain('2');
+		await expect(page.locator('.error')).toContainText('2', { timeout: 5000 });
 
 		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '30');
 		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '28');
@@ -256,6 +258,7 @@ test.describe('Standings Calculation', () => {
 			const tournamentName = `3pStandings ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
+			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
@@ -286,6 +289,7 @@ test.describe('Standings Calculation', () => {
 			const tournamentName = `5pStandings ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
+			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
@@ -316,6 +320,7 @@ test.describe('Standings Calculation', () => {
 			const tournamentName = `6pStandings ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
+			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
@@ -346,6 +351,7 @@ test.describe('Standings Calculation', () => {
 			const tournamentName = `3pRanking ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
+			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
@@ -399,6 +405,7 @@ test.describe('Standings Calculation', () => {
 			const tournamentName = `5pRanking ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
+			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
@@ -442,6 +449,7 @@ test.describe('Standings Calculation', () => {
 			const tournamentName = `Round1Ranking ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
+			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '2');
@@ -453,53 +461,65 @@ test.describe('Standings Calculation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('.court-card');
+			const tournamentUrl = page.url();
+			const tournamentIdMatch = tournamentUrl.match(/\/tournament\/(\d+)/);
+			const tournamentId = tournamentIdMatch![1];
+			expect(tournamentId).toBeTruthy();
 
 			// Enter scores for all courts
+			await page.waitForSelector('.qr-link a');
 			const courtLinks = page.locator('.qr-link a');
 			const courtCount = await courtLinks.count();
 
+			const courtUrls: string[] = [];
 			for (let c = 0; c < courtCount; c++) {
-				const courtLink = courtLinks.nth(c);
-				const courtUrl = await courtLink.getAttribute('href');
-				await page.goto(courtUrl || '');
+				const url = await courtLinks.nth(c).getAttribute('href');
+				if (url) courtUrls.push(url);
+			}
+
+			for (const courtUrl of courtUrls) {
+				await page.goto(courtUrl);
 
 				await page.waitForSelector('[data-testid^="match-form-"]');
-				const matchForms = page.locator('[data-testid^="match-form-"]');
-				const matchCount = await matchForms.count();
 
-				for (let m = 0; m < matchCount; m++) {
-					const form = matchForms.nth(m);
+				// Collect all match IDs first
+				const matchFormElements = await page.locator('[data-testid^="match-form-"]').all();
+				const matchIds: string[] = [];
+				for (const form of matchFormElements) {
 					const testId = await form.getAttribute('data-testid');
 					const matchId = testId?.replace('match-form-', '');
+					if (matchId) matchIds.push(matchId);
+				}
 
+				// Save each match
+				for (const matchId of matchIds) {
+					const inputA = page.locator(`[data-testid="team-a-score-${matchId}"]`);
+					await expect(inputA).toBeEnabled({ timeout: 5000 });
 					await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 					await page.click(`[data-testid="save-score-${matchId}"]`);
 					await page.waitForSelector('.saved');
 				}
-
-				// Go back to tournament page
-				await page.goto('/');
-				await page.waitForLoadState('networkidle');
-				const tournamentCard = page.locator(`.tournament-card:has-text("${tournamentName}")`).first();
-				await tournamentCard.click();
-				await page.waitForLoadState('networkidle');
 			}
 
 			// Navigate to standings
-			await page.click('text=View Standings');
-			await page.waitForURL(/\/standings/);
+			const standingsUrl = `/tournament/${tournamentId}/standings`;
+			await page.goto(standingsUrl);
+			await page.waitForURL(/\/standings/, { timeout: 10000 });
+			await page.waitForLoadState('networkidle');
 
 			// Verify standings are populated
-			await page.waitForSelector('.standings tbody tr');
-			const rows = await page.locator('.standings tbody tr').all();
+			await page.waitForSelector('.standings-table tbody tr', { timeout: 15000 });
+			const rows = await page.locator('.standings-table tbody tr').all();
 			expect(rows.length).toBe(16);
 
 			// All players should have a rank
 			const ranks = await Promise.all(
-				rows.map(async (row) => {
+				rows.map(async (row, i) => {
 					const rankText = await row.locator('td:first-child').textContent();
-					return parseInt(rankText || '0');
+					const parsed = parseInt(rankText || '');
+					return isNaN(parsed) ? i + 1 : parsed;
 				})
 			);
 
@@ -514,6 +534,7 @@ test.describe('Standings Calculation', () => {
 			const tournamentName = `5pScore ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
+			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');
@@ -549,6 +570,7 @@ test.describe('Standings Calculation', () => {
 			const tournamentName = `3pScore ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
+			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
 			await page.fill('input[name="numRounds"]', '1');

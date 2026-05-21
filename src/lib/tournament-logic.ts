@@ -788,20 +788,67 @@ export function getTop2(court: {
 // Scoring Rules
 // ============================================================================
 
-export function getScoreCap(config: TournamentConfig, courtSize: number): number {
-	const base =
-		courtSize >= 5 ? (config.pointsToWin === 21 ? 15 : config.pointsToWin) : config.pointsToWin;
-	if (config.setsToWin >= 2) return Math.min(base, config.decidingSetPoints ?? 15);
-	return base;
+export type ScoringOverrides = Record<
+	string,
+	{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
+>;
+
+export function getEffectiveScoring(
+	courtSize: number,
+	config: Pick<TournamentConfig, 'pointsToWin' | 'setsToWin' | 'decidingSetPoints'>,
+	overrides?: ScoringOverrides | null
+): { pointsToWin: number; setsToWin: number; decidingSetPoints: number } {
+	const key = String(courtSize);
+	const ovr = overrides?.[key];
+	return {
+		pointsToWin: ovr?.pointsToWin ?? config.pointsToWin,
+		setsToWin: ovr?.setsToWin ?? config.setsToWin,
+		decidingSetPoints: ovr?.decidingSetPoints ?? config.decidingSetPoints
+	};
 }
 
-export function getScoringLabel(config: TournamentConfig, courtSize: number): string {
-	const cap = getScoreCap(config, courtSize);
-	if (config.setsToWin >= 2) {
-		const dec = config.decidingSetPoints ?? 15;
-		return `Best of ${config.setsToWin} (${config.pointsToWin}pt, deciding: ${dec}pt)`;
+export function isDecidingSet(setNumber: number, setsToWin: number): boolean {
+	return setsToWin >= 2 && setNumber === setsToWin * 2 - 1;
+}
+
+export function getMaxSets(setsToWin: number): number {
+	return setsToWin >= 2 ? setsToWin * 2 - 1 : 1;
+}
+
+export function getMinPointsForSet(
+	setNumber: number,
+	courtSize: number,
+	config: Pick<TournamentConfig, 'pointsToWin' | 'setsToWin' | 'decidingSetPoints'>,
+	overrides?: ScoringOverrides | null
+): number {
+	const effective = getEffectiveScoring(courtSize, config, overrides);
+	if (effective.setsToWin >= 2) {
+		return isDecidingSet(setNumber, effective.setsToWin)
+			? effective.decidingSetPoints
+			: effective.pointsToWin;
 	}
-	return `1 set to ${cap}`;
+	if (courtSize >= 5) {
+		return effective.pointsToWin === 21 ? 15 : effective.pointsToWin;
+	}
+	return effective.pointsToWin;
+}
+
+export function getScoringLabel(
+	config: Pick<TournamentConfig, 'pointsToWin' | 'setsToWin' | 'decidingSetPoints'>,
+	courtSize: number,
+	overrides?: ScoringOverrides | null
+): string {
+	const effective = getEffectiveScoring(courtSize, config, overrides);
+	if (effective.setsToWin >= 2) {
+		return `Best of ${effective.setsToWin} (${effective.pointsToWin}pt, deciding: ${effective.decidingSetPoints}pt)`;
+	}
+	const minPoints =
+		courtSize >= 5
+			? effective.pointsToWin === 21
+				? 15
+				: effective.pointsToWin
+			: effective.pointsToWin;
+	return `1 set to ${minPoints}`;
 }
 
 // ============================================================================

@@ -1,23 +1,9 @@
-import { form, getRequestEvent } from '$app/server';
+import { form } from '$app/server';
 import { db } from '$lib/server/db';
 import { match, courtAccess, tournament, courtRotation } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { getMinPointsForSet } from '$lib/server/tournament-logic';
 import * as v from 'valibot';
-
-function getMinPointsForSet(setNumber: number, courtSize: number, tourney: typeof tournament.$inferSelect): number {
-	const setsToWin = tourney.setsToWin ?? 1;
-	const pointsToWin = tourney.pointsToWin ?? 21;
-	const decidingSetPoints = tourney.decidingSetPoints ?? 15;
-
-	if (setsToWin >= 2) {
-		const isDecidingSet = setNumber === setsToWin * 2 - 1;
-		return isDecidingSet ? decidingSetPoints : pointsToWin;
-	}
-	if (courtSize >= 5) {
-		return pointsToWin === 21 ? 15 : pointsToWin;
-	}
-	return pointsToWin;
-}
 
 const baseScoreSchema = v.pipe(
 	v.object({
@@ -68,25 +54,16 @@ const setScoreSchema = v.pipe(
 	}, 'Winner must win by at least 2 points')
 );
 
-export const saveScore = form(baseScoreSchema, async (data) => {
-	const matchId = parseInt(data.matchId);
-	const teamAScore = data.teamAScore;
-	const teamBScore = data.teamBScore;
-
+async function getMatchContext(matchId: number) {
 	const [matchRecord] = await db.select().from(match).where(eq(match.id, matchId));
-
-	if (!matchRecord) {
-		return { error: 'Invalid match' };
-	}
+	if (!matchRecord) return null;
 
 	const [access] = await db
 		.select()
 		.from(courtAccess)
 		.where(eq(courtAccess.courtRotationId, matchRecord.courtRotationId));
 
-	if (!access || !access.isActive) {
-		return { error: 'Court is not active' };
-	}
+	if (!access || !access.isActive) return { error: 'Court is not active' as const };
 
 	const [rotation] = await db
 		.select()
@@ -98,7 +75,30 @@ export const saveScore = form(baseScoreSchema, async (data) => {
 		.from(tournament)
 		.where(eq(tournament.id, rotation.tournamentId));
 
-	const minPoints = getMinPointsForSet(1, rotation.courtSize, tourney);
+	return { matchRecord, rotation, tourney };
+}
+
+export const saveScore = form(baseScoreSchema, async (data) => {
+	const matchId = parseInt(data.matchId);
+	const teamAScore = data.teamAScore;
+	const teamBScore = data.teamBScore;
+
+	const ctx = await getMatchContext(matchId);
+	if (!ctx) return { error: 'Invalid match' };
+	if ('error' in ctx) return { error: ctx.error };
+
+	const { matchRecord, rotation, tourney } = ctx;
+	const config = {
+		pointsToWin: tourney.pointsToWin ?? 21,
+		setsToWin: tourney.setsToWin ?? 1,
+		decidingSetPoints: tourney.decidingSetPoints ?? 15
+	};
+	const minPoints = getMinPointsForSet(
+		1,
+		rotation.courtSize,
+		config,
+		tourney.scoringOverrides as any
+	);
 	const maxScore = Math.max(teamAScore, teamBScore);
 
 	if (maxScore < minPoints) {
@@ -116,32 +116,22 @@ export const saveSetScore = form(setScoreSchema, async (data) => {
 	const teamAScore = data.teamAScore;
 	const teamBScore = data.teamBScore;
 
-	const [matchRecord] = await db.select().from(match).where(eq(match.id, matchId));
+	const ctx = await getMatchContext(matchId);
+	if (!ctx) return { error: 'Invalid match' };
+	if ('error' in ctx) return { error: ctx.error };
 
-	if (!matchRecord) {
-		return { error: 'Invalid match' };
-	}
-
-	const [access] = await db
-		.select()
-		.from(courtAccess)
-		.where(eq(courtAccess.courtRotationId, matchRecord.courtRotationId));
-
-	if (!access || !access.isActive) {
-		return { error: 'Court is not active' };
-	}
-
-	const [rotation] = await db
-		.select()
-		.from(courtRotation)
-		.where(eq(courtRotation.id, matchRecord.courtRotationId));
-
-	const [tourney] = await db
-		.select()
-		.from(tournament)
-		.where(eq(tournament.id, rotation.tournamentId));
-
-	const minPoints = getMinPointsForSet(setNumber, rotation.courtSize, tourney);
+	const { matchRecord, rotation, tourney } = ctx;
+	const config = {
+		pointsToWin: tourney.pointsToWin ?? 21,
+		setsToWin: tourney.setsToWin ?? 1,
+		decidingSetPoints: tourney.decidingSetPoints ?? 15
+	};
+	const minPoints = getMinPointsForSet(
+		setNumber,
+		rotation.courtSize,
+		config,
+		tourney.scoringOverrides as any
+	);
 	const maxScore = Math.max(teamAScore, teamBScore);
 
 	if (maxScore < minPoints) {
@@ -160,10 +150,7 @@ export const saveSetScore = form(setScoreSchema, async (data) => {
 		);
 
 	if (existingSet) {
-		await db
-			.update(match)
-			.set({ teamAScore, teamBScore })
-			.where(eq(match.id, existingSet.id));
+		await db.update(match).set({ teamAScore, teamBScore }).where(eq(match.id, existingSet.id));
 	} else {
 		await db.insert(match).values({
 			courtRotationId: matchRecord.courtRotationId,

@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 
 import type { PageServerLoad } from './$types';
 import type { MatchData } from '$lib/server/tournament-logic';
+import { getMinPointsForSet, getScoringLabel } from '$lib/server/tournament-logic';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const token = params.token;
@@ -35,7 +36,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.select()
 		.from(match)
 		.where(eq(match.courtRotationId, rotation.id))
-		.orderBy(match.matchNumber);
+		.orderBy(match.matchNumber, match.setNumber);
 
 	// Get player names for all player slots (including player5/6 for non-standard courts)
 	const playerIds: number[] = [
@@ -70,19 +71,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const decidingSetPoints = tourney.decidingSetPoints ?? 15;
 	const setsToWin = tourney.setsToWin ?? 1;
 
-	let minPoints: number;
-	if (setsToWin >= 2) {
-		minPoints = Math.min(pointsToWin, decidingSetPoints);
-	} else if (courtSize >= 5) {
-		minPoints = pointsToWin === 21 ? 15 : pointsToWin;
-	} else {
-		minPoints = pointsToWin;
-	}
-
-	const scoringLabel =
-		setsToWin >= 2
-			? `Best of ${setsToWin} (${pointsToWin}pt, deciding: ${decidingSetPoints}pt)`
-			: `1 set to ${minPoints}`;
+	const config = { pointsToWin, setsToWin, decidingSetPoints };
+	const overrides = tourney.scoringOverrides as Record<
+		string,
+		{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
+	> | null;
+	const minPoints = getMinPointsForSet(1, courtSize, config, overrides);
+	const scoringLabel = getScoringLabel(config, courtSize, overrides);
 
 	return {
 		court: {
@@ -95,7 +90,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			scoringLabel,
 			setsToWin,
 			pointsToWin,
-			decidingSetPoints
+			decidingSetPoints,
+			scoringOverrides: overrides
 		},
 		matches,
 		standings,
@@ -154,18 +150,16 @@ export const actions: Actions = {
 		const courtSizes: number[] = tourney.courtSizes ? JSON.parse(tourney.courtSizes) : [];
 		const courtSize = courtSizes[rotation.courtNumber - 1] ?? 4;
 
-		const pointsToWin = tourney.pointsToWin ?? 21;
-		const decidingSetPoints = tourney.decidingSetPoints ?? 15;
-		const setsToWin = tourney.setsToWin ?? 1;
-
-		let minPoints: number;
-		if (setsToWin >= 2) {
-			minPoints = Math.min(pointsToWin, decidingSetPoints);
-		} else if (courtSize >= 5) {
-			minPoints = pointsToWin === 21 ? 15 : pointsToWin;
-		} else {
-			minPoints = pointsToWin;
-		}
+		const config = {
+			pointsToWin: tourney.pointsToWin ?? 21,
+			setsToWin: tourney.setsToWin ?? 1,
+			decidingSetPoints: tourney.decidingSetPoints ?? 15
+		};
+		const overrides = tourney.scoringOverrides as Record<
+			string,
+			{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
+		> | null;
+		const minPoints = getMinPointsForSet(1, courtSize, config, overrides);
 
 		if (maxScore < minPoints) {
 			return { error: `Winner must have at least ${minPoints} points` };

@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import { isDecidingSet, getMinPointsForSet } from '$lib/tournament-logic';
 
 export function createScoreSchema(minPoints: number) {
 	return v.pipe(
@@ -30,9 +31,13 @@ export function createScoreSchema(minPoints: number) {
 	);
 }
 
-export function createSetScoreSchema(regularPoints: number, decidingPoints: number, setNumber: number, setsToWin: number) {
-	const isDecidingSet = setNumber === setsToWin;
-	const pointsToWin = isDecidingSet ? decidingPoints : regularPoints;
+export function createSetScoreSchema(
+	regularPoints: number,
+	decidingPoints: number,
+	setNumber: number,
+	setsToWin: number
+) {
+	const minPoints = isDecidingSet(setNumber, setsToWin) ? decidingPoints : regularPoints;
 
 	return v.pipe(
 		v.object({
@@ -54,8 +59,8 @@ export function createSetScoreSchema(regularPoints: number, decidingPoints: numb
 		}, 'Scores cannot be tied'),
 		v.check((input) => {
 			const maxScore = Math.max(input.teamAScore, input.teamBScore);
-			return maxScore >= pointsToWin;
-		}, `Winner must have at least ${pointsToWin} points`),
+			return maxScore >= minPoints;
+		}, `Winner must have at least ${minPoints} points`),
 		v.check((input) => {
 			const maxScore = Math.max(input.teamAScore, input.teamBScore);
 			const minScore = Math.min(input.teamAScore, input.teamBScore);

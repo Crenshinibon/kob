@@ -1,5 +1,14 @@
 import { db } from './db';
-import { tournament, player, courtRotation, match, courtAccess, match3Player, match5Player, match6Player } from '../src/lib/server/db/schema';
+import {
+	tournament,
+	player,
+	courtRotation,
+	match,
+	courtAccess,
+	match3Player,
+	match5Player,
+	match6Player
+} from '../src/lib/server/db/schema';
 import { lt, eq, inArray } from 'drizzle-orm';
 
 export default async function setup() {

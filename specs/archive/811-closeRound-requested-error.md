@@ -3,6 +3,7 @@
 ## Issue
 
 When closing a round, the following error occurs:
+
 ```
 [500] POST /tournament/292
 Error: requested(...) can only be called in the context of a command/form remote function
@@ -21,5 +22,6 @@ The `requested()` function from `$app/server` is being called outside the contex
 - Use `getTournamentDataLive(tournamentId).reconnect()` for live query reconnection instead
 
 ## Files Affected
+
 - `src/routes/tournament/[id]/+page.server.ts` - Remove requested() calls
 - `src/routes/tournament/[id]/tournament-actions.remote.ts` - Ensure proper reconnection

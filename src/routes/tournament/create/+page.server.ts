@@ -10,6 +10,7 @@ import {
 	addPlayers,
 	startRound,
 	generateAllMatchesForAssignment,
+	getMaxSets,
 	type FormatType
 } from '$lib/server/tournament-logic';
 
@@ -207,7 +208,7 @@ export const actions = {
 
 			const allMatchesForCourt = generateAllMatchesForAssignment(assignment, courtSizes);
 
-			const maxSets = newTournament.setsToWin >= 2 ? newTournament.setsToWin * 2 - 1 : 1;
+			const maxSets = getMaxSets(newTournament.setsToWin);
 
 			for (let mi = 0; mi < allMatchesForCourt.length; mi++) {
 				const m = allMatchesForCourt[mi];

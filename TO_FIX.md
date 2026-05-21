@@ -2,9 +2,6 @@
 
 ## ToDo
 
-- [] For Best-Of-3 matches the entry for the third set should only be visible when each team one a set. Also the rules 3rd set to 15 are not enforced. Entering the scores is weird also, when I enter points in all fields and then click save. The entered scores "are shifted around".
-- [] Tournament view layout is broken, it covers whole width of the browser, instead of the previous "centralized" layout.
-- [] We need an option for the Org, to overwrite the "scoring mode" for the 6p, 3p, and 5p courts, if they are (or become, because of retiring players) relevant for his tournament. 
 - [] There should be a way to remove a player from the tournament during a round and the affected court should handle this gracefully.Adjusting the court to a different format (to 3p from 4p, to 5p from 6p, to 4p from 5p) is not an option, because we would have to deal with already played matches and how to score the other players. I guess we need to investigate here, a little bit.
 - [] add job to delete tournaments that are closed and older then 14 days
 - [] add job to delete tournaments that are not updated for 31 days
@@ -12,9 +9,11 @@
 - [] we need a banner (for v1) to show that the data will be wiped
 - [] Integration tests (in tournament.spec.ts) "scoring modes"" should go a step further and test that the scores must be entered as dictated by the selected mode.
 
-
 ## Done
 
+- [x] For Best-Of-3 matches the entry for the third set should only be visible when each team one a set. Also the rules 3rd set to 15 are not enforced. Entering the scores is weird also, when I enter points in all fields and then click save. The entered scores "are shifted around". (Fixed: deciding set shown only when split 1-1, min points enforced per set, score shifting fixed with keyed {#each}, sorted sets, correct team labels lookup)
+- [x] Tournament view layout is broken, it covers whole width of the browser, instead of the previous "centralized" layout.
+- [x] We need an option for the Org, to overwrite the "scoring mode" for the 6p, 3p, and 5p courts, if they are (or become, because of retiring players) relevant for his tournament. (Fixed: scoringOverrides JSONB column on tournament, per-court-type scoring config UI)
 - [x] Change the input type from <select> for "Match Format" and "Win By" to "radio", because we have only two options.
 - [x] It's still not possible to enter 2nd and 3rd set.
 - [x] Delete tournament still not working!
@@ -43,4 +42,3 @@
 - [x] Use proper live() query from RemoteFunctions (https://svelte.dev/docs/kit/remote-functions#query.live) with server-side polling or realtime queries from db
 - [x] Update database schema with set_number column for best-of-3 support (match, match_3_player, match_5_player, match_6_player tables)
 - [x] score entry doesn't reflect game mode. When we have best of 3 mode we should allow to enter the scores for 3 sets.
-

@@ -266,21 +266,11 @@
 				<span class="label">Match Format</span>
 				<div class="radio-group">
 					<label class="radio-label">
-						<input
-							type="radio"
-							name="customFormat"
-							value="1"
-							bind:group={customFormat}
-						/>
+						<input type="radio" name="customFormat" value="1" bind:group={customFormat} />
 						<span class="radio-text">Single set</span>
 					</label>
 					<label class="radio-label">
-						<input
-							type="radio"
-							name="customFormat"
-							value="2"
-							bind:group={customFormat}
-						/>
+						<input type="radio" name="customFormat" value="2" bind:group={customFormat} />
 						<span class="radio-text">Best of 3</span>
 					</label>
 				</div>
@@ -289,21 +279,11 @@
 				<span class="label">Win By</span>
 				<div class="radio-group">
 					<label class="radio-label">
-						<input
-							type="radio"
-							name="customWinBy"
-							value="2"
-							bind:group={customWinBy}
-						/>
+						<input type="radio" name="customWinBy" value="2" bind:group={customWinBy} />
 						<span class="radio-text">2 points</span>
 					</label>
 					<label class="radio-label">
-						<input
-							type="radio"
-							name="customWinBy"
-							value="1"
-							bind:group={customWinBy}
-						/>
+						<input type="radio" name="customWinBy" value="1" bind:group={customWinBy} />
 						<span class="radio-text">1 point</span>
 					</label>
 				</div>

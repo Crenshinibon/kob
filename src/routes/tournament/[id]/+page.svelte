@@ -1,14 +1,26 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { getTournamentDataLive } from './tournament-data.remote';
-	import { closeRoundForm, deleteTournamentForm } from './tournament-actions.remote';
+	import {
+		closeRoundForm,
+		deleteTournamentForm,
+		updateScoringOverrides
+	} from './tournament-actions.remote';
 	import type { TournamentDisplayData, CourtDisplayData } from './tournament-data.remote';
+	import { getEffectiveScoring, getScoringLabel } from '$lib/tournament-logic';
 	import CourtQRCode from '../../../components/CourtQRCode.svelte';
 
 	let { data } = $props<{ data: { tournamentId: number; tournament: any } }>();
 
 	const liveQuery = $derived(getTournamentDataLive(data.tournamentId));
 	const isConnected = $derived(liveQuery.connected);
+	let editingScoring = $state(false);
+	let localOverrides = $state<
+		Record<
+			string,
+			{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
+		>
+	>({});
 
 	function getMatchStatus(matches: { teamAScore: number | null }[]): string {
 		const completed = matches.filter((m) => m.teamAScore !== null).length;
@@ -176,6 +188,180 @@
 					</form>
 				{/if}
 			</section>
+
+			{#if isActive && courtSizes.length > 0}
+				<section class="scoring-section">
+					<details>
+						<summary class="scoring-header">Court Scoring Configuration</summary>
+						<p class="scoring-note">
+							Override scoring per court type. Changes apply from the next round.
+						</p>
+						{#if editingScoring}
+							<div class="scoring-grid">
+								{#each courtSizes
+									.filter((s, i, a) => a.indexOf(s) === i)
+									.sort((a, b) => a - b) as size}
+									{@const effective = getEffectiveScoring(
+										size,
+										{
+											pointsToWin: tournament.pointsToWin ?? 21,
+											setsToWin: tournament.setsToWin ?? 1,
+											decidingSetPoints: tournament.decidingSetPoints ?? 15
+										},
+										tournament.scoringOverrides
+									)}
+									{@const ovr =
+										localOverrides[String(size)] ??
+										tournament.scoringOverrides?.[String(size)] ??
+										{}}
+									<fieldset class="scoring-fieldset">
+										<legend>{size}p Courts</legend>
+										<label>
+											Points to win
+											<input
+												type="number"
+												min="1"
+												max="50"
+												value={ovr.pointsToWin ?? effective.pointsToWin}
+												oninput={(e) => {
+													const v = parseInt(e.currentTarget.value);
+													if (!isNaN(v))
+														localOverrides = {
+															...localOverrides,
+															[size]: { ...(localOverrides[String(size)] ?? {}), pointsToWin: v }
+														};
+												}}
+											/>
+										</label>
+										<label>
+											Win by
+											<input
+												type="number"
+												min="1"
+												max="10"
+												value={ovr.winBy ?? tournament.winBy ?? 2}
+												oninput={(e) => {
+													const v = parseInt(e.currentTarget.value);
+													if (!isNaN(v))
+														localOverrides = {
+															...localOverrides,
+															[size]: { ...(localOverrides[String(size)] ?? {}), winBy: v }
+														};
+												}}
+											/>
+										</label>
+										<label>
+											Sets to win
+											<input
+												type="number"
+												min="1"
+												max="5"
+												value={ovr.setsToWin ?? effective.setsToWin}
+												oninput={(e) => {
+													const v = parseInt(e.currentTarget.value);
+													if (!isNaN(v))
+														localOverrides = {
+															...localOverrides,
+															[size]: { ...(localOverrides[String(size)] ?? {}), setsToWin: v }
+														};
+												}}
+											/>
+										</label>
+										{#if (ovr.setsToWin ?? effective.setsToWin) >= 2}
+											<label>
+												Deciding set points
+												<input
+													type="number"
+													min="1"
+													max="50"
+													value={ovr.decidingSetPoints ?? effective.decidingSetPoints}
+													oninput={(e) => {
+														const v = parseInt(e.currentTarget.value);
+														if (!isNaN(v))
+															localOverrides = {
+																...localOverrides,
+																[size]: {
+																	...(localOverrides[String(size)] ?? {}),
+																	decidingSetPoints: v
+																}
+															};
+													}}
+												/>
+											</label>
+										{/if}
+										<p class="scoring-preview">
+											{getScoringLabel(
+												{
+													pointsToWin: tournament.pointsToWin ?? 21,
+													setsToWin: tournament.setsToWin ?? 1,
+													decidingSetPoints: tournament.decidingSetPoints ?? 15
+												},
+												size,
+												{
+													...(tournament.scoringOverrides ?? {}),
+													[String(size)]:
+														localOverrides[String(size)] ??
+														tournament.scoringOverrides?.[String(size)] ??
+														{}
+												}
+											)}
+										</p>
+									</fieldset>
+								{/each}
+							</div>
+							<div class="scoring-actions">
+								<button
+									class="btn-primary"
+									onclick={async () => {
+										const merged: Record<string, any> = { ...(tournament.scoringOverrides ?? {}) };
+										for (const [k, v] of Object.entries(localOverrides)) {
+											merged[k] = { ...(merged[k] ?? {}), ...v };
+										}
+										await updateScoringOverrides({
+											tournamentId: tournament.id,
+											overrides: merged
+										});
+										editingScoring = false;
+										localOverrides = {};
+									}}>Save Scoring</button
+								>
+								<button
+									class="btn-secondary"
+									onclick={() => {
+										editingScoring = false;
+										localOverrides = {};
+									}}>Cancel</button
+								>
+							</div>
+						{:else}
+							<div class="scoring-summary">
+								{#each courtSizes
+									.filter((s, i, a) => a.indexOf(s) === i)
+									.sort((a, b) => a - b) as size}
+									<span class="scoring-badge"
+										>{size}p: {getScoringLabel(
+											{
+												pointsToWin: tournament.pointsToWin ?? 21,
+												setsToWin: tournament.setsToWin ?? 1,
+												decidingSetPoints: tournament.decidingSetPoints ?? 15
+											},
+											size,
+											tournament.scoringOverrides
+										)}</span
+									>
+								{/each}
+								<button
+									class="btn-edit"
+									onclick={() => {
+										editingScoring = true;
+										localOverrides = {};
+									}}>Edit</button
+								>
+							</div>
+						{/if}
+					</details>
+				</section>
+			{/if}
 
 			{#if isActive && currentRound > 0}
 				<section class="retire-section">
@@ -477,6 +663,116 @@
 		50% {
 			opacity: 0.5;
 		}
+	}
+
+	.scoring-section {
+		margin-top: var(--spacing-lg);
+	}
+
+	.scoring-header {
+		cursor: pointer;
+		font-weight: 600;
+		color: var(--text-muted);
+		padding: var(--spacing-sm);
+	}
+
+	.scoring-header:hover {
+		color: var(--text-secondary);
+	}
+
+	.scoring-note {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		margin: var(--spacing-xs) 0;
+	}
+
+	.scoring-summary {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-sm);
+		align-items: center;
+		margin-top: var(--spacing-sm);
+	}
+
+	.scoring-badge {
+		font-size: var(--font-size-sm);
+		padding: 2px 8px;
+		border-radius: var(--radius-sm);
+		background-color: var(--bg-secondary);
+		color: var(--text-secondary);
+	}
+
+	.scoring-grid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-md);
+		margin-top: var(--spacing-sm);
+	}
+
+	.scoring-fieldset {
+		border: 2px solid var(--border-default);
+		border-radius: var(--radius-md);
+		padding: var(--spacing-sm);
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+		min-width: 180px;
+	}
+
+	.scoring-fieldset legend {
+		font-weight: 700;
+		font-size: var(--font-size-sm);
+		color: var(--text-primary);
+	}
+
+	.scoring-fieldset label {
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.scoring-fieldset input {
+		min-height: 36px;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		font-size: var(--font-size-base);
+		background-color: var(--bg-input);
+		color: var(--text-input);
+		border: var(--border-thickness) solid var(--border-strong);
+		border-radius: var(--radius-sm);
+	}
+
+	.scoring-fieldset input:focus {
+		outline: none;
+		border-color: var(--border-focus);
+	}
+
+	.scoring-preview {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+		margin: var(--spacing-xs) 0 0 0;
+	}
+
+	.scoring-actions {
+		display: flex;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-sm);
+	}
+
+	.btn-secondary {
+		background-color: transparent;
+		color: var(--text-secondary);
+		padding: var(--spacing-xs) var(--spacing-md);
+		border: 2px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-sm);
+		cursor: pointer;
+	}
+
+	.btn-secondary:hover {
+		border-color: var(--border-strong);
+		color: var(--text-primary);
 	}
 
 	.retire-section {

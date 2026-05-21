@@ -51,12 +51,12 @@ Organizer can adjust:
 
 ### Configurable Parameters
 
-| Parameter           | Default | Range | Notes                                                |
-| ------------------- | ------- | ----- | ---------------------------------------------------- |
-| `pointsToWin`       | 21      | 9-21  | Points needed to win a regular set                   |
-| `winBy`             | 2       | 1-2   | Minimum point margin to win (radio: 1 or 2)          |
-| `setsToWin`         | 1       | 1-2   | Sets needed to win match (radio: single or best-of-3)|
-| `decidingSetPoints` | 15      | 9-21  | Points for the deciding set only (if best-of-3)      |
+| Parameter           | Default | Range | Notes                                                 |
+| ------------------- | ------- | ----- | ----------------------------------------------------- |
+| `pointsToWin`       | 21      | 9-21  | Points needed to win a regular set                    |
+| `winBy`             | 2       | 1-2   | Minimum point margin to win (radio: 1 or 2)           |
+| `setsToWin`         | 1       | 1-2   | Sets needed to win match (radio: single or best-of-3) |
+| `decidingSetPoints` | 15      | 9-21  | Points for the deciding set only (if best-of-3)       |
 
 **UI note**: "Match Format" (single set vs best-of-3) and "Win By" (1 vs 2) should use radio buttons, not `<select>` dropdowns, since they only have two options.
 

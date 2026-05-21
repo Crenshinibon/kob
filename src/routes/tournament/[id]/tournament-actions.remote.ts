@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { error, redirect } from '@sveltejs/kit';
-import { form, getRequestEvent } from '$app/server';
+import { form, command, getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
 import { tournament, courtRotation, match, courtAccess, player } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
@@ -12,6 +12,8 @@ import {
 	closeRound,
 	calculateCourtSizes,
 	generateAllMatchesForAssignment,
+	getMaxSets,
+	getEffectiveScoring,
 	type FormatType,
 	type MatchData
 } from '$lib/server/tournament-logic';
@@ -150,8 +152,16 @@ export const closeRoundForm = form(
 
 			const allMatchesForCourt = generateAllMatchesForAssignment(assignment, courtSizes);
 
-			const setsToWin = tourney.setsToWin ?? 1;
-			const maxSets = setsToWin >= 2 ? setsToWin * 2 - 1 : 1;
+			const effective = getEffectiveScoring(
+				size,
+				{
+					pointsToWin: tourney.pointsToWin ?? 21,
+					setsToWin: tourney.setsToWin ?? 1,
+					decidingSetPoints: tourney.decidingSetPoints ?? 15
+				},
+				tourney.scoringOverrides as any
+			);
+			const maxSets = getMaxSets(effective.setsToWin);
 
 			for (let mi = 0; mi < allMatchesForCourt.length; mi++) {
 				const m = allMatchesForCourt[mi];
@@ -246,5 +256,41 @@ export const deleteTournamentForm = form(
 		await db.delete(tournament).where(eq(tournament.id, tournamentId));
 
 		redirect(303, '/');
+	}
+);
+
+export const updateScoringOverrides = command(
+	v.object({
+		tournamentId: v.pipe(v.number(), v.minValue(1)),
+		overrides: v.record(
+			v.string(),
+			v.object({
+				pointsToWin: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(50))),
+				winBy: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(10))),
+				setsToWin: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(5))),
+				decidingSetPoints: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(50)))
+			})
+		)
+	}),
+	async ({ tournamentId, overrides }) => {
+		const event = getRequestEvent();
+		const user = event.locals.user;
+		if (!user) error(401, 'Unauthorized');
+
+		const [tourney] = await db
+			.select()
+			.from(tournament)
+			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
+
+		if (!tourney) error(404, 'Tournament not found');
+
+		await db
+			.update(tournament)
+			.set({ scoringOverrides: overrides })
+			.where(eq(tournament.id, tournamentId));
+
+		getTournamentDataLive(tournamentId).reconnect();
+
+		return { success: true };
 	}
 );

@@ -5,6 +5,7 @@
 
 	import { saveScore, saveSetScore } from './scores.remote';
 	import { createScoreSchema, createSetScoreSchema } from './scoreSchema';
+	import { isDecidingSet, getEffectiveScoring } from '$lib/tournament-logic';
 
 	let { data } = $props<{
 		data: {
@@ -21,14 +22,22 @@
 	// Track which matches are being edited (for authenticated users)
 	let editingMatches = $state<Set<number>>(new Set());
 	// Dynamic score schema based on court's minimum points
+	const effectiveScoring = $derived(
+		getEffectiveScoring(
+			data.court.courtSize,
+			{
+				pointsToWin: data.court.pointsToWin ?? 21,
+				setsToWin: data.court.setsToWin ?? 1,
+				decidingSetPoints: data.court.decidingSetPoints ?? 15
+			},
+			data.court.scoringOverrides
+		)
+	);
 	const dynamicScoreSchema = $derived(createScoreSchema(data.court.minPoints ?? 21));
 	// Track completed matches locally for smooth transitions
 	let completedMatches = $derived<Set<number>>(
 		new Set(data.matches.filter((m: any) => m.teamAScore !== null).map((m: any) => m.id))
 	);
-	// Local match data for optimistic updates
-	let matchData = $state<Record<number, any>>({});
-
 	// Group matches by matchNumber for best-of-3 support
 	const matchGroups = $derived(() => {
 		const courtSize = data.court.courtSize;
@@ -45,7 +54,11 @@
 			}
 			return Array.from(groups.entries())
 				.sort(([a], [b]) => a - b)
-				.map(([matchNumber, sets]) => ({ type: 'sets' as const, matchNumber, sets }));
+				.map(([matchNumber, sets]) => ({
+					type: 'sets' as const,
+					matchNumber,
+					sets: [...sets].sort((a: any, b: any) => a.setNumber - b.setNumber)
+				}));
 		}
 
 		// For 5p/6p courts, group by runs
@@ -83,8 +96,15 @@
 				scoring: data.court.scoringLabel ?? 'to 15 points',
 				ranking: 'Average points per game (normalized for fairness)',
 				runDetails: [
-					{ label: 'Run 1', description: 'Fixed team on side X, one fixed player on side Y, two players rotate' },
-					{ label: 'Run 2', description: 'Different fixed team on side X, different fixed player on side Y, different players rotate' }
+					{
+						label: 'Run 1',
+						description: 'Fixed team on side X, one fixed player on side Y, two players rotate'
+					},
+					{
+						label: 'Run 2',
+						description:
+							'Different fixed team on side X, different fixed player on side Y, different players rotate'
+					}
 				]
 			};
 		}
@@ -97,7 +117,10 @@
 				ranking: 'Average points per game (normalized for fairness)',
 				runDetails: [
 					{ label: 'Run 1', description: 'Fixed team on side X, two rotating pairs on side Y' },
-					{ label: 'Run 2', description: 'New fixed team on side X, different rotating pairs on side Y' }
+					{
+						label: 'Run 2',
+						description: 'New fixed team on side X, different rotating pairs on side Y'
+					}
 				]
 			};
 		}
@@ -108,18 +131,20 @@
 	// 3p: A vs B, A vs B, B vs A (solo rotation)
 	// 4p: AB vs CD, AC vs BD, AD vs BC
 	// 5p/6p: parallel style
-	const teamLabels = $derived(
-		data.matches.map((m: any) => {
+	const teamLabels = $derived(() => {
+		const byMatchNumber = new Map<number, { teamA: string; teamB: string }>();
+		for (const m of data.matches) {
+			if (byMatchNumber.has(m.matchNumber)) continue;
 			const nameA1 = getPlayerName(m, 'a1');
 			const nameA2 = getPlayerName(m, 'a2');
 			const nameB1 = getPlayerName(m, 'b1');
 			const nameB2 = getPlayerName(m, 'b2');
-			// For 3p courts, solo player appears twice in data but should show once
 			const teamA = m.teamAPlayer1Id === m.teamAPlayer2Id ? nameA1 : `${nameA1} & ${nameA2}`;
 			const teamB = m.teamBPlayer1Id === m.teamBPlayer2Id ? nameB1 : `${nameB1} & ${nameB2}`;
-			return { teamA, teamB };
-		})
-	);
+			byMatchNumber.set(m.matchNumber, { teamA, teamB });
+		}
+		return byMatchNumber;
+	});
 
 	function getPlayerName(match: any, position: string) {
 		const names = data.court.playerNames;
@@ -148,6 +173,22 @@
 		if (!browser) return '';
 		const url = window.location.href;
 		return QRCode.toDataURL(url, { width: 200, margin: 2 });
+	}
+
+	function shouldShowSet(setNum: number, sets: any[]): boolean {
+		if (!isDecidingSet(setNum, effectiveScoring.setsToWin)) return true;
+
+		const set1 = sets.find((s) => s.setNumber === 1);
+		const set2 = sets.find((s) => s.setNumber === 2);
+		if (!set1 || !set2) return false;
+		if (set1.teamAScore === null || set2.teamAScore === null) return false;
+
+		const teamAWins =
+			(set1.teamAScore > set1.teamBScore ? 1 : 0) + (set2.teamAScore > set2.teamBScore ? 1 : 0);
+		const teamBWins =
+			(set1.teamBScore > set1.teamAScore ? 1 : 0) + (set2.teamBScore > set2.teamAScore ? 1 : 0);
+
+		return teamAWins >= 1 && teamBWins >= 1;
 	}
 
 	function renderMatch(match: any, index: number) {
@@ -207,7 +248,8 @@
 						<div class="run-details">
 							{#each formatExplanation()!.runDetails as run}
 								<p class="run-detail">
-									<strong>{run.label}:</strong> {run.description}
+									<strong>{run.label}:</strong>
+									{run.description}
 								</p>
 							{/each}
 						</div>
@@ -231,139 +273,282 @@
 
 		<section class="matches">
 			{#if matchGroups()}
-				{#each matchGroups() as group}
+				{#each matchGroups() as group (group.type === 'sets' ? `sets-${group.matchNumber}` : group.label)}
 					<div class="match-run">
 						{#if group.type === 'sets'}
 							<!-- Best-of-3: group by match number -->
 							<h3 class="run-label">
 								Match {group.matchNumber}
-								{#if teamLabels[group.matchNumber - 1]}
+								{#if teamLabels().get(group.matchNumber)}
 									<span class="team-label">
-										{@html `${teamLabels[group.matchNumber - 1].teamA}`} vs
-										{@html `${teamLabels[group.matchNumber - 1].teamB}`}
+										{@html `${teamLabels().get(group.matchNumber)!.teamA}`} vs
+										{@html `${teamLabels().get(group.matchNumber)!.teamB}`}
 									</span>
 								{/if}
 							</h3>
 							<div class="sets-container">
-								{#each group.sets as setMatch}
+								{#each group.sets as setMatch (setMatch.id)}
 									{@const setNum = setMatch.setNumber}
-									{@const scoreForm = saveSetScore.for(setMatch.id)}
-									{@const issues = scoreForm.fields.allIssues() ?? []}
-									{@const isSaving = savingMatches.has(setMatch.id)}
-									{@const isEditing = editingMatches.has(setMatch.id)}
-									{@const setScoreSchema = createSetScoreSchema(
-										data.court.pointsToWin ?? 21,
-										data.court.decidingSetPoints ?? 15,
-										setNum,
-										data.court.setsToWin ?? 1
-									)}
-									<div class="set-card" transition:slide>
-										<h4>Set {setNum}</h4>
-										{#if completedMatches.has(setMatch.id) && !editingMatches.has(setMatch.id)}
-											<div class="completed">
+									{#if shouldShowSet(setNum, group.sets)}
+										{@const scoreForm = saveSetScore.for(setMatch.id)}
+										{@const issues = scoreForm.fields.allIssues() ?? []}
+										{@const isSaving = savingMatches.has(setMatch.id)}
+										{@const isEditing = editingMatches.has(setMatch.id)}
+										{@const setScoreSchema = createSetScoreSchema(
+											effectiveScoring.pointsToWin,
+											effectiveScoring.decidingSetPoints,
+											setNum,
+											effectiveScoring.setsToWin
+										)}
+										<div class="set-card" transition:slide>
+											<h4>
+												Set {setNum}{#if isDecidingSet(setNum, effectiveScoring.setsToWin)}
+													<span class="deciding-hint"
+														>(to {effectiveScoring.decidingSetPoints})</span
+													>{/if}
+											</h4>
+											{#if completedMatches.has(setMatch.id) && !editingMatches.has(setMatch.id)}
+												<div class="completed">
+													<p>
+														{getTeamDisplay(setMatch, 'a')}:
+														<strong>{setMatch.teamAScore}</strong>
+													</p>
+													<p>
+														{getTeamDisplay(setMatch, 'b')}:
+														<strong>{setMatch.teamBScore}</strong>
+													</p>
+													<span class="saved">✓ Saved</span>
+													{#if data.isAuthenticated}
+														<button
+															class="btn-edit"
+															onclick={() =>
+																(editingMatches = new Set([...editingMatches, setMatch.id]))}
+														>
+															Edit
+														</button>
+													{/if}
+												</div>
+											{:else}
+												{#if issues.length > 0 && !isSaving}
+													<div class="error">
+														{#each issues as issue}
+															<p>{issue.message}</p>
+														{/each}
+													</div>
+												{/if}
+												<form
+													data-testid="set-form-{setMatch.id}"
+													{...scoreForm.preflight(setScoreSchema).enhance(async ({ submit }) => {
+														savingMatches = new Set([...savingMatches, setMatch.id]);
+														try {
+															await submit();
+															if (isEditing) {
+																editingMatches = new Set(
+																	[...editingMatches].filter((id) => id !== setMatch.id)
+																);
+															}
+														} catch (error) {
+															console.log(error);
+														} finally {
+															savingMatches = new Set(
+																[...savingMatches].filter((id) => id !== setMatch.id)
+															);
+														}
+													})}
+												>
+													<input type="hidden" name="matchId" value={setMatch.id} />
+													<input type="hidden" name="setNumber" value={setNum} />
+													<div class="teams">
+														<div class="team">
+															<p>{getTeamDisplay(setMatch, 'a')}</p>
+															<input
+																data-testid="team-a-score-{setMatch.id}"
+																type="number"
+																name="teamAScore"
+																min="0"
+																max="50"
+																required
+																disabled={savingMatches.has(setMatch.id)}
+																{...scoreForm.fields.teamAScore}
+															/>
+														</div>
+														<div class="vs">vs</div>
+														<div class="team">
+															<p>{getTeamDisplay(setMatch, 'b')}</p>
+															<input
+																data-testid="team-b-score-{setMatch.id}"
+																type="number"
+																name="teamBScore"
+																min="0"
+																max="50"
+																required
+																disabled={savingMatches.has(setMatch.id)}
+																{...scoreForm.fields.teamBScore}
+															/>
+														</div>
+													</div>
+													<div class="form-actions">
+														{#if isEditing}
+															<button
+																type="button"
+																class="btn-secondary"
+																onclick={() =>
+																	(editingMatches = new Set(
+																		[...editingMatches].filter((id) => id !== setMatch.id)
+																	))}
+																disabled={savingMatches.has(setMatch.id)}
+															>
+																Cancel
+															</button>
+														{/if}
+														<button
+															data-testid="save-score-{setMatch.id}"
+															type="submit"
+															class="btn-primary"
+															disabled={savingMatches.has(setMatch.id)}
+														>
+															{#if savingMatches.has(setMatch.id)}
+																<span class="spinner"></span>
+																{isEditing ? 'Updating...' : 'Saving...'}
+															{:else}
+																{isEditing ? 'Update Score' : 'Save Score'}
+															{/if}
+														</button>
+													</div>
+												</form>
+											{/if}
+										</div>
+									{/if}
+								{/each}
+							</div>
+						{:else if group.type === 'runs'}
+							<!-- 5p/6p: group by run -->
+							<h3 class="run-label">{group.label}</h3>
+							<div class="parallel-matches">
+								{#each group.matches as match (match.id)}
+									{@const render = renderMatch(match, data.matches.indexOf(match))}
+									<div class="match" transition:slide>
+										{#if render.issues.length > 0 && !render.isSaving}
+											<div class="error" transition:slide>
+												{#each render.issues as issue}
+													<p>{issue.message}</p>
+												{/each}
+											</div>
+										{/if}
+
+										<h3>
+											Match {render.index + 1}
+											{#if teamLabels().get(match.matchNumber)}
+												<span class="team-label">
+													{@html `${teamLabels().get(match.matchNumber)!.teamA}`} vs
+													{@html `${teamLabels().get(match.matchNumber)!.teamB}`}
+												</span>
+											{/if}
+										</h3>
+
+										{#if completedMatches.has(match.id) && !editingMatches.has(match.id)}
+											<div class="completed" transition:slide>
 												<p>
-													{getTeamDisplay(setMatch, 'a')}:
-													<strong>{setMatch.teamAScore}</strong>
+													{getTeamDisplay(match, 'a')}:
+													<strong>{match.teamAScore}</strong>
 												</p>
 												<p>
-													{getTeamDisplay(setMatch, 'b')}:
-													<strong>{setMatch.teamBScore}</strong>
+													{getTeamDisplay(match, 'b')}:
+													<strong>{match.teamBScore}</strong>
 												</p>
 												<span class="saved">✓ Saved</span>
 												{#if data.isAuthenticated}
 													<button
 														class="btn-edit"
 														onclick={() =>
-															(editingMatches = new Set([...editingMatches, setMatch.id]))}
+															(editingMatches = new Set([...editingMatches, match.id]))}
 													>
 														Edit
 													</button>
 												{/if}
 											</div>
 										{:else}
-											{#if issues.length > 0 && !isSaving}
-												<div class="error">
-													{#each issues as issue}
-														<p>{issue.message}</p>
-													{/each}
-												</div>
-											{/if}
 											<form
-												data-testid="set-form-{setMatch.id}"
-												{...scoreForm.preflight(setScoreSchema).enhance(async ({ submit }) => {
-													savingMatches = new Set([...savingMatches, setMatch.id]);
-													try {
-														await submit();
-														if (isEditing) {
-															editingMatches = new Set(
-																[...editingMatches].filter((id) => id !== setMatch.id)
+												data-testid="match-form-{match.id}"
+												{...render.scoreForm
+													.preflight(dynamicScoreSchema)
+													.enhance(async ({ submit }) => {
+														savingMatches = new Set([...savingMatches, match.id]);
+														try {
+															await submit();
+															if (render.isEditing) {
+																editingMatches = new Set(
+																	[...editingMatches].filter((id) => id !== match.id)
+																);
+															}
+														} catch (error) {
+															console.log(error);
+														} finally {
+															savingMatches = new Set(
+																[...savingMatches].filter((id) => id !== match.id)
 															);
 														}
-													} catch (error) {
-														console.log(error);
-													} finally {
-														savingMatches = new Set(
-															[...savingMatches].filter((id) => id !== setMatch.id)
-														);
-													}
-												})}
+													})}
 											>
-												<input type="hidden" name="matchId" value={setMatch.id} />
-												<input type="hidden" name="setNumber" value={setNum} />
+												<input type="hidden" name="matchId" value={match.id} />
+
 												<div class="teams">
 													<div class="team">
-														<p>{getTeamDisplay(setMatch, 'a')}</p>
+														<p>{getTeamDisplay(match, 'a')}</p>
 														<input
-															data-testid="team-a-score-{setMatch.id}"
+															data-testid="team-a-score-{match.id}"
 															type="number"
 															name="teamAScore"
 															min="0"
 															max="50"
 															required
-															disabled={savingMatches.has(setMatch.id)}
-															{...scoreForm.fields.teamAScore}
+															disabled={savingMatches.has(match.id)}
+															{...render.scoreForm.fields.teamAScore}
 														/>
 													</div>
+
 													<div class="vs">vs</div>
+
 													<div class="team">
-														<p>{getTeamDisplay(setMatch, 'b')}</p>
+														<p>{getTeamDisplay(match, 'b')}</p>
 														<input
-															data-testid="team-b-score-{setMatch.id}"
+															data-testid="team-b-score-{match.id}"
 															type="number"
 															name="teamBScore"
 															min="0"
 															max="50"
 															required
-															disabled={savingMatches.has(setMatch.id)}
-															{...scoreForm.fields.teamBScore}
+															disabled={savingMatches.has(match.id)}
+															{...render.scoreForm.fields.teamBScore}
 														/>
 													</div>
 												</div>
+
 												<div class="form-actions">
-													{#if isEditing}
+													{#if render.isEditing}
 														<button
 															type="button"
 															class="btn-secondary"
 															onclick={() =>
 																(editingMatches = new Set(
-																	[...editingMatches].filter((id) => id !== setMatch.id)
+																	[...editingMatches].filter((id) => id !== match.id)
 																))}
-															disabled={savingMatches.has(setMatch.id)}
+															disabled={savingMatches.has(match.id)}
 														>
 															Cancel
 														</button>
 													{/if}
 													<button
-														data-testid="save-score-{setMatch.id}"
+														data-testid="save-score-{match.id}"
 														type="submit"
 														class="btn-primary"
-														disabled={savingMatches.has(setMatch.id)}
+														disabled={savingMatches.has(match.id)}
 													>
-														{#if savingMatches.has(setMatch.id)}
+														{#if savingMatches.has(match.id)}
 															<span class="spinner"></span>
-															{isEditing ? 'Updating...' : 'Saving...'}
+															{render.isEditing ? 'Updating...' : 'Saving...'}
 														{:else}
-															{isEditing ? 'Update Score' : 'Save Score'}
+															{render.isEditing ? 'Update Score' : 'Save Score'}
 														{/if}
 													</button>
 												</div>
@@ -372,279 +557,136 @@
 									</div>
 								{/each}
 							</div>
-						{:else if group.type === 'runs'}
-							<!-- 5p/6p: group by run -->
-							<h3 class="run-label">{group.label}</h3>
-							<div class="parallel-matches">
-								{#each group.matches as match}
-									{@const render = renderMatch(match, data.matches.indexOf(match))}
-									<div class="match" transition:slide>
-									{#if render.issues.length > 0 && !render.isSaving}
-										<div class="error" transition:slide>
-											{#each render.issues as issue}
-												<p>{issue.message}</p>
-											{/each}
-										</div>
-									{/if}
-
-									<h3>
-										Match {render.index + 1}
-										{#if teamLabels[render.index]}
-											<span class="team-label">
-												{@html `${teamLabels[render.index].teamA}`} vs
-												{@html `${teamLabels[render.index].teamB}`}
-											</span>
-										{/if}
-									</h3>
-
-									{#if completedMatches.has(match.id) && !editingMatches.has(match.id)}
-										<div class="completed" transition:slide>
-											<p>
-												{getTeamDisplay(match, 'a')}:
-												<strong>{matchData[match.id]?.teamAScore || match.teamAScore}</strong>
-											</p>
-											<p>
-												{getTeamDisplay(match, 'b')}:
-												<strong>{matchData[match.id]?.teamBScore || match.teamBScore}</strong>
-											</p>
-											<span class="saved">✓ Saved</span>
-											{#if data.isAuthenticated}
-												<button
-													class="btn-edit"
-													onclick={() =>
-														(editingMatches = new Set([...editingMatches, match.id]))}
-												>
-													Edit
-												</button>
-											{/if}
-										</div>
-									{:else}
-										<form
-											data-testid="match-form-{match.id}"
-											{...render.scoreForm
-												.preflight(dynamicScoreSchema)
-												.enhance(async ({ submit }) => {
-													savingMatches = new Set([...savingMatches, match.id]);
-													try {
-														await submit();
-														if (render.isEditing) {
-															editingMatches = new Set(
-																[...editingMatches].filter((id) => id !== match.id)
-															);
-														}
-													} catch (error) {
-														console.log(error);
-													} finally {
-														savingMatches = new Set(
-															[...savingMatches].filter((id) => id !== match.id)
-														);
-													}
-												})}
-										>
-											<input type="hidden" name="matchId" value={match.id} />
-
-											<div class="teams">
-												<div class="team">
-													<p>{getTeamDisplay(match, 'a')}</p>
-													<input
-														data-testid="team-a-score-{match.id}"
-														type="number"
-														name="teamAScore"
-														min="0"
-														max="50"
-														required
-														disabled={savingMatches.has(match.id)}
-														{...render.scoreForm.fields.teamAScore}
-													/>
-												</div>
-
-												<div class="vs">vs</div>
-
-												<div class="team">
-													<p>{getTeamDisplay(match, 'b')}</p>
-													<input
-														data-testid="team-b-score-{match.id}"
-														type="number"
-														name="teamBScore"
-														min="0"
-														max="50"
-														required
-														disabled={savingMatches.has(match.id)}
-														{...render.scoreForm.fields.teamBScore}
-													/>
-												</div>
-											</div>
-
-											<div class="form-actions">
-												{#if render.isEditing}
-													<button
-														type="button"
-														class="btn-secondary"
-														onclick={() =>
-															(editingMatches = new Set(
-																[...editingMatches].filter((id) => id !== match.id)
-															))}
-														disabled={savingMatches.has(match.id)}
-													>
-														Cancel
-													</button>
-												{/if}
-												<button
-													data-testid="save-score-{match.id}"
-													type="submit"
-													class="btn-primary"
-													disabled={savingMatches.has(match.id)}
-												>
-													{#if savingMatches.has(match.id)}
-														<span class="spinner"></span>
-														{render.isEditing ? 'Updating...' : 'Saving...'}
-													{:else}
-														{render.isEditing ? 'Update Score' : 'Save Score'}
-													{/if}
-												</button>
-											</div>
-									</form>
-								{/if}
-							</div>
-						{/each}
-					</div>
-				{/if}
-			</div>
-		{/each}
-	{:else}
-		<!-- Single-set matches (4p courts, standard scoring) -->
-		{#each data.matches as match, index}
-			{@const render = renderMatch(match, index)}
-			<div class="match" transition:slide>
-				{#if render.issues.length > 0 && !render.isSaving}
-					<div class="error" transition:slide>
-						{#each render.issues as issue}
-							<p>{issue.message}</p>
-						{/each}
-					</div>
-				{/if}
-
-				<h3>
-					Match {render.index + 1}
-					{#if teamLabels[render.index]}
-						<span class="team-label">
-							{@html `${teamLabels[render.index].teamA}`} vs
-							{@html `${teamLabels[render.index].teamB}`}
-						</span>
-					{/if}
-				</h3>
-
-				{#if completedMatches.has(match.id) && !editingMatches.has(match.id)}
-					<div class="completed" transition:slide>
-						<p>
-							{getTeamDisplay(match, 'a')}:
-							<strong>{matchData[match.id]?.teamAScore || match.teamAScore}</strong>
-						</p>
-						<p>
-							{getTeamDisplay(match, 'b')}:
-							<strong>{matchData[match.id]?.teamBScore || match.teamBScore}</strong>
-						</p>
-						<span class="saved">✓ Saved</span>
-						{#if data.isAuthenticated}
-							<button
-								class="btn-edit"
-								onclick={() =>
-									(editingMatches = new Set([...editingMatches, match.id]))}
-							>
-								Edit
-							</button>
 						{/if}
 					</div>
-				{:else}
-					<form
-						data-testid="match-form-{match.id}"
-						{...render.scoreForm
-							.preflight(dynamicScoreSchema)
-							.enhance(async ({ submit }) => {
-								savingMatches = new Set([...savingMatches, match.id]);
-								try {
-									await submit();
-									if (render.isEditing) {
-										editingMatches = new Set(
-											[...editingMatches].filter((id) => id !== match.id)
-										);
-									}
-								} catch (error) {
-									console.log(error);
-								} finally {
-									savingMatches = new Set(
-										[...savingMatches].filter((id) => id !== match.id)
-									);
-								}
-							})}
-					>
-						<input type="hidden" name="matchId" value={match.id} />
-
-						<div class="teams">
-							<div class="team">
-								<p>{getTeamDisplay(match, 'a')}</p>
-								<input
-									data-testid="team-a-score-{match.id}"
-									type="number"
-									name="teamAScore"
-									min="0"
-									max="50"
-									required
-									disabled={savingMatches.has(match.id)}
-									{...render.scoreForm.fields.teamAScore}
-								/>
+				{/each}
+			{:else}
+				<!-- Single-set matches (4p courts, standard scoring) -->
+				{#each data.matches as match, index (match.id)}
+					{@const render = renderMatch(match, index)}
+					<div class="match" transition:slide>
+						{#if render.issues.length > 0 && !render.isSaving}
+							<div class="error" transition:slide>
+								{#each render.issues as issue}
+									<p>{issue.message}</p>
+								{/each}
 							</div>
+						{/if}
 
-							<div class="vs">vs</div>
-
-							<div class="team">
-								<p>{getTeamDisplay(match, 'b')}</p>
-								<input
-									data-testid="team-b-score-{match.id}"
-									type="number"
-									name="teamBScore"
-									min="0"
-									max="50"
-									required
-									disabled={savingMatches.has(match.id)}
-									{...render.scoreForm.fields.teamBScore}
-								/>
-							</div>
-						</div>
-
-						<div class="form-actions">
-							{#if render.isEditing}
-								<button
-									type="button"
-									class="btn-secondary"
-									onclick={() =>
-										(editingMatches = new Set(
-											[...editingMatches].filter((id) => id !== match.id)
-										))}
-									disabled={savingMatches.has(match.id)}
-								>
-									Cancel
-								</button>
+						<h3>
+							Match {render.index + 1}
+							{#if teamLabels().get(match.matchNumber)}
+								<span class="team-label">
+									{@html `${teamLabels().get(match.matchNumber)!.teamA}`} vs
+									{@html `${teamLabels().get(match.matchNumber)!.teamB}`}
+								</span>
 							{/if}
-							<button
-								data-testid="save-score-{match.id}"
-								type="submit"
-								class="btn-primary"
-								disabled={savingMatches.has(match.id)}
-							>
-								{#if savingMatches.has(match.id)}
-									<span class="spinner"></span>
-									{render.isEditing ? 'Updating...' : 'Saving...'}
-								{:else}
-									{render.isEditing ? 'Update Score' : 'Save Score'}
+						</h3>
+
+						{#if completedMatches.has(match.id) && !editingMatches.has(match.id)}
+							<div class="completed" transition:slide>
+								<p>
+									{getTeamDisplay(match, 'a')}:
+									<strong>{match.teamAScore}</strong>
+								</p>
+								<p>
+									{getTeamDisplay(match, 'b')}:
+									<strong>{match.teamBScore}</strong>
+								</p>
+								<span class="saved">✓ Saved</span>
+								{#if data.isAuthenticated}
+									<button
+										class="btn-edit"
+										onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
+									>
+										Edit
+									</button>
 								{/if}
-							</button>
-						</div>
-					</form>
-				{/if}
-			</div>
-		{/each}
-	{/if}
+							</div>
+						{:else}
+							<form
+								data-testid="match-form-{match.id}"
+								{...render.scoreForm.preflight(dynamicScoreSchema).enhance(async ({ submit }) => {
+									savingMatches = new Set([...savingMatches, match.id]);
+									try {
+										await submit();
+										if (render.isEditing) {
+											editingMatches = new Set([...editingMatches].filter((id) => id !== match.id));
+										}
+									} catch (error) {
+										console.log(error);
+									} finally {
+										savingMatches = new Set([...savingMatches].filter((id) => id !== match.id));
+									}
+								})}
+							>
+								<input type="hidden" name="matchId" value={match.id} />
+
+								<div class="teams">
+									<div class="team">
+										<p>{getTeamDisplay(match, 'a')}</p>
+										<input
+											data-testid="team-a-score-{match.id}"
+											type="number"
+											name="teamAScore"
+											min="0"
+											max="50"
+											required
+											disabled={savingMatches.has(match.id)}
+											{...render.scoreForm.fields.teamAScore}
+										/>
+									</div>
+
+									<div class="vs">vs</div>
+
+									<div class="team">
+										<p>{getTeamDisplay(match, 'b')}</p>
+										<input
+											data-testid="team-b-score-{match.id}"
+											type="number"
+											name="teamBScore"
+											min="0"
+											max="50"
+											required
+											disabled={savingMatches.has(match.id)}
+											{...render.scoreForm.fields.teamBScore}
+										/>
+									</div>
+								</div>
+
+								<div class="form-actions">
+									{#if render.isEditing}
+										<button
+											type="button"
+											class="btn-secondary"
+											onclick={() =>
+												(editingMatches = new Set(
+													[...editingMatches].filter((id) => id !== match.id)
+												))}
+											disabled={savingMatches.has(match.id)}
+										>
+											Cancel
+										</button>
+									{/if}
+									<button
+										data-testid="save-score-{match.id}"
+										type="submit"
+										class="btn-primary"
+										disabled={savingMatches.has(match.id)}
+									>
+										{#if savingMatches.has(match.id)}
+											<span class="spinner"></span>
+											{render.isEditing ? 'Updating...' : 'Saving...'}
+										{:else}
+											{render.isEditing ? 'Update Score' : 'Save Score'}
+										{/if}
+									</button>
+								</div>
+							</form>
+						{/if}
+					</div>
+				{/each}
+			{/if}
 		</section>
 	{/if}
 
@@ -992,7 +1034,12 @@
 	.set-card h4 {
 		margin: 0 0 var(--spacing-xs) 0;
 		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
+	}
+
+	.deciding-hint {
+		font-weight: 400;
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
 	}
 
 	@media (max-width: 768px) {
