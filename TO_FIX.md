@@ -2,12 +2,13 @@
 
 ## ToDo
 
-- [] For the package.json scripts why are we using node/npx/tsx for some things. We are in a Bun environment and should use Bun and it's build in abilities as far as possible.
 - [] There should be a way to remove a player from the tournament during a round and the affected court should handle this gracefully.Adjusting the court to a different format (to 3p from 4p, to 6p from 5p, to 4p from 5p) is not an option, because we would have to deal with already played matches and how to score the other players. I guess we need to investigate here, a little bit.
 - [] add tests for 5p / 6p court redistribution
 - [] we need a banner (for v1) to show that the data will be wiped
 
 ## Done
+
+- [x] Use Bun's built-in capabilities for scripts instead of npx/tsx/npm (Fixed: db:wipe, db:cleanup use `bun`, auth:schema uses `bunx`, removed `dotenv` dependency, updated AGENTS.md with Bun-first policy)
 
 - [x] Integration tests (in tournament.spec.ts) "scoring modes" should go a step further and test that the scores must be entered as dictated by the selected mode. (Fixed: best-of-3 per-set validation, single-set min points, 5p min points E2E tests all pass)
 - [x] add job to delete tournaments that are closed and older then 14 days

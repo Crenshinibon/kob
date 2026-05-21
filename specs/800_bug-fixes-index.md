@@ -3,6 +3,7 @@
 Bug fixes identified from user testing and code review.
 
 - **[840_critical-bugs.md](./840_critical-bugs.md)**: Active critical bugs from user testing
+- **[850_bun-migration.md](./850_bun-migration.md)**: Migrate scripts from npx/tsx/npm to Bun-native tooling
 
 ## Archived (Completed)
 

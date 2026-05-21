@@ -42,6 +42,7 @@
 
 - **[800_bug-fixes-index.md](./800_bug-fixes-index.md)**: Bug fixes from user testing and code review.
   - **[840_critical-bugs.md](./840_critical-bugs.md)**: Critical bugs: delete tournament, best-of-3 score entry, score validation, player removal, UI glitches, reactivity warnings, E2E config, auto-cleanup, radio button inputs
+  - **[850_bun-migration.md](./850_bun-migration.md)**: Migrate package.json scripts from npx/tsx/npm to Bun-native tooling
   - **Archived**: [810](./archive/810_match-display-bugs.md), [811](./archive/811-closeRound-requested-error.md), [812](./archive/812-standings-ranking-bug.md), [813](./archive/813-qr-live-query-bugs.md), [814](./archive/814-fetch-errors.md)
 
 - **[820_ux-improvements.md](./820_ux-improvements.md)**: UX improvements: radio button inputs, player count validation, format explanations, org override for non-standard courts, v1 banner
