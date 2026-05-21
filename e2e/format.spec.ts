@@ -326,12 +326,10 @@ test.describe('Tournament Format Selection', () => {
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBe(3);
 
-			// Find the 3p court (should have a badge or label)
+			// Find the 3p court and navigate to it
 			const threePCourt = page.locator('.court-card:has-text("3p")').first();
 			await expect(threePCourt).toBeVisible();
-
-			// Navigate to 3p court and verify 3 matches
-			const courtLink = page.locator('.qr-link a').last();
+			const courtLink = threePCourt.locator('.qr-link a');
 			const courtUrl = await courtLink.getAttribute('href');
 			expect(courtUrl).toBeTruthy();
 
@@ -363,12 +361,10 @@ test.describe('Tournament Format Selection', () => {
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBe(5);
 
-			// Find the 5p court
+			// Find the 5p court and navigate to it
 			const fivePCourt = page.locator('.court-card:has-text("5p")').first();
 			await expect(fivePCourt).toBeVisible();
-
-			// Navigate to 5p court and verify 4 games
-			const courtLink = page.locator('.qr-link a').last();
+			const courtLink = fivePCourt.locator('.qr-link a');
 			const courtUrl = await courtLink.getAttribute('href');
 			expect(courtUrl).toBeTruthy();
 
@@ -400,12 +396,10 @@ test.describe('Tournament Format Selection', () => {
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBe(5);
 
-			// Find the 6p court
+			// Find the 6p court and navigate to it
 			const sixPCourt = page.locator('.court-card:has-text("6p")').first();
 			await expect(sixPCourt).toBeVisible();
-
-			// Navigate to 6p court and verify 4 games
-			const courtLink = page.locator('.qr-link a').last();
+			const courtLink = sixPCourt.locator('.qr-link a');
 			const courtUrl = await courtLink.getAttribute('href');
 			expect(courtUrl).toBeTruthy();
 
@@ -435,6 +429,7 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.waitForURL(/\/tournament\/\d+/);
 
+			await page.waitForSelector('.court-card');
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBe(2);
 		});
@@ -468,6 +463,7 @@ test.describe('Tournament Format Selection', () => {
 
 			await page.waitForURL(/\/tournament\/\d+/);
 
+			await page.waitForSelector('.court-card');
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBe(16);
 		});

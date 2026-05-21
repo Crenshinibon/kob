@@ -32,10 +32,9 @@
 	}
 </script>
 
-{#if liveQuery.error}
-	<div class="error">Failed to load tournament: {liveQuery.error?.message ?? 'Unknown error'}</div>
-{:else}
-	{@const state = await liveQuery}
+{#await liveQuery}
+	<div class="loading">Loading tournament...</div>
+{:then state}
 	{@const tournament = state?.tournament}
 	{@const courts = state?.courts ?? []}
 	{@const currentRound = state?.currentRound ?? 0}
@@ -212,7 +211,9 @@
 			{/if}
 		</main>
 	{/if}
-{/if}
+{:catch error}
+	<div class="error">Failed to load tournament: {error?.message ?? 'Unknown error'}</div>
+{/await}
 
 <style>
 	.loading,
