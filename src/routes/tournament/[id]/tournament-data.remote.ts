@@ -18,7 +18,7 @@ export interface CourtDisplayData {
 	courtSize: number;
 	matches: (typeof match.$inferSelect)[];
 	token: string | null;
-	players: { id: number; name: string }[];
+	players: { id: number; name: string; retired?: boolean }[];
 	shift?: number;
 	totalShifts?: number;
 	waitMinutes?: number;
@@ -36,6 +36,13 @@ export interface TournamentDisplayData {
 	shifts: number[][];
 	roundDuration: number;
 	currentPlayerCount: number;
+	activePlayerCount: number;
+	retiredPlayers: {
+		id: number;
+		name: string;
+		retiredRound: number | null;
+		retirementReason: string | null;
+	}[];
 	error?: string;
 }
 
@@ -63,6 +70,16 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		seedRank: p.seedRank
 	}));
 
+	const retiredPlayers = dbPlayers
+		.filter((p) => p.retiredAt)
+		.map((p) => ({
+			id: p.id,
+			name: p.name,
+			retiredRound: p.retiredRound,
+			retirementReason: p.retirementReason
+		}));
+	const activePlayerCount = dbPlayers.filter((p) => !p.retiredAt).length;
+
 	let canCloseRound = false;
 	let isFinalRound = false;
 
@@ -89,11 +106,13 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 				(sum, size) => sum + matchCountForCourtSize(size),
 				0
 			);
+			const canceledMatchCount = allMatches.filter((m) => m.isCanceled).length;
 			const scoredMatchCount = allMatches.filter(
 				(m) => m.teamAScore !== null && m.teamBScore !== null
 			).length;
 			canCloseRound =
-				allMatches.length >= expectedMatchCount && scoredMatchCount === expectedMatchCount;
+				allMatches.length >= expectedMatchCount &&
+				scoredMatchCount + canceledMatchCount === expectedMatchCount;
 		}
 		isFinalRound = currentRound >= tourney.numRounds;
 	}
@@ -107,7 +126,8 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		)
 		.orderBy(courtRotation.courtNumber);
 
-	const playerMap = new Map(players.map((p) => [p.id, p]));
+	const playerMap = new Map<number, (typeof dbPlayers)[0]>();
+	for (const p of dbPlayers) playerMap.set(p.id, p);
 
 	const courts: CourtDisplayData[] = [];
 	for (const rotation of rotations) {
@@ -128,10 +148,17 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 			...(rotation.player6Id !== null ? [rotation.player6Id] : [])
 		].filter((id): id is number => id !== null);
 
-		const rotationPlayers = playerIds.map((id) => playerMap.get(id)).filter(Boolean) as {
-			id: number;
-			name: string;
-		}[];
+		const rotationPlayers = playerIds
+			.map((id) => {
+				const p = playerMap.get(id);
+				if (!p) return null;
+				return {
+					id: p.id,
+					name: p.name,
+					retired: !!p.retiredAt
+				};
+			})
+			.filter(Boolean) as { id: number; name: string; retired?: boolean }[];
 
 		const size = rotation.courtSize ?? courtSizes[rotation.courtNumber - 1] ?? 4;
 
@@ -187,7 +214,9 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		physicalCourtCount,
 		shifts,
 		roundDuration,
-		currentPlayerCount: players.length
+		currentPlayerCount: players.length,
+		activePlayerCount,
+		retiredPlayers
 	};
 }
 

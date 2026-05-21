@@ -693,4 +693,186 @@ test.describe('Tournament Integration Tests', () => {
 			await expect(page.locator('h1', { hasText: tournamentName })).toBeVisible();
 		});
 	});
+
+	test.describe('Player Retirement', () => {
+		test('retire a player between rounds and continue tournament', async ({ page }) => {
+			const tournamentName = `Retire Test ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			// Create 16-player tournament with 2 rounds
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '2');
+			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('text=Round 1 of 2');
+
+			// Complete Round 1 on all 4 courts
+			const courtLinksSel = await page.locator('.qr-link a').all();
+			const courtLinks: string[] = [];
+			for (const cl of courtLinksSel) {
+				const url = await cl.getAttribute('href');
+				if (url) courtLinks.push(url);
+			}
+			expect(courtLinks.length).toBe(4);
+
+			for (const url of courtLinks) {
+				await page.goto(url);
+				await page.waitForSelector('[data-testid^="match-form-"]');
+				const forms = await page.locator('[data-testid^="match-form-"]').all();
+				for (let i = 0; i < 3; i++) {
+					const testId = await forms[i].getAttribute('data-testid');
+					const matchId = testId?.replace('match-form-', '');
+					await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
+					await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
+					await page.click(`[data-testid="save-score-${matchId}"]`);
+					await page.waitForSelector('.saved');
+				}
+			}
+
+			// Close Round 1
+			await page.goto('/');
+			await page.click(`text=${tournamentName}`);
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)');
+			await page.click('button:has-text("Close Round & Advance")');
+			await page.waitForSelector('text=Round 2 of 2');
+
+			// Retire a player before Round 2 scores are entered
+			await page.click('summary:has-text("Retire a Player")');
+			await page.waitForSelector('.retire-form');
+			await page.selectOption('#retirePlayerId', { label: /Player1/ });
+			await page.selectOption('#retireReason', { value: 'injury' });
+			await page.click('.retire-form button[type="submit"]');
+
+			// Verify tournament still shows Round 2 with 15 players (3 full courts + 1 3p court)
+			await page.waitForTimeout(1000);
+			await page.waitForSelector('text=Round 2 of 2');
+			const courtCards = await page.locator('.court-card').count();
+			expect(courtCards).toBe(4);
+
+			// Complete Round 2 with remaining players
+			const round2LinksSel = await page.locator('.qr-link a').all();
+			const round2Links: string[] = [];
+			for (const cl of round2LinksSel) {
+				const url = await cl.getAttribute('href');
+				if (url) round2Links.push(url);
+			}
+
+			for (const url of round2Links) {
+				await page.goto(url);
+				await page.waitForSelector('[data-testid^="match-form-"]');
+				const forms = await page.locator('[data-testid^="match-form-"]').all();
+				for (let i = 0; i < forms.length; i++) {
+					const testId = await forms[i].getAttribute('data-testid');
+					const matchId = testId?.replace('match-form-', '');
+					await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
+					await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
+					await page.click(`[data-testid="save-score-${matchId}"]`);
+					await page.waitForSelector('.saved');
+				}
+			}
+
+			// Close final round
+			await page.goto('/');
+			await page.click(`text=${tournamentName}`);
+			await page.waitForSelector('button:has-text("Finalize Tournament")');
+			await page.click('button:has-text("Finalize Tournament")');
+			await page.waitForTimeout(1000);
+
+			// Verify tournament completed
+			await page.goto('/');
+			await page.waitForSelector(`text=${tournamentName}`);
+			const statusBadge = page
+				.locator(`.tournament-card:has-text("${tournamentName}") .status.completed`)
+				.first();
+			await expect(statusBadge).toBeVisible();
+		});
+
+		test('report mid-round injury with Cancel & Average option', async ({ page }) => {
+			const tournamentName = `Injury Cancel Test ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			// Create 16-player tournament with 2 rounds
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '2');
+			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('text=Round 1 of 2');
+
+			// Enter some scores for Round 1 on Court 1 only
+			const courtLink = await page.locator('.qr-link a').first();
+			const courtUrl = await courtLink.getAttribute('href');
+			await page.goto(courtUrl || '');
+			await page.waitForSelector('[data-testid^="match-form-"]');
+			const forms = await page.locator('[data-testid^="match-form-"]').all();
+			expect(forms.length).toBe(3);
+
+			// Score only first match
+			const testId = await forms[0].getAttribute('data-testid');
+			const matchId = testId?.replace('match-form-', '');
+			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
+			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
+			await page.click(`[data-testid="save-score-${matchId}"]`);
+			await page.waitForSelector('.saved');
+
+			// Report injury for Player1 on this court
+			await page.goto('/');
+			await page.click(`text=${tournamentName}`);
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			await page.click('summary:has-text("Report Injury")');
+			await page.waitForSelector('.injury-form');
+			await page.selectOption('#injuryPlayerId', { label: /Player1/ });
+			await page.click('input[value="cancel"]');
+			await page.click('.injury-form button[type="submit"]');
+
+			// Verify Player1 shows as retired on the court
+			await page.waitForTimeout(1000);
+			const retiredPlayer = page.locator('.player.retired').first();
+			await expect(retiredPlayer).toBeVisible();
+
+			// Complete remaining matches on all courts
+			const allCourtLinks = await page.locator('.qr-link a').all();
+			for (const cl of allCourtLinks) {
+				const url = await cl.getAttribute('href');
+				if (!url) continue;
+				await page.goto(url);
+				await page.waitForSelector('[data-testid^="match-form-"]');
+				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
+				for (let i = 0; i < matchForms.length; i++) {
+					const mTestId = await matchForms[i].getAttribute('data-testid');
+					const mId = mTestId?.replace('match-form-', '');
+					if (!mId) continue;
+					// Skip if already scored
+					const scoreA = await page
+						.locator(`[data-testid="team-a-score-${mId}"]`)
+						.inputValue()
+						.catch(() => '');
+					if (scoreA) continue;
+					await page.fill(`[data-testid="team-a-score-${mId}"]`, '21');
+					await page.fill(`[data-testid="team-b-score-${mId}"]`, '19');
+					await page.click(`[data-testid="save-score-${mId}"]`);
+					await page.waitForSelector('.saved');
+				}
+			}
+
+			// Close Round 1 — should work even with canceled matches
+			await page.goto('/');
+			await page.click(`text=${tournamentName}`);
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)', {
+				timeout: 10000
+			});
+			await page.click('button:has-text("Close Round & Advance")');
+			await page.waitForSelector('text=Round 2 of 2');
+		});
+	});
 });

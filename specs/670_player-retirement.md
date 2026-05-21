@@ -121,56 +121,58 @@ Instead, the remaining unplayed matches for that court must be handled in one of
 
 ### Option A: Physical Play with a Neutral Substitute (Recommended)
 
-* **Concept**: A temporary substitute player (not part of the court's standings) replaces the injured player for the remaining matches/sets of the current round.
-* **Sourcing the Substitute**:
+- **Concept**: A temporary substitute player (not part of the court's standings) replaces the injured player for the remaining matches/sets of the current round.
+- **Sourcing the Substitute**:
   1. A player from another court that has already finished their matches.
   2. A player who is on a bye (resting) in the current shift.
   3. An external volunteer, spectator, or the organizer themselves.
-* **Scoring Rules**:
+- **Scoring Rules**:
   1. The substitute player plays in the matches, but their individual standing points are **not tracked** (they do not receive points, and their name is not added to the tournament standings).
-  2. The healthy partner who plays *with* the substitute receives the **actual points scored** by their team in the match.
+  2. The healthy partner who plays _with_ the substitute receives the **actual points scored** by their team in the match.
   3. The opponents receive their **actual points scored** in the match.
   4. The injured player receives **0 points** (forfeit) for the matches they missed.
-* **Database Implementation**: The match is entered normally with the injured player's ID in the slot. Since the substitute is temporary and doesn't get points, keeping the injured player's ID in the match record allows the partner's points to be computed naturally.
-* **Pros**: Standard 2v2 gameplay is preserved. No mathematical skewing. Partners can still play and earn points. Opponents don't get free 21-0 wins that distort tournament-wide standings.
+- **Database Implementation**: The match is entered normally with the injured player's ID in the slot. Since the substitute is temporary and doesn't get points, keeping the injured player's ID in the match record allows the partner's points to be computed naturally.
+- **Pros**: Standard 2v2 gameplay is preserved. No mathematical skewing. Partners can still play and earn points. Opponents don't get free 21-0 wins that distort tournament-wide standings.
 
 ### Option B: Cancel & Average (Mathematical Solution)
 
-* **Concept**: If a physical substitute cannot be found, the remaining matches involving the injured player are **canceled**.
-* **Scoring Rules**:
+- **Concept**: If a physical substitute cannot be found, the remaining matches involving the injured player are **canceled**.
+- **Scoring Rules**:
   1. The injured player receives **0 points** for the canceled matches.
   2. The healthy players on the court are ranked by their **average points per match** and **average point differential per match** for the current round, rather than total points.
-  3. *Example*:
-     * Match 1: P1 + P2 vs P3 + P4 (completed: 21 - 18)
-     * P4 is injured. Match 2 (P1+P3 vs P2+P4) and Match 3 (P1+P4 vs P2+P3) are canceled.
-     * P1 and P2 only played 1 match. Their average points = 21.0. Their average diff = +3.0.
-     * P3 only played 1 match. Their average points = 18.0. Their average diff = -3.0.
-     * P4 gets 0 points.
-     * Court Standings for the round: P1 & P2 (1st place, 21.0 avg pts) > P3 (3rd place, 18.0 avg pts) > P4 (4th place, 0 avg pts).
-* **Database Implementation**:
+  3. _Example_:
+     - Match 1: P1 + P2 vs P3 + P4 (completed: 21 - 18)
+     - P4 is injured. Match 2 (P1+P3 vs P2+P4) and Match 3 (P1+P4 vs P2+P3) are canceled.
+     - P1 and P2 only played 1 match. Their average points = 21.0. Their average diff = +3.0.
+     - P3 only played 1 match. Their average points = 18.0. Their average diff = -3.0.
+     - P4 gets 0 points.
+     - Court Standings for the round: P1 & P2 (1st place, 21.0 avg pts) > P3 (3rd place, 18.0 avg pts) > P4 (4th place, 0 avg pts).
+- **Database Implementation**:
   1. Add an `isCanceled` column (boolean, default false) to the match tables: `match`, `match_3_player`, `match_5_player`, and `match_6_player`.
   2. Canceled matches are marked `is_canceled = true` and their scores are left as `null`.
   3. When calculating standings for a court, if any match has `is_canceled = true`, the system automatically ranks players on that court by average points per completed match and average point differential per completed match, instead of total points.
-* **Non-Standard Courts (5p/6p)**: Since 5-player and 6-player courts already use average points per game to rank players (due to uneven match distributions), Option B is trivial: the system simply cancels games involving the injured player, and ranks the remaining players by their averages over the games they completed.
-* **Pros**: Does not require a physical substitute. Fairly handles the situation without forcing arbitrary 0-21 forfeits that penalize the healthy partner and boost opponents.
+- **Non-Standard Courts (5p/6p)**: Since 5-player and 6-player courts already use average points per game to rank players (due to uneven match distributions), Option B is trivial: the system simply cancels games involving the injured player, and ranks the remaining players by their averages over the games they completed.
+- **Pros**: Does not require a physical substitute. Fairly handles the situation without forcing arbitrary 0-21 forfeits that penalize the healthy partner and boost opponents.
 
 ### Option C: Play Solo (2v1)
 
-* **Concept**: The remaining matches are played as scheduled, but the team with the injured player plays as a 1-player team.
-* **Rules**:
+- **Concept**: The remaining matches are played as scheduled, but the team with the injured player plays as a 1-player team.
+- **Rules**:
   1. The solo player gets 3 touches (using the 3-player court solo player rule).
   2. Matches are scored exactly as played.
-* **Pros**: Keeps the games active without requiring a substitute.
-* **Cons**: Extremely physically demanding and unfair for the solo player, who is almost guaranteed to lose by a large margin (hurting their standing points and point differential).
+- **Pros**: Keeps the games active without requiring a substitute.
+- **Cons**: Extremely physically demanding and unfair for the solo player, who is almost guaranteed to lose by a large margin (hurting their standing points and point differential).
 
 ---
 
 ## UI Flow for Mid-Round Injury
 
 ### 1. Reporting an Injury
+
 During an active round, the organizer sees a "Report Injury" button next to each court or next to each player name on the tournament dashboard/court view.
 
 ### 2. Selecting the Handling Option
+
 Clicking "Report Injury" for a player opens a modal:
 
 ```
@@ -196,11 +198,14 @@ Clicking "Report Injury" for a player opens a modal:
 ```
 
 ### 3. Court View Updates
-* **If Substitute or Play Solo is selected**: The court view displays Player D as "Injured" but the remaining matches remain active for score entry.
-* **If Cancel & Average is selected**: The remaining matches involving Player D are marked as "Canceled" and disabled in the UI. The organizer only enters scores for any matches that did not involve Player D.
+
+- **If Substitute or Play Solo is selected**: The court view displays Player D as "Injured" but the remaining matches remain active for score entry.
+- **If Cancel & Average is selected**: The remaining matches involving Player D are marked as "Canceled" and disabled in the UI. The organizer only enters scores for any matches that did not involve Player D.
 
 ### 4. Closing the Round
+
 When the organizer closes the round:
+
 1. The injured player is marked as retired (`retiredAt` set to current timestamp, `retiredRound` set to current round).
 2. The standings for the court are calculated. If Option B (Cancel & Average) was used, the standings are calculated using averages of completed matches.
 3. For subsequent rounds, the retired player is excluded from court assignment generation, and the court configuration is recalculated for the remaining players (applying the standard retirement rules).

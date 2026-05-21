@@ -40,6 +40,7 @@ export const player = pgTable('player', {
 	seedRank: integer('seed_rank'),
 	retiredAt: timestamp('retired_at'),
 	retiredRound: integer('retired_round'),
+	retiredCourt: integer('retired_court'),
 	retirementReason: text('retirement_reason'),
 	finalStanding: integer('final_standing')
 });
@@ -68,7 +69,9 @@ export const match = pgTable('match', {
 	teamBPlayer1Id: integer('team_b_player_1_id').notNull(),
 	teamBPlayer2Id: integer('team_b_player_2_id').notNull(),
 	teamAScore: integer('team_a_score'),
-	teamBScore: integer('team_b_score')
+	teamBScore: integer('team_b_score'),
+	isCanceled: boolean('is_canceled').notNull().default(false),
+	injuredPlayerIds: jsonb('injured_player_ids').$type<number[]>()
 });
 
 export const match3Player = pgTable('match_3_player', {
@@ -80,7 +83,8 @@ export const match3Player = pgTable('match_3_player', {
 	teamOfTwoPlayer2Id: integer('team_of_two_player_2_id').notNull(),
 	soloPlayerId: integer('solo_player_id').notNull(),
 	teamOfTwoScore: integer('team_of_two_score'),
-	soloPlayerScore: integer('solo_player_score')
+	soloPlayerScore: integer('solo_player_score'),
+	isCanceled: boolean('is_canceled').notNull().default(false)
 });
 
 export const match5Player = pgTable('match_5_player', {
@@ -94,7 +98,8 @@ export const match5Player = pgTable('match_5_player', {
 	sideYFixedPlayerId: integer('side_y_fixed_player_id').notNull(),
 	sideYRotatingPlayerId: integer('side_y_rotating_player_id').notNull(),
 	sideXScore: integer('side_x_score'),
-	sideYScore: integer('side_y_score')
+	sideYScore: integer('side_y_score'),
+	isCanceled: boolean('is_canceled').notNull().default(false)
 });
 
 export const match6Player = pgTable('match_6_player', {
@@ -108,7 +113,8 @@ export const match6Player = pgTable('match_6_player', {
 	rotatingTeamPlayer1Id: integer('rotating_team_player_1_id').notNull(),
 	rotatingTeamPlayer2Id: integer('rotating_team_player_2_id').notNull(),
 	fixedTeamScore: integer('fixed_team_score'),
-	rotatingTeamScore: integer('rotating_team_score')
+	rotatingTeamScore: integer('rotating_team_score'),
+	isCanceled: boolean('is_canceled').notNull().default(false)
 });
 
 export const courtAccess = pgTable('court_access', {

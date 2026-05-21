@@ -8,7 +8,6 @@ import {
 	startRound,
 	closeRound,
 	redistributePreseedRecursive,
-	redistributeLadder,
 	verticalSeeding,
 	ladderRedistribute,
 	calculateCourtStandings,
@@ -22,6 +21,10 @@ import {
 	getMaxSets,
 	getMinPointsForSet,
 	getScoringLabel,
+	recalculateCourtConfigAfterRetirement,
+	getPreseedBracketRange,
+	calculateRetiredStanding,
+	getFinalRoundCourtConfig,
 	type FormatType,
 	type TournamentState,
 	type CourtResult,
@@ -1050,5 +1053,150 @@ describe('Scoring logic', () => {
 		it('custom', () => {
 			expect(getScoringLabel(customConfig, 4)).toBe('Best of 2 (25pt, deciding: 20pt)');
 		});
+	});
+});
+
+// ============================================================================
+// Player Retirement
+// ============================================================================
+
+describe('calculateCourtStandings with canceled matches', () => {
+	it('uses averages when any match is canceled', () => {
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			{ ...mockMatch([1, 3], [2, 4], 25, 23), isCanceled: true },
+			{ ...mockMatch([1, 4], [2, 3], 22, 20), isCanceled: true }
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4]);
+		// Only 1 completed match. Averages = same as totals for 1 match.
+		expect(result[0].playerId).toBe(1);
+		expect(result[0].points).toBe(21);
+		expect(result[0].diff).toBe(2);
+	});
+
+	it('uses averages for 5p courts even without canceled matches', () => {
+		// 5 players, 4 matches (p2 plays 4, others play 3)
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			mockMatch([1, 2], [3, 5], 22, 20),
+			mockMatch([4, 5], [2, 1], 18, 25),
+			mockMatch([4, 5], [2, 3], 20, 23)
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4, 5]);
+		// p1 played 3 matches: scores 21, 22, 25 = 68 total, avg = 22.67
+		// p2 played 4 matches: scores 21, 22, 25, 23 = 91 total, avg = 22.75
+		expect(result[0].playerId).toBe(2);
+		expect(result[0].points).toBeCloseTo(22.75, 1);
+	});
+
+	it('injured player gets 0 points in substitute matches', () => {
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			{ ...mockMatch([1, 3], [2, 4], 25, 23), injuredPlayerIds: [2] },
+			mockMatch([1, 4], [2, 3], 22, 20)
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4]);
+		// p2 should have 21 + 0 + 20 = 41
+		// p1 should have 21 + 25 + 22 = 68
+		const p2 = result.find((s) => s.playerId === 2);
+		expect(p2?.points).toBe(41);
+	});
+});
+
+describe('recalculateCourtConfigAfterRetirement', () => {
+	it('23 players → 5×4p + 1×3p', () => {
+		expect(recalculateCourtConfigAfterRetirement(23)).toEqual({
+			courtSizes: [4, 4, 4, 4, 4, 3],
+			totalCourts: 6
+		});
+	});
+
+	it('22 players → 4×4p + 1×6p', () => {
+		expect(recalculateCourtConfigAfterRetirement(22)).toEqual({
+			courtSizes: [4, 4, 4, 4, 6],
+			totalCourts: 5
+		});
+	});
+
+	it('3 players → 1×3p', () => {
+		expect(recalculateCourtConfigAfterRetirement(3)).toEqual({
+			courtSizes: [3],
+			totalCourts: 1
+		});
+	});
+});
+
+describe('getPreseedBracketRange', () => {
+	it('4 courts: C1 → 1-8, C3 → 9-16', () => {
+		expect(getPreseedBracketRange(1, 4)).toEqual({ min: 1, max: 8 });
+		expect(getPreseedBracketRange(2, 4)).toEqual({ min: 1, max: 8 });
+		expect(getPreseedBracketRange(3, 4)).toEqual({ min: 9, max: 16 });
+		expect(getPreseedBracketRange(4, 4)).toEqual({ min: 9, max: 16 });
+	});
+
+	it('8 courts: recursive split into 4 leaves', () => {
+		expect(getPreseedBracketRange(1, 8)).toEqual({ min: 1, max: 16 });
+		expect(getPreseedBracketRange(5, 8)).toEqual({ min: 17, max: 32 });
+	});
+});
+
+describe('calculateRetiredStanding', () => {
+	it('preseed: returns bracket max', () => {
+		const standing = calculateRetiredStanding(3, 4, 1, 3, 'preseed', [4, 4, 4, 4], {
+			min: 9,
+			max: 16
+		});
+		expect(standing).toBe(16);
+	});
+
+	it('random seed: worst court after full relegation', () => {
+		// 24 players, 6 courts, retired after round 2 on court 3
+		// remainingRounds = 1, worstCourt = min(3 + 1, 6) = 4
+		// places on courts 1-3: 12, court 4 has 4 players → worst = 16
+		const standing = calculateRetiredStanding(3, 6, 2, 3, 'random-seed', [4, 4, 4, 4, 4, 4]);
+		expect(standing).toBe(16);
+	});
+
+	it('random seed with non-standard bottom court', () => {
+		// 23 players, 6 courts [4,4,4,4,4,3]
+		// worstCourt = min(3 + 1, 6) = 4
+		// places = 4*3 + 4 = 16
+		const standing = calculateRetiredStanding(3, 6, 2, 3, 'random-seed', [4, 4, 4, 4, 4, 3]);
+		expect(standing).toBe(16);
+	});
+});
+
+describe('getFinalRoundCourtConfig', () => {
+	it('5 players: eliminate 1, top 4 play', () => {
+		const result = getFinalRoundCourtConfig(
+			[4, 4, 4, 4, 5],
+			[
+				[1, 2, 3, 4],
+				[5, 6, 7, 8],
+				[9, 10, 11, 12],
+				[13, 14, 15, 16],
+				[17, 18, 19, 20, 21]
+			]
+		);
+		expect(result.courtSizes).toEqual([4, 4, 4, 4, 5]);
+		expect(result.eliminatedPlayerIds).toEqual([]);
+	});
+
+	it('5 players with 1 court: trim to 4', () => {
+		const result = getFinalRoundCourtConfig([5], [[1, 2, 3, 4, 5]]);
+		expect(result.courtSizes).toEqual([4]);
+		expect(result.eliminatedPlayerIds).toEqual([5]);
+	});
+
+	it('7 players: 4 + 3', () => {
+		const result = getFinalRoundCourtConfig(
+			[4, 3],
+			[
+				[1, 2, 3, 4],
+				[5, 6, 7]
+			]
+		);
+		expect(result.courtSizes).toEqual([4, 3]);
+		expect(result.eliminatedPlayerIds).toEqual([]);
 	});
 });

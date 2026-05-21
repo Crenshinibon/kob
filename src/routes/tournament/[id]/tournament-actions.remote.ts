@@ -3,7 +3,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { form, command, getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
 import { tournament, courtRotation, match, courtAccess, player } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import crypto from 'crypto';
 import {
 	createInitialState,
@@ -11,9 +11,11 @@ import {
 	startRound,
 	closeRound,
 	calculateCourtSizes,
+	recalculateCourtConfigAfterRetirement,
 	generateAllMatchesForAssignment,
 	getMaxSets,
 	getEffectiveScoring,
+	getFinalRoundCourtConfig,
 	type FormatType,
 	type MatchData
 } from '$lib/server/tournament-logic';
@@ -63,8 +65,21 @@ export const closeRoundForm = form(
 			seedRank: p.seedRank
 		}));
 
-		const courtSizes: number[] = parseCourtSizes(tourney);
+		const retiredPlayerIds = new Set(dbPlayers.filter((p) => p.retiredAt).map((p) => p.id));
+		const activePlayerCount = dbPlayers.length - retiredPlayerIds.size;
+
+		let courtSizes: number[] = parseCourtSizes(tourney);
 		const physicalCourtCount = tourney.physicalCourtCount ?? 4;
+
+		// If player count changed due to retirements, recalculate court sizes
+		if (activePlayerCount !== tourney.playerCount) {
+			const newConfig = recalculateCourtConfigAfterRetirement(activePlayerCount);
+			courtSizes = newConfig.courtSizes;
+			await db
+				.update(tournament)
+				.set({ playerCount: activePlayerCount, courtSizes: JSON.stringify(courtSizes) })
+				.where(eq(tournament.id, tournamentId));
+		}
 
 		const initState = createInitialState({
 			tournamentId: tourney.id,
@@ -94,7 +109,7 @@ export const closeRoundForm = form(
 				...(rotation.player4Id !== null ? [rotation.player4Id] : []),
 				...(rotation.player5Id !== null ? [rotation.player5Id] : []),
 				...(rotation.player6Id !== null ? [rotation.player6Id] : [])
-			].filter((id): id is number => id !== null)
+			].filter((id): id is number => id !== null && !retiredPlayerIds.has(id))
 		}));
 
 		const allMatches: MatchData[] = [];
@@ -103,20 +118,46 @@ export const closeRoundForm = form(
 				.select()
 				.from(match)
 				.where(eq(match.courtRotationId, rotation.id));
-			const scored = rotationMatches.filter((m) => m.teamAScore !== null && m.teamBScore !== null);
-			allMatches.push(...scored);
+			for (const m of rotationMatches) {
+				allMatches.push({
+					teamAPlayer1Id: m.teamAPlayer1Id,
+					teamAPlayer2Id: m.teamAPlayer2Id,
+					teamBPlayer1Id: m.teamBPlayer1Id,
+					teamBPlayer2Id: m.teamBPlayer2Id,
+					teamAScore: m.teamAScore,
+					teamBScore: m.teamBScore,
+					isCanceled: m.isCanceled ?? false,
+					injuredPlayerIds: m.injuredPlayerIds ?? undefined
+				});
+			}
 		}
 
 		const startedState = startRound(stateWithPlayers);
 
-		const closedState = closeRound({
-			...startedState,
-			roundsCompleted: currentRound - 1,
-			currentAssignments: currentAssignmentsFromDb,
-			currentMatches: allMatches
-		});
+		const closedState = closeRound(
+			{
+				...startedState,
+				roundsCompleted: currentRound - 1,
+				currentAssignments: currentAssignmentsFromDb,
+				currentMatches: allMatches
+			},
+			courtSizes
+		);
 
 		if (closedState.isComplete) {
+			// Compute final standings for any retired players without one
+			const retiredWithoutStanding = dbPlayers.filter(
+				(p) => p.retiredAt && p.finalStanding === null
+			);
+			for (const rp of retiredWithoutStanding) {
+				// Simple fallback: place at the bottom
+				const fallbackStanding = activePlayerCount;
+				await db
+					.update(player)
+					.set({ finalStanding: fallbackStanding })
+					.where(eq(player.id, rp.id));
+			}
+
 			await db
 				.update(tournament)
 				.set({ status: 'completed', currentRound: closedState.roundsCompleted })
@@ -127,8 +168,46 @@ export const closeRoundForm = form(
 			redirect(303, `/tournament/${tournamentId}/standings`);
 		}
 
-		const nextAssignments = closedState.nextAssignments;
+		let nextAssignments = closedState.nextAssignments;
 		const nextRoundNumber = closedState.roundsCompleted + 1;
+
+		// Apply final round elimination if needed
+		const isFinalRound = nextRoundNumber >= tourney.numRounds;
+		if (isFinalRound) {
+			const playerIdsByCourt = nextAssignments.map((a) => [...a.playerIds]);
+			const finalConfig = getFinalRoundCourtConfig(courtSizes, playerIdsByCourt);
+			if (finalConfig.eliminatedPlayerIds.length > 0) {
+				// Trim assignments to 4 players for the top court
+				nextAssignments = nextAssignments.map((a, i) => ({
+					...a,
+					playerIds: i === 0 ? a.playerIds.slice(0, Math.min(4, a.playerIds.length)) : a.playerIds
+				}));
+			}
+		}
+
+		// Delete any existing next round data (in case of partial state from retirement)
+		const existingNextRotations = await db
+			.select()
+			.from(courtRotation)
+			.where(
+				and(
+					eq(courtRotation.tournamentId, tournamentId),
+					eq(courtRotation.roundNumber, nextRoundNumber)
+				)
+			);
+		if (existingNextRotations.length > 0) {
+			const existingIds = existingNextRotations.map((r) => r.id);
+			await db.delete(match).where(inArray(match.courtRotationId, existingIds));
+			await db.delete(courtAccess).where(inArray(courtAccess.courtRotationId, existingIds));
+			await db
+				.delete(courtRotation)
+				.where(
+					and(
+						eq(courtRotation.tournamentId, tournamentId),
+						eq(courtRotation.roundNumber, nextRoundNumber)
+					)
+				);
+		}
 
 		for (const assignment of nextAssignments) {
 			const idx = assignment.courtNumber - 1;
@@ -138,7 +217,7 @@ export const closeRoundForm = form(
 				.insert(courtRotation)
 				.values({
 					tournamentId: tournamentId,
-					roundNumber: nextRoundNumber as any,
+					roundNumber: nextRoundNumber,
 					courtNumber: assignment.courtNumber,
 					courtSize: size,
 					player1Id: assignment.playerIds[0],
@@ -159,7 +238,10 @@ export const closeRoundForm = form(
 					setsToWin: tourney.setsToWin ?? 1,
 					decidingSetPoints: tourney.decidingSetPoints ?? 15
 				},
-				tourney.scoringOverrides as any
+				tourney.scoringOverrides as Record<
+					string,
+					{ pointsToWin?: number; setsToWin?: number; decidingSetPoints?: number }
+				>
 			);
 			const maxSets = getMaxSets(effective.setsToWin);
 
@@ -206,8 +288,8 @@ export const closeRoundForm = form(
 			)
 			.orderBy(courtRotation.courtNumber);
 
-		const activeCount = Math.min(physicalCourtCount, newRotations.length);
-		for (let i = 0; i < activeCount; i++) {
+		const activeCourtCount = Math.min(physicalCourtCount, newRotations.length);
+		for (let i = 0; i < activeCourtCount; i++) {
 			await db
 				.update(courtAccess)
 				.set({ isActive: true })

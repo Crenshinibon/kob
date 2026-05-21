@@ -5,7 +5,11 @@ import { eq } from 'drizzle-orm';
 
 import type { PageServerLoad } from './$types';
 import type { MatchData } from '$lib/server/tournament-logic';
-import { getMinPointsForSet, getScoringLabel } from '$lib/server/tournament-logic';
+import {
+	calculateCourtStandings,
+	getMinPointsForSet,
+	getScoringLabel
+} from '$lib/server/tournament-logic';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const token = params.token;
@@ -59,8 +63,31 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		playerNames[id] = playerMap.get(id) || 'Unknown';
 	});
 
-	// Calculate standings
-	const standings = calculateStandings(matches, playerNames);
+	// Map DB matches to MatchData and calculate standings using shared logic
+	const matchData: MatchData[] = matches.map((m) => ({
+		teamAPlayer1Id: m.teamAPlayer1Id,
+		teamAPlayer2Id: m.teamAPlayer2Id,
+		teamBPlayer1Id: m.teamBPlayer1Id,
+		teamBPlayer2Id: m.teamBPlayer2Id,
+		teamAScore: m.teamAScore,
+		teamBScore: m.teamBScore,
+		isCanceled: m.isCanceled ?? false,
+		injuredPlayerIds: m.injuredPlayerIds ?? undefined
+	}));
+
+	const standings = calculateCourtStandings(matchData, playerIds).map((s) => ({
+		...s,
+		name: playerNames[s.playerId] || 'Unknown',
+		matchesPlayed: matchData.filter(
+			(m) =>
+				!m.isCanceled &&
+				m.teamAScore !== null &&
+				(m.teamAPlayer1Id === s.playerId ||
+					m.teamAPlayer2Id === s.playerId ||
+					m.teamBPlayer1Id === s.playerId ||
+					m.teamBPlayer2Id === s.playerId)
+		).length
+	}));
 
 	const courtSize = (tourney as any).courtSizes
 		? ((JSON.parse((tourney as any).courtSizes) as number[])[rotation.courtNumber - 1] ??
@@ -177,67 +204,4 @@ interface Actions {
 		request: Request;
 		params: { token: string };
 	}) => Promise<{ success?: string; error?: string }>;
-}
-
-function calculateStandings(matches: MatchData[], playerNames: Record<number, string>) {
-	const stats: Record<
-		number,
-		{ id: number; points: number; for: number; against: number; matchesPlayed: number }
-	> = {};
-
-	// Get all player IDs from matches
-	const allPlayerIds = new Set<number>();
-	matches.forEach((m) => {
-		allPlayerIds.add(m.teamAPlayer1Id);
-		allPlayerIds.add(m.teamAPlayer2Id);
-		allPlayerIds.add(m.teamBPlayer1Id);
-		allPlayerIds.add(m.teamBPlayer2Id);
-	});
-
-	// Initialize stats
-	allPlayerIds.forEach((id) => {
-		stats[id] = { id, points: 0, for: 0, against: 0, matchesPlayed: 0 };
-	});
-
-	// Calculate stats from completed matches
-	matches.forEach((m) => {
-		if (m.teamAScore === null || m.teamBScore === null) return;
-
-		// Team A players
-		stats[m.teamAPlayer1Id].points += m.teamAScore;
-		stats[m.teamAPlayer1Id].for += m.teamAScore;
-		stats[m.teamAPlayer1Id].against += m.teamBScore;
-		stats[m.teamAPlayer1Id].matchesPlayed += 1;
-
-		stats[m.teamAPlayer2Id].points += m.teamAScore;
-		stats[m.teamAPlayer2Id].for += m.teamAScore;
-		stats[m.teamAPlayer2Id].against += m.teamBScore;
-		stats[m.teamAPlayer2Id].matchesPlayed += 1;
-
-		// Team B players
-		stats[m.teamBPlayer1Id].points += m.teamBScore;
-		stats[m.teamBPlayer1Id].for += m.teamBScore;
-		stats[m.teamBPlayer1Id].against += m.teamAScore;
-		stats[m.teamBPlayer1Id].matchesPlayed += 1;
-
-		stats[m.teamBPlayer2Id].points += m.teamBScore;
-		stats[m.teamBPlayer2Id].for += m.teamBScore;
-		stats[m.teamBPlayer2Id].against += m.teamAScore;
-		stats[m.teamBPlayer2Id].matchesPlayed += 1;
-	});
-
-	// Convert to array and sort
-	return Object.values(stats)
-		.map((s) => ({
-			...s,
-			name: playerNames[s.id] || 'Unknown',
-			diff: s.for - s.against,
-			avgPoints: s.matchesPlayed > 0 ? s.points / s.matchesPlayed : 0
-		}))
-		.sort((a, b) => {
-			if (b.points !== a.points) return b.points - a.points;
-			if (b.diff !== a.diff) return b.diff - a.diff;
-			return a.id - b.id;
-		})
-		.map((s, i) => ({ ...s, rank: i + 1 }));
 }

@@ -1,16 +1,31 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { getTournamentDataLive } from './tournament-data.remote';
 	import {
 		closeRoundForm,
 		deleteTournamentForm,
 		updateScoringOverrides
 	} from './tournament-actions.remote';
-	import type { TournamentDisplayData, CourtDisplayData } from './tournament-data.remote';
 	import { getEffectiveScoring, getScoringLabel } from '$lib/tournament-logic';
 	import CourtQRCode from '../../../components/CourtQRCode.svelte';
 
-	let { data } = $props<{ data: { tournamentId: number; tournament: any } }>();
+	let { data } = $props<{
+		data: {
+			tournamentId: number;
+			tournament: {
+				id: number;
+				name: string;
+				status: string;
+				numRounds: number;
+				pointsToWin?: number;
+				setsToWin?: number;
+				decidingSetPoints?: number;
+				scoringOverrides?: Record<
+					string,
+					{ pointsToWin?: number; setsToWin?: number; decidingSetPoints?: number }
+				> | null;
+			};
+		};
+	}>();
 
 	const liveQuery = $derived(getTournamentDataLive(data.tournamentId));
 	const isConnected = $derived(liveQuery.connected);
@@ -145,8 +160,11 @@
 
 						<div class="players">
 							{#each court.players as p, i (p.id)}
-								<span class="player">
+								<span class="player" class:retired={p.retired}>
 									{String.fromCharCode(65 + i)}: {p.name}
+									{#if p.retired}
+										<span class="retired-badge">Retired</span>
+									{/if}
 								</span>
 							{/each}
 						</div>
@@ -374,7 +392,9 @@
 									<option value="">— Select player —</option>
 									{#each courts as court}
 										{#each court.players as p}
-											<option value={p.id}>{p.name} (Court {court.courtNumber})</option>
+											{#if !p.retired}
+												<option value={p.id}>{p.name} (Court {court.courtNumber})</option>
+											{/if}
 										{/each}
 									{/each}
 								</select>
@@ -391,6 +411,52 @@
 								</select>
 							</div>
 							<button type="submit" class="btn-danger"> Retire Player </button>
+						</form>
+					</details>
+				</section>
+
+				<section class="injury-section">
+					<details>
+						<summary class="btn-injury-header">Report Injury</summary>
+						<form method="POST" action="?/reportInjury" class="injury-form">
+							<div class="field">
+								<label for="injuryPlayerId">Select injured player</label>
+								<select id="injuryPlayerId" name="playerId" required>
+									<option value="">— Select player —</option>
+									{#each courts as court}
+										{#each court.players as p}
+											{#if !p.retired}
+												<option value={p.id}>{p.name} (Court {court.courtNumber})</option>
+											{/if}
+										{/each}
+									{/each}
+								</select>
+							</div>
+							<div class="field">
+								<span class="label-text">How would you like to handle the remaining matches?</span>
+								<div
+									class="radio-group"
+									role="radiogroup"
+									aria-label="How would you like to handle the remaining matches?"
+								>
+									<label class="radio-label">
+										<input type="radio" name="option" value="substitute" required />
+										<span class="radio-title">Use a Substitute</span>
+										<span class="radio-desc">
+											Play 2v2 with a temporary substitute. Scores entered normally.
+										</span>
+									</label>
+									<label class="radio-label">
+										<input type="radio" name="option" value="cancel" required />
+										<span class="radio-title">Cancel &amp; Average</span>
+										<span class="radio-desc">
+											Cancel remaining matches. Standings use average points.
+										</span>
+									</label>
+								</div>
+							</div>
+							<input type="hidden" name="reason" value="injury" />
+							<button type="submit" class="btn-danger"> Confirm Injury </button>
 						</form>
 					</details>
 				</section>
@@ -829,6 +895,104 @@
 	}
 
 	.retire-form .btn-danger {
+		align-self: flex-start;
+	}
+
+	.player.retired {
+		opacity: 0.6;
+		text-decoration: line-through;
+	}
+
+	.retired-badge {
+		font-size: var(--font-size-xs);
+		color: var(--accent-error);
+		margin-left: 4px;
+		font-weight: 700;
+	}
+
+	.injury-section {
+		margin-top: var(--spacing-lg);
+	}
+
+	.btn-injury-header {
+		cursor: pointer;
+		font-weight: 600;
+		color: var(--text-muted);
+		padding: var(--spacing-sm);
+	}
+
+	.btn-injury-header:hover {
+		color: var(--text-secondary);
+	}
+
+	.injury-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-sm);
+		padding: var(--spacing-md);
+		background-color: var(--bg-card);
+		border: 2px solid var(--border-default);
+		border-radius: var(--radius-md);
+	}
+
+	.injury-form .field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+	}
+
+	.injury-form label,
+	.injury-form .label-text {
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+	}
+
+	.injury-form select {
+		min-height: 40px;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		font-size: var(--font-size-base);
+		background-color: var(--bg-input);
+		color: var(--text-input);
+		border: var(--border-thickness) solid var(--border-strong);
+		border-radius: var(--radius-sm);
+	}
+
+	.injury-form select:focus {
+		outline: none;
+		border-color: var(--border-focus);
+	}
+
+	.radio-group {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-xs);
+	}
+
+	.radio-label {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: var(--spacing-sm);
+		background-color: var(--bg-secondary);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+	}
+
+	.radio-title {
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+		color: var(--text-primary);
+	}
+
+	.radio-desc {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+	}
+
+	.injury-form .btn-danger {
 		align-self: flex-start;
 	}
 </style>

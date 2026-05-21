@@ -8,14 +8,15 @@ The project uses `npx`, `tsx`, and `npm run` in package.json scripts despite run
 
 Scripts using non-Bun tooling:
 
-| Script | Current | Issue |
-|--------|---------|-------|
-| `db:wipe` | `npx tsx scripts/wipe-tournaments.ts` | Uses `npx` + `tsx` (Bun runs TS natively) |
-| `db:cleanup` | `npx tsx scripts/cleanup-old-tournaments.ts` | Uses `npx` + `tsx` (Bun runs TS natively) |
-| `auth:schema` | `npx @better-auth/cli generate ...` | Uses `npx` instead of `bunx` |
-| All scripts | invoked via `npm run` | Should use `bun run` |
+| Script        | Current                                      | Issue                                     |
+| ------------- | -------------------------------------------- | ----------------------------------------- |
+| `db:wipe`     | `npx tsx scripts/wipe-tournaments.ts`        | Uses `npx` + `tsx` (Bun runs TS natively) |
+| `db:cleanup`  | `npx tsx scripts/cleanup-old-tournaments.ts` | Uses `npx` + `tsx` (Bun runs TS natively) |
+| `auth:schema` | `npx @better-auth/cli generate ...`          | Uses `npx` instead of `bunx`              |
+| All scripts   | invoked via `npm run`                        | Should use `bun run`                      |
 
 Dependencies that could be removed:
+
 - `dotenv` — Bun has built-in `.env` file loading
 - `tsx` (not even a direct dependency, but pulled in via npx)
 
@@ -77,6 +78,7 @@ Update all command references from `npm run` / `npx` to `bun run` / `bunx`.
 - Running scripts: `bun run script` (not `npm run script`)
 
 Exceptions are allowed when:
+
 - A tool explicitly requires Node.js runtime
 - A tool has known incompatibilities with Bun
 - The SvelteKit/Vite ecosystem requires npm-specific behavior
