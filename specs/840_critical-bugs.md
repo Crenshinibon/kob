@@ -19,7 +19,7 @@
 
 ---
 
-## Org Override for Non-Standard Court Scoring
+## ~~Org Override for Non-Standard Court Scoring~~ [FIXED]
 
 ### Problem
 
@@ -27,24 +27,14 @@
 - Currently these courts use fixed defaults (5p/6p: 1 set to 15, 3p: same as 4p)
 - When courts become relevant due to player retirements, org may want different scoring
 
-### Location
+### Fix Applied
 
-- Tournament settings UI (`src/routes/tournament/[id]/+page.svelte`)
-- Court page UI (`src/routes/court/[token]/+page.svelte`)
-- Score validation logic (`src/routes/court/[token]/scores.remote.ts`)
-
-### Expected Behavior
-
-- Org can configure per-court-type scoring overrides when tournament needs non-standard courts
-- Override options: points to win, win-by margin, sets to win
-- UI should show which court types are active (3p, 5p, 6p)
-- Overrides apply to all courts of that type in the tournament
-- Default values shown but editable
-
-### Notes
-
-- Related to player retirement feature (courts may change type mid-tournament)
-- Should be accessible from tournament settings or court management view
+- Added `scoringOverrides` JSONB column to `tournament` table (keyed by court size string)
+- Added `updateScoringOverrides` command in `tournament-actions.remote.ts` with validation
+- Scoring config UI on tournament page with `<details>` per-court-type fieldsets (edit/save/cancel)
+- `getEffectiveScoring()` merges base config with per-court-type overrides
+- All consumers use centralized scoring functions: `getMinPointsForSet`, `isDecidingSet`, `getScoringLabel`, `getMaxSets`
+- `closeRoundForm` generates correct number of set rows per court using effective scoring
 
 ---
 
@@ -64,7 +54,7 @@
 
 ---
 
-## Best-of-3 Score Entry: Set 3 Visibility, Deciding Set Rules, and Score Shifting
+## ~~Best-of-3 Score Entry: Set 3 Visibility, Deciding Set Rules, and Score Shifting~~ [FIXED]
 
 ### Problem
 
@@ -76,24 +66,13 @@ Three related issues with best-of-3 score entry:
 
 3. **Score values shift on save**: When entering points in all set fields and clicking save, the entered scores get "shifted around" — values appear in the wrong input fields after saving.
 
-### Location
+### Fix Applied
 
-- `src/routes/court/[token]/+page.svelte` - Set 3 visibility logic, score form rendering
-- `src/routes/court/[token]/scores.remote.ts` - `getMinPointsForSet` validation
-- `src/routes/court/[token]/scoreSchema.ts` - `createSetScoreSchema` deciding set logic
-- `src/routes/court/[token]/+page.server.ts` - Score cap calculation
-
-### Expected Behavior
-
-- Set 3 input fields hidden until sets 1 and 2 are both saved with one win each
-- Deciding set (set 3) validation enforces `decidingSetPoints` (default 15) as minimum
-- Score values stay in their correct input fields after save; no shifting
-
-### Notes
-
-- The "score shifting" bug likely stems from the `saveSetScore` form handler creating/updating match rows and the UI re-rendering with reordered data
-- Need to check if `setNumber` is correctly preserved when inserting/updating match rows
-- The `createSetScoreSchema` receives `setNumber` and `setsToWin` but may not correctly identify the deciding set when `setsToWin=2` (deciding set = set 3, i.e., `setNumber === setsToWin * 2 - 1`)
+- `shouldShowSet()` hides deciding set until sets 1 & 2 are both saved and split 1-1
+- `createSetScoreSchema` enforces `decidingSetPoints` as minimum for deciding set
+- `saveSetScore` server-side validation uses `getMinPointsForSet` with overrides
+- Score shifting fixed: keyed `{#each}` blocks, sets sorted by `setNumber`, `teamLabels` uses `Map<matchNumber, labels>` instead of array index
+- `matchGroups` uses `effectiveScoring.setsToWin` (override-aware) instead of base `setsToWin`
 
 ---
 
@@ -197,33 +176,20 @@ Three related issues with best-of-3 score entry:
 
 ---
 
-## Auto-Cleanup Jobs Needed
+## ~~Auto-Cleanup Jobs Needed~~ [FIXED]
 
 ### Problem
 
 - No automated cleanup of old tournaments
 - Database will accumulate stale data over time
 
-### Requirements
+### Fix Applied
 
-1. Delete tournaments that are closed and older than 14 days
-2. Delete tournaments that are not updated for 31 days
-
-### Location
-
-- New scheduled job or cron task
-- Database cleanup utility
-
-### Expected Behavior
-
-- Job runs daily (or on server startup)
-- Deletes tournaments matching criteria
-- Logs deleted tournament count
-
-### Notes
-
-- Manual cleanup script exists: `scripts/wipe-tournaments.ts`
-- V1 banner should warn users about data wipe policy
+- Created `scripts/cleanup-old-tournaments.ts` (`npm run db:cleanup`)
+- Deletes completed tournaments older than 14 days
+- Deletes any tournaments older than 31 days (inactive/stale)
+- Fixed `scripts/wipe-tournaments.ts` to use `dotenv` instead of broken `$env` import
+- Shared `scripts/db.ts` utility for database access outside SvelteKit
 
 ---
 

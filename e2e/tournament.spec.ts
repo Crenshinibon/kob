@@ -409,6 +409,191 @@ test.describe('Tournament Integration Tests', () => {
 			// Should show 15-point target hint in format explanation
 			await expect(page.locator('text=to 15')).toBeVisible();
 		});
+
+		test('best-of-3 tournament enforces per-set score entry', async ({ page }) => {
+			const tournamentName = `Bo3Score ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.waitForSelector('text=+ New Tournament');
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+
+			// Select best-of-3
+			await page.click('input[value="best-of-3"]');
+
+			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('.qr-link a');
+
+			// Go to first court
+			const courtLink = page.locator('.qr-link a').first();
+			const courtUrl = await courtLink.getAttribute('href');
+			expect(courtUrl).toBeTruthy();
+			expect(courtUrl).toContain('/court/');
+			await page.goto(courtUrl!);
+			await page.waitForURL(/\/court\//, { timeout: 10000 });
+			await page.waitForSelector('[data-testid^="set-form-"]', { timeout: 15000 });
+
+			// Should show sets UI with "Set 1" and "Set 2"
+			const setTexts = await page.locator('.set-card h4').allTextContents();
+			expect(setTexts.length).toBeGreaterThanOrEqual(2);
+			expect(setTexts[0]).toContain('Set 1');
+			expect(setTexts[1]).toContain('Set 2');
+
+			// Set 3 should NOT be visible initially (no results yet)
+			await expect(page.locator('h4:has-text("Set 3")')).not.toBeVisible();
+
+			// Get the first match group's set forms
+			const firstMatchGroup = page.locator('.match-run').first();
+			const set1Form = firstMatchGroup.locator('[data-testid^="set-form-"]').first();
+			const set1TestId = await set1Form.getAttribute('data-testid');
+			const set1MatchId = set1TestId?.replace('set-form-', '');
+
+			// Enter scores for Set 1 — below minimum 21 should fail
+			await page.fill(`[data-testid="team-a-score-${set1MatchId}"]`, '19');
+			await page.fill(`[data-testid="team-b-score-${set1MatchId}"]`, '17');
+			await page.click(`[data-testid="save-score-${set1MatchId}"]`);
+
+			// Should show error about minimum 21 points
+			await expect(page.locator('.error')).toContainText('21');
+
+			// Enter valid set 1 scores
+			await page.fill(`[data-testid="team-a-score-${set1MatchId}"]`, '21');
+			await page.fill(`[data-testid="team-b-score-${set1MatchId}"]`, '19');
+			await page.click(`[data-testid="save-score-${set1MatchId}"]`);
+
+			// Wait for save and page data refresh
+			await page.waitForLoadState('networkidle');
+			await page.waitForTimeout(500);
+
+			// Set 3 still should NOT be visible (only one set completed)
+			await expect(page.locator('h4:has-text("Set 3")')).not.toBeVisible();
+
+			// Enter set 2 scores within the SAME match group (team B wins to split 1-1)
+			const set2Form = firstMatchGroup.locator('[data-testid^="set-form-"]').first();
+			const set2TestId = await set2Form.getAttribute('data-testid');
+			const set2MatchId = set2TestId?.replace('set-form-', '');
+
+			await page.fill(`[data-testid="team-a-score-${set2MatchId}"]`, '19');
+			await page.fill(`[data-testid="team-b-score-${set2MatchId}"]`, '21');
+			await page.click(`[data-testid="save-score-${set2MatchId}"]`);
+
+			// Wait for save and page data refresh
+			await page.waitForLoadState('networkidle');
+			await page.waitForTimeout(500);
+
+			// Set 3 should NOW be visible (match is split 1-1)
+			await expect(page.locator('h4:has-text("Set 3")')).toBeVisible({ timeout: 10000 });
+
+			// Deciding set should show hint about 15 points
+			await expect(page.locator('.deciding-hint')).toContainText('15', { timeout: 5000 });
+
+			// Enter set 3 scores — below deciding set minimum 15 should fail
+			// Set 3 is now the only remaining form in the first match group
+			// (sets 1 and 2 are completed)
+			const set3Form = firstMatchGroup.locator('[data-testid^="set-form-"]').first();
+			const set3TestId = await set3Form.getAttribute('data-testid');
+			const set3MatchId = set3TestId?.replace('set-form-', '');
+
+			await page.fill(`[data-testid="team-a-score-${set3MatchId}"]`, '13');
+			await page.fill(`[data-testid="team-b-score-${set3MatchId}"]`, '11');
+			await page.click(`[data-testid="save-score-${set3MatchId}"]`);
+
+			// Server-side validation should reject scores below deciding set minimum (15)
+			await expect(firstMatchGroup.locator('.error p').first()).toContainText('15', {
+				timeout: 5000
+			});
+
+			// Valid deciding set scores
+			await page.fill(`[data-testid="team-a-score-${set3MatchId}"]`, '15');
+			await page.fill(`[data-testid="team-b-score-${set3MatchId}"]`, '13');
+			await page.click(`[data-testid="save-score-${set3MatchId}"]`);
+			await expect(firstMatchGroup.locator('.saved').first()).toBeVisible({ timeout: 10000 });
+		});
+
+		test('single-set tournament rejects scores below minimum', async ({ page }) => {
+			const tournamentName = `SingleScore ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.waitForSelector('text=+ New Tournament');
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+
+			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('.qr-link a');
+
+			const courtUrl = await page.locator('.qr-link a').first().getAttribute('href');
+			await page.goto(courtUrl || '');
+
+			await page.waitForSelector('[data-testid^="match-form-"]');
+
+			// Should NOT show sets UI
+			await expect(page.locator('text=Set 1')).not.toBeVisible();
+
+			// Enter scores below minimum 21
+			const form = page.locator('[data-testid^="match-form-"]').first();
+			const testId = await form.getAttribute('data-testid');
+			const matchId = testId?.replace('match-form-', '');
+
+			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '18');
+			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '16');
+			await page.click(`[data-testid="save-score-${matchId}"]`);
+
+			await expect(page.locator('.error')).toContainText('21');
+
+			// Valid scores
+			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
+			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
+			await page.click(`[data-testid="save-score-${matchId}"]`);
+			await page.waitForSelector('.saved');
+		});
+
+		test('5p court rejects scores below 15-point minimum', async ({ page }) => {
+			const tournamentName = `5pValidation ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.waitForSelector('text=+ New Tournament');
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="numRounds"]', '1');
+
+			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('.qr-link a');
+
+			// Navigate to 5p court (last one)
+			const courtUrl = await page.locator('.qr-link a').last().getAttribute('href');
+			await page.goto(courtUrl || '');
+
+			await page.waitForSelector('[data-testid^="match-form-"]');
+
+			const form = page.locator('[data-testid^="match-form-"]').first();
+			const testId = await form.getAttribute('data-testid');
+			const matchId = testId?.replace('match-form-', '');
+
+			// Enter scores below 5p minimum (15)
+			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '13');
+			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '11');
+			await page.click(`[data-testid="save-score-${matchId}"]`);
+
+			await expect(page.locator('.error')).toContainText('15');
+
+			// Valid 15-point scores
+			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '15');
+			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '13');
+			await page.click(`[data-testid="save-score-${matchId}"]`);
+			await page.waitForSelector('.saved');
+		});
 	});
 
 	test.describe('Virtual Courts (Physical < Virtual)', () => {

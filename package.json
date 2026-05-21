@@ -22,7 +22,8 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
 		"auth:schema": "npx @better-auth/cli generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes",
-		"db:wipe": "npx tsx scripts/wipe-tournaments.ts"
+		"db:wipe": "npx tsx scripts/wipe-tournaments.ts",
+		"db:cleanup": "npx tsx scripts/cleanup-old-tournaments.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.1.0",

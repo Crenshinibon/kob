@@ -1,4 +1,5 @@
 import { form } from '$app/server';
+import { invalid } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { match, courtAccess, tournament, courtRotation } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
@@ -78,16 +79,16 @@ async function getMatchContext(matchId: number) {
 	return { matchRecord, rotation, tourney };
 }
 
-export const saveScore = form(baseScoreSchema, async (data) => {
+export const saveScore = form(baseScoreSchema, async (data, issue) => {
 	const matchId = parseInt(data.matchId);
 	const teamAScore = data.teamAScore;
 	const teamBScore = data.teamBScore;
 
 	const ctx = await getMatchContext(matchId);
-	if (!ctx) return { error: 'Invalid match' };
-	if ('error' in ctx) return { error: ctx.error };
+	if (!ctx) invalid(issue.teamAScore('Invalid match'));
+	if (ctx && 'error' in ctx) invalid(issue.teamAScore(ctx.error ?? 'Court error'));
 
-	const { matchRecord, rotation, tourney } = ctx;
+	const { matchRecord, rotation, tourney } = ctx!;
 	const config = {
 		pointsToWin: tourney.pointsToWin ?? 21,
 		setsToWin: tourney.setsToWin ?? 1,
@@ -102,7 +103,10 @@ export const saveScore = form(baseScoreSchema, async (data) => {
 	const maxScore = Math.max(teamAScore, teamBScore);
 
 	if (maxScore < minPoints) {
-		return { error: `Winner must have at least ${minPoints} points` };
+		invalid(
+			issue.teamAScore(`Winner must have at least ${minPoints} points`),
+			issue.teamBScore(`Winner must have at least ${minPoints} points`)
+		);
 	}
 
 	await db.update(match).set({ teamAScore, teamBScore }).where(eq(match.id, matchId));
@@ -110,17 +114,17 @@ export const saveScore = form(baseScoreSchema, async (data) => {
 	return { success: true, matchId, teamAScore, teamBScore };
 });
 
-export const saveSetScore = form(setScoreSchema, async (data) => {
+export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 	const matchId = parseInt(data.matchId);
 	const setNumber = data.setNumber;
 	const teamAScore = data.teamAScore;
 	const teamBScore = data.teamBScore;
 
 	const ctx = await getMatchContext(matchId);
-	if (!ctx) return { error: 'Invalid match' };
-	if ('error' in ctx) return { error: ctx.error };
+	if (!ctx) invalid(issue.teamAScore('Invalid match'));
+	if (ctx && 'error' in ctx) invalid(issue.teamAScore(ctx.error ?? 'Court error'));
 
-	const { matchRecord, rotation, tourney } = ctx;
+	const { matchRecord, rotation, tourney } = ctx!;
 	const config = {
 		pointsToWin: tourney.pointsToWin ?? 21,
 		setsToWin: tourney.setsToWin ?? 1,
@@ -135,7 +139,10 @@ export const saveSetScore = form(setScoreSchema, async (data) => {
 	const maxScore = Math.max(teamAScore, teamBScore);
 
 	if (maxScore < minPoints) {
-		return { error: `Winner must have at least ${minPoints} points` };
+		invalid(
+			issue.teamAScore(`Winner must have at least ${minPoints} points`),
+			issue.teamBScore(`Winner must have at least ${minPoints} points`)
+		);
 	}
 
 	const [existingSet] = await db

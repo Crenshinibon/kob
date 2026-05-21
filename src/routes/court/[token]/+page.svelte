@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
+	import { SvelteMap } from 'svelte/reactivity';
 	import { browser } from '$app/environment';
 	import QRCode from 'qrcode';
 
@@ -19,8 +20,11 @@
 
 	// Track which matches are being saved
 	let savingMatches = $state<Set<number>>(new Set());
-	// Track which matches are being edited (for authenticated users)
 	let editingMatches = $state<Set<number>>(new Set());
+	let savedSetScores = $state<SvelteMap<number, { teamAScore: number; teamBScore: number }>>(
+		new SvelteMap()
+	);
+	let formErrors = $state<SvelteMap<number, string[]>>(new SvelteMap());
 	// Dynamic score schema based on court's minimum points
 	const effectiveScoring = $derived(
 		getEffectiveScoring(
@@ -41,7 +45,7 @@
 	// Group matches by matchNumber for best-of-3 support
 	const matchGroups = $derived(() => {
 		const courtSize = data.court.courtSize;
-		const setsToWin = data.court.setsToWin ?? 1;
+		const setsToWin = effectiveScoring.setsToWin;
 
 		if (setsToWin > 1) {
 			// Group matches by matchNumber
@@ -181,23 +185,31 @@
 		const set1 = sets.find((s) => s.setNumber === 1);
 		const set2 = sets.find((s) => s.setNumber === 2);
 		if (!set1 || !set2) return false;
-		if (set1.teamAScore === null || set2.teamAScore === null) return false;
 
-		const teamAWins =
-			(set1.teamAScore > set1.teamBScore ? 1 : 0) + (set2.teamAScore > set2.teamBScore ? 1 : 0);
-		const teamBWins =
-			(set1.teamBScore > set1.teamAScore ? 1 : 0) + (set2.teamBScore > set2.teamAScore ? 1 : 0);
+		const s1A = set1.teamAScore ?? savedSetScores.get(set1.id)?.teamAScore;
+		const s1B = set1.teamBScore ?? savedSetScores.get(set1.id)?.teamBScore;
+		const s2A = set2.teamAScore ?? savedSetScores.get(set2.id)?.teamAScore;
+		const s2B = set2.teamBScore ?? savedSetScores.get(set2.id)?.teamBScore;
+
+		if (s1A === null || s1B === null || s2A === null || s2B === null) return false;
+
+		const teamAWins = (s1A > s1B ? 1 : 0) + (s2A > s2B ? 1 : 0);
+		const teamBWins = (s1B > s1A ? 1 : 0) + (s2B > s2A ? 1 : 0);
 
 		return teamAWins >= 1 && teamBWins >= 1;
 	}
 
 	function renderMatch(match: any, index: number) {
 		const scoreForm = saveScore.for(match.id);
-		const issues = scoreForm.fields.allIssues() ?? [];
 		const isSaving = savingMatches.has(match.id);
 		const isEditing = editingMatches.has(match.id);
+		const preflightIssues = scoreForm.fields.allIssues() ?? [];
+		const currentErrors = [
+			...(formErrors.get(match.id) ?? []),
+			...preflightIssues.map((i: any) => i.message)
+		];
 
-		return { match, scoreForm, issues, isSaving, isEditing, index };
+		return { match, scoreForm, currentErrors, isSaving, isEditing, index };
 	}
 </script>
 
@@ -291,9 +303,13 @@
 									{@const setNum = setMatch.setNumber}
 									{#if shouldShowSet(setNum, group.sets)}
 										{@const scoreForm = saveSetScore.for(setMatch.id)}
-										{@const issues = scoreForm.fields.allIssues() ?? []}
 										{@const isSaving = savingMatches.has(setMatch.id)}
 										{@const isEditing = editingMatches.has(setMatch.id)}
+										{@const preflightIssues = scoreForm.fields.allIssues() ?? []}
+										{@const currentErrors = [
+											...(formErrors.get(setMatch.id) ?? []),
+											...preflightIssues.map((i: any) => i.message)
+										]}
 										{@const setScoreSchema = createSetScoreSchema(
 											effectiveScoring.pointsToWin,
 											effectiveScoring.decidingSetPoints,
@@ -329,32 +345,59 @@
 													{/if}
 												</div>
 											{:else}
-												{#if issues.length > 0 && !isSaving}
+												{#if currentErrors.length > 0 && !isSaving}
 													<div class="error">
-														{#each issues as issue}
-															<p>{issue.message}</p>
+														{#each currentErrors as msg, ei (ei)}
+															<p>{msg}</p>
 														{/each}
 													</div>
 												{/if}
 												<form
 													data-testid="set-form-{setMatch.id}"
-													{...scoreForm.preflight(setScoreSchema).enhance(async ({ submit }) => {
-														savingMatches = new Set([...savingMatches, setMatch.id]);
-														try {
-															await submit();
-															if (isEditing) {
-																editingMatches = new Set(
-																	[...editingMatches].filter((id) => id !== setMatch.id)
+													{...scoreForm
+														.preflight(setScoreSchema)
+														.enhance(async ({ submit, form }) => {
+															savingMatches = new Set([...savingMatches, setMatch.id]);
+															formErrors.delete(setMatch.id);
+															const formData = new FormData(form);
+															const teamA = parseInt(formData.get('teamAScore') as string);
+															const teamB = parseInt(formData.get('teamBScore') as string);
+															const minPts = isDecidingSet(setNum, effectiveScoring.setsToWin)
+																? effectiveScoring.decidingSetPoints
+																: effectiveScoring.pointsToWin;
+															try {
+																const result = await submit();
+																if (result) {
+																	savedSetScores.set(setMatch.id, {
+																		teamAScore: teamA,
+																		teamBScore: teamB
+																	});
+																	if (isEditing) {
+																		editingMatches = new Set(
+																			[...editingMatches].filter((id) => id !== setMatch.id)
+																		);
+																	}
+																} else {
+																	const serverIssues = scoreForm.fields.allIssues() ?? [];
+																	const messages =
+																		serverIssues.length > 0
+																			? serverIssues.map((i: any) => i.message)
+																			: [`Winner must have at least ${minPts} points`];
+																	formErrors.set(setMatch.id, messages);
+																}
+															} catch {
+																const serverIssues = scoreForm.fields.allIssues() ?? [];
+																const messages =
+																	serverIssues.length > 0
+																		? serverIssues.map((i: any) => i.message)
+																		: [`Winner must have at least ${minPts} points`];
+																formErrors.set(setMatch.id, messages);
+															} finally {
+																savingMatches = new Set(
+																	[...savingMatches].filter((id) => id !== setMatch.id)
 																);
 															}
-														} catch (error) {
-															console.log(error);
-														} finally {
-															savingMatches = new Set(
-																[...savingMatches].filter((id) => id !== setMatch.id)
-															);
-														}
-													})}
+														})}
 												>
 													<input type="hidden" name="matchId" value={setMatch.id} />
 													<input type="hidden" name="setNumber" value={setNum} />
@@ -428,10 +471,10 @@
 								{#each group.matches as match (match.id)}
 									{@const render = renderMatch(match, data.matches.indexOf(match))}
 									<div class="match" transition:slide>
-										{#if render.issues.length > 0 && !render.isSaving}
+										{#if render.currentErrors.length > 0 && !render.isSaving}
 											<div class="error" transition:slide>
-												{#each render.issues as issue}
-													<p>{issue.message}</p>
+												{#each render.currentErrors as msg, ei (ei)}
+													<p>{msg}</p>
 												{/each}
 											</div>
 										{/if}
@@ -474,15 +517,34 @@
 													.preflight(dynamicScoreSchema)
 													.enhance(async ({ submit }) => {
 														savingMatches = new Set([...savingMatches, match.id]);
+														formErrors.delete(match.id);
 														try {
-															await submit();
-															if (render.isEditing) {
-																editingMatches = new Set(
-																	[...editingMatches].filter((id) => id !== match.id)
-																);
+															const result = await submit();
+															if (result) {
+																if (render.isEditing) {
+																	editingMatches = new Set(
+																		[...editingMatches].filter((id) => id !== match.id)
+																	);
+																}
+															} else {
+																const serverIssues = render.scoreForm.fields.allIssues() ?? [];
+																const messages =
+																	serverIssues.length > 0
+																		? serverIssues.map((i: any) => i.message)
+																		: [
+																				`Winner must have at least ${data.court.minPoints ?? 21} points`
+																			];
+																formErrors.set(match.id, messages);
 															}
-														} catch (error) {
-															console.log(error);
+														} catch {
+															const serverIssues = render.scoreForm.fields.allIssues() ?? [];
+															const messages =
+																serverIssues.length > 0
+																	? serverIssues.map((i: any) => i.message)
+																	: [
+																			`Winner must have at least ${data.court.minPoints ?? 21} points`
+																		];
+															formErrors.set(match.id, messages);
 														} finally {
 															savingMatches = new Set(
 																[...savingMatches].filter((id) => id !== match.id)
@@ -565,10 +627,10 @@
 				{#each data.matches as match, index (match.id)}
 					{@const render = renderMatch(match, index)}
 					<div class="match" transition:slide>
-						{#if render.issues.length > 0 && !render.isSaving}
+						{#if render.currentErrors.length > 0 && !render.isSaving}
 							<div class="error" transition:slide>
-								{#each render.issues as issue}
-									<p>{issue.message}</p>
+								{#each render.currentErrors as msg, ei (ei)}
+									<p>{msg}</p>
 								{/each}
 							</div>
 						{/if}
@@ -608,13 +670,30 @@
 								data-testid="match-form-{match.id}"
 								{...render.scoreForm.preflight(dynamicScoreSchema).enhance(async ({ submit }) => {
 									savingMatches = new Set([...savingMatches, match.id]);
+									formErrors.delete(match.id);
 									try {
-										await submit();
-										if (render.isEditing) {
-											editingMatches = new Set([...editingMatches].filter((id) => id !== match.id));
+										const result = await submit();
+										if (result) {
+											if (render.isEditing) {
+												editingMatches = new Set(
+													[...editingMatches].filter((id) => id !== match.id)
+												);
+											}
+										} else {
+											const serverIssues = render.scoreForm.fields.allIssues() ?? [];
+											const messages =
+												serverIssues.length > 0
+													? serverIssues.map((i: any) => i.message)
+													: [`Winner must have at least ${data.court.minPoints ?? 21} points`];
+											formErrors.set(match.id, messages);
 										}
-									} catch (error) {
-										console.log(error);
+									} catch {
+										const serverIssues = render.scoreForm.fields.allIssues() ?? [];
+										const messages =
+											serverIssues.length > 0
+												? serverIssues.map((i: any) => i.message)
+												: [`Winner must have at least ${data.court.minPoints ?? 21} points`];
+										formErrors.set(match.id, messages);
 									} finally {
 										savingMatches = new Set([...savingMatches].filter((id) => id !== match.id));
 									}

@@ -2,15 +2,17 @@
 
 ## ToDo
 
-- [] There should be a way to remove a player from the tournament during a round and the affected court should handle this gracefully.Adjusting the court to a different format (to 3p from 4p, to 5p from 6p, to 4p from 5p) is not an option, because we would have to deal with already played matches and how to score the other players. I guess we need to investigate here, a little bit.
-- [] add job to delete tournaments that are closed and older then 14 days
-- [] add job to delete tournaments that are not updated for 31 days
+- [] For the package.json scripts why are we using node/npx/tsx for some things. We are in a Bun environment and should use Bun and it's build in abilities as far as possible.
+- [] There should be a way to remove a player from the tournament during a round and the affected court should handle this gracefully.Adjusting the court to a different format (to 3p from 4p, to 6p from 5p, to 4p from 5p) is not an option, because we would have to deal with already played matches and how to score the other players. I guess we need to investigate here, a little bit.
 - [] add tests for 5p / 6p court redistribution
 - [] we need a banner (for v1) to show that the data will be wiped
-- [] Integration tests (in tournament.spec.ts) "scoring modes"" should go a step further and test that the scores must be entered as dictated by the selected mode.
 
 ## Done
 
+- [x] Integration tests (in tournament.spec.ts) "scoring modes" should go a step further and test that the scores must be entered as dictated by the selected mode. (Fixed: best-of-3 per-set validation, single-set min points, 5p min points E2E tests all pass)
+- [x] add job to delete tournaments that are closed and older then 14 days
+- [x] add script to wipe all tournaments from the database (`npm run db:wipe`)
+- [x] add job to delete tournaments that are not updated for 31 days
 - [x] For Best-Of-3 matches the entry for the third set should only be visible when each team one a set. Also the rules 3rd set to 15 are not enforced. Entering the scores is weird also, when I enter points in all fields and then click save. The entered scores "are shifted around". (Fixed: deciding set shown only when split 1-1, min points enforced per set, score shifting fixed with keyed {#each}, sorted sets, correct team labels lookup)
 - [x] Tournament view layout is broken, it covers whole width of the browser, instead of the previous "centralized" layout.
 - [x] We need an option for the Org, to overwrite the "scoring mode" for the 6p, 3p, and 5p courts, if they are (or become, because of retiring players) relevant for his tournament. (Fixed: scoringOverrides JSONB column on tournament, per-court-type scoring config UI)
@@ -21,14 +23,12 @@
 - [x] await_reactivity_loss warning on the tournament page - fixed by wrapping live query call in $derived
 - [x] Score validation not enforced correctly (6p court accepted 13 vs 11) - removed point caps, now enforces minimum points + win by 2 only
 - [x] E2E test configuration - global-setup.ts and db.ts properly configured with dotenv
-
 - [x] 3p court in the matchups, the single player is shown twice
 - [x] 5p court in the matchups, it should be clearer which matches "belong together", are executed simultaneously. And don't duplicate the match up in the top row. (Fixed: parallel games now share fixed team, UI shows run details)
 - [x] 6p court in the matchups, it should be clearer which matches "belong together" (parallel games) and there is a bug. The first team in the first game should be the same as the first team in the second match, otherwise parallel games are not possible. (Fixed: parallel games now share fixed team per spec)
 - [x] also for non-standard games we need an explanation of the format and how it should work
 - [x] when we enter more than 64 names the system should raise a warning/error, that only max 64 are supported and that at least one player must be removed to proceed
 - [x] add auto cleanup after test runs
-- [x] add script to wipe all tournaments from the database (`npm run db:wipe`)
 - [x] QR codes in round overview are sometimes not loaded fast enough and don't update, when ready
 - [x] Round overview live query is not working also?
 - [x] closeRound errors hard: requested(...) can only be called in the context of a command/form remote function
