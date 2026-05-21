@@ -263,7 +263,7 @@
 
 		<div class="advanced-section" class:hidden={scoringMode !== 'custom'}>
 			<div class="field">
-				<label>Match Format</label>
+				<span class="label">Match Format</span>
 				<div class="radio-group">
 					<label class="radio-label">
 						<input
@@ -286,7 +286,7 @@
 				</div>
 			</div>
 			<div class="field">
-				<label>Win By</label>
+				<span class="label">Win By</span>
 				<div class="radio-group">
 					<label class="radio-label">
 						<input
@@ -847,25 +847,6 @@
 
 	.advanced-section .field {
 		gap: var(--spacing-xs);
-	}
-
-	.advanced-section select {
-		min-height: 40px;
-		width: 100%;
-		padding: var(--spacing-xs) var(--spacing-sm);
-		font-size: var(--font-size-base);
-		background-color: var(--bg-input);
-		color: var(--text-input);
-		border: 2px solid var(--border-strong);
-		border-radius: var(--radius-sm);
-		cursor: pointer;
-		appearance: auto;
-	}
-
-	.advanced-section select:focus-visible {
-		outline: 2px solid var(--border-focus);
-		outline-offset: -2px;
-		border-color: var(--border-strong);
 	}
 
 	.advanced-section input[type='number'] {

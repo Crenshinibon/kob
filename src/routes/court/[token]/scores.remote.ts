@@ -4,7 +4,7 @@ import { match, courtAccess, tournament, courtRotation } from '$lib/server/db/sc
 import { eq, and } from 'drizzle-orm';
 import * as v from 'valibot';
 
-function getScoreCapForSet(setNumber: number, courtSize: number, tourney: typeof tournament.$inferSelect): number {
+function getMinPointsForSet(setNumber: number, courtSize: number, tourney: typeof tournament.$inferSelect): number {
 	const setsToWin = tourney.setsToWin ?? 1;
 	const pointsToWin = tourney.pointsToWin ?? 21;
 	const decidingSetPoints = tourney.decidingSetPoints ?? 15;
@@ -98,11 +98,11 @@ export const saveScore = form(baseScoreSchema, async (data) => {
 		.from(tournament)
 		.where(eq(tournament.id, rotation.tournamentId));
 
-	const scoreCap = getScoreCapForSet(1, rotation.courtSize, tourney);
+	const minPoints = getMinPointsForSet(1, rotation.courtSize, tourney);
 	const maxScore = Math.max(teamAScore, teamBScore);
 
-	if (maxScore < scoreCap) {
-		return { error: `Winner must have at least ${scoreCap} points` };
+	if (maxScore < minPoints) {
+		return { error: `Winner must have at least ${minPoints} points` };
 	}
 
 	await db.update(match).set({ teamAScore, teamBScore }).where(eq(match.id, matchId));
@@ -141,11 +141,11 @@ export const saveSetScore = form(setScoreSchema, async (data) => {
 		.from(tournament)
 		.where(eq(tournament.id, rotation.tournamentId));
 
-	const scoreCap = getScoreCapForSet(setNumber, rotation.courtSize, tourney);
+	const minPoints = getMinPointsForSet(setNumber, rotation.courtSize, tourney);
 	const maxScore = Math.max(teamAScore, teamBScore);
 
-	if (maxScore < scoreCap) {
-		return { error: `Winner must have at least ${scoreCap} points` };
+	if (maxScore < minPoints) {
+		return { error: `Winner must have at least ${minPoints} points` };
 	}
 
 	const [existingSet] = await db

@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 
-export function createScoreSchema(scoreCap: number) {
+export function createScoreSchema(minPoints: number) {
 	return v.pipe(
 		v.object({
 			matchId: v.pipe(v.string(), v.nonEmpty()),
@@ -20,18 +20,13 @@ export function createScoreSchema(scoreCap: number) {
 		}, 'Scores cannot be tied'),
 		v.check((input) => {
 			const maxScore = Math.max(input.teamAScore, input.teamBScore);
-			return maxScore >= scoreCap;
-		}, `Winner must have at least ${scoreCap} points`),
+			return maxScore >= minPoints;
+		}, `Winner must have at least ${minPoints} points`),
 		v.check((input) => {
 			const maxScore = Math.max(input.teamAScore, input.teamBScore);
 			const minScore = Math.min(input.teamAScore, input.teamBScore);
 			return maxScore - minScore >= 2;
-		}, 'Winner must win by at least 2 points'),
-		v.check((input) => {
-			const maxScore = Math.max(input.teamAScore, input.teamBScore);
-			const minScore = Math.min(input.teamAScore, input.teamBScore);
-			return maxScore <= scoreCap || maxScore - minScore === 2;
-		}, 'Points difference can only be 2 with over-point games')
+		}, 'Winner must win by at least 2 points')
 	);
 }
 
@@ -65,11 +60,6 @@ export function createSetScoreSchema(regularPoints: number, decidingPoints: numb
 			const maxScore = Math.max(input.teamAScore, input.teamBScore);
 			const minScore = Math.min(input.teamAScore, input.teamBScore);
 			return maxScore - minScore >= 2;
-		}, 'Winner must win by at least 2 points'),
-		v.check((input) => {
-			const maxScore = Math.max(input.teamAScore, input.teamBScore);
-			const minScore = Math.min(input.teamAScore, input.teamBScore);
-			return maxScore <= pointsToWin || maxScore - minScore === 2;
-		}, 'Points difference can only be 2 with over-point games')
+		}, 'Winner must win by at least 2 points')
 	);
 }

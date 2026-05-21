@@ -199,7 +199,7 @@ test.describe('Standings Calculation', () => {
 		expect(parseInt(topPlayerPoints || '0')).toBeGreaterThan(60);
 	});
 
-	test('validates score entry rules (min 21, win by 2)', async ({ page }) => {
+	test('validates score entry rules (min points, win by 2, no cap)', async ({ page }) => {
 		const tournamentName = `Validation Test ${Date.now()}`;
 		testTournamentNames.push(tournamentName);
 
@@ -234,7 +234,7 @@ test.describe('Standings Calculation', () => {
 
 		await page.waitForSelector('.error');
 		const errorText2 = await page.locator('.error').textContent();
-		expect(errorText2?.toLowerCase()).toContain('tie');
+		expect(errorText2?.toLowerCase()).toContain('tied');
 
 		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '20');
@@ -243,6 +243,12 @@ test.describe('Standings Calculation', () => {
 		await page.waitForSelector('.error');
 		const errorText3 = await page.locator('.error').textContent();
 		expect(errorText3).toContain('2');
+
+		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '30');
+		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '28');
+		await page.click(`[data-testid="save-score-${matchId}"]`);
+
+		await page.waitForSelector('.saved');
 	});
 
 	test.describe('Non-Standard Court Standings', () => {
@@ -503,6 +509,7 @@ test.describe('Standings Calculation', () => {
 		});
 	});
 
+	test.describe('Non-Standard Court Score Validation', () => {
 		test('5p court accepts 15-point scores', async ({ page }) => {
 			const tournamentName = `5pScore ${Date.now()}`;
 			testTournamentNames.push(tournamentName);

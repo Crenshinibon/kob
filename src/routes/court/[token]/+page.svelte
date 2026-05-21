@@ -20,8 +20,8 @@
 	let savingMatches = $state<Set<number>>(new Set());
 	// Track which matches are being edited (for authenticated users)
 	let editingMatches = $state<Set<number>>(new Set());
-	// Dynamic score schema based on court's score cap
-	const dynamicScoreSchema = $derived(createScoreSchema(data.court.scoreCap ?? 21));
+	// Dynamic score schema based on court's minimum points
+	const dynamicScoreSchema = $derived(createScoreSchema(data.court.minPoints ?? 21));
 	// Track completed matches locally for smooth transitions
 	let completedMatches = $derived<Set<number>>(
 		new Set(data.matches.filter((m: any) => m.teamAScore !== null).map((m: any) => m.id))

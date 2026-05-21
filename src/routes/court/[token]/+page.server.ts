@@ -70,19 +70,19 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const decidingSetPoints = tourney.decidingSetPoints ?? 15;
 	const setsToWin = tourney.setsToWin ?? 1;
 
-	let scoreCap: number;
+	let minPoints: number;
 	if (setsToWin >= 2) {
-		scoreCap = Math.min(pointsToWin, decidingSetPoints);
+		minPoints = Math.min(pointsToWin, decidingSetPoints);
 	} else if (courtSize >= 5) {
-		scoreCap = pointsToWin === 21 ? 15 : pointsToWin;
+		minPoints = pointsToWin === 21 ? 15 : pointsToWin;
 	} else {
-		scoreCap = pointsToWin;
+		minPoints = pointsToWin;
 	}
 
 	const scoringLabel =
 		setsToWin >= 2
 			? `Best of ${setsToWin} (${pointsToWin}pt, deciding: ${decidingSetPoints}pt)`
-			: `1 set to ${scoreCap}`;
+			: `1 set to ${minPoints}`;
 
 	return {
 		court: {
@@ -91,7 +91,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			roundNumber: rotation.roundNumber,
 			courtSize,
 			playerNames,
-			scoreCap,
+			minPoints,
 			scoringLabel,
 			setsToWin,
 			pointsToWin,
@@ -158,17 +158,17 @@ export const actions: Actions = {
 		const decidingSetPoints = tourney.decidingSetPoints ?? 15;
 		const setsToWin = tourney.setsToWin ?? 1;
 
-		let scoreCap: number;
+		let minPoints: number;
 		if (setsToWin >= 2) {
-			scoreCap = Math.min(pointsToWin, decidingSetPoints);
+			minPoints = Math.min(pointsToWin, decidingSetPoints);
 		} else if (courtSize >= 5) {
-			scoreCap = pointsToWin === 21 ? 15 : pointsToWin;
+			minPoints = pointsToWin === 21 ? 15 : pointsToWin;
 		} else {
-			scoreCap = pointsToWin;
+			minPoints = pointsToWin;
 		}
 
-		if (maxScore < scoreCap) {
-			return { error: `Winner must have at least ${scoreCap} points` };
+		if (maxScore < minPoints) {
+			return { error: `Winner must have at least ${minPoints} points` };
 		}
 
 		// Save score

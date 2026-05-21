@@ -2,6 +2,7 @@
 
 ## ToDo
 
+- [] Tournament view layout is broken, it covers whole width of the browser, instead of the previous "centralized" layout.
 - [] Change the input type from <select> for "Match Format" and "Win By" to "radio", because we have only two options.
 - [] We need an option for the Org, to overwrite the "scoring mode" for the 6p, 3p, and 5p courts, if they are (or become, because of retiring players) relevant for his tournament. 
 - [] There should be a way to remove a player from the tournament during a round and the affected court should handle this gracefully.Adjusting the court to a different format (to 3p from 4p, to 5p from 6p, to 4p from 5p) is not an option, because we would have to deal with already played matches and how to score the other players. I guess we need to investigate here, a little bit.
