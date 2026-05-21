@@ -7,10 +7,10 @@
 
 	let { data } = $props<{ data: { tournamentId: number; tournament: any } }>();
 
-	const liveQuery = $derived(getTournamentDataLive(data.tournamentId));
-	const state = $derived(await liveQuery);
+	const liveQuery = getTournamentDataLive(data.tournamentId);
 	const isConnected = $derived(liveQuery.connected);
 
+	const state = $derived(liveQuery.current);
 	const tournament = $derived(state?.tournament);
 	const courts = $derived(state?.courts ?? []);
 	const currentRound = $derived(state?.currentRound ?? 0);
@@ -393,6 +393,8 @@
 		background-color: var(--bg-secondary);
 		padding: 2px 8px;
 		border-radius: 4px;
+		align-self: flex-start;
+		line-height: 1.4;
 	}
 
 	.qr-link a {

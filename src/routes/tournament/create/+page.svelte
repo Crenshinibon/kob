@@ -263,28 +263,50 @@
 
 		<div class="advanced-section" class:hidden={scoringMode !== 'custom'}>
 			<div class="field">
-				<label for="setsToWin">Match Format</label>
-				<select
-					id="setsToWin"
-					name="setsToWin"
-					bind:value={customFormat}
-					disabled={scoringMode !== 'custom'}
-				>
-					<option value="1">Single set</option>
-					<option value="2">Best of 3</option>
-				</select>
+				<label>Match Format</label>
+				<div class="radio-group">
+					<label class="radio-label">
+						<input
+							type="radio"
+							name="customFormat"
+							value="1"
+							bind:group={customFormat}
+						/>
+						Single set
+					</label>
+					<label class="radio-label">
+						<input
+							type="radio"
+							name="customFormat"
+							value="2"
+							bind:group={customFormat}
+						/>
+						Best of 3
+					</label>
+				</div>
 			</div>
 			<div class="field">
-				<label for="winBy">Win By</label>
-				<select
-					id="winBy"
-					name="winBy"
-					bind:value={customWinBy}
-					disabled={scoringMode !== 'custom'}
-				>
-					<option value={2}>2 points</option>
-					<option value={1}>1 point</option>
-				</select>
+				<label>Win By</label>
+				<div class="radio-group">
+					<label class="radio-label">
+						<input
+							type="radio"
+							name="customWinBy"
+							value="2"
+							bind:group={customWinBy}
+						/>
+						2 points
+					</label>
+					<label class="radio-label">
+						<input
+							type="radio"
+							name="customWinBy"
+							value="1"
+							bind:group={customWinBy}
+						/>
+						1 point
+					</label>
+				</div>
 			</div>
 			{#if customFormat === '1'}
 				<div class="field">
@@ -497,6 +519,30 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-sm);
+	}
+
+	.radio-group {
+		display: flex;
+		gap: var(--spacing-md);
+	}
+
+	.radio-label {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		font-weight: 500;
+		font-size: var(--font-size-base);
+		color: var(--text-primary);
+		text-transform: none;
+		letter-spacing: normal;
+		cursor: pointer;
+	}
+
+	.radio-label input[type='radio'] {
+		accent-color: var(--accent-primary);
+		width: 18px;
+		height: 18px;
+		cursor: pointer;
 	}
 
 	label,

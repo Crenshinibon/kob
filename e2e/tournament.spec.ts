@@ -337,8 +337,8 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('text=+ New Tournament');
 
 			// Best of 3 radio should be visible
-			await expect(page.locator('input[value="best-of-3"]')).toBeVisible();
-			await expect(page.locator('label:has-text("Best of 3")')).toBeVisible();
+			await expect(page.locator('input[name="scoringMode"][value="best-of-3"]')).toBeVisible();
+			await expect(page.locator('label:has-text("Best of 3")').first()).toBeVisible();
 		});
 
 		test('custom scoring mode reveals advanced options', async ({ page }) => {
@@ -350,11 +350,13 @@ test.describe('Tournament Integration Tests', () => {
 			// Advanced section should be visible
 			await expect(page.locator('.advanced-section')).toBeVisible();
 
-			// Should show match format select
-			await expect(page.locator('select[name="setsToWin"]')).toBeVisible();
+			// Should show match format radio buttons
+			await expect(page.locator('input[name="customFormat"][value="1"]')).toBeVisible();
+			await expect(page.locator('input[name="customFormat"][value="2"]')).toBeVisible();
 
-			// Should show win by select
-			await expect(page.locator('select[name="winBy"]')).toBeVisible();
+			// Should show win by radio buttons
+			await expect(page.locator('input[name="customWinBy"][value="1"]')).toBeVisible();
+			await expect(page.locator('input[name="customWinBy"][value="2"]')).toBeVisible();
 
 			// Should show points to win input
 			await expect(page.locator('input[name="pointsToWin"]')).toBeVisible();
@@ -364,8 +366,8 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('text=+ New Tournament');
 			await page.click('input[value="custom"]');
 
-			// Change to best-of-3
-			await page.selectOption('select[name="setsToWin"]', '2');
+			// Change to best-of-3 via radio button
+			await page.click('input[name="customFormat"][value="2"]');
 
 			// Should show deciding set points input
 			await expect(page.locator('input[name="decidingSetPoints"]')).toBeVisible();
@@ -404,8 +406,8 @@ test.describe('Tournament Integration Tests', () => {
 			const courtUrl = await courtLink.getAttribute('href');
 			await page.goto(courtUrl || '');
 
-			// Should show 15-point target hint
-			await expect(page.locator('text=15')).toBeVisible();
+			// Should show 15-point target hint in format explanation
+			await expect(page.locator('text=to 15')).toBeVisible();
 		});
 	});
 
