@@ -46,6 +46,7 @@ export type CourtStandings = {
 	readonly rank: number;
 	readonly points: number;
 	readonly diff: number;
+	readonly matchCount: number;
 };
 
 export type CourtResult = {
@@ -586,7 +587,13 @@ export function calculateCourtStandings(
 			return { ...s, diff };
 		})
 		.sort((a, b) => b.points - a.points || b.diff - a.diff || a.playerId - b.playerId)
-		.map((s, i) => ({ playerId: s.playerId, rank: i + 1, points: s.points, diff: s.diff }));
+		.map((s, i) => ({
+			playerId: s.playerId,
+			rank: i + 1,
+			points: s.points,
+			diff: s.diff,
+			matchCount: s.matchCount
+		}));
 }
 
 // ============================================================================

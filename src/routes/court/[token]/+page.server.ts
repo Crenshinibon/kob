@@ -77,7 +77,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const standings = calculateCourtStandings(matchData, playerIds).map((s) => ({
 		...s,
+		id: s.playerId,
 		name: playerNames[s.playerId] || 'Unknown',
+		avgPoints: s.matchCount > 0 ? s.points : undefined,
 		matchesPlayed: matchData.filter(
 			(m) =>
 				!m.isCanceled &&
