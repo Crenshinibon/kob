@@ -644,9 +644,11 @@ function genMatchForAssignment(
 export function generate5pMatches(playerIds: readonly number[]): MatchData[] {
 	if (playerIds.length !== 5) throw new Error(`Expected 5 players, got ${playerIds.length}`);
 	const [p1, p2, p3, p4, p5] = playerIds;
-	// 5p format: 4 matches, each player sits once
-	// Each match is 2v2, one player sits
+	// 5p format: 2 runs × 2 parallel games = 4 games
+	// Run 1: A+B fixed on side X, C fixed on side Y, D/E rotate
+	// Run 2: D+E fixed on side X, B fixed on side Y, A/C rotate
 	return [
+		// Run 1, Game 1: A+B vs C+D
 		{
 			teamAPlayer1Id: p1,
 			teamAPlayer2Id: p2,
@@ -655,27 +657,30 @@ export function generate5pMatches(playerIds: readonly number[]): MatchData[] {
 			teamAScore: null,
 			teamBScore: null
 		},
+		// Run 1, Game 2: A+B vs C+E (parallel with Game 1, same fixed teams)
 		{
 			teamAPlayer1Id: p1,
-			teamAPlayer2Id: p3,
-			teamBPlayer1Id: p4,
+			teamAPlayer2Id: p2,
+			teamBPlayer1Id: p3,
 			teamBPlayer2Id: p5,
 			teamAScore: null,
 			teamBScore: null
 		},
+		// Run 2, Game 3: D+E vs B+A
 		{
-			teamAPlayer1Id: p1,
-			teamAPlayer2Id: p4,
+			teamAPlayer1Id: p4,
+			teamAPlayer2Id: p5,
 			teamBPlayer1Id: p2,
-			teamBPlayer2Id: p5,
+			teamBPlayer2Id: p1,
 			teamAScore: null,
 			teamBScore: null
 		},
+		// Run 2, Game 4: D+E vs B+C (parallel with Game 3, same fixed teams)
 		{
-			teamAPlayer1Id: p2,
-			teamAPlayer2Id: p3,
-			teamBPlayer1Id: p4,
-			teamBPlayer2Id: p5,
+			teamAPlayer1Id: p4,
+			teamAPlayer2Id: p5,
+			teamBPlayer1Id: p2,
+			teamBPlayer2Id: p3,
 			teamAScore: null,
 			teamBScore: null
 		}
@@ -685,38 +690,43 @@ export function generate5pMatches(playerIds: readonly number[]): MatchData[] {
 export function generate6pMatches(playerIds: readonly number[]): MatchData[] {
 	if (playerIds.length !== 6) throw new Error(`Expected 6 players, got ${playerIds.length}`);
 	const [p1, p2, p3, p4, p5, p6] = playerIds;
-	// 6p format: 4 matches, each player plays 4 matches
-	// Each match is 2v2, 2 players sit each match
-	// Players rotate to ensure everyone plays together
+	// 6p format: 2 runs × 2 parallel games = 4 games
+	// Run 1: p1+p2 fixed on side X, p3+p5 and p4+p6 rotate
+	// Run 2: p3+p4 fixed on side X, p1+p5 and p2+p6 rotate
+	// No partnership repeats across runs. Game count diff ≤ 1 (4 players × 3 games, 2 players × 2 games).
 	return [
+		// Run 1, Game 1: p1+p2 vs p3+p5
 		{
 			teamAPlayer1Id: p1,
 			teamAPlayer2Id: p2,
 			teamBPlayer1Id: p3,
-			teamBPlayer2Id: p4,
-			teamAScore: null,
-			teamBScore: null
-		},
-		{
-			teamAPlayer1Id: p1,
-			teamAPlayer2Id: p3,
-			teamBPlayer1Id: p5,
-			teamBPlayer2Id: p6,
-			teamAScore: null,
-			teamBScore: null
-		},
-		{
-			teamAPlayer1Id: p1,
-			teamAPlayer2Id: p4,
-			teamBPlayer1Id: p2,
 			teamBPlayer2Id: p5,
 			teamAScore: null,
 			teamBScore: null
 		},
+		// Run 1, Game 2: p1+p2 vs p4+p6 (parallel with Game 1, same fixed team)
 		{
-			teamAPlayer1Id: p2,
-			teamAPlayer2Id: p3,
+			teamAPlayer1Id: p1,
+			teamAPlayer2Id: p2,
 			teamBPlayer1Id: p4,
+			teamBPlayer2Id: p6,
+			teamAScore: null,
+			teamBScore: null
+		},
+		// Run 2, Game 3: p3+p4 vs p1+p5
+		{
+			teamAPlayer1Id: p3,
+			teamAPlayer2Id: p4,
+			teamBPlayer1Id: p1,
+			teamBPlayer2Id: p5,
+			teamAScore: null,
+			teamBScore: null
+		},
+		// Run 2, Game 4: p3+p4 vs p2+p6 (parallel with Game 3, same fixed team)
+		{
+			teamAPlayer1Id: p3,
+			teamAPlayer2Id: p4,
+			teamBPlayer1Id: p2,
 			teamBPlayer2Id: p6,
 			teamAScore: null,
 			teamBScore: null

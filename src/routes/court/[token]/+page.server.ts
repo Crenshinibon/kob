@@ -92,7 +92,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			courtSize,
 			playerNames,
 			scoreCap,
-			scoringLabel
+			scoringLabel,
+			setsToWin,
+			pointsToWin,
+			decidingSetPoints
 		},
 		matches,
 		standings,

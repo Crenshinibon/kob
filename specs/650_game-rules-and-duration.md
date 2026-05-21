@@ -89,7 +89,8 @@ Organizer can adjust:
 - **4 games per round** — 2 runs × 2 parallel games
 - **One full court**, continuous play, rotating pair swaps after every point
 - **Setup**: Fixed team on side X, two pairs rotate on side Y
-- **Game count**: Some players play 3, others play 2 (role randomized across rounds)
+- **Partnership rule**: No pair of players partners together in both runs. Players mix up as much as possible.
+- **Game count**: 4 players play 3 games, 2 players play 2 games (diff ≤ 1, roles randomized across rounds)
 - **Ranking**: Average points per round (normalized), then total points, then diff, then playerId
 
 ### Rule Inference Table

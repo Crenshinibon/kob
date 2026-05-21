@@ -708,6 +708,38 @@ describe('generate5pMatches', () => {
 			expect(matchesPlayed).toBeGreaterThanOrEqual(3);
 		}
 	});
+
+	it('Run 1 has fixed team A+B on side X', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		// Games 1 and 2 should have same team A (p1+p2)
+		expect(m[0].teamAPlayer1Id).toBe(1);
+		expect(m[0].teamAPlayer2Id).toBe(2);
+		expect(m[1].teamAPlayer1Id).toBe(1);
+		expect(m[1].teamAPlayer2Id).toBe(2);
+	});
+
+	it('Run 1 has fixed player C on side Y', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		// Games 1 and 2 should have same player p3 on team B
+		expect(m[0].teamBPlayer1Id).toBe(3);
+		expect(m[1].teamBPlayer1Id).toBe(3);
+	});
+
+	it('Run 2 has fixed team D+E on side X', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		// Games 3 and 4 should have same team A (p4+p5)
+		expect(m[2].teamAPlayer1Id).toBe(4);
+		expect(m[2].teamAPlayer2Id).toBe(5);
+		expect(m[3].teamAPlayer1Id).toBe(4);
+		expect(m[3].teamAPlayer2Id).toBe(5);
+	});
+
+	it('Run 2 has fixed player B on side Y', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		// Games 3 and 4 should have same player p2 on team B
+		expect(m[2].teamBPlayer1Id).toBe(2);
+		expect(m[3].teamBPlayer1Id).toBe(2);
+	});
 });
 
 describe('generate6pMatches', () => {
@@ -741,6 +773,77 @@ describe('generate6pMatches', () => {
 					match.teamBPlayer2Id === playerId
 			).length;
 			expect(matchesPlayed).toBeGreaterThanOrEqual(2);
+		}
+	});
+
+	it('game count diff is max 1', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		const allPlayers = [1, 2, 3, 4, 5, 6];
+		const counts = allPlayers.map((playerId) =>
+			m.filter(
+				(match) =>
+					match.teamAPlayer1Id === playerId ||
+					match.teamAPlayer2Id === playerId ||
+					match.teamBPlayer1Id === playerId ||
+					match.teamBPlayer2Id === playerId
+			).length
+		);
+		const max = Math.max(...counts);
+		const min = Math.min(...counts);
+		expect(max - min).toBeLessThanOrEqual(1);
+	});
+
+	it('Run 1 has fixed team p1+p2 on side X', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		expect(m[0].teamAPlayer1Id).toBe(1);
+		expect(m[0].teamAPlayer2Id).toBe(2);
+		expect(m[1].teamAPlayer1Id).toBe(1);
+		expect(m[1].teamAPlayer2Id).toBe(2);
+	});
+
+	it('Run 1 has rotating pairs p3+p5 and p4+p6 on side Y', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		expect(m[0].teamBPlayer1Id).toBe(3);
+		expect(m[0].teamBPlayer2Id).toBe(5);
+		expect(m[1].teamBPlayer1Id).toBe(4);
+		expect(m[1].teamBPlayer2Id).toBe(6);
+	});
+
+	it('Run 2 has fixed team p3+p4 on side X', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		expect(m[2].teamAPlayer1Id).toBe(3);
+		expect(m[2].teamAPlayer2Id).toBe(4);
+		expect(m[3].teamAPlayer1Id).toBe(3);
+		expect(m[3].teamAPlayer2Id).toBe(4);
+	});
+
+	it('Run 2 has rotating pairs p1+p5 and p2+p6 on side Y', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		expect(m[2].teamBPlayer1Id).toBe(1);
+		expect(m[2].teamBPlayer2Id).toBe(5);
+		expect(m[3].teamBPlayer1Id).toBe(2);
+		expect(m[3].teamBPlayer2Id).toBe(6);
+	});
+
+	it('no partnership repeats across runs', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		// Collect partnerships from Run 1 (games 0-1)
+		const run1Partnerships = new Set<string>();
+		for (let i = 0; i < 2; i++) {
+			const match = m[i];
+			const pairA = [match.teamAPlayer1Id, match.teamAPlayer2Id].sort().join('-');
+			const pairB = [match.teamBPlayer1Id, match.teamBPlayer2Id].sort().join('-');
+			run1Partnerships.add(pairA);
+			run1Partnerships.add(pairB);
+		}
+
+		// Check Run 2 (games 2-3) partnerships don't overlap with Run 1
+		for (let i = 2; i < 4; i++) {
+			const match = m[i];
+			const pairA = [match.teamAPlayer1Id, match.teamAPlayer2Id].sort().join('-');
+			const pairB = [match.teamBPlayer1Id, match.teamBPlayer2Id].sort().join('-');
+			expect(run1Partnerships.has(pairA)).toBe(false);
+			expect(run1Partnerships.has(pairB)).toBe(false);
 		}
 	});
 });

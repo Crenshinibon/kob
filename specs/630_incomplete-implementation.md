@@ -128,21 +128,21 @@ Roles randomized each round. One player plays 4 games, others play 3. Ranking by
 
 **6-player court matches** (2 runs × 2 parallel games = 4 games):
 
-Run 1: A+B fixed on side X, C+D and E+F rotate every point.
+Run 1: A+B fixed on side X, C+E and D+F rotate every point.
 
 ```
-Game 1: A+B vs C+D (scored when C+D on court)
-Game 2: A+B vs E+F (scored when E+F on court)
+Game 1: A+B vs C+E (scored when C+E on court)
+Game 2: A+B vs D+F (scored when D+F on court)
 ```
 
-Run 2: C+D fixed on side X, A+B and E+F rotate every point.
+Run 2: C+D fixed on side X, A+E and B+F rotate every point.
 
 ```
-Game 3: C+D vs A+B (scored when A+B on court)
-Game 4: C+D vs E+F (scored when E+F on court)
+Game 3: C+D vs A+E (scored when A+E on court)
+Game 4: C+D vs B+F (scored when B+F on court)
 ```
 
-Roles randomized each round. Some players play 3, others play 2. Ranking by average points per round.
+Roles randomized each round. 4 players play 3 games, 2 players play 2 games (diff ≤ 1). **No partnership repeats across runs** — if two players were partners in Run 1, they are not partners in Run 2. Ranking by average points per round.
 
 **Schema**: Instead of reusing the existing `match` table (designed for 2v2), create separate tables per court type. This avoids if-cascades in all layers (DB queries, server logic, UI components).
 
