@@ -447,4 +447,62 @@ test.describe('Tournament Integration Tests', () => {
 			await expect(page.locator('.duration-estimate')).toBeVisible();
 		});
 	});
+
+	test.describe('Tournament Deletion', () => {
+		test('deletes tournament from detail page', async ({ page }) => {
+			const tournamentName = `Delete Test ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			// Create tournament
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('text=Round 1');
+
+			// Click delete button
+			await page.click('button:has-text("Delete")');
+
+			// Confirm deletion in browser dialog
+			page.on('dialog', (dialog) => dialog.accept());
+
+			// Wait for redirect to dashboard
+			await page.waitForURL('/');
+
+			// Verify tournament no longer appears
+			await page.waitForLoadState('networkidle');
+			const deletedTournament = page.locator(`text=${tournamentName}`);
+			await expect(deletedTournament).not.toBeVisible();
+		});
+
+		test('cancelling delete keeps tournament', async ({ page }) => {
+			const tournamentName = `Cancel Delete Test ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			// Create tournament
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+/);
+
+			// Click delete button
+			await page.click('button:has-text("Delete")');
+
+			// Dismiss dialog
+			page.on('dialog', (dialog) => dialog.dismiss());
+
+			// Should stay on same page
+			await page.waitForTimeout(500);
+			await expect(page).toHaveURL(/\/tournament\/\d+/);
+
+			// Tournament should still exist
+			await expect(page.locator('h1', { hasText: tournamentName })).toBeVisible();
+		});
+	});
 });

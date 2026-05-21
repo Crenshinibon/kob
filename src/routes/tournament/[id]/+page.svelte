@@ -7,7 +7,7 @@
 
 	let { data } = $props<{ data: { tournamentId: number; tournament: any } }>();
 
-	const liveQuery = getTournamentDataLive(data.tournamentId);
+	const liveQuery = $derived(getTournamentDataLive(data.tournamentId));
 	const state = $derived(await liveQuery);
 	const isConnected = $derived(liveQuery.connected);
 
