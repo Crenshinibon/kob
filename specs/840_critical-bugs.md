@@ -35,7 +35,7 @@
 - Score validation logic (`src/routes/court/[token]/scores.remote.ts`)
 
 ### Expected Behavior
-- Org can configure per-court-type scoring overrides when tournament uses non-standard courts
+- Org can configure per-court-type scoring overrides when tournament needs non-standard courts
 - Override options: points to win, win-by margin, sets to win
 - UI should show which court types are active (3p, 5p, 6p)
 - Overrides apply to all courts of that type in the tournament
