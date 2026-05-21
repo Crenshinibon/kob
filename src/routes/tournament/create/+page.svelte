@@ -16,7 +16,7 @@
 	let scoringMode = $state<'single-21' | 'best-of-3' | 'custom'>('single-21');
 	let customFormat = $state<'1' | '2'>('1');
 	let customPointsToWin = $state(21);
-	let customWinBy = $state(2);
+	let customWinBy = $state<'1' | '2'>('2');
 	let customDecidingPoints = $state(15);
 	let numRounds = $state(3);
 	let textareaEl: HTMLTextAreaElement | undefined = $state();
@@ -272,7 +272,7 @@
 							value="1"
 							bind:group={customFormat}
 						/>
-						Single set
+						<span class="radio-text">Single set</span>
 					</label>
 					<label class="radio-label">
 						<input
@@ -281,7 +281,7 @@
 							value="2"
 							bind:group={customFormat}
 						/>
-						Best of 3
+						<span class="radio-text">Best of 3</span>
 					</label>
 				</div>
 			</div>
@@ -295,7 +295,7 @@
 							value="2"
 							bind:group={customWinBy}
 						/>
-						2 points
+						<span class="radio-text">2 points</span>
 					</label>
 					<label class="radio-label">
 						<input
@@ -304,7 +304,7 @@
 							value="1"
 							bind:group={customWinBy}
 						/>
-						1 point
+						<span class="radio-text">1 point</span>
 					</label>
 				</div>
 			</div>
@@ -536,6 +536,17 @@
 		text-transform: none;
 		letter-spacing: normal;
 		cursor: pointer;
+		opacity: 0.85;
+		transition: opacity var(--transition-fast);
+	}
+
+	.radio-label:has(input:checked) {
+		opacity: 1;
+		font-weight: 600;
+	}
+
+	.radio-label:hover {
+		opacity: 1;
 	}
 
 	.radio-label input[type='radio'] {
@@ -673,6 +684,16 @@
 		transition: all var(--transition-fast);
 	}
 
+	.radio-text {
+		color: var(--text-input);
+		font-weight: 500;
+	}
+
+	.radio-label:has(input:checked) .radio-text {
+		color: #ffffff;
+		font-weight: 600;
+	}
+
 	.radio-wrapper {
 		display: flex;
 		align-self: stretch;
@@ -703,16 +724,20 @@
 
 	.radio-content strong {
 		font-weight: 600;
-		color: var(--bg-primary);
+		color: var(--text-input);
 	}
 
 	.radio-label:has(input:checked) .radio-content strong {
-		color: var(--text-primary);
+		color: #ffffff;
 	}
 
 	.radio-content small {
 		font-size: var(--font-size-sm);
-		color: var(--text-muted);
+		color: #555555;
+	}
+
+	.radio-label:has(input:checked) .radio-content small {
+		color: var(--text-secondary);
 	}
 
 	.btn-primary {
