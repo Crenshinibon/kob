@@ -41,13 +41,15 @@
   - **[730_i18n-implementation.md](./730_i18n-implementation.md)**: 7 implementation phases, file changes, testing strategy.
 
 - **[800_bug-fixes-index.md](./800_bug-fixes-index.md)**: Bug fixes from user testing and code review.
-  - **[810_match-display-bugs.md](./810_match-display-bugs.md)**: 3p/5p/6p court matchup display bugs
-  - **[811-closeRound-requested-error.md](./811-closeRound-requested-error.md)**: closeRound errors with requested() outside context
-  - **[812-standings-ranking-bug.md](./812-standings-ranking-bug.md)**: Standings ranking by court position first, not points
-  - **[813-qr-live-query-bugs.md](./813-qr-live-query-bugs.md)**: QR codes not loading/updating, live query not working
-  - **[814-fetch-errors.md](./814-fetch-errors.md)**: Failed to fetch errors in browser console
-  - **[840_critical-bugs.md](./840_critical-bugs.md)**: Critical bugs: delete tournament, best-of-3 score entry, score validation, player removal, UI glitches, reactivity warnings, E2E config, auto-cleanup
+  - **[840_critical-bugs.md](./840_critical-bugs.md)**: Critical bugs: delete tournament, best-of-3 score entry, score validation, player removal, UI glitches, reactivity warnings, E2E config, auto-cleanup, radio button inputs
+  - **Archived**: [810](./archive/810_match-display-bugs.md), [811](./archive/811-closeRound-requested-error.md), [812](./archive/812-standings-ranking-bug.md), [813](./archive/813-qr-live-query-bugs.md), [814](./archive/814-fetch-errors.md)
 
-- **[820_ux-improvements.md](./820_ux-improvements.md)**: UX improvements: player count validation, format explanations, v1 banner
+- **[820_ux-improvements.md](./820_ux-improvements.md)**: UX improvements: radio button inputs, player count validation, format explanations, org override for non-standard courts, v1 banner
 
-- **[830_test-improvements.md](./830_test-improvements.md)**: Test improvements: auto cleanup, 5p/6p tests, scoring mode tests
+- **[830_test-improvements.md](./830_test-improvements.md)**: Test improvements: auto cleanup, E2E config fix, 5p/6p tests, scoring mode tests, tournament deletion tests
+
+- **Archived specs** (completed, no longer active references):
+  - **[110_score-saving-ux.md](./archive/110_score-saving-ux.md)**: Score saving UX fixes
+  - **[400_testing-gaps.md](./archive/400_testing-gaps.md)**: Testing gaps and pre-launch checklist
+  - **[500_production-readiness-progress.md](./archive/500_production-readiness-progress.md)**: Production readiness progress log
+  - **[800_e2e-fixes-and-improvements.md](./archive/800_e2e-fixes-and-improvements.md)**: E2E test fixes and tournament creation simplification
