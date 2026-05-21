@@ -1,8 +1,23 @@
-import { form } from '$app/server';
+import { form, getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
-import { match, courtAccess } from '$lib/server/db/schema';
+import { match, courtAccess, tournament, courtRotation } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import * as v from 'valibot';
+
+function getScoreCapForSet(setNumber: number, courtSize: number, tourney: typeof tournament.$inferSelect): number {
+	const setsToWin = tourney.setsToWin ?? 1;
+	const pointsToWin = tourney.pointsToWin ?? 21;
+	const decidingSetPoints = tourney.decidingSetPoints ?? 15;
+
+	if (setsToWin >= 2) {
+		const isDecidingSet = setNumber === setsToWin * 2 - 1;
+		return isDecidingSet ? decidingSetPoints : pointsToWin;
+	}
+	if (courtSize >= 5) {
+		return pointsToWin === 21 ? 15 : pointsToWin;
+	}
+	return pointsToWin;
+}
 
 const baseScoreSchema = v.pipe(
 	v.object({
@@ -58,14 +73,12 @@ export const saveScore = form(baseScoreSchema, async (data) => {
 	const teamAScore = data.teamAScore;
 	const teamBScore = data.teamBScore;
 
-	// Get match and verify it exists
 	const [matchRecord] = await db.select().from(match).where(eq(match.id, matchId));
 
 	if (!matchRecord) {
 		return { error: 'Invalid match' };
 	}
 
-	// Check if court is still active
 	const [access] = await db
 		.select()
 		.from(courtAccess)
@@ -75,7 +88,23 @@ export const saveScore = form(baseScoreSchema, async (data) => {
 		return { error: 'Court is not active' };
 	}
 
-	// Save score
+	const [rotation] = await db
+		.select()
+		.from(courtRotation)
+		.where(eq(courtRotation.id, matchRecord.courtRotationId));
+
+	const [tourney] = await db
+		.select()
+		.from(tournament)
+		.where(eq(tournament.id, rotation.tournamentId));
+
+	const scoreCap = getScoreCapForSet(1, rotation.courtSize, tourney);
+	const maxScore = Math.max(teamAScore, teamBScore);
+
+	if (maxScore < scoreCap) {
+		return { error: `Winner must have at least ${scoreCap} points` };
+	}
+
 	await db.update(match).set({ teamAScore, teamBScore }).where(eq(match.id, matchId));
 
 	return { success: true, matchId, teamAScore, teamBScore };
@@ -87,14 +116,12 @@ export const saveSetScore = form(setScoreSchema, async (data) => {
 	const teamAScore = data.teamAScore;
 	const teamBScore = data.teamBScore;
 
-	// Get match and verify it exists
 	const [matchRecord] = await db.select().from(match).where(eq(match.id, matchId));
 
 	if (!matchRecord) {
 		return { error: 'Invalid match' };
 	}
 
-	// Check if court is still active
 	const [access] = await db
 		.select()
 		.from(courtAccess)
@@ -104,7 +131,23 @@ export const saveSetScore = form(setScoreSchema, async (data) => {
 		return { error: 'Court is not active' };
 	}
 
-	// Check if this set already has a score
+	const [rotation] = await db
+		.select()
+		.from(courtRotation)
+		.where(eq(courtRotation.id, matchRecord.courtRotationId));
+
+	const [tourney] = await db
+		.select()
+		.from(tournament)
+		.where(eq(tournament.id, rotation.tournamentId));
+
+	const scoreCap = getScoreCapForSet(setNumber, rotation.courtSize, tourney);
+	const maxScore = Math.max(teamAScore, teamBScore);
+
+	if (maxScore < scoreCap) {
+		return { error: `Winner must have at least ${scoreCap} points` };
+	}
+
 	const [existingSet] = await db
 		.select()
 		.from(match)
@@ -117,13 +160,11 @@ export const saveSetScore = form(setScoreSchema, async (data) => {
 		);
 
 	if (existingSet) {
-		// Update existing set score
 		await db
 			.update(match)
 			.set({ teamAScore, teamBScore })
 			.where(eq(match.id, existingSet.id));
 	} else {
-		// Create new set score row
 		await db.insert(match).values({
 			courtRotationId: matchRecord.courtRotationId,
 			matchNumber: matchRecord.matchNumber,

@@ -150,16 +150,22 @@ export const closeRoundForm = form(
 
 			const allMatchesForCourt = generateAllMatchesForAssignment(assignment, courtSizes);
 
+			const setsToWin = tourney.setsToWin ?? 1;
+			const maxSets = setsToWin >= 2 ? setsToWin * 2 - 1 : 1;
+
 			for (let mi = 0; mi < allMatchesForCourt.length; mi++) {
 				const m = allMatchesForCourt[mi];
-				await db.insert(match).values({
-					courtRotationId: rotation.id,
-					matchNumber: mi + 1,
-					teamAPlayer1Id: m.teamAPlayer1Id,
-					teamAPlayer2Id: m.teamAPlayer2Id,
-					teamBPlayer1Id: m.teamBPlayer1Id,
-					teamBPlayer2Id: m.teamBPlayer2Id
-				});
+				for (let setNum = 1; setNum <= maxSets; setNum++) {
+					await db.insert(match).values({
+						courtRotationId: rotation.id,
+						matchNumber: mi + 1,
+						setNumber: setNum,
+						teamAPlayer1Id: m.teamAPlayer1Id,
+						teamAPlayer2Id: m.teamAPlayer2Id,
+						teamBPlayer1Id: m.teamBPlayer1Id,
+						teamBPlayer2Id: m.teamBPlayer2Id
+					});
+				}
 			}
 
 			const token = crypto.randomBytes(16).toString('hex');

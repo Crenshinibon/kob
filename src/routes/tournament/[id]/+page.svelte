@@ -162,7 +162,11 @@
 			{#if tournament.status !== 'completed'}
 				<form
 					{...deleteTournamentForm.enhance(async ({ form }) => {
-						form.reset();
+						try {
+							await form.submit();
+						} catch {
+							// redirect happens on server
+						}
 					})}
 					class="delete-form"
 				>

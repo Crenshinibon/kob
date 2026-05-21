@@ -1,8 +1,8 @@
-import { db } from '../src/lib/server/db';
-import { tournament, player, courtRotation, match, courtAccess } from '../src/lib/server/db/schema';
+import { db } from './db';
+import { tournament, player, courtRotation, match, courtAccess, match3Player, match5Player, match6Player } from '../src/lib/server/db/schema';
 import { lt, eq, inArray } from 'drizzle-orm';
 
-export async function setup() {
+export default async function setup() {
 	console.log('🧹 Cleaning up old test tournaments...');
 
 	const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
@@ -34,6 +34,9 @@ export async function setup() {
 			// Delete court_access and matches for these rotations
 			await db.delete(courtAccess).where(inArray(courtAccess.courtRotationId, rotationIds));
 			await db.delete(match).where(inArray(match.courtRotationId, rotationIds));
+			await db.delete(match3Player).where(inArray(match3Player.courtRotationId, rotationIds));
+			await db.delete(match5Player).where(inArray(match5Player.courtRotationId, rotationIds));
+			await db.delete(match6Player).where(inArray(match6Player.courtRotationId, rotationIds));
 		}
 
 		// Delete court_rotations
@@ -47,8 +50,4 @@ export async function setup() {
 	await db.delete(tournament).where(inArray(tournament.id, tournamentIds));
 
 	console.log(`✅ Cleaned up ${tournamentIds.length} old tournaments`);
-}
-
-export async function teardown() {
-	// Optional: cleanup after all tests
 }

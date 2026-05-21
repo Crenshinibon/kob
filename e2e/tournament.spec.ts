@@ -463,17 +463,18 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForURL(/\/tournament\/\d+/);
 			await page.waitForSelector('text=Round 1');
 
+			// Set up dialog handler BEFORE clicking delete
+			page.on('dialog', (dialog) => dialog.accept());
+
 			// Click delete button
 			await page.click('button:has-text("Delete")');
-
-			// Confirm deletion in browser dialog
-			page.on('dialog', (dialog) => dialog.accept());
 
 			// Wait for redirect to dashboard
 			await page.waitForURL('/');
 
 			// Verify tournament no longer appears
-			await page.waitForLoadState('networkidle');
+			await page.waitForLoadState('domcontentloaded');
+			await page.waitForTimeout(1000);
 			const deletedTournament = page.locator(`text=${tournamentName}`);
 			await expect(deletedTournament).not.toBeVisible();
 		});
@@ -491,11 +492,11 @@ test.describe('Tournament Integration Tests', () => {
 
 			await page.waitForURL(/\/tournament\/\d+/);
 
+			// Set up dialog handler BEFORE clicking delete
+			page.on('dialog', (dialog) => dialog.dismiss());
+
 			// Click delete button
 			await page.click('button:has-text("Delete")');
-
-			// Dismiss dialog
-			page.on('dialog', (dialog) => dialog.dismiss());
 
 			// Should stay on same page
 			await page.waitForTimeout(500);
