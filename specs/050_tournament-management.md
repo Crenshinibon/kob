@@ -43,8 +43,11 @@ Form with:
 
 - Tournament name (required)
 - Format: Random Seed or Preseed
-- Player count: 16 or 32 players
-- Number of rounds (1-5 for Random, fixed 3/4 for Preseed)
+- Player count: 8-64 players
+- Number of rounds (1-5 for Random, fixed for Preseed)
+- **Scoring mode**: Radio buttons for "Single Set", "Best of 3", "Custom"
+- **Win By**: Radio buttons for "1" or "2"
+- Physical courts: slider (1-16)
 - [Create] button
 
 ### Add Players (`/tournament/[id]/players`)
@@ -114,4 +117,7 @@ Text area:
 
 - Verifies user authorization (must be org who created tournament)
 - Cascades deletion through all related tables
-- Only available for draft tournaments
+- Available for all tournaments (not just drafts)
+- Shows confirmation dialog before deletion
+- Redirects to dashboard after successful deletion
+- **Known bug**: Delete form submission not executing (see `840_critical-bugs.md`)

@@ -54,18 +54,23 @@ Organizer can adjust:
 | Parameter           | Default | Range | Notes                                                |
 | ------------------- | ------- | ----- | ---------------------------------------------------- |
 | `pointsToWin`       | 21      | 9-21  | Points needed to win a regular set                   |
-| `winBy`             | 2       | 1-2   | Minimum point margin to win                          |
-| `setsToWin`         | 1       | 1-2   | Sets needed to win match (1 = single, 2 = best-of-3) |
+| `winBy`             | 2       | 1-2   | Minimum point margin to win (radio: 1 or 2)          |
+| `setsToWin`         | 1       | 1-2   | Sets needed to win match (radio: single or best-of-3)|
 | `decidingSetPoints` | 15      | 9-21  | Points for the deciding set only (if best-of-3)      |
+
+**UI note**: "Match Format" (single set vs best-of-3) and "Win By" (1 vs 2) should use radio buttons, not `<select>` dropdowns, since they only have two options.
 
 ### Special Court Rules (3p, 5p, 6p)
 
 **Inference rule**: Special court rules are derived from the standard 4p rules unless explicitly overridden by the organizer.
 
+**Org override**: The organizer can override scoring mode for non-standard courts (3p, 5p, 6p) when they are relevant to the tournament. This is configurable in tournament settings.
+
 #### 3-Player Courts
 
-- **Same scoring mode** as 4p courts (single set or best-of-3)
-- **Same point target** (e.g., 21)
+- **Default**: Same scoring mode as 4p courts (single set or best-of-3)
+- **Default point target**: Same as 4p courts (e.g., 21)
+- **Org override**: Can configure different points/win-by/sets
 - **Same number of matches**: 3 per round
 - **Different team composition**: 2v1 format
   - Match 1: A+B vs C
@@ -75,7 +80,8 @@ Organizer can adjust:
 
 #### 5-Player Courts (Parallel Games, Rotating Every Point)
 
-- **1 set to 15 points** (default) or **1 set to 21 points** (organizer choice), win by 2
+- **Default**: 1 set to 15 points, win by 2
+- **Org override**: Can configure to 21 points, best-of-3, or custom settings
 - **4 games per round** — 2 runs × 2 parallel games
 - **One full court**, continuous play, rotating player swaps after every point
 - **Run 1**: Fixed team on side X, one fixed player on side Y, two players rotate
@@ -85,7 +91,8 @@ Organizer can adjust:
 
 #### 6-Player Courts (Parallel Games, Rotating Every Point)
 
-- **1 set to 15 points** (default) or **1 set to 21 points** (organizer choice), win by 2
+- **Default**: 1 set to 15 points, win by 2
+- **Org override**: Can configure to 21 points, best-of-3, or custom settings
 - **4 games per round** — 2 runs × 2 parallel games
 - **One full court**, continuous play, rotating pair swaps after every point
 - **Setup**: Fixed team on side X, two pairs rotate on side Y
@@ -97,11 +104,13 @@ Organizer can adjust:
 
 | 4p Rule            | 3p Court           | 5p Court                              | 6p Court                              |
 | ------------------ | ------------------ | ------------------------------------- | ------------------------------------- |
-| Single set to 21   | Single set to 21   | 1 set to 15 (default) or configurable | 1 set to 15 (default) or configurable |
-| Best-of-3 to 15    | Best-of-3 to 15    | Single set to 15                      | Single set to 15                      |
-| Win by 2           | Win by 2           | Win by 2                              | Win by 2                              |
+| Single set to 21   | Single set to 21   | 1 set to 15 (default) or org override | 1 set to 15 (default) or org override |
+| Best-of-3 to 15    | Best-of-3 to 15    | Single set to 15 or org override      | Single set to 15 or org override      |
+| Win by 2           | Win by 2           | Win by 2 or org override              | Win by 2 or org override              |
 | 3 games/round      | 3 games/round      | 4 parallel games/round                | 4 parallel games/round                |
 | Ranking: total pts | Ranking: total pts | Ranking: avg pts/round                | Ranking: avg pts/round                |
+
+**Org override**: When non-standard courts are active, organizer can configure custom scoring per court type (3p, 5p, 6p) via tournament settings. Overrides include points to win, win-by margin, and sets to win.
 
 **Rationale for 5p/6p defaults**: Two parallel game tracks (15pt each), interleaved by rotating players every point, done in 2 runs = 4 games total. Not truly parallel — approximately same duration as a single game + 10% overhead for player switches. Because players play different numbers of games (3 or 4 in 5-player; 2 or 3 in 6-player), ranking uses **average points per round** to normalize performance. Ties are broken by total points (more data = advantage), then differential, then playerId. For 3-player courts, all players play the same number of games, so standard total-points ranking applies.
 
@@ -280,3 +289,4 @@ setNumber: integer('set_number').notNull().default(1);
 3. **Break time**: 10 min transition between rounds (includes score finalization, redistribution, player break).
 4. **Parallel game timing**: Not truly parallel. ~Same as single game + 10% overhead for player switches.
 5. **Score validation**: 5/6p courts play 1 set to 15, win by 2. 3p courts use same rules as 4p courts.
+6. **Score validation enforcement**: System must validate scores match the configured rules (points to win, win-by margin). Currently not enforced correctly (see `840_critical-bugs.md`).

@@ -20,17 +20,11 @@
 
 - **[100_dark-theme.md](./100_dark-theme.md)**: High-contrast dark theme optimized for outdoor visibility in bright sunlight. Color palettes, component styles, and accessibility guidelines.
 
-- **[110_score-saving-ux.md](./110_score-saving-ux.md)**: Score saving UX - fixed Svelte 5 reactivity for immediate button feedback on mobile.
-
 - **[120_gotchas.md](./120_gotchas.md)**: Development lessons, common issues, and workarounds encountered during implementation and testing.
 
 - **[200_kob-32.md](./200_kob-32.md)**: 32-player Preseed format with points-based seeding and tiered redistribution. Supports both Random Seed and Preseed formats for 16 and 32 players.
 
 - **[300_pluggable-formats.md](./300_pluggable-formats.md)**: [PLANNED EXTENSION] Extensible architecture for supporting multiple tournament formats. Not yet implemented.
-
-- **[400_testing-gaps.md](./400_testing-gaps.md)**: Testing gaps, missing E2E tests, and pre-launch checklist.
-
-- **[500_production-readiness-progress.md](./500_production-readiness-progress.md)**: Progress log of critical fixes made for production readiness.
 
 - **[600_incomplete-rosters-index.md](./600_incomplete-rosters-index.md)**: Index for incomplete roster specs. Replaces original 600_incomplete-rosters.md. Supports 8-64 players, recursive preseed, physical/virtual courts.
   - **[610_incomplete-core.md](./610_incomplete-core.md)**: Problem statement, physical vs virtual courts, player count extension (8-64), vertical seeding, leftover configuration.
@@ -52,6 +46,7 @@
   - **[812-standings-ranking-bug.md](./812-standings-ranking-bug.md)**: Standings ranking by court position first, not points
   - **[813-qr-live-query-bugs.md](./813-qr-live-query-bugs.md)**: QR codes not loading/updating, live query not working
   - **[814-fetch-errors.md](./814-fetch-errors.md)**: Failed to fetch errors in browser console
+  - **[840_critical-bugs.md](./840_critical-bugs.md)**: Critical bugs: delete tournament, best-of-3 score entry, score validation, player removal, UI glitches, reactivity warnings, E2E config, auto-cleanup
 
 - **[820_ux-improvements.md](./820_ux-improvements.md)**: UX improvements: player count validation, format explanations, v1 banner
 

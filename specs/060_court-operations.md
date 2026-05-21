@@ -36,10 +36,17 @@ Current Standings:
 ### Score Entry
 
 - Number inputs for scores
-- Validation: 0-50, no ties, winner needs 21+
-- Show error if invalid: "Winner must have 21+ points"
-- Save button per match
+- **Single set mode**: One score input per match
+- **Best-of-3 mode**: Set-by-set score entry (Set 1, Set 2, Set 3 if needed)
+- Validation per set:
+  - 4p/3p courts: First to 21, win by 2
+  - 5p/6p courts: First to 15, win by 2
+  - Custom mode: Use configured `pointsToWin` and `winBy`
+- Show error if invalid: "Winner must have 21+ points" or "Must win by 2"
+- Save button per match (saves all sets at once)
 - On save: show "Saved" confirmation
+- **Known bug**: Best-of-3 score entry not working - only shows one set input (see `840_critical-bugs.md`)
+- **Known bug**: Score validation not enforcing rules (see `840_critical-bugs.md`)
 
 ### Closed Round
 
