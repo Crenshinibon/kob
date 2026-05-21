@@ -57,6 +57,13 @@
       "when": 1779202135798,
       "tag": "0007_outgoing_steve_rogers",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1779393078561,
+      "tag": "0008_magical_vampiro",
+      "breakpoints": true
     }
   ]
 }
