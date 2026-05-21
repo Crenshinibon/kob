@@ -2,34 +2,10 @@
 
 ## ToDo
 
+- [] For Best-Of-3 matches the entry for the third set should only be visible when each team one a set. Also the rules 3rd set to 15 are not enforced. Entering the scores is weird also, when I enter points in all fields and then click save. The entered scores "are shifted around".
 - [] Tournament view layout is broken, it covers whole width of the browser, instead of the previous "centralized" layout.
-- [] Change the input type from <select> for "Match Format" and "Win By" to "radio", because we have only two options.
 - [] We need an option for the Org, to overwrite the "scoring mode" for the 6p, 3p, and 5p courts, if they are (or become, because of retiring players) relevant for his tournament. 
 - [] There should be a way to remove a player from the tournament during a round and the affected court should handle this gracefully.Adjusting the court to a different format (to 3p from 4p, to 5p from 6p, to 4p from 5p) is not an option, because we would have to deal with already played matches and how to score the other players. I guess we need to investigate here, a little bit.
-- [] It's still not possible to enter 2nd and 3rd set.
-- [] Investigate configuration issue for E2E tests, those were working yesterday
-- [] Delete tournament still not working!
-- [] There is an UI glitch: when having a court whose player name enforce a second line and there are courts that only would show one line of player names the dark background of the playernames is extended to fill the two lines.
-- [] I get this warning on the tournament page:
-  client.js?v=ad69a31c:3356 [svelte] await_reactivity_lossDetected reactivity loss when reading `LiveQuery.#promise`. This happens when state is read in an async function after an earlier `await`https://svelte.dev/e/await_reactivity_loss
-  warn @ client.js?v=ad69a31c:3356
-  await_reactivity_loss @ warnings-2hVNjS22.js?v=ad69a31c:18
-  get @ runtime-CkG8d-0H.js?v=ad69a31c:5051
-  (anonymous) @ query-live.svelte.js?v=ad69a31c:185
-  update_reaction @ runtime-CkG8d-0H.js?v=ad69a31c:4886
-  execute_derived @ runtime-CkG8d-0H.js?v=ad69a31c:3388
-  update_derived @ runtime-CkG8d-0H.js?v=ad69a31c:3402
-  is_dirty @ runtime-CkG8d-0H.js?v=ad69a31c:4832
-  #traverse @ runtime-CkG8d-0H.js?v=ad69a31c:1936
-  #process @ runtime-CkG8d-0H.js?v=ad69a31c:1869
-  flush @ runtime-CkG8d-0H.js?v=ad69a31c:2041
-  (anonymous) @ runtime-CkG8d-0H.js?v=ad69a31c:2180
-  run_all @ runtime-CkG8d-0H.js?v=ad69a31c:40
-  run_micro_tasks @ runtime-CkG8d-0H.js?v=ad69a31c:1146
-  (anonymous) @ runtime-CkG8d-0H.js?v=ad69a31c:1155
-  client.js?v=ad69a31c:3356 traced at
-    at query-live.svelte.js?v=ad69a31c:185:16
-- [] When entering points for matches the rules are not enforced correctly. In a 6 player court, that was supposed to go to 15 I could enter 13 vs 11 without the system complaining
 - [] add job to delete tournaments that are closed and older then 14 days
 - [] add job to delete tournaments that are not updated for 31 days
 - [] add tests for 5p / 6p court redistribution
@@ -38,6 +14,14 @@
 
 
 ## Done
+
+- [x] Change the input type from <select> for "Match Format" and "Win By" to "radio", because we have only two options.
+- [x] It's still not possible to enter 2nd and 3rd set.
+- [x] Delete tournament still not working!
+- [x] There is an UI glitch: when having a court whose player name enforce a second line and there are courts that only would show one line of player names the dark background of the playernames is extended to fill the two lines.
+- [x] await_reactivity_loss warning on the tournament page - fixed by wrapping live query call in $derived
+- [x] Score validation not enforced correctly (6p court accepted 13 vs 11) - removed point caps, now enforces minimum points + win by 2 only
+- [x] E2E test configuration - global-setup.ts and db.ts properly configured with dotenv
 
 - [x] 3p court in the matchups, the single player is shown twice
 - [x] 5p court in the matchups, it should be clearer which matches "belong together", are executed simultaneously. And don't duplicate the match up in the top row. (Fixed: parallel games now share fixed team, UI shows run details)

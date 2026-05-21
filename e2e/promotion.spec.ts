@@ -82,6 +82,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await page.waitForSelector('.court-card');
 
 		// Capture tournament ID for later navigation
 		const tournamentUrl = page.url();
@@ -90,6 +91,7 @@ test.describe('Promotion and Relegation', () => {
 		expect(tournamentId).toBeTruthy();
 
 		// Complete Round 1
+		await page.waitForSelector('.qr-link a');
 		const courtLinksOnPage = await page.locator('.qr-link a').all();
 		const courtLinks: string[] = [];
 		for (const cl of courtLinksOnPage) {
@@ -134,7 +136,7 @@ test.describe('Promotion and Relegation', () => {
 		// Wait for the tournament page to fully render
 		await page.waitForSelector('h1');
 		await page.waitForSelector('.court-card');
-		await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)');
+		await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)', { timeout: 10000 });
 		await page.click('button:has-text("Close Round & Advance")');
 
 		// Verify Round 2 started
@@ -281,6 +283,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await page.waitForSelector('.qr-link a');
 
 		// Capture tournament ID for later navigation
 		const tournamentUrl = page.url();
@@ -322,7 +325,8 @@ test.describe('Promotion and Relegation', () => {
 
 		// Close the only round
 		await page.goto(`/tournament/${tournamentId}`);
-		await page.waitForSelector('button:has-text("Finalize Tournament")');
+		await page.waitForSelector('.court-card');
+		await page.waitForSelector('button:has-text("Finalize Tournament"):not(:disabled)', { timeout: 10000 });
 		await page.click('button:has-text("Finalize Tournament")');
 
 		// Wait for redirect to standings

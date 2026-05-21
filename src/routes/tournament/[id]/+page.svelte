@@ -221,10 +221,17 @@
 		text-align: center;
 		padding: var(--spacing-xl);
 		font-size: var(--font-size-lg);
+		max-width: 800px;
+		margin: 0 auto;
 	}
 
 	.error {
 		color: var(--accent-error);
+	}
+
+	main {
+		max-width: 800px;
+		margin: 0 auto;
 	}
 
 	.courts {

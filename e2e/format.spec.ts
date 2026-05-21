@@ -321,6 +321,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('.court-card');
 
 			// Should have 3 courts (2×4p + 1×3p)
 			const courtCards = await page.locator('.court-card').count();
@@ -356,6 +357,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('.court-card');
 
 			// Should have 5 courts (4×4p + 1×5p)
 			const courtCards = await page.locator('.court-card').count();
@@ -391,6 +393,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('.court-card');
 
 			// Should have 5 courts (4×4p + 1×6p)
 			const courtCards = await page.locator('.court-card').count();
