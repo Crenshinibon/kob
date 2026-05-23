@@ -17,6 +17,14 @@
 - `scripts/cleanup-old-tournaments.ts` (`bun run db:cleanup`): deletes completed tournaments older than 14 days, deletes any tournament older than 31 days
 - Manual cleanup script: `scripts/wipe-tournaments.ts` (`bun run db:wipe`)
 
+## E2E Live Query Timing
+
+- Two E2E tests fail because the live query polls every 3 seconds
+- Tests wait for "Finalize Tournament" / "Close Round & Advance" button that doesn't exist in DOM until `canCloseRound` refreshes
+- The disabled state renders as a completely different button ("⏳ Waiting for all scores...")
+- Affected: `promotion.spec.ts:275`, `tournament.spec.ts:810`
+- See `specs/860_e2e-live-query-timing.md` for fix options
+
 ## 5p/6p Court Redistribution Tests
 
 - Need E2E tests for 5p and 6p court redistribution logic

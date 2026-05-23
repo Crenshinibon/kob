@@ -43,7 +43,8 @@
 - **[800_bug-fixes-index.md](./800_bug-fixes-index.md)**: Bug fixes from user testing and code review.
   - **[840_critical-bugs.md](./840_critical-bugs.md)**: Critical bugs: all fixed (radio buttons, org override, delete, best-of-3, score validation, UI glitch, reactivity, E2E config, auto-cleanup). Remaining: player removal mid-round, winBy hardcoding.
   - **[850_bun-migration.md](./850_bun-migration.md)**: Migrate package.json scripts from npx/tsx/npm to Bun-native tooling [COMPLETE]
-  - **Archived**: [810](./archive/810_match-display-bugs.md), [811](./archive/811-closeRound-requested-error.md), [812](./archive/812-standings-ranking-bug.md), [813](./archive/813-qr-live-query-bugs.md), [814](./archive/814-fetch-errors.md)
+  - **[860_e2n-live-query-timing.md](./860_e2e-live-query-timing.md)**: E2E tests fail due to live query polling delay (3s). Two tests affected. Fix: increase timeout or reduce polling interval.
+- **Archived**: [810](./archive/810_match-display-bugs.md), [811](./archive/811-closeRound-requested-error.md), [812](./archive/812-standings-ranking-bug.md), [813](./archive/813-qr-live-query-bugs.md), [814](./archive/814-fetch-errors.md)
 
 - **[820_ux-improvements.md](./820_ux-improvements.md)**: UX improvements: [ALL FIXED except v1 banner] radio buttons, player count validation, format explanations, org override, cleanup scripts, UI glitch
 

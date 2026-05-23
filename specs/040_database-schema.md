@@ -90,7 +90,7 @@
 }
 ```
 
-**Note**: 3p/5p/6p matches are stored in the same `match` table using the same `teamAScore`/`teamBScore` columns. The separate `match_3_player`, `match_5_player`, `match_6_player` tables exist in the schema but are **unused** (dead schema from an earlier design).
+**Note**: 3p/5p/6p matches are stored in the same `match` table using the same `teamAScore`/`teamBScore` columns. The separate `match_3_player`, `match_5_player`, `match_6_player` tables exist in the schema but are **unused dead schema** and should be removed. The original plan was separate tables per court type for strong DB-level typing, but the current approach (nullable player columns, application-layer enforcement) works well enough that migration carries more risk than benefit.
 
 ### match_3_player (UNUSED - dead schema)
 

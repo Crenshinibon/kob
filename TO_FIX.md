@@ -10,7 +10,7 @@
 
 - [ ] **E2E tests fail due to live query polling delay** — Tests wait for "Finalize Tournament" or "Close Round & Advance" button but it's not in the DOM until the 3-second live query poll refreshes `canCloseRound`. The disabled state renders as a completely different button ("⏳ Waiting for all scores..."). Two tests affected: `promotion.spec.ts:275` and `tournament.spec.ts:810`. See `specs/860_e2e-live-query-timing.md`.
 - [ ] `winBy` validation hardcoded to 2 — Score validation in `scoreSchema.ts` and `scores.remote.ts` always requires win-by-2, ignoring tournament's `winBy` config (e.g., `winBy: 1`)
-- [ ] Dead schema tables — `match_3_player`, `match_5_player`, `match_6_player` exist in schema but are never used. All 3p/5p/6p matches go through the main `match` table. Should be cleaned up.
+- [ ] Remove dead schema tables — `match_3_player`, `match_5_player`, `match_6_player` exist but are never used. All 3p/5p/6p matches go through the main `match` table with nullable player columns. Separate tables were the original plan for strong typing, but the current approach works and migrating would be high-risk for no user-visible benefit. Remove the dead tables and their Drizzle definitions.
 - [ ] No live query reconnect after `retirePlayer` / `reportInjury` — The live query on the tournament page doesn't auto-update after these server actions
 - [ ] Duplicate `saveScore` — Both a legacy server action in `+page.server.ts` AND a remote form in `scores.remote.ts`. The server action is dead code.
 - [ ] Draft status unused — Tournaments skip draft status and go straight to active on creation. The `status: 'draft'` default in schema is misleading.

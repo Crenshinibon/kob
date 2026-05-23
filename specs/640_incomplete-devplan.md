@@ -250,7 +250,7 @@ All redistribution algorithms implemented as pure functions with immutable state
 
 ## Known Issues
 
-1. **Dead schema tables**: `match_3_player`, `match_5_player`, `match_6_player` exist in schema but are never used. All matches go through the main `match` table.
+1. **Dead schema tables**: `match_3_player`, `match_5_player`, `match_6_player` exist in schema but are never used. Decision: remove them. The current single-table approach with nullable columns works; migrating to separate tables is high-risk for no user-visible benefit.
 2. **Hardcoded winBy**: Score validation always requires win-by-2 regardless of tournament's `winBy` config.
 3. **Draft status unused**: Tournaments skip draft status and go straight to active on creation.
 4. **No `/tournament/[id]/players` route**: The dashboard links to this page but it doesn't exist.
@@ -263,7 +263,7 @@ All redistribution algorithms implemented as pure functions with immutable state
 1. **Phase 1 validated by 82 tests** — redistribution logic is solid
 2. **Schema migration needed on production** — multiple migrations for new columns
 3. **DB column used instead of separate tables** — `player5Id`/`player6Id` nullable on `courtRotation` keeps schema simple
-4. **Dead schema tables** — `match_3_player`, `match_5_player`, `match_6_player` should be cleaned up
+4. **Dead schema tables**: Remove `match_3_player`, `match_5_player`, `match_6_player` — decided to stick with single `match` table
 5. **Hardcoded winBy** — needs to use tournament config for proper validation
 
 ## What We're NOT Doing (Out of Scope)
