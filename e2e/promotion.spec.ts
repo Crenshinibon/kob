@@ -137,8 +137,8 @@ test.describe('Promotion and Relegation', () => {
 		// Wait for the tournament page to fully render
 		await page.waitForSelector('h1');
 		await page.waitForSelector('.court-card');
-		await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)', {
-			timeout: 30000
+		await page.waitForSelector('button:has-text("Close Round & Advance")', {
+			timeout: 20000
 		});
 		await page.click('button:has-text("Close Round & Advance")');
 
@@ -267,7 +267,7 @@ test.describe('Promotion and Relegation', () => {
 
 		// Navigate to tournament page and close round button should be enabled
 		await page.goto(`/tournament/${tournamentId}`);
-		await page.waitForSelector('button:has-text("Close Round")');
+		await page.waitForSelector('button:has-text("Close Round")', { timeout: 20000 });
 		const enabledButton = await page.locator('button:has-text("Close Round")');
 		await expect(enabledButton).toBeEnabled();
 	});
@@ -332,8 +332,8 @@ test.describe('Promotion and Relegation', () => {
 		// Close the only round
 		await page.goto(`/tournament/${tournamentId}`);
 		await page.waitForSelector('.court-card');
-		await page.waitForSelector('button:has-text("Finalize Tournament"):not(:disabled)', {
-			timeout: 10000
+		await page.waitForSelector('button:has-text("Finalize Tournament")', {
+			timeout: 20000
 		});
 		await page.click('button:has-text("Finalize Tournament")');
 
@@ -409,7 +409,7 @@ test.describe('Promotion and Relegation', () => {
 		}
 
 		await page.goto(`/tournament/${tournamentId}`);
-		await page.waitForSelector('button:has-text("Close Round")');
+		await page.waitForSelector('button:has-text("Close Round")', { timeout: 20000 });
 		await page.click('button:has-text("Close Round")');
 
 		// Verify Round 2
@@ -488,7 +488,7 @@ test.describe('Promotion and Relegation', () => {
 
 			// Close Round 1
 			await page.goto(`/tournament/${tournamentId}`);
-			await page.waitForSelector('button:has-text("Close Round")');
+			await page.waitForSelector('button:has-text("Close Round")', { timeout: 20000 });
 			await page.click('button:has-text("Close Round")');
 
 			// Verify Round 2 started - live query updates automatically

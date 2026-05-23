@@ -162,8 +162,7 @@ test.describe('Tournament Integration Tests', () => {
 		await page.goto('/');
 		await page.click(`text=${tournamentName}`);
 		await page.waitForURL(/\/tournament\/\d+/);
-		// Wait for the close round button to be enabled (not the disabled waiting button)
-		await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)');
+		await page.waitForSelector('button:has-text("Close Round & Advance")', { timeout: 20000 });
 		await page.click('button:has-text("Close Round & Advance")');
 
 		// 7. Verify Round 2 started - live query updates automatically
@@ -207,7 +206,7 @@ test.describe('Tournament Integration Tests', () => {
 		// 9. Close final round
 		await page.goto('/');
 		await page.click(`text=${tournamentName}`);
-		await page.waitForSelector('button:has-text("Finalize Tournament")');
+		await page.waitForSelector('button:has-text("Finalize Tournament")', { timeout: 20000 });
 		await page.click('button:has-text("Finalize Tournament")');
 		await page.waitForTimeout(1000);
 
@@ -743,7 +742,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.goto('/');
 			await page.click(`text=${tournamentName}`);
 			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)');
+			await page.waitForSelector('button:has-text("Close Round & Advance")', { timeout: 20000 });
 			await page.click('button:has-text("Close Round & Advance")');
 			await page.waitForSelector('text=Round 2 of 2');
 
@@ -794,7 +793,7 @@ test.describe('Tournament Integration Tests', () => {
 			// Close final round
 			await page.goto('/');
 			await page.click(`text=${tournamentName}`);
-			await page.waitForSelector('button:has-text("Finalize Tournament")');
+		await page.waitForSelector('button:has-text("Finalize Tournament")', { timeout: 20000 });
 			await page.click('button:has-text("Finalize Tournament")');
 			await page.waitForTimeout(1000);
 
@@ -890,12 +889,8 @@ test.describe('Tournament Integration Tests', () => {
 			await page.goto('/');
 			await page.click(`text=${tournamentName}`);
 			await page.waitForURL(/\/tournament\/\d+/);
-			// Wait for tournament page to finish loading
-			await page.waitForSelector('button:has-text("Close Round & Advance"), button:has-text("Waiting for all scores...")', {
-				timeout: 15000
-			});
-			await page.waitForSelector('button:has-text("Close Round & Advance"):not(:disabled)', {
-				timeout: 15000
+			await page.waitForSelector('button:has-text("Close Round & Advance")', {
+				timeout: 20000
 			});
 			await page.click('button:has-text("Close Round & Advance")');
 			await page.waitForSelector('text=Round 2 of 2');

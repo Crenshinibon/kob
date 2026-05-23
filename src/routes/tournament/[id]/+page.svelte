@@ -3,7 +3,9 @@
 	import {
 		closeRoundForm,
 		deleteTournamentForm,
-		updateScoringOverrides
+		updateScoringOverrides,
+		retirePlayer,
+		reportInjury
 	} from './tournament-actions.remote';
 	import { getEffectiveScoring, getScoringLabel } from '$lib/tournament-logic';
 	import CourtQRCode from '../../../components/CourtQRCode.svelte';
