@@ -1,29 +1,27 @@
 # 820 UX Improvements
 
-## Match Format & Win By Inputs
+## ~~Match Format & Win By Inputs~~ [FIXED]
 
-- Change `<select>` dropdowns to radio buttons for "Match Format" and "Win By"
+- Changed `<select>` dropdowns to radio buttons for "Match Format" and "Win By"
 - Both only have two options, radio buttons are more visible and require fewer clicks
-- See `840_critical-bugs.md` for details
 
-## Player Count Validation
+## ~~Player Count Validation~~ [FIXED]
 
-- When entering more than 64 names, show warning/error that only max 64 are supported
+- When entering more than 64 names, warning/error shown that only max 64 are supported
 - At least one player must be removed to proceed
-- Currently the system accepts >64 but may fail silently or behave unexpectedly
 
-## Non-Standard Format Explanation
+## ~~Non-Standard Format Explanation~~ [FIXED]
 
-- Need explanation of how 3p/5p/6p formats work
-- Users need to understand the rotation and scoring rules for non-standard courts
+- 3p courts show "Solo Rotation" format explanation
+- 5p/6p courts show "Parallel Games" format explanation with run details
+- Users can understand the rotation and scoring rules for non-standard courts
 
-## Org Override for Non-Standard Court Scoring
+## ~~Org Override for Non-Standard Court Scoring~~ [FIXED]
 
-- Org should be able to overwrite scoring mode for 3p, 5p, and 6p courts
-- Relevant when these court types are active (or become active due to player retirements)
-- Override options: points to win, win-by margin, sets to win
-- UI should show which court types are active and allow per-type configuration
-- See `840_critical-bugs.md` for details
+- `scoringOverrides` JSONB column on tournament table for per-court-type scoring config
+- UI on tournament page with collapsible per-court-type fieldsets (edit/save/cancel)
+- `getEffectiveScoring()` merges base config with overrides
+- All consumers use centralized scoring functions
 
 ## V1 Data Wipe Banner
 
@@ -31,23 +29,21 @@
 - Manage user expectations about data persistence
 - Auto-cleanup jobs: delete closed tournaments older than 14 days, delete inactive tournaments older than 31 days
 
-## Tournament Cleanup Script
+## ~~Tournament Cleanup Script~~ [FIXED]
 
-- Need a way/script to wipe all tournaments from the database
-- Useful for testing and maintenance
-- Script exists: `scripts/wipe-tournaments.ts` (`npm run db:wipe`)
+- Script exists: `scripts/wipe-tournaments.ts` (`bun run db:wipe`)
+- Auto-cleanup script: `scripts/cleanup-old-tournaments.ts` (`bun run db:cleanup`)
+- Shared `scripts/db.ts` utility for database access outside SvelteKit
 
-## Player Name Background Overflow (UI Glitch)
+## ~~Player Name Background Overflow (UI Glitch)~~ [FIXED]
 
-- When a court has player names that wrap to a second line, the dark background extends to fill two lines
-- Courts with single-line player names don't have this issue
-- Inconsistent visual appearance across court cards
-- See `840_critical-bugs.md` for details
+- Added `align-self: flex-start` to `.player` CSS class
+- Courts with multi-line player names no longer extend dark background
 
 ## Files Affected
 
-- `src/routes/tournament/create/+page.svelte` - Radio buttons for Match Format/Win By, player count validation
-- `src/routes/tournament/[id]/+page.svelte` - Format explanation, banner, UI glitch, org override settings
-- `src/routes/court/[token]/+page.svelte` - Score entry with org override rules
-- `scripts/wipe-tournaments.ts` - Database cleanup script
-- New scheduled job file for auto-cleanup
+- `src/routes/tournament/create/+page.svelte` - Radio buttons for Match Format/Win By, player count validation, format explanations
+- `src/routes/tournament/[id]/+page.svelte` - Format explanation, org override settings, retirement UI, injury reporting
+- `src/routes/court/[token]/+page.svelte` - Score entry with org override rules, 3p/5p/6p format explanations
+- `scripts/wipe-tournaments.ts` - Database wipe script
+- `scripts/cleanup-old-tournaments.ts` - Auto-cleanup script

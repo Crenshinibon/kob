@@ -280,11 +280,11 @@ ORDER BY rank;
 
 ## Acceptance Criteria
 
-- [ ] Total standings calculate correctly across all rounds
-- [ ] Rankings update immediately when round is closed
-- [ ] Top 3 winners clearly highlighted
+- [x] Total standings calculate correctly across all rounds
+- [x] Rankings update immediately when round is closed
+- [x] Top 3 winners clearly highlighted
 - [ ] Movement indicators show rank changes between rounds
 - [ ] Winner announcement view is projection-friendly
 - [ ] Export to PDF/CSV works
-- [ ] Mobile display is readable
-- [ ] Handles ties appropriately
+- [x] Mobile display is readable
+- [x] Handles ties appropriately

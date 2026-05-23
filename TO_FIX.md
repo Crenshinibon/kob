@@ -2,17 +2,28 @@
 
 ## ToDo
 
-- [] There should be a way to remove a player from the tournament during a round and the affected court should handle this gracefully.Adjusting the court to a different format (to 3p from 4p, to 6p from 5p, to 4p from 5p) is not an option, because we would have to deal with already played matches and how to score the other players. I guess we need to investigate here, a little bit.
-- [] add tests for 5p / 6p court redistribution
-- [] we need a banner (for v1) to show that the data will be wiped
+- [ ] Mid-round player removal: There should be a way to remove a player during an active round and handle it gracefully. Adjusting the court format mid-round is not viable (already-played matches), so Options A (substitute) and C (solo play) from `670_player-retirement.md` need implementation. The cancel & average (Option B) is implemented in scoring logic but lacks UI.
+- [ ] Add E2E tests for 5p / 6p court redistribution
+- [ ] We need a banner (for v1) to show that the data will be wiped
+
+## Known Issues
+
+- [ ] `winBy` validation hardcoded to 2 — Score validation in `scoreSchema.ts` and `scores.remote.ts` always requires win-by-2, ignoring tournament's `winBy` config (e.g., `winBy: 1`)
+- [ ] Dead schema tables — `match_3_player`, `match_5_player`, `match_6_player` exist in schema but are never used. All 3p/5p/6p matches go through the main `match` table. Should be cleaned up.
+- [ ] No live query reconnect after `retirePlayer` / `reportInjury` — The live query on the tournament page doesn't auto-update after these server actions
+- [ ] Duplicate `saveScore` — Both a legacy server action in `+page.server.ts` AND a remote form in `scores.remote.ts`. The server action is dead code.
+- [ ] Draft status unused — Tournaments skip draft status and go straight to active on creation. The `status: 'draft'` default in schema is misleading.
+- [ ] Broken `/tournament/[id]/players` link — Dashboard links to this route but it doesn't exist. Player management is now on the creation form.
+- [ ] `retirePlayer` and `reportInjury` are still legacy server actions, not remote functions
+- [ ] `create` tournament action is still a legacy server action, not a remote function
+- [ ] `matchGroups()` and other derived functions return functions instead of values (unusual Svelte 5 pattern)
 
 ## Done
 
 - [x] Use Bun's built-in capabilities for scripts instead of npx/tsx/npm (Fixed: db:wipe, db:cleanup use `bun`, auth:schema uses `bunx`, removed `dotenv` dependency, updated AGENTS.md with Bun-first policy)
-
 - [x] Integration tests (in tournament.spec.ts) "scoring modes" should go a step further and test that the scores must be entered as dictated by the selected mode. (Fixed: best-of-3 per-set validation, single-set min points, 5p min points E2E tests all pass)
 - [x] add job to delete tournaments that are closed and older then 14 days
-- [x] add script to wipe all tournaments from the database (`npm run db:wipe`)
+- [x] add script to wipe all tournaments from the database (`bun run db:wipe`)
 - [x] add job to delete tournaments that are not updated for 31 days
 - [x] For Best-Of-3 matches the entry for the third set should only be visible when each team one a set. Also the rules 3rd set to 15 are not enforced. Entering the scores is weird also, when I enter points in all fields and then click save. The entered scores "are shifted around". (Fixed: deciding set shown only when split 1-1, min points enforced per set, score shifting fixed with keyed {#each}, sorted sets, correct team labels lookup)
 - [x] Tournament view layout is broken, it covers whole width of the browser, instead of the previous "centralized" layout.

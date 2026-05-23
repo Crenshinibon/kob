@@ -243,166 +243,28 @@ All redistribution algorithms implemented as pure functions with immutable state
 - ~~Phase 5: Redistribution Integration~~ ✅
 - ~~Phase 6: UI Updates~~ ✅
 - ~~Phase 7: Physical/Virtual Court UI~~ ✅
-- **Phase 8: Game Rules & Scoring Modes** — ✅ COMPLETE
-- **Phase 9: Duration Estimation** — ✅ COMPLETE
-- **Phase 10: Wait Time Forecasting** — ✅ COMPLETE
-- **Phase 11: Player Retirement** — ✅ COMPLETE
+- ~~Phase 8: Game Rules & Scoring Modes~~ ✅
+- ~~Phase 9: Duration Estimation~~ ✅
+- ~~Phase 10: Wait Time Forecasting~~ ✅
+- ~~Phase 11: Player Retirement~~ ✅
 
-- `src/lib/server/db/schema.ts` — add `scoring_mode`, `points_to_win`, `win_by`, `sets_to_win`, `deciding_set_points` columns
-- `src/lib/server/tournament-logic.ts` — extend `TournamentConfig` with scoring fields, add `getScoreCap(tournament, courtSize)` helper
-- `src/routes/tournament/create/+page.server.ts` — accept scoring mode and params from form
-- `src/routes/tournament/create/+page.svelte` — scoring mode radio (single-21 / best-of-3-15), optional param overrides (Advanced section)
-- `src/routes/court/[token]/scoreSchema.ts` — **FIX**: remove hardcoded `maxScore >= 21`, use tournament-level score cap
-- `src/routes/court/[token]/+page.server.ts` — read `scoreCap` from tournament config instead of hardcoded `courtSize >= 5 ? 15 : 21`
-- `src/routes/court/[token]/+page.svelte` — dynamic "to X" display via tournament config, best-of-3 per-set score UI
+## Known Issues
 
-**Changes**:
-
-- Tournament creation adds "Scoring Mode" section: Single Set to 21 (default) or Best of 3 to 15
-- Advanced section: optionally override `pointsToWin` (15-25), `winBy` (1-3), `setsToWin` (1-2)
-- 5p/6p courts: default to 1 set to 15 (or configurable 21), win by 2
-- 3p courts: same scoring as 4p courts (inherit from tournament config)
-- Client-side score validation fixed: `maxScore >= scoreCap` instead of hardcoded `>= 21`
-- Score entry validates win-by margin correctly per config
-- "to X" label on court page reads from tournament config, not hardcoded
-
-**Database migration**: `0003_game_rules.sql` — add 5 columns to `tournament` table
-
----
-
-### Phase 9: Duration Estimation (spec 650)
-
-**Estimated effort**: 2 days
-
-**Files modified**:
-
-- `src/lib/server/db/schema.ts` — add `setup_time_minutes`, `transition_time_minutes`, `avg_rally_duration_seconds`, `time_between_rallies_seconds`, `time_between_matches_minutes` columns
-- `src/lib/server/tournament-logic.ts` — add `estimateCourtDuration()`, `estimateRoundDuration()`, `estimateTournamentDuration()` pure functions
-- `src/routes/tournament/create/+page.server.ts` — calculate and return total duration estimate
-- `src/routes/tournament/create/+page.svelte` — live duration estimate display, updates as org changes settings
-- `src/routes/tournament/[id]/+page.server.ts` — per-round duration estimates
-- `src/routes/tournament/[id]/+page.svelte` — round duration info on round cards
-
-**Functions implemented**:
-
-1. `estimateCourtDuration(courtSize, pointsToWin, setsToWin)` — per-court duration using rally heuristic
-2. `estimateRoundDuration(tournament)` — `max(court duration)` for all active courts
-3. `estimateTournamentDuration(tournament)` — full formula: `setup + (rounds × round_duration) + ((rounds-1) × transition) + buffer`
-4. Shift-aware: for virtual courts, round = `shifts × court_duration + (shifts-1) × shift_transition`
-
-**UI display** (on create page, updates live):
-
-```
-Estimated Duration: ~3h 30min
-├─ Setup: 15 min
-├─ Round 1: 45 min
-├─ Transition: 10 min
-├─ Round 2: 45 min
-├─ ...
-└─ Buffer: 15 min
-Based on: 6 courts, 24 players, single set to 21, preseed format
-```
-
-**Duration defaults** (from spec 650):
-| Court Type | Default |
-|------------|---------|
-| 4p (21pt single set) | 45 min |
-| 4p (15pt best-of-3) | 55 min |
-| 3p (21pt) | 35 min |
-| 5p (15pt) | 45 min |
-| 6p (15pt) | 45 min |
-
-**Database migration**: `0004_duration_config.sql` — add 5 timing columns to `tournament` table
-
----
-
-### Phase 10: Wait Time Forecasting (spec 660)
-
-**Estimated effort**: 1 day
-
-**Files modified**:
-
-- `src/lib/server/tournament-logic.ts` — add `estimateWaitTimeForShift()` function
-- `src/routes/tournament/[id]/+page.server.ts` — export wait estimates per shift/virtual court
-- `src/routes/tournament/[id]/+page.svelte` — display "Est. wait: ~45 min" for waiting courts
-- `src/routes/court/[token]/+page.server.ts` — return wait estimate when court is in waiting shift
-- `src/routes/court/[token]/+page.svelte` — show waiting status with estimated countdown
-
-**Changes**:
-
-- Tournament view: each waiting court shows estimated wait time (`Est. round completion: ~40 min`)
-- Court page: waiting players see "Status: WAITING — Est. wait: ~45 min"
-- Wait formula: `(remaining shifts × avg court duration) + (remaining shifts × transition time)`
-- No real-time countdown (no WebSocket infrastructure); estimates are static per page load
-- Progress indicators for active shift courts (completed matches / total matches)
-
----
-
-### Phase 11: Player Retirement (spec 670)
-
-**Estimated effort**: 2 days
-
-**Files modified**:
-
-- `src/lib/server/db/schema.ts` — add `retired_at`, `retired_round`, `retirement_reason`, `final_standing` columns to `player` table
-- `src/lib/server/tournament-logic.ts` — add `calculateRetiredStanding()`, `recalculateCourtConfigAfterRetirement()`, final round elimination rule (`topCourtIs4Players`)
-- `src/routes/tournament/[id]/+page.server.ts` — `retirePlayer` action, redistribution after retirement
-- `src/routes/tournament/[id]/+page.svelte` — retire button per player, retirement flow UI, final round elimination display
-- `src/routes/tournament/[id]/standings/+page.server.ts` — retired players show final standing
-
-**Functions implemented**:
-
-1. `calculateRetiredStanding(court, totalCourts, remainingRounds, format)` — worst place for retired player
-   - Preseed: worst place in current bracket
-   - Random seed: `min(currentCourt + remainingRounds, totalCourts)` worst court, last place on that court
-2. `recalculateCourtConfigAfterRetirement(players, courtSizes)` — recompute court sizes after removal
-3. Final round rule: top court always 4 players. 1-2 extra players eliminated, placed at bottom of final standings.
-
-**UI flow**:
-
-- On tournament page: "Retire Player" button shown after round closes
-- Dropdown to select player, optional reason dropdown (Injury/Schedule/Personal/Disqualified/Other)
-- System recalculates court configuration and redistributes
-- Final round: eliminated players displayed with "(Eliminated — Final standing: Xth place)"
-- Standings page: retired players marked with reason, show final standing
-
-**Rules**:
-
-- Retirement only allowed **between rounds** (after closeRound, before next startRound)
-- No mid-tournament replacements — only before tournament starts
-- Auto-forfeit incomplete matches 0-21
-- Multiple retirements ordered: preseed = within bracket, random = by court position (worse court = worse standing)
-
-**Database migration**: `0005_player_retirement.sql` — add 4 columns to `player` table
-
----
-
-## Total Estimated Remaining Effort: 7 days
-
-### Revised Timeline
-
-- ~~Phase 1: Tournament Logic~~ ✅
-- ~~Phase 2: Database Schema~~ ✅
-- ~~Phase 3: Player Input & Creation~~ ✅
-- ~~Phase 4: Variable Court Match Generation~~ ✅
-- ~~Phase 5: Redistribution Integration~~ ✅
-- ~~Phase 6: UI Updates~~ ✅
-- ~~Phase 7: Physical/Virtual Court UI~~ ✅
-- **Phase 8: Game Rules & Scoring Modes** — 2 days
-- **Phase 9: Duration Estimation** — 2 days
-- **Phase 10: Wait Time Forecasting** — 1 day
-- **Phase 11: Player Retirement** — 2 days
+1. **Dead schema tables**: `match_3_player`, `match_5_player`, `match_6_player` exist in schema but are never used. All matches go through the main `match` table.
+2. **Hardcoded winBy**: Score validation always requires win-by-2 regardless of tournament's `winBy` config.
+3. **Draft status unused**: Tournaments skip draft status and go straight to active on creation.
+4. **No `/tournament/[id]/players` route**: The dashboard links to this page but it doesn't exist.
+5. **Legacy server actions**: `retirePlayer`, `reportInjury`, and `create` are still legacy server actions, not remote functions.
+6. **Duplicate `saveScore`**: Both a legacy server action and a remote form exist for score saving.
+7. **Live query gaps**: `retirePlayer` and `reportInjury` don't trigger live query reconnect.
 
 ## Risks & Dependencies
 
 1. **Phase 1 validated by 82 tests** — redistribution logic is solid
-2. **Schema migration needed on production** — `player5Id`, `player6Id`, `schedulingMode`, `court_sizes` columns added
+2. **Schema migration needed on production** — multiple migrations for new columns
 3. **DB column used instead of separate tables** — `player5Id`/`player6Id` nullable on `courtRotation` keeps schema simple
-4. **Physical court mapping needs venue-specific UI** — waiting for design input
-5. **Phase 8 depends on 5p/6p courts (Phase 4)** — scoring mode interacts with parallel game rules
-6. **Phase 9 depends on Phase 8** — duration formula needs scoring mode (21pt vs 15pt)
-7. **Phase 10 depends on Phase 9** — wait time uses duration estimates
-8. **Phase 11 depends on redistribution (Phase 5)** — retirement triggers recalculation
+4. **Dead schema tables** — `match_3_player`, `match_5_player`, `match_6_player` should be cleaned up
+5. **Hardcoded winBy** — needs to use tournament config for proper validation
 
 ## What We're NOT Doing (Out of Scope)
 
@@ -411,6 +273,8 @@ Based on: 6 courts, 24 players, single set to 21, preseed format
 - Tournament merging / splitting for >64 players
 - Custom match formats beyond 2v2
 - Option C (rotating sit-outs) — removed per spec update
-- Separate match tables per court type (match3Player, match5Player, match6Player) — using nullable columns instead
+- Separate match tables per court type — using main `match` table with nullable columns
 - Live countdown timers for wait time — estimates are static per page load
 - Push notifications for court completion or shift start
+- Draft tournament state — tournaments start immediately on creation
+- Editing tournament settings after creation

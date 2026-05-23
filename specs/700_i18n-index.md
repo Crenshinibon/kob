@@ -1,5 +1,7 @@
 # i18n — Internationalization Spec Index
 
+**Status: NOT YET IMPLEMENTED** — This is a planned feature for a future version.
+
 ## Sub-Specs
 
 | File                         | Topic                                                                          |

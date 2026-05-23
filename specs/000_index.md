@@ -6,17 +6,17 @@
 
 - **[030_auth-and-users.md](./030_auth-and-users.md)**: Simple auth: Admin login for management, anonymous access for players via court URLs.
 
-- **[040_database-schema.md](./040_database-schema.md)**: Schema: tournament, player, courtRotation, match, courtAccess tables. Tournament supports formatType and playerCount.
+- **[040_database-schema.md](./040_database-schema.md)**: Schema: tournament (with scoring/retirement/timing/court config), player (with retirement), courtRotation (variable size 3-6), match (all court types, best-of-3, injury), courtAccess. Dead schema: match_3/5/6_player tables.
 
-- **[050_tournament-management.md](./050_tournament-management.md)**: Flow: Create → Select format and player count → Add players → Start → Run rounds → Finish. Supports 16 and 32 players, Random Seed and Preseed formats.
+- **[050_tournament-management.md](./050_tournament-management.md)**: Flow: Create (with players, scoring, court config) → Run rounds → Finish. No draft state — tournaments start immediately. Uses remote functions + some legacy server actions.
 
-- **[060_court-operations.md](./060_court-operations.md)**: Mobile-optimized score entry. No real-time - refresh to update.
+- **[060_court-operations.md](./060_court-operations.md)**: Mobile-optimized score entry. Supports 3p/4p/5p/6p courts. Best-of-3 set-by-set scoring. No live query on court page.
 
-- **[070_scoring-and-standings.md](./070_scoring-and-standings.md)**: Points = your score each match. Tiebreakers: points → differential → playerId (deterministic). Total standings page with podium and achievements.
+- **[070_scoring-and-standings.md](./070_scoring-and-standings.md)**: Points = your score each match. Tiebreakers: points → differential → playerId (deterministic). 5p/6p use average points per game. Canceled matches use averages. Scoring modes: single-21, best-of-3, custom. Per-court-type overrides.
 
-- **[080_promotion-relegation.md](./080_promotion-relegation.md)**: Random Seed: Round 1 redistributes by rank (vertical seeding), Round 2+ uses ladder system (2 up, 2 down). Preseed: tiered binary redistribution.
+- **[080_promotion-relegation.md](./080_promotion-relegation.md)**: Random Seed: Round 1 redistributes by rank (vertical seeding), Round 2+ uses ladder system (2 up, 2 down). Preseed: recursive tiered redistribution. All work for 8-64 players (2-16 courts). Non-standard bottom court for leftovers.
 
-- **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion).
+- **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export]
 
 - **[100_dark-theme.md](./100_dark-theme.md)**: High-contrast dark theme optimized for outdoor visibility in bright sunlight. Color palettes, component styles, and accessibility guidelines.
 
@@ -41,13 +41,13 @@
   - **[730_i18n-implementation.md](./730_i18n-implementation.md)**: 7 implementation phases, file changes, testing strategy.
 
 - **[800_bug-fixes-index.md](./800_bug-fixes-index.md)**: Bug fixes from user testing and code review.
-  - **[840_critical-bugs.md](./840_critical-bugs.md)**: Critical bugs: delete tournament, best-of-3 score entry, score validation, player removal, UI glitches, reactivity warnings, E2E config, auto-cleanup, radio button inputs
-  - **[850_bun-migration.md](./850_bun-migration.md)**: Migrate package.json scripts from npx/tsx/npm to Bun-native tooling
+  - **[840_critical-bugs.md](./840_critical-bugs.md)**: Critical bugs: all fixed (radio buttons, org override, delete, best-of-3, score validation, UI glitch, reactivity, E2E config, auto-cleanup). Remaining: player removal mid-round, winBy hardcoding.
+  - **[850_bun-migration.md](./850_bun-migration.md)**: Migrate package.json scripts from npx/tsx/npm to Bun-native tooling [COMPLETE]
   - **Archived**: [810](./archive/810_match-display-bugs.md), [811](./archive/811-closeRound-requested-error.md), [812](./archive/812-standings-ranking-bug.md), [813](./archive/813-qr-live-query-bugs.md), [814](./archive/814-fetch-errors.md)
 
-- **[820_ux-improvements.md](./820_ux-improvements.md)**: UX improvements: radio button inputs, player count validation, format explanations, org override for non-standard courts, v1 banner
+- **[820_ux-improvements.md](./820_ux-improvements.md)**: UX improvements: [ALL FIXED except v1 banner] radio buttons, player count validation, format explanations, org override, cleanup scripts, UI glitch
 
-- **[830_test-improvements.md](./830_test-improvements.md)**: Test improvements: auto cleanup, E2E config fix, 5p/6p tests, scoring mode tests, tournament deletion tests
+- **[830_test-improvements.md](./830_test-improvements.md)**: Test improvements: [MOSTLY FIXED] auto cleanup, E2E config, scoring mode tests, non-standard standings tests. Remaining: 5p/6p redistribution E2E tests
 
 - **Archived specs** (completed, no longer active references):
   - **[110_score-saving-ux.md](./archive/110_score-saving-ux.md)**: Score saving UX fixes

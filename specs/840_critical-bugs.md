@@ -110,31 +110,40 @@ Three related issues with best-of-3 score entry:
 
 ---
 
-## Player Removal During Tournament
+## Player Removal During Tournament (Partially Implemented)
 
 ### Problem
 
-- No way to remove a player from tournament during a round
-- Affected court should handle this gracefully
-- Adjusting court format (e.g., 6p to 5p) is not viable due to already-played matches
+- No way to remove a player from tournament **during an active round**
+- Between rounds, the `retirePlayer` server action exists and works
+- Mid-round injury handling (`reportInjury` action) exists but needs more testing
+- Adjusting court format (e.g., 4p to 3p) mid-round is not viable due to already-played matches
+
+### What's Implemented
+
+- `retirePlayer` server action: works between rounds, recalculates court config, redistributes
+- `reportInjury` server action: marks match as canceled, injured player IDs tracked
+- Retirement UI: collapsible form on tournament page, between rounds only
+- Injury reporting UI: collapsible form on tournament page, during active rounds
+- `calculateRetiredStanding()`: computes final standing for retired players
+- `recalculateCourtConfigAfterRetirement()`: adjusts court sizes after removal
+- Standings handle canceled matches using average points per completed match
+
+### What's Not Implemented
+
+- Mid-round player removal (changing court size while matches are in progress)
+- Physical substitute flow for injured players (Option A from `670_player-retirement.md`)
+- Solo play option for injured players (Option C from `670_player-retirement.md`)
+- UI for selecting injury handling option (substitute vs cancel vs solo)
 
 ### Location
 
-- Tournament logic (`src/lib/tournament-logic.ts`)
-- Court page UI (`src/routes/court/[token]/+page.svelte`)
 - Tournament view (`src/routes/tournament/[id]/+page.svelte`)
+- Server actions (`src/routes/tournament/[id]/+page.server.ts`)
 
-### Expected Behavior
+### Spec Reference
 
-- Org can retire/remove player mid-tournament (see `670_player-retirement.md`)
-- System recalculates court configuration
-- Affected matches handled (auto-forfeit 0-21 or redistribution)
-- Remaining players continue with adjusted court setup
-
-### Notes
-
-- Spec already exists in `670_player-retirement.md` but not implemented
-- Need to investigate edge cases for mid-round removal
+See `670_player-retirement.md` for full retirement/injury spec.
 
 ---
 
@@ -193,7 +202,7 @@ Three related issues with best-of-3 score entry:
 
 ---
 
-## Scoring Mode Tests Need Enhancement
+## ~~Scoring Mode Tests Need Enhancement~~ [FIXED]
 
 ### Problem
 
@@ -201,32 +210,40 @@ Three related issues with best-of-3 score entry:
 - Don't verify that scores must be entered as dictated by selected mode
 - Best-of-3 should require set-by-set score entry in tests
 
-### Location
+### Fix Applied
 
-- `e2e/tournament.spec.ts` - Scoring Modes test describe block
-
-### Expected Behavior
-
-- Tests create tournaments with different scoring modes
-- Verify score entry UI matches mode (single set vs best-of-3)
-- Verify validation enforces mode rules
-- Verify match completion requires correct number of sets
+- Best-of-3 per-set validation tests pass
+- Single-set min points validation tests pass
+- 5p min points validation tests pass
+- Score entry reflects game mode correctly
 
 ---
 
 ## Files Affected
 
-- `src/routes/tournament/[id]/+page.svelte` - Delete form, reactivity warning, UI glitch, layout fix
+- `src/routes/tournament/[id]/+page.svelte` - Delete form, reactivity warning, UI glitch, layout fix, retirement UI, injury UI
 - `src/routes/tournament/[id]/+page.ts` - SSR disabled for hydration fix
-- `src/routes/tournament/[id]/tournament-actions.remote.ts` - Delete handler
-- `src/routes/tournament/create/+page.svelte` - Radio buttons for format/win-by
-- `src/routes/court/[token]/+page.svelte` - Score entry UI (best-of-3)
+- `src/routes/tournament/[id]/tournament-actions.remote.ts` - Delete handler, closeRound, scoring overrides
+- `src/routes/tournament/[id]/+page.server.ts` - retirePlayer action, reportInjury action
+- `src/routes/tournament/create/+page.svelte` - Radio buttons for format/win-by, player count validation, duration estimation
+- `src/routes/court/[token]/+page.svelte` - Score entry UI (best-of-3), 3p/5p/6p format explanations
 - `src/routes/court/[token]/scores.remote.ts` - Score validation (no caps, min points + win-by-2)
-- `src/routes/court/[token]/scoreSchema.ts` - Removed point cap validation
-- `src/routes/court/[token]/+page.server.ts` - Renamed scoreCap to minPoints
+- `src/routes/court/[token]/scoreSchema.ts` - Client-side score validation
+- `src/routes/court/[token]/+page.server.ts` - Renamed scoreCap to minPoints, effective scoring
+- `src/lib/server/tournament-logic.ts` - State machine, redistribution, scoring, retirement, duration
 - `e2e/db.ts` - Database connection for E2E tests
 - `e2e/global-setup.ts` - Test cleanup
-- `e2e/tournament.spec.ts` - Scoring mode tests
+- `e2e/tournament.spec.ts` - Scoring mode tests, tournament deletion tests
 - `e2e/standings.spec.ts` - Score validation tests (no caps)
 - `e2e/format.spec.ts` - Court link navigation fixes
-- New scheduled job file for auto-cleanup (pending)
+- `scripts/cleanup-old-tournaments.ts` - Auto-cleanup
+- `scripts/wipe-tournaments.ts` - Manual wipe
+
+## Known Issues (Not Yet Fixed)
+
+1. **winBy hardcoding**: Score validation always requires win-by-2 regardless of tournament's `winBy` config
+2. **Dead schema tables**: `match_3_player`, `match_5_player`, `match_6_player` exist but are never used
+3. **No live query reconnect after retirePlayer/reportInjury**: Live query doesn't auto-update
+4. **Duplicate saveScore**: Both legacy server action and remote form exist
+5. **Draft status unused**: Tournaments created as active, never use draft status
+6. **Broken `/tournament/[id]/players` link**: Dashboard links to this route but it doesn't exist

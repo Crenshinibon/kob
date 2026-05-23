@@ -93,13 +93,17 @@ Court 4: 3rd-4th from Courts 3,4 → Places 13-16
 ```typescript
 function redistributePlayers(courtResults, currentRound, courtCount, isPreseed) {
 	if (isPreseed) {
-		return redistributePreseed(courtResults, currentRound, courtCount);
+		return redistributePreseedRecursive(courtResults, currentRound, courtCount);
 	} else {
 		return redistributeLadder(courtResults, currentRound === 1, courtCount);
 	}
 }
 ```
 
-Pure functions extracted to `src/lib/server/tournament-logic.ts` with comprehensive unit tests.
+Pure functions extracted to `src/lib/server/tournament-logic.ts` with comprehensive unit tests (82 passing).
+
+**Extended support**: All redistribution algorithms work for 8-64 players (2-16 courts). Vertical seeding uses a cascade pattern that works for any court count. Ladder (2-up/2-down) works for any court count >= 2. Preseed uses recursive splitting for any court count.
+
+**Non-standard bottom court**: When `playerCount % 4 !== 0`, the bottom court is non-standard (3p/5p/6p). Redistribution places the lowest-ranked players on this court after filling standard courts from the top.
 
 That's the complete algorithm. No complex UI needed - just happens automatically when admin clicks "Close Round".

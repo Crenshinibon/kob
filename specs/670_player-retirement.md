@@ -1,5 +1,13 @@
 # Player Retirement During Tournament
 
+## Implementation Status
+
+**Between-rounds retirement**: ✅ IMPLEMENTED — Org can retire players between rounds via `retirePlayer` server action. Court configuration recalculates, redistribution applies.
+
+**Mid-round injury handling**: ⚠️ PARTIALLY IMPLEMENTED — `reportInjury` action exists for marking matches as canceled with `isCanceled` flag. Options A (substitute), B (cancel & average), C (solo play) are spec'd but only Option B (cancel & average) is implemented in the scoring logic. No UI for selecting between the three options.
+
+**Final round elimination**: ✅ IMPLEMENTED — Top court must have exactly 4 players. Extra players eliminated.
+
 ## Problem
 
 Players bail out mid-tournament for various reasons:

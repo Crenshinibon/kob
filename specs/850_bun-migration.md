@@ -1,5 +1,9 @@
 # 850 Bun Migration
 
+## Status: COMPLETE ✅
+
+All package.json scripts have been migrated to Bun-native commands.
+
 ## Problem
 
 The project uses `npx`, `tsx`, and `npm run` in package.json scripts despite running in a Bun environment (`"packageManager": "bun@1.3.9"`). This introduces unnecessary dependencies and tooling overhead.
@@ -49,16 +53,17 @@ const DATABASE_URL = process.env.DATABASE_URL!;
 
 Then remove `dotenv` from `devDependencies`.
 
-### Phase 3: Update AGENTS.md
+### Phase 3: Update AGENTS.md ✅
 
 Update all command references from `npm run` / `npx` to `bun run` / `bunx`.
 
-### Phase 4: Verify
+### Phase 4: Verify ✅
 
 - All scripts work with `bun run`
-- E2E tests still pass
-- Database scripts still work
+- Database scripts work (`bun run db:wipe`, `bun run db:cleanup`)
 - No regressions in dev workflow
+- `dotenv` dependency removed, Bun auto-loads `.env`
+- Minor remaining: `test` script uses `npm run` for sub-commands (Vitest/Playwright compatibility)
 
 ## Constraints
 

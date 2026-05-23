@@ -159,24 +159,24 @@ workers: 2, // or 1 for serial execution
 
 ### Beach Volleyball Rules
 
-**Problem**: Invalid scores (e.g., winner with < 21 points, win by only 1 point, tied scores) were being accepted.
+**Problem**: Invalid scores (e.g., winner with insufficient points, win by only 1 point, tied scores) were being accepted.
 
-**Solution**: Server-side validation in `src/routes/court/[token]/+page.server.ts`:
+**Solution**: Server-side validation uses centralized scoring functions:
 
 ```typescript
-if (teamAScore < 1 || teamAScore > 50 || teamBScore < 1 || teamBScore > 50) {
-	return { error: 'Scores must be between 1 and 50' };
-}
-if (teamAScore === teamBScore) {
-	return { error: 'Scores cannot be tied' };
-}
-if (maxScore < 21) {
-	return { error: 'Winner must have at least 21 points' };
-}
-if (maxScore - minScore < 2) {
-	return { error: 'Winner must win by at least 2 points' };
-}
+// Scores are validated against the tournament's effective scoring config
+const effectiveScoring = getEffectiveScoring(tournament, courtSize);
+const minPoints = getMinPointsForSet(effectiveScoring, setNumber, isDecidingSet);
+
+// Validation rules:
+// - Scores between 0-50
+// - No ties
+// - Winner must have >= minPoints (21 for 4p, 15 for 5p/6p, configurable)
+// - Winner must win by at least winBy points (default 2)
+// - No point caps — scores like 30-28 are valid (winner has enough points + wins by 2)
 ```
+
+**Known issue**: The `winBy` validation is hardcoded to 2 in `scoreSchema.ts` and `scores.remote.ts`. If a tournament is configured with `winBy: 1`, the validation still requires win by 2.
 
 ## Summary
 
