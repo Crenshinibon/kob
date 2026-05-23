@@ -241,7 +241,8 @@ See `670_player-retirement.md` for full retirement/injury spec.
 
 ## Known Issues (Not Yet Fixed)
 
-1. **winBy hardcoding**: Score validation always requires win-by-2 regardless of tournament's `winBy` config
+1. **E2E tests fail due to live query polling delay**: Tests wait for "Finalize Tournament" / "Close Round & Advance" button but it's not rendered until the 3-second live query poll refreshes `canCloseRound`. The disabled state is a completely different DOM element ("⏳ Waiting for all scores..."). Affected tests: `promotion.spec.ts:275`, `tournament.spec.ts:810`. See `specs/860_e2e-live-query-timing.md`.
+2. **winBy hardcoding**: Score validation always requires win-by-2 regardless of tournament's `winBy` config
 2. **Dead schema tables**: `match_3_player`, `match_5_player`, `match_6_player` exist but are never used
 3. **No live query reconnect after retirePlayer/reportInjury**: Live query doesn't auto-update
 4. **Duplicate saveScore**: Both legacy server action and remote form exist
