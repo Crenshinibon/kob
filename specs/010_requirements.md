@@ -61,11 +61,13 @@ Only the Org can create a tournament. The creation form requires:
 Courts may contain 3, 4, 5, or 6 players depending on player count. The system generates matches automatically for each court type:
 
 **4-player courts**: 3 matches ensuring every player partners with every other player exactly once:
+
 1. **Match 1:** A & B vs. C & D
 2. **Match 2:** A & C vs. B & D
 3. **Match 3:** A & D vs. B & C
 
 **3-player courts**: 3 matches in 2v1 format (each player takes a solo turn):
+
 1. **Match 1:** A & B vs. C
 2. **Match 2:** A & C vs. B
 3. **Match 3:** B & C vs. A

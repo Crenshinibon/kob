@@ -38,6 +38,10 @@
 			{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
 		>
 	>({});
+	let retirePlayerId = $state(0);
+	let retireReason = $state('');
+	let injuryPlayerId = $state(0);
+	let injuryOption = $state<'substitute' | 'cancel' | ''>('');
 
 	function getMatchStatus(matches: { teamAScore: number | null }[]): string {
 		const completed = matches.filter((m) => m.teamAScore !== null).length;
@@ -387,10 +391,10 @@
 				<section class="retire-section">
 					<details>
 						<summary class="btn-retire-header">Retire a Player</summary>
-						<form method="POST" action="?/retirePlayer" class="retire-form">
+						<div class="retire-form">
 							<div class="field">
 								<label for="retirePlayerId">Select player to retire</label>
-								<select id="retirePlayerId" name="playerId" required>
+								<select id="retirePlayerId" bind:value={retirePlayerId} required>
 									<option value="">— Select player —</option>
 									{#each courts as court}
 										{#each court.players as p}
@@ -403,7 +407,7 @@
 							</div>
 							<div class="field">
 								<label for="retireReason">Reason</label>
-								<select id="retireReason" name="reason">
+								<select id="retireReason" bind:value={retireReason}>
 									<option value="">— Optional —</option>
 									<option value="injury">Injury</option>
 									<option value="schedule">Schedule</option>
@@ -412,18 +416,32 @@
 									<option value="other">Other</option>
 								</select>
 							</div>
-							<button type="submit" class="btn-danger"> Retire Player </button>
-						</form>
+							<button
+								class="btn-danger"
+								onclick={async () => {
+									if (!retirePlayerId) return;
+									await retirePlayer({
+										tournamentId: data.tournamentId,
+										playerId: retirePlayerId,
+										reason: retireReason || undefined
+									});
+									retirePlayerId = 0;
+									retireReason = '';
+								}}
+							>
+								Retire Player
+							</button>
+						</div>
 					</details>
 				</section>
 
 				<section class="injury-section">
 					<details>
 						<summary class="btn-injury-header">Report Injury</summary>
-						<form method="POST" action="?/reportInjury" class="injury-form">
+						<div class="injury-form">
 							<div class="field">
 								<label for="injuryPlayerId">Select injured player</label>
-								<select id="injuryPlayerId" name="playerId" required>
+								<select id="injuryPlayerId" bind:value={injuryPlayerId} required>
 									<option value="">— Select player —</option>
 									{#each courts as court}
 										{#each court.players as p}
@@ -442,14 +460,14 @@
 									aria-label="How would you like to handle the remaining matches?"
 								>
 									<label class="radio-label">
-										<input type="radio" name="option" value="substitute" required />
+										<input type="radio" bind:group={injuryOption} value="substitute" required />
 										<span class="radio-title">Use a Substitute</span>
 										<span class="radio-desc">
 											Play 2v2 with a temporary substitute. Scores entered normally.
 										</span>
 									</label>
 									<label class="radio-label">
-										<input type="radio" name="option" value="cancel" required />
+										<input type="radio" bind:group={injuryOption} value="cancel" required />
 										<span class="radio-title">Cancel &amp; Average</span>
 										<span class="radio-desc">
 											Cancel remaining matches. Standings use average points.
@@ -457,9 +475,23 @@
 									</label>
 								</div>
 							</div>
-							<input type="hidden" name="reason" value="injury" />
-							<button type="submit" class="btn-danger"> Confirm Injury </button>
-						</form>
+							<button
+								class="btn-danger"
+								onclick={async () => {
+									if (!injuryPlayerId || !injuryOption) return;
+									await reportInjury({
+										tournamentId: data.tournamentId,
+										playerId: injuryPlayerId,
+										option: injuryOption,
+										reason: 'injury'
+									});
+									injuryPlayerId = 0;
+									injuryOption = '';
+								}}
+							>
+								Confirm Injury
+							</button>
+						</div>
 					</details>
 				</section>
 			{/if}

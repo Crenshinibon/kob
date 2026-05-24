@@ -6,8 +6,9 @@
 		estimateRoundDurationMinutes,
 		type DurationConfig
 	} from '$lib/tournament-logic';
+	import { createTournamentForm } from './create.remote';
 
-	let { form } = $props<{ form?: { error?: string } }>();
+	let createError = $state('');
 
 	let tournamentName = $state('');
 	let formatType = $state<'random-seed' | 'preseed'>('random-seed');
@@ -187,9 +188,31 @@
 		<h1>Create Tournament</h1>
 	</header>
 
-	<form method="POST" action="?/create">
-		{#if form?.error}
-			<div class="error">{form.error}</div>
+	<form {...createTournamentForm}>
+		<input type="hidden" name="name" value={tournamentName} />
+		<input type="hidden" name="formatType" value={formatType} />
+		<input type="hidden" name="names" value={playerNames} />
+		<input type="hidden" name="physicalCourts" value={physicalCourts} />
+		<input type="hidden" name="scoringMode" value={scoringMode} />
+		<input type="hidden" name="numRounds" value={numRounds} />
+		{#if scoringMode === 'custom'}
+			<input type="hidden" name="pointsToWin" value={customPointsToWin} />
+			<input type="hidden" name="winBy" value={parseInt(customWinBy)} />
+			<input type="hidden" name="setsToWin" value={parseInt(customFormat)} />
+			<input type="hidden" name="decidingSetPoints" value={customDecidingPoints} />
+		{:else if scoringMode === 'best-of-3'}
+			<input type="hidden" name="pointsToWin" value={21} />
+			<input type="hidden" name="winBy" value={2} />
+			<input type="hidden" name="setsToWin" value={2} />
+			<input type="hidden" name="decidingSetPoints" value={15} />
+		{:else}
+			<input type="hidden" name="pointsToWin" value={21} />
+			<input type="hidden" name="winBy" value={2} />
+			<input type="hidden" name="setsToWin" value={1} />
+			<input type="hidden" name="decidingSetPoints" value={15} />
+		{/if}
+		{#if createError}
+			<div class="error">{createError}</div>
 		{/if}
 
 		<div class="field">
@@ -197,7 +220,6 @@
 			<input
 				type="text"
 				id="name"
-				name="name"
 				bind:value={tournamentName}
 				required
 				placeholder="King Of the Beach 2026"
@@ -209,7 +231,7 @@
 			<div class="radio-group">
 				<label class="radio-label">
 					<div class="radio-wrapper">
-						<input type="radio" name="formatType" value="random-seed" bind:group={formatType} />
+						<input type="radio" value="random-seed" bind:group={formatType} />
 					</div>
 					<span class="radio-content">
 						<strong>Random</strong>
@@ -218,7 +240,7 @@
 				</label>
 				<label class="radio-label">
 					<div class="radio-wrapper">
-						<input type="radio" name="formatType" value="preseed" bind:group={formatType} />
+						<input type="radio" value="preseed" bind:group={formatType} />
 					</div>
 					<span class="radio-content">
 						<strong>Pre-Seed</strong>
@@ -233,7 +255,7 @@
 			<div class="radio-group">
 				<label class="radio-label">
 					<div class="radio-wrapper">
-						<input type="radio" name="scoringMode" value="single-21" bind:group={scoringMode} />
+						<input type="radio" value="single-21" bind:group={scoringMode} />
 					</div>
 					<span class="radio-content">
 						<strong>One Set to 21</strong>
@@ -242,7 +264,7 @@
 				</label>
 				<label class="radio-label">
 					<div class="radio-wrapper">
-						<input type="radio" name="scoringMode" value="best-of-3" bind:group={scoringMode} />
+						<input type="radio" value="best-of-3" bind:group={scoringMode} />
 					</div>
 					<span class="radio-content">
 						<strong>Best of 3</strong>
@@ -251,7 +273,7 @@
 				</label>
 				<label class="radio-label">
 					<div class="radio-wrapper">
-						<input type="radio" name="scoringMode" value="custom" bind:group={scoringMode} />
+						<input type="radio" value="custom" bind:group={scoringMode} />
 					</div>
 					<span class="radio-content">
 						<strong>Custom</strong>
@@ -266,11 +288,11 @@
 				<span class="label">Match Format</span>
 				<div class="radio-group">
 					<label class="radio-label">
-						<input type="radio" name="customFormat" value="1" bind:group={customFormat} />
+						<input type="radio" value="1" bind:group={customFormat} />
 						<span class="radio-text">Single set</span>
 					</label>
 					<label class="radio-label">
-						<input type="radio" name="customFormat" value="2" bind:group={customFormat} />
+						<input type="radio" value="2" bind:group={customFormat} />
 						<span class="radio-text">Best of 3</span>
 					</label>
 				</div>
@@ -279,11 +301,11 @@
 				<span class="label">Win By</span>
 				<div class="radio-group">
 					<label class="radio-label">
-						<input type="radio" name="customWinBy" value="2" bind:group={customWinBy} />
+						<input type="radio" value="2" bind:group={customWinBy} />
 						<span class="radio-text">2 points</span>
 					</label>
 					<label class="radio-label">
-						<input type="radio" name="customWinBy" value="1" bind:group={customWinBy} />
+						<input type="radio" value="1" bind:group={customWinBy} />
 						<span class="radio-text">1 point</span>
 					</label>
 				</div>
@@ -294,7 +316,6 @@
 					<input
 						type="number"
 						id="pointsToWin"
-						name="pointsToWin"
 						min="9"
 						max="21"
 						bind:value={customPointsToWin}
@@ -307,7 +328,6 @@
 					<input
 						type="number"
 						id="pointsToWin"
-						name="pointsToWin"
 						min="9"
 						max="21"
 						bind:value={customPointsToWin}
@@ -319,7 +339,6 @@
 					<input
 						type="number"
 						id="decidingSetPoints"
-						name="decidingSetPoints"
 						min="9"
 						max="21"
 						bind:value={customDecidingPoints}
@@ -333,7 +352,6 @@
 			<label for="names">Player Names</label>
 			<textarea
 				id="names"
-				name="names"
 				bind:value={playerNames}
 				bind:this={textareaEl}
 				onpaste={handlePaste}
@@ -382,7 +400,6 @@
 			<input
 				type="range"
 				id="physicalCourts"
-				name="physicalCourts"
 				bind:value={physicalCourts}
 				min={1}
 				max={16}
@@ -405,13 +422,12 @@
 			<span class="label">Number of Rounds</span>
 			{#if formatType === 'preseed'}
 				<div class="info-box">{effectiveRounds} rounds (auto-calculated)</div>
-				<input type="hidden" name="numRounds" value={effectiveRounds} />
+				<input type="hidden" value={effectiveRounds} />
 			{:else}
 				<div class="rounds-config">
 					<input
 						type="number"
 						id="numRounds"
-						name="numRounds"
 						bind:value={numRounds}
 						min="1"
 						max="10"

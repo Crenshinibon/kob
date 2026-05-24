@@ -51,15 +51,15 @@
 
 ## E2E Test Files
 
-| File | Coverage |
-|------|----------|
-| `e2e/demo.test.ts` | Basic home page check |
+| File                     | Coverage                               |
+| ------------------------ | -------------------------------------- |
+| `e2e/demo.test.ts`       | Basic home page check                  |
 | `e2e/tournament.spec.ts` | Tournament creation, scoring, deletion |
-| `e2e/standings.spec.ts` | Standings page functionality |
-| `e2e/promotion.spec.ts` | Promotion/relegation logic |
-| `e2e/format.spec.ts` | Court format (3p/5p/6p) tests |
-| `e2e/global-setup.ts` | Test cleanup |
-| `e2e/db.ts` | Database connection for E2E |
+| `e2e/standings.spec.ts`  | Standings page functionality           |
+| `e2e/promotion.spec.ts`  | Promotion/relegation logic             |
+| `e2e/format.spec.ts`     | Court format (3p/5p/6p) tests          |
+| `e2e/global-setup.ts`    | Test cleanup                           |
+| `e2e/db.ts`              | Database connection for E2E            |
 
 ## Files Affected
 

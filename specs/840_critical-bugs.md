@@ -121,8 +121,8 @@ Three related issues with best-of-3 score entry:
 
 ### What's Implemented
 
-- `retirePlayer` server action: works between rounds, recalculates court config, redistributes
-- `reportInjury` server action: marks match as canceled, injured player IDs tracked
+- `retirePlayer` command in `tournament-actions.remote.ts`: works between rounds, recalculates court config, redistributes, reconnects live query
+- `reportInjury` command in `tournament-actions.remote.ts`: marks match as canceled, injured player IDs tracked, reconnects live query
 - Retirement UI: collapsible form on tournament page, between rounds only
 - Injury reporting UI: collapsible form on tournament page, during active rounds
 - `calculateRetiredStanding()`: computes final standing for retired players
@@ -139,7 +139,7 @@ Three related issues with best-of-3 score entry:
 ### Location
 
 - Tournament view (`src/routes/tournament/[id]/+page.svelte`)
-- Server actions (`src/routes/tournament/[id]/+page.server.ts`)
+- Server actions (`src/routes/tournament/[id]/tournament-actions.remote.ts`)
 
 ### Spec Reference
 
@@ -223,13 +223,14 @@ See `670_player-retirement.md` for full retirement/injury spec.
 
 - `src/routes/tournament/[id]/+page.svelte` - Delete form, reactivity warning, UI glitch, layout fix, retirement UI, injury UI
 - `src/routes/tournament/[id]/+page.ts` - SSR disabled for hydration fix
-- `src/routes/tournament/[id]/tournament-actions.remote.ts` - Delete handler, closeRound, scoring overrides
-- `src/routes/tournament/[id]/+page.server.ts` - retirePlayer action, reportInjury action
+- `src/routes/tournament/[id]/tournament-actions.remote.ts` - Delete handler, closeRound, scoring overrides, retirePlayer, reportInjury
+- `src/routes/tournament/[id]/+page.server.ts` - Load-only (no more actions)
+- `src/routes/tournament/create/create.remote.ts` - Create tournament form
 - `src/routes/tournament/create/+page.svelte` - Radio buttons for format/win-by, player count validation, duration estimation
 - `src/routes/court/[token]/+page.svelte` - Score entry UI (best-of-3), 3p/5p/6p format explanations
 - `src/routes/court/[token]/scores.remote.ts` - Score validation (no caps, min points + win-by-2)
 - `src/routes/court/[token]/scoreSchema.ts` - Client-side score validation
-- `src/routes/court/[token]/+page.server.ts` - Renamed scoreCap to minPoints, effective scoring
+- `src/routes/court/[token]/+page.server.ts` - Load-only (legacy saveScore action removed)
 - `src/lib/server/tournament-logic.ts` - State machine, redistribution, scoring, retirement, duration
 - `e2e/db.ts` - Database connection for E2E tests
 - `e2e/global-setup.ts` - Test cleanup
@@ -243,8 +244,6 @@ See `670_player-retirement.md` for full retirement/injury spec.
 
 1. **E2E tests fail due to live query polling delay**: Tests wait for "Finalize Tournament" / "Close Round & Advance" button but it's not rendered until the 3-second live query poll refreshes `canCloseRound`. The disabled state is a completely different DOM element ("⏳ Waiting for all scores..."). Affected tests: `promotion.spec.ts:275`, `tournament.spec.ts:810`. See `specs/860_e2e-live-query-timing.md`.
 2. **winBy hardcoding**: Score validation always requires win-by-2 regardless of tournament's `winBy` config
-2. **Dead schema tables**: `match_3_player`, `match_5_player`, `match_6_player` exist but are never used
-3. **No live query reconnect after retirePlayer/reportInjury**: Live query doesn't auto-update
-4. **Duplicate saveScore**: Both legacy server action and remote form exist
-5. **Draft status unused**: Tournaments created as active, never use draft status
-6. **Broken `/tournament/[id]/players` link**: Dashboard links to this route but it doesn't exist
+3. **Dead schema tables**: `match_3_player`, `match_5_player`, `match_6_player` exist but are never used
+4. **Draft status unused**: Tournaments created as active, never use draft status
+5. **Broken `/tournament/[id]/players` link**: Dashboard links to this route but it doesn't exist

@@ -11,15 +11,17 @@
 - [ ] **E2E tests fail due to live query polling delay** — Tests wait for "Finalize Tournament" or "Close Round & Advance" button but it's not in the DOM until the 3-second live query poll refreshes `canCloseRound`. The disabled state renders as a completely different button ("⏳ Waiting for all scores..."). Two tests affected: `promotion.spec.ts:275` and `tournament.spec.ts:810`. See `specs/860_e2e-live-query-timing.md`.
 - [ ] `winBy` validation hardcoded to 2 — Score validation in `scoreSchema.ts` and `scores.remote.ts` always requires win-by-2, ignoring tournament's `winBy` config (e.g., `winBy: 1`)
 - [ ] Remove dead schema tables — `match_3_player`, `match_5_player`, `match_6_player` exist but are never used. All 3p/5p/6p matches go through the main `match` table with nullable player columns. Separate tables were the original plan for strong typing, but the current approach works and migrating would be high-risk for no user-visible benefit. Remove the dead tables and their Drizzle definitions.
-- [ ] No live query reconnect after `retirePlayer` / `reportInjury` — The live query on the tournament page doesn't auto-update after these server actions
-- [ ] Duplicate `saveScore` — Both a legacy server action in `+page.server.ts` AND a remote form in `scores.remote.ts`. The server action is dead code.
 - [ ] Draft status unused — Tournaments skip draft status and go straight to active on creation. The `status: 'draft'` default in schema is misleading.
 - [ ] Broken `/tournament/[id]/players` link — Dashboard links to this route but it doesn't exist. Player management is now on the creation form.
-- [ ] `retirePlayer` and `reportInjury` are still legacy server actions, not remote functions
-- [ ] `create` tournament action is still a legacy server action, not a remote function
 - [ ] `matchGroups()` and other derived functions return functions instead of values (unusual Svelte 5 pattern)
 
 ## Done
+
+- [x] Migrated `retirePlayer` and `reportInjury` to remote commands in `tournament-actions.remote.ts` with live query reconnect
+- [x] Migrated `create` tournament action to remote form in `create.remote.ts`
+- [x] Removed duplicate `saveScore` legacy server action from `court/[token]/+page.server.ts` (dead code — `scores.remote.ts` handles it)
+- [x] Removed all legacy server actions — no more `export const actions` in any `+page.server.ts`
+- [x] Fixed E2E test timeouts for "Close Round" / "Finalize Tournament" buttons (removed `:not(:disabled)` selectors, added `{ timeout: 20000 }`)
 
 - [x] Use Bun's built-in capabilities for scripts instead of npx/tsx/npm (Fixed: db:wipe, db:cleanup use `bun`, auth:schema uses `bunx`, removed `dotenv` dependency, updated AGENTS.md with Bun-first policy)
 - [x] Integration tests (in tournament.spec.ts) "scoring modes" should go a step further and test that the scores must be entered as dictated by the selected mode. (Fixed: best-of-3 per-set validation, single-set min points, 5p min points E2E tests all pass)

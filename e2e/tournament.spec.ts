@@ -752,7 +752,9 @@ test.describe('Tournament Integration Tests', () => {
 			const retireOptions = await page.locator('#retirePlayerId option').allTextContents();
 			const player1RetireOption = retireOptions.find((opt) => opt.includes('Player1'));
 			if (!player1RetireOption) {
-				throw new Error(`Player1 not found in retire options. Available: ${retireOptions.join(', ')}`);
+				throw new Error(
+					`Player1 not found in retire options. Available: ${retireOptions.join(', ')}`
+				);
 			}
 			await page.selectOption('#retirePlayerId', { label: player1RetireOption.trim() });
 			await page.selectOption('#retireReason', { value: 'injury' });
@@ -793,7 +795,7 @@ test.describe('Tournament Integration Tests', () => {
 			// Close final round
 			await page.goto('/');
 			await page.click(`text=${tournamentName}`);
-		await page.waitForSelector('button:has-text("Finalize Tournament")', { timeout: 20000 });
+			await page.waitForSelector('button:has-text("Finalize Tournament")', { timeout: 20000 });
 			await page.click('button:has-text("Finalize Tournament")');
 			await page.waitForTimeout(1000);
 

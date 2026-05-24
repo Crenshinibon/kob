@@ -90,14 +90,14 @@ Combined form with:
 - `closeRoundForm` — form: validates all matches scored, closes round, pre-computes next round assignments
 - `deleteTournamentForm` — form: cascades deletion through all related tables
 - `updateScoringOverrides` — command: per-court-type scoring overrides
+- `retirePlayer` — command: validates no scores exist, marks player retired, recalculates courts, regenerates current round
+- `reportInjury` — command: validates scores exist, cancels/marks injured matches, marks player retired
+
+**create.remote.ts** (on create page)
+
+- `createTournamentForm` — form: parses player names, validates count, calculates court config, creates tournament + players + round 1, redirects
 
 **scores.remote.ts** (on court page)
 
 - `saveScore` — form: single-set score entry with validation
 - `saveSetScore` — form: per-set score entry for best-of-3
-
-**Legacy server actions** (still in use):
-
-- `retirePlayer` — in `+page.server.ts`, not yet migrated to remote function
-- `reportInjury` — in `+page.server.ts`, not yet migrated to remote function
-- `create` — in `tournament/create/+page.server.ts`, not yet migrated to remote function

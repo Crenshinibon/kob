@@ -3,6 +3,7 @@
 ## SvelteKit (Remote Functions)
 
 Uses SvelteKit's experimental Remote Functions for data fetching and mutations. Three `.remote.ts` files:
+
 - `tournament-data.remote.ts` — live query for tournament data
 - `tournament-actions.remote.ts` — closeRound, deleteTournament, updateScoringOverrides
 - `scores.remote.ts` — saveScore, saveSetScore

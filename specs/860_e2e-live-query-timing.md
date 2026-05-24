@@ -18,10 +18,10 @@ The tournament page uses a **live query** (`getTournamentDataLive`) that polls e
 
 The button rendering uses `{#if canCloseRound}` which switches between two **completely different DOM elements**:
 
-| `canCloseRound` | Rendered Element |
-|---|---|
-| `true` | `<button type="submit">Finalize Tournament</button>` (or "Close Round & Advance") |
-| `false` | `<button disabled>⏳ Waiting for all scores...</button>` |
+| `canCloseRound` | Rendered Element                                                                  |
+| --------------- | --------------------------------------------------------------------------------- |
+| `true`          | `<button type="submit">Finalize Tournament</button>` (or "Close Round & Advance") |
+| `false`         | `<button disabled>⏳ Waiting for all scores...</button>`                          |
 
 The test selector `button:has-text("Finalize Tournament")` will **never match** while the "Waiting" button is rendered, because it's a different element entirely. The test needs to wait for the live query to refresh (up to 3 seconds) before the correct button appears.
 
@@ -38,12 +38,12 @@ This is a **timing issue**, not a logic bug. The close-round logic correctly han
 ```typescript
 // Before (fails):
 await page.waitForSelector('button:has-text("Finalize Tournament"):not(:disabled)', {
-    timeout: 10000
+	timeout: 10000
 });
 
 // After (works):
 await page.waitForSelector('button:has-text("Finalize Tournament")', {
-    timeout: 20000
+	timeout: 20000
 });
 ```
 
@@ -71,10 +71,10 @@ await page.waitForSelector('button:has-text("Finalize Tournament")', {
 
 ## Affected Tests
 
-| Test File | Line | Button Text | Current Timeout |
-|---|---|---|---|
-| `e2e/promotion.spec.ts` | 335 | "Finalize Tournament" | 10s |
-| `e2e/tournament.spec.ts` | 897 | "Close Round & Advance" | 15s |
+| Test File                | Line | Button Text             | Current Timeout |
+| ------------------------ | ---- | ----------------------- | --------------- |
+| `e2e/promotion.spec.ts`  | 335  | "Finalize Tournament"   | 10s             |
+| `e2e/tournament.spec.ts` | 897  | "Close Round & Advance" | 15s             |
 
 ## Related Issues
 

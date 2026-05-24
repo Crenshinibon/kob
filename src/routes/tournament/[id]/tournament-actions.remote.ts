@@ -2,13 +2,7 @@ import * as v from 'valibot';
 import { error, redirect } from '@sveltejs/kit';
 import { form, command, getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
-import {
-	tournament,
-	player,
-	courtRotation,
-	match,
-	courtAccess
-} from '$lib/server/db/schema';
+import { tournament, player, courtRotation, match, courtAccess } from '$lib/server/db/schema';
 import { eq, and, inArray, isNull, or } from 'drizzle-orm';
 import crypto from 'crypto';
 import {
