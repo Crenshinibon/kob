@@ -40,10 +40,10 @@ export const createTournamentForm = form(
 		names: v.pipe(v.string(), v.minLength(1)),
 		physicalCourts: v.pipe(v.number(), v.minValue(1), v.maxValue(16)),
 		scoringMode: v.picklist(['single-21', 'best-of-3', 'custom']),
-		pointsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(50)),
-		winBy: v.pipe(v.number(), v.minValue(1), v.maxValue(10)),
-		setsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(5)),
-		decidingSetPoints: v.pipe(v.number(), v.minValue(1), v.maxValue(50)),
+		pointsToWin: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(50))),
+		winBy: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(10))),
+		setsToWin: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(5))),
+		decidingSetPoints: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(50))),
 		numRounds: v.pipe(v.number(), v.minValue(1), v.maxValue(10))
 	}),
 	async ({
@@ -62,20 +62,26 @@ export const createTournamentForm = form(
 		const user = event.locals.user;
 		if (!user) error(401, 'Unauthorized');
 
-		let pointsToWin = pointsToWinRaw;
-		let winBy = winByRaw;
-		let setsToWin = setsToWinRaw;
-		let decidingSetPoints = decidingSetPointsRaw;
+		let pointsToWin: number;
+		let winBy: number;
+		let setsToWin: number;
+		let decidingSetPoints: number;
 
 		if (scoringMode === 'single-21') {
 			pointsToWin = 21;
 			winBy = 2;
 			setsToWin = 1;
+			decidingSetPoints = 15;
 		} else if (scoringMode === 'best-of-3') {
 			pointsToWin = 21;
 			winBy = 2;
 			setsToWin = 2;
 			decidingSetPoints = 15;
+		} else {
+			pointsToWin = pointsToWinRaw ?? 21;
+			winBy = winByRaw ?? 2;
+			setsToWin = setsToWinRaw ?? 1;
+			decidingSetPoints = decidingSetPointsRaw ?? 15;
 		}
 
 		const lines: string[] = namesText

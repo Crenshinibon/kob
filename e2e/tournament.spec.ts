@@ -350,12 +350,12 @@ test.describe('Tournament Integration Tests', () => {
 			await expect(page.locator('.advanced-section')).toBeVisible();
 
 			// Should show match format radio buttons
-			await expect(page.locator('input[name="customFormat"][value="1"]')).toBeVisible();
-			await expect(page.locator('input[name="customFormat"][value="2"]')).toBeVisible();
+			await expect(page.locator('input[name="setsToWin"][value="1"]')).toBeVisible();
+			await expect(page.locator('input[name="setsToWin"][value="2"]')).toBeVisible();
 
 			// Should show win by radio buttons
-			await expect(page.locator('input[name="customWinBy"][value="1"]')).toBeVisible();
-			await expect(page.locator('input[name="customWinBy"][value="2"]')).toBeVisible();
+			await expect(page.locator('input[name="winBy"][value="1"]')).toBeVisible();
+			await expect(page.locator('input[name="winBy"][value="2"]')).toBeVisible();
 
 			// Should show points to win input
 			await expect(page.locator('input[name="pointsToWin"]')).toBeVisible();
@@ -366,7 +366,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('input[value="custom"]');
 
 			// Change to best-of-3 via radio button
-			await page.click('input[name="customFormat"][value="2"]');
+			await page.click('input[name="setsToWin"][value="2"]');
 
 			// Should show deciding set points input
 			await expect(page.locator('input[name="decidingSetPoints"]')).toBeVisible();

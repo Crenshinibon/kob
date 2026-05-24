@@ -1,11 +1,7 @@
 {
-  "extends": "../tsconfig.json",
-  "compilerOptions": {
-    "types": [
-      "node",
-    ]
-  },
-  "include": [
-    "**/*.ts"
-  ]
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"types": ["node"]
+	},
+	"include": ["**/*.ts"]
 }
