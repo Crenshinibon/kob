@@ -75,7 +75,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.fill('input[name="numRounds"]', '3');
+		await page.fill('input[name="n:numRounds"]', '3');
 
 		// Add 16 players with predictable names
 		const players = Array.from({ length: 16 }, (_, i) => `Player${String(i + 1).padStart(2, '0')}`);
@@ -189,7 +189,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.fill('input[name="numRounds"]', '2');
+		await page.fill('input[name="n:numRounds"]', '2');
 
 		// Add 16 players
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
@@ -281,7 +281,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.fill('input[name="numRounds"]', '1');
+		await page.fill('input[name="n:numRounds"]', '1');
 
 		// Add 16 players
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
@@ -361,7 +361,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.fill('input[name="numRounds"]', '3');
+		await page.fill('input[name="n:numRounds"]', '3');
 
 		// Add 16 players
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
@@ -441,7 +441,7 @@ test.describe('Promotion and Relegation', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '2');
+			await page.fill('input[name="n:numRounds"]', '2');
 
 			// 11 players = 2×4p + 1×3p
 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);

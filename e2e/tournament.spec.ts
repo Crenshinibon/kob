@@ -74,7 +74,7 @@ test.describe('Tournament Integration Tests', () => {
 		// 1. Create tournament with players
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.fill('input[name="numRounds"]', '2');
+		await page.fill('input[name="n:numRounds"]', '2');
 		const players = [
 			'Alice',
 			'Bob',
@@ -350,15 +350,15 @@ test.describe('Tournament Integration Tests', () => {
 			await expect(page.locator('.advanced-section')).toBeVisible();
 
 			// Should show match format radio buttons
-			await expect(page.locator('input[name="setsToWin"][value="1"]')).toBeVisible();
-			await expect(page.locator('input[name="setsToWin"][value="2"]')).toBeVisible();
+			await expect(page.locator('input[name="n:setsToWin"][value="1"]')).toBeVisible();
+			await expect(page.locator('input[name="n:setsToWin"][value="2"]')).toBeVisible();
 
 			// Should show win by radio buttons
-			await expect(page.locator('input[name="winBy"][value="1"]')).toBeVisible();
-			await expect(page.locator('input[name="winBy"][value="2"]')).toBeVisible();
+			await expect(page.locator('input[name="n:winBy"][value="1"]')).toBeVisible();
+			await expect(page.locator('input[name="n:winBy"][value="2"]')).toBeVisible();
 
 			// Should show points to win input
-			await expect(page.locator('input[name="pointsToWin"]')).toBeVisible();
+			await expect(page.locator('input[name="n:pointsToWin"]')).toBeVisible();
 		});
 
 		test('custom best-of-3 shows deciding set points', async ({ page }) => {
@@ -366,10 +366,10 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('input[value="custom"]');
 
 			// Change to best-of-3 via radio button
-			await page.click('input[name="setsToWin"][value="2"]');
+			await page.click('input[name="n:setsToWin"][value="2"]');
 
 			// Should show deciding set points input
-			await expect(page.locator('input[name="decidingSetPoints"]')).toBeVisible();
+			await expect(page.locator('input[name="n:decidingSetPoints"]')).toBeVisible();
 		});
 
 		test('duration estimate updates based on scoring mode', async ({ page }) => {
@@ -390,7 +390,7 @@ test.describe('Tournament Integration Tests', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '1');
+			await page.fill('input[name="n:numRounds"]', '1');
 
 			// Enter 21 players on the create page
 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
@@ -561,7 +561,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '1');
+			await page.fill('input[name="n:numRounds"]', '1');
 
 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
@@ -604,7 +604,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill('textarea[name="names"]', players.join('\n'));
 
 			// Set physical courts to 4 (less than 8 virtual)
-			await page.locator('input[name="physicalCourts"]').fill('4');
+			await page.locator('input[name="n:physicalCourts"]').fill('4');
 
 			// Should show virtual court info
 			await expect(page.locator('.info:has-text("Virtual courts")')).toBeVisible();
@@ -614,7 +614,7 @@ test.describe('Tournament Integration Tests', () => {
 		test('physical courts slider ranges from 1 to 16', async ({ page }) => {
 			await page.click('text=+ New Tournament');
 
-			const slider = page.locator('input[name="physicalCourts"]');
+			const slider = page.locator('input[name="n:physicalCourts"]');
 			await expect(slider).toHaveAttribute('min', '1');
 			await expect(slider).toHaveAttribute('max', '16');
 		});
@@ -627,7 +627,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill('textarea[name="names"]', players.join('\n'));
 
 			// With 4 physical courts, should show 2 shifts per round
-			await page.locator('input[name="physicalCourts"]').fill('4');
+			await page.locator('input[name="n:physicalCourts"]').fill('4');
 
 			// Duration estimate should reflect shifts
 			await expect(page.locator('.duration-estimate')).toBeVisible();
@@ -702,7 +702,7 @@ test.describe('Tournament Integration Tests', () => {
 			// Create 16-player tournament with 2 rounds
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '2');
+			await page.fill('input[name="n:numRounds"]', '2');
 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
@@ -815,7 +815,7 @@ test.describe('Tournament Integration Tests', () => {
 			// Create 16-player tournament with 2 rounds
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '2');
+			await page.fill('input[name="n:numRounds"]', '2');
 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');

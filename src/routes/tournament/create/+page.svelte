@@ -267,11 +267,11 @@
 				<span class="label">Match Format</span>
 				<div class="radio-group">
 					<label class="radio-label">
-						<input type="radio" name="setsToWin" value="1" bind:group={setsToWin} />
+						<input type="radio" name="n:setsToWin" value="1" bind:group={setsToWin} />
 						<span class="radio-text">Single set</span>
 					</label>
 					<label class="radio-label">
-						<input type="radio" name="setsToWin" value="2" bind:group={setsToWin} />
+						<input type="radio" name="n:setsToWin" value="2" bind:group={setsToWin} />
 						<span class="radio-text">Best of 3</span>
 					</label>
 				</div>
@@ -280,11 +280,11 @@
 				<span class="label">Win By</span>
 				<div class="radio-group">
 					<label class="radio-label">
-						<input type="radio" name="winBy" value="2" bind:group={winBy} />
+						<input type="radio" name="n:winBy" value="2" bind:group={winBy} />
 						<span class="radio-text">2 points</span>
 					</label>
 					<label class="radio-label">
-						<input type="radio" name="winBy" value="1" bind:group={winBy} />
+						<input type="radio" name="n:winBy" value="1" bind:group={winBy} />
 						<span class="radio-text">1 point</span>
 					</label>
 				</div>
@@ -295,7 +295,7 @@
 					<input
 						type="number"
 						id="pointsToWin"
-						name="pointsToWin"
+						name="n:pointsToWin"
 						min="9"
 						max="21"
 						bind:value={pointsToWin}
@@ -308,7 +308,7 @@
 					<input
 						type="number"
 						id="pointsToWin"
-						name="pointsToWin"
+						name="n:pointsToWin"
 						min="9"
 						max="21"
 						bind:value={pointsToWin}
@@ -320,7 +320,7 @@
 					<input
 						type="number"
 						id="decidingSetPoints"
-						name="decidingSetPoints"
+						name="n:decidingSetPoints"
 						min="9"
 						max="21"
 						bind:value={decidingSetPoints}
@@ -383,7 +383,7 @@
 			<input
 				type="range"
 				id="physicalCourts"
-				name="physicalCourts"
+				name="n:physicalCourts"
 				bind:value={physicalCourts}
 				min={1}
 				max={16}
@@ -406,13 +406,13 @@
 			<span class="label">Number of Rounds</span>
 			{#if formatType === 'preseed'}
 				<div class="info-box">{effectiveRounds} rounds (auto-calculated)</div>
-				<input type="hidden" name="numRounds" value={effectiveRounds} />
+				<input type="hidden" name="n:numRounds" value={effectiveRounds} />
 			{:else}
 				<div class="rounds-config">
 					<input
 						type="number"
 						id="numRounds"
-						name="numRounds"
+						name="n:numRounds"
 						bind:value={numRounds}
 						min="1"
 						max="10"

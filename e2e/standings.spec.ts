@@ -57,7 +57,7 @@ test.describe('Standings Calculation', () => {
 		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.fill('input[name="numRounds"]', '3');
+		await page.fill('input[name="n:numRounds"]', '3');
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
@@ -261,7 +261,7 @@ test.describe('Standings Calculation', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '1');
+			await page.fill('input[name="n:numRounds"]', '1');
 
 			// 11 players = 2×4p + 1×3p
 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
@@ -292,7 +292,7 @@ test.describe('Standings Calculation', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '1');
+			await page.fill('input[name="n:numRounds"]', '1');
 
 			// 21 players = 4×4p + 1×5p
 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
@@ -323,7 +323,7 @@ test.describe('Standings Calculation', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '1');
+			await page.fill('input[name="n:numRounds"]', '1');
 
 			// 22 players = 4×4p + 1×6p
 			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
@@ -354,7 +354,7 @@ test.describe('Standings Calculation', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '1');
+			await page.fill('input[name="n:numRounds"]', '1');
 
 			// 11 players = 2×4p + 1×3p
 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
@@ -408,7 +408,7 @@ test.describe('Standings Calculation', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '1');
+			await page.fill('input[name="n:numRounds"]', '1');
 
 			// 21 players = 4×4p + 1×5p
 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
@@ -452,7 +452,7 @@ test.describe('Standings Calculation', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '2');
+			await page.fill('input[name="n:numRounds"]', '2');
 
 			// 16 players = 4×4p
 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
@@ -537,7 +537,7 @@ test.describe('Standings Calculation', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '1');
+			await page.fill('input[name="n:numRounds"]', '1');
 
 			// 21 players = 4×4p + 1×5p
 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
@@ -573,7 +573,7 @@ test.describe('Standings Calculation', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="numRounds"]', '1');
+			await page.fill('input[name="n:numRounds"]', '1');
 
 			// 11 players = 2×4p + 1×3p
 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
