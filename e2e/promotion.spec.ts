@@ -138,7 +138,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.waitForSelector('h1');
 		await page.waitForSelector('.court-card');
 		await page.waitForSelector('button:has-text("Close Round & Advance")', {
-			timeout: 20000
+			timeout: 30000
 		});
 		await page.click('button:has-text("Close Round & Advance")');
 

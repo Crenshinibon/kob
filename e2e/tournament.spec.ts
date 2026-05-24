@@ -758,7 +758,7 @@ test.describe('Tournament Integration Tests', () => {
 			}
 			await page.selectOption('#retirePlayerId', { label: player1RetireOption.trim() });
 			await page.selectOption('#retireReason', { value: 'injury' });
-			await page.click('.retire-form button[type="submit"]');
+			await page.click('.retire-form button');
 
 			// Verify tournament still shows Round 2 with 15 players (3 full courts + 1 3p court)
 			await page.waitForTimeout(1000);
@@ -854,7 +854,7 @@ test.describe('Tournament Integration Tests', () => {
 			}
 			await page.selectOption('#injuryPlayerId', { label: player1Option.trim() });
 			await page.click('input[value="cancel"]');
-			await page.click('.injury-form button[type="submit"]');
+			await page.click('.injury-form button');
 
 			// Verify Player1 shows as retired on the court
 			await page.waitForTimeout(1000);
