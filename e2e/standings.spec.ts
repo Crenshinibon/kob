@@ -250,7 +250,7 @@ test.describe('Standings Calculation', () => {
 		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '28');
 		await page.click(`[data-testid="save-score-${matchId}"]`);
 
-		await page.waitForSelector('.saved');
+		await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 	});
 
 	test.describe('Non-Standard Court Standings', () => {
@@ -387,7 +387,7 @@ test.describe('Standings Calculation', () => {
 				await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, String(21 - i));
 				await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, String(19 - i));
 				await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
-				await page.waitForSelector('.saved');
+				await page.waitForSelector(`[data-testid="saved-${matchIds[i]}"]`);
 			}
 
 			// Verify standings show 3 players ranked
@@ -432,7 +432,7 @@ test.describe('Standings Calculation', () => {
 			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '15');
 			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '13');
 			await page.click(`[data-testid="save-score-${matchId}"]`);
-			await page.waitForSelector('.saved');
+			await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 
 			// Verify standings show 5 players
 			await page.waitForSelector('.standings tbody tr');
@@ -499,7 +499,7 @@ test.describe('Standings Calculation', () => {
 					await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 					await page.click(`[data-testid="save-score-${matchId}"]`);
-					await page.waitForSelector('.saved');
+					await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 				}
 			}
 

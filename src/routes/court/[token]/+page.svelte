@@ -333,7 +333,7 @@
 														{getTeamDisplay(setMatch, 'b')}:
 														<strong>{setMatch.teamBScore}</strong>
 													</p>
-													<span class="saved">✓ Saved</span>
+													<span class="saved" data-testid="saved-{setMatch.id}">✓ Saved</span>
 													{#if data.isAuthenticated}
 														<button
 															class="btn-edit"
@@ -499,7 +499,7 @@
 													{getTeamDisplay(match, 'b')}:
 													<strong>{match.teamBScore}</strong>
 												</p>
-												<span class="saved">✓ Saved</span>
+												<span class="saved" data-testid="saved-{match.id}">✓ Saved</span>
 												{#if data.isAuthenticated}
 													<button
 														class="btn-edit"
@@ -655,7 +655,7 @@
 									{getTeamDisplay(match, 'b')}:
 									<strong>{match.teamBScore}</strong>
 								</p>
-								<span class="saved">✓ Saved</span>
+								<span class="saved" data-testid="saved-{match.id}">✓ Saved</span>
 								{#if data.isAuthenticated}
 									<button
 										class="btn-edit"
