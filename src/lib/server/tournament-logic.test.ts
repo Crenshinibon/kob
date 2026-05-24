@@ -37,7 +37,7 @@ import {
 
 function mockCourtResult(
   courtNumber: number,
-  standings: { playerId: number; rank: number; points: number; diff: number }[]
+  standings: { playerId: number; rank: number; points: number; diff: number; matchCount: number }[]
 ): CourtResult {
   return { courtNumber, standings };
 }
@@ -463,14 +463,14 @@ describe('redistributePreseedRecursive', () => {
   it('single court returns same assignment', () => {
     expect(
       redistributePreseedRecursive([
-        mockCourtResult(1, [{ playerId: 1, rank: 1, points: 63, diff: 5 }])
+        mockCourtResult(1, [{ playerId: 1, rank: 1, points: 63, diff: 5, matchCount: 3 }])
       ])
     ).toEqual([{ courtNumber: 1, playerIds: [1] }]);
   });
 
   it('handles 3 courts (2W + 1L)', () => {
     const results = [1, 5, 9].map((id, i) =>
-      mockCourtResult(i + 1, [{ playerId: id, rank: 1, points: 63 - i * 5, diff: 0 }])
+      mockCourtResult(i + 1, [{ playerId: id, rank: 1, points: 63 - i * 5, diff: 0, matchCount: 3 }])
     );
     const a = redistributePreseedRecursive(results);
     expect(a.length).toBe(3);
@@ -481,7 +481,7 @@ describe('redistributePreseedRecursive', () => {
 
   it('handles 5 courts (4W + 1L)', () => {
     const results = Array.from({ length: 5 }, (_, i) =>
-      mockCourtResult(i + 1, [{ playerId: i * 4 + 1, rank: 1, points: 100 - i * 5, diff: 0 }])
+      mockCourtResult(i + 1, [{ playerId: i * 4 + 1, rank: 1, points: 100 - i * 5, diff: 0, matchCount: 3 }])
     );
     const a = redistributePreseedRecursive(results);
     expect(a.length).toBe(5);
@@ -497,7 +497,8 @@ describe('redistributePreseedRecursive', () => {
           playerId: i * 4 + j + 1,
           rank: j + 1,
           points: 0,
-          diff: 0
+          diff: 0,
+          matchCount: 3
         }))
       )
     );
@@ -515,28 +516,28 @@ describe('verticalSeeding', () => {
   it('redistributes 4 courts correctly', () => {
     const results = [
       mockCourtResult(1, [
-        { playerId: 1, rank: 1, points: 63, diff: 5 },
-        { playerId: 2, rank: 2, points: 50, diff: 3 },
-        { playerId: 3, rank: 3, points: 40, diff: 1 },
-        { playerId: 4, rank: 4, points: 30, diff: -2 }
+        { playerId: 1, rank: 1, points: 63, diff: 5, matchCount: 3 },
+        { playerId: 2, rank: 2, points: 50, diff: 3, matchCount: 3 },
+        { playerId: 3, rank: 3, points: 40, diff: 1, matchCount: 3 },
+        { playerId: 4, rank: 4, points: 30, diff: -2, matchCount: 3 }
       ]),
       mockCourtResult(2, [
-        { playerId: 5, rank: 1, points: 58, diff: 4 },
-        { playerId: 6, rank: 2, points: 45, diff: 2 },
-        { playerId: 7, rank: 3, points: 35, diff: 0 },
-        { playerId: 8, rank: 4, points: 25, diff: -3 }
+        { playerId: 5, rank: 1, points: 58, diff: 4, matchCount: 3 },
+        { playerId: 6, rank: 2, points: 45, diff: 2, matchCount: 3 },
+        { playerId: 7, rank: 3, points: 35, diff: 0, matchCount: 3 },
+        { playerId: 8, rank: 4, points: 25, diff: -3, matchCount: 3 }
       ]),
       mockCourtResult(3, [
-        { playerId: 9, rank: 1, points: 55, diff: 3 },
-        { playerId: 10, rank: 2, points: 42, diff: 1 },
-        { playerId: 11, rank: 3, points: 32, diff: -1 },
-        { playerId: 12, rank: 4, points: 22, diff: -4 }
+        { playerId: 9, rank: 1, points: 55, diff: 3, matchCount: 3 },
+        { playerId: 10, rank: 2, points: 42, diff: 1, matchCount: 3 },
+        { playerId: 11, rank: 3, points: 32, diff: -1, matchCount: 3 },
+        { playerId: 12, rank: 4, points: 22, diff: -4, matchCount: 3 }
       ]),
       mockCourtResult(4, [
-        { playerId: 13, rank: 1, points: 50, diff: 2 },
-        { playerId: 14, rank: 2, points: 40, diff: 0 },
-        { playerId: 15, rank: 3, points: 30, diff: -2 },
-        { playerId: 16, rank: 4, points: 20, diff: -5 }
+        { playerId: 13, rank: 1, points: 50, diff: 2, matchCount: 3 },
+        { playerId: 14, rank: 2, points: 40, diff: 0, matchCount: 3 },
+        { playerId: 15, rank: 3, points: 30, diff: -2, matchCount: 3 },
+        { playerId: 16, rank: 4, points: 20, diff: -5, matchCount: 3 }
       ])
     ];
     const a = verticalSeeding(results, 4);
@@ -552,7 +553,8 @@ describe('verticalSeeding', () => {
           playerId: i * 4 + j + 1,
           rank: j + 1,
           points: (8 - i) * 10,
-          diff: 0
+          diff: 0,
+          matchCount: 3
         }))
       )
     );
@@ -570,7 +572,7 @@ describe('verticalSeeding', () => {
           playerId: start + j,
           rank: j + 1,
           points: 40 - j * 5,
-          diff: 0
+                    diff: 0, matchCount: 3
         }))
       )
     );
@@ -589,28 +591,28 @@ describe('ladderRedistribute', () => {
   it('4 courts: 2-up/2-down', () => {
     const results = [
       mockCourtResult(1, [
-        { playerId: 1, rank: 1, points: 63, diff: 5 },
-        { playerId: 2, rank: 2, points: 50, diff: 3 },
-        { playerId: 3, rank: 3, points: 40, diff: 1 },
-        { playerId: 4, rank: 4, points: 30, diff: -2 }
+        { playerId: 1, rank: 1, points: 63, diff: 5, matchCount: 3 },
+        { playerId: 2, rank: 2, points: 50, diff: 3, matchCount: 3 },
+        { playerId: 3, rank: 3, points: 40, diff: 1, matchCount: 3 },
+        { playerId: 4, rank: 4, points: 30, diff: -2, matchCount: 3 }
       ]),
       mockCourtResult(2, [
-        { playerId: 5, rank: 1, points: 58, diff: 4 },
-        { playerId: 6, rank: 2, points: 45, diff: 2 },
-        { playerId: 7, rank: 3, points: 35, diff: 0 },
-        { playerId: 8, rank: 4, points: 25, diff: -3 }
+        { playerId: 5, rank: 1, points: 58, diff: 4, matchCount: 3 },
+        { playerId: 6, rank: 2, points: 45, diff: 2, matchCount: 3 },
+        { playerId: 7, rank: 3, points: 35, diff: 0, matchCount: 3 },
+        { playerId: 8, rank: 4, points: 25, diff: -3, matchCount: 3 }
       ]),
       mockCourtResult(3, [
-        { playerId: 9, rank: 1, points: 55, diff: 3 },
-        { playerId: 10, rank: 2, points: 42, diff: 1 },
-        { playerId: 11, rank: 3, points: 32, diff: -1 },
-        { playerId: 12, rank: 4, points: 22, diff: -4 }
+        { playerId: 9, rank: 1, points: 55, diff: 3, matchCount: 3 },
+        { playerId: 10, rank: 2, points: 42, diff: 1, matchCount: 3 },
+        { playerId: 11, rank: 3, points: 32, diff: -1, matchCount: 3 },
+        { playerId: 12, rank: 4, points: 22, diff: -4, matchCount: 3 }
       ]),
       mockCourtResult(4, [
-        { playerId: 13, rank: 1, points: 50, diff: 2 },
-        { playerId: 14, rank: 2, points: 40, diff: 0 },
-        { playerId: 15, rank: 3, points: 30, diff: -2 },
-        { playerId: 16, rank: 4, points: 20, diff: -5 }
+        { playerId: 13, rank: 1, points: 50, diff: 2, matchCount: 3 },
+        { playerId: 14, rank: 2, points: 40, diff: 0, matchCount: 3 },
+        { playerId: 15, rank: 3, points: 30, diff: -2, matchCount: 3 },
+        { playerId: 16, rank: 4, points: 20, diff: -5, matchCount: 3 }
       ])
     ];
     const a = ladderRedistribute(results, 4);
@@ -623,16 +625,16 @@ describe('ladderRedistribute', () => {
   it('2 courts: swap halves', () => {
     const results = [
       mockCourtResult(1, [
-        { playerId: 1, rank: 1, points: 63, diff: 5 },
-        { playerId: 2, rank: 2, points: 50, diff: 3 },
-        { playerId: 3, rank: 3, points: 40, diff: 1 },
-        { playerId: 4, rank: 4, points: 30, diff: -2 }
+        { playerId: 1, rank: 1, points: 63, diff: 5, matchCount: 3 },
+        { playerId: 2, rank: 2, points: 50, diff: 3, matchCount: 3 },
+        { playerId: 3, rank: 3, points: 40, diff: 1, matchCount: 3 },
+        { playerId: 4, rank: 4, points: 30, diff: -2, matchCount: 3 }
       ]),
       mockCourtResult(2, [
-        { playerId: 5, rank: 1, points: 58, diff: 4 },
-        { playerId: 6, rank: 2, points: 45, diff: 2 },
-        { playerId: 7, rank: 3, points: 35, diff: 0 },
-        { playerId: 8, rank: 4, points: 25, diff: -3 }
+        { playerId: 5, rank: 1, points: 58, diff: 4, matchCount: 3 },
+        { playerId: 6, rank: 2, points: 45, diff: 2, matchCount: 3 },
+        { playerId: 7, rank: 3, points: 35, diff: 0, matchCount: 3 },
+        { playerId: 8, rank: 4, points: 25, diff: -3, matchCount: 3 }
       ])
     ];
     const a = ladderRedistribute(results, 2);
@@ -648,7 +650,7 @@ describe('ladderRedistribute', () => {
           playerId: i * 4 + j + 1,
           rank: j + 1,
           points: (8 - i) * 10,
-          diff: 0
+                    diff: 0, matchCount: 3
         }))
       )
     );
