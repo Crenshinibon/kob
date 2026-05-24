@@ -563,7 +563,7 @@ test.describe('Standings Calculation', () => {
 			await page.click(`[data-testid="save-score-${matchId}"]`);
 
 			// Should save successfully
-			await page.waitForSelector('.saved');
+			await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 		});
 
 		test('3p court accepts 21-point scores (same as 4p)', async ({ page }) => {
@@ -599,7 +599,7 @@ test.describe('Standings Calculation', () => {
 			await page.click(`[data-testid="save-score-${matchId}"]`);
 
 			// Should save successfully
-			await page.waitForSelector('.saved');
+			await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 		});
 	});
 });

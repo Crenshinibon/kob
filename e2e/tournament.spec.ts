@@ -148,8 +148,7 @@ test.describe('Tournament Integration Tests', () => {
 				);
 				await page.click(`[data-testid="save-score-${matchIds[matchIdx]}"]`);
 
-				// Wait for success message
-				await page.waitForSelector('.saved');
+				await page.waitForSelector(`[data-testid="saved-${matchIds[matchIdx]}"]`);
 			}
 
 			// Verify standings are calculated
@@ -198,8 +197,7 @@ test.describe('Tournament Integration Tests', () => {
 				await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');
 				await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '19');
 				await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
-				// Wait for save to complete
-				await page.waitForSelector('.saved');
+				await page.waitForSelector(`[data-testid="saved-${matchIds[i]}"]`);
 			}
 		}
 
@@ -268,7 +266,7 @@ test.describe('Tournament Integration Tests', () => {
 		await publicPage.click(`[data-testid="save-score-${matchIds[0]}"]`);
 
 		// Should see success
-		await publicPage.waitForSelector('.saved');
+		await publicPage.waitForSelector(`[data-testid="saved-${matchIds[0]}"]`);
 
 		await publicContext!.close();
 	});
@@ -551,7 +549,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 			await page.click(`[data-testid="save-score-${matchId}"]`);
-			await page.waitForSelector('.saved');
+			await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 		});
 
 		test('5p court rejects scores below 15-point minimum', async ({ page }) => {
@@ -591,7 +589,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '15');
 			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '13');
 			await page.click(`[data-testid="save-score-${matchId}"]`);
-			await page.waitForSelector('.saved');
+			await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 		});
 	});
 
@@ -734,7 +732,7 @@ test.describe('Tournament Integration Tests', () => {
 					await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 					await page.click(`[data-testid="save-score-${matchId}"]`);
-					await page.waitForSelector('.saved');
+					await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 				}
 			}
 
@@ -788,7 +786,7 @@ test.describe('Tournament Integration Tests', () => {
 					await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 					await page.click(`[data-testid="save-score-${matchId}"]`);
-					await page.waitForSelector('.saved');
+					await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 				}
 			}
 
@@ -837,7 +835,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 			await page.click(`[data-testid="save-score-${matchId}"]`);
-			await page.waitForSelector('.saved');
+			await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 
 			// Report injury for Player1 on this court
 			await page.goto('/');
@@ -883,7 +881,7 @@ test.describe('Tournament Integration Tests', () => {
 					await page.fill(`[data-testid="team-a-score-${mId}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${mId}"]`, '19');
 					await page.click(`[data-testid="save-score-${mId}"]`);
-					await page.waitForSelector('.saved');
+					await page.waitForSelector(`[data-testid="saved-${mId}"]`);
 				}
 			}
 
