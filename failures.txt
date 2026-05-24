@@ -1,55 +1,502 @@
 $ playwright test --last-failed "--workers=1" "--reporter=list"
+🧹 Cleaning up old test tournaments...
+✅ No old tournaments to clean up
 
-Running 1 test using 1 worker
+Running 59 tests using 1 worker
 
-[2m[WebServer] [22m[2m2026-05-20T10:15:29.316Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
-PAGE ERROR: TypeError: Failed to fetch
-    at window.fetch (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:1:1644)
-    at Vn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:18169)
-    at Tn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:6520)
-    at un (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:1939)
-PAGE ERROR: TypeError: Failed to fetch
-    at window.fetch (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:1:1644)
-    at Vn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:18169)
-    at Tn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:6520)
-    at un (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:1939)
-PAGE ERROR: TypeError: Failed to fetch
-    at window.fetch (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:1:1644)
-    at Vn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:18169)
-    at Tn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:6520)
-    at un (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:1939)
-PAGE ERROR: TypeError: Failed to fetch
-    at window.fetch (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:1:1644)
-    at Vn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:18169)
-    at Tn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:6520)
-    at un (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:1939)
-PAGE ERROR: TypeError: Failed to fetch
-    at window.fetch (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:1:1644)
-    at Vn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:18169)
-    at Tn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:6520)
-    at un (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:1939)
-PAGE ERROR: TypeError: Failed to fetch
-    at window.fetch (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:1:1644)
-    at Vn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:18169)
-    at Tn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:6520)
-    at un (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:1939)
-PAGE ERROR: TypeError: Failed to fetch
-    at window.fetch (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:1:1644)
-    at Vn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:18169)
-    at Tn (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:6520)
-    at un (http://localhost:4173/_app/immutable/chunks/Cyw6oUkt.js:4:1939)
-Round text: Round 1 of 2
-QR links: [33m4[39m
-Court closed: [33mfalse[39m
-  ✘  1 e2e/test-form-errors.spec.ts:3:1 › test close round form with error logging (30.0s)
+  ✓   1 e2e/demo.test.ts:3:1 › home page has expected h1 (280ms)
+[2m[WebServer] [22m[2m2026-05-24T10:19:47.475Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
+  ✘   2 e2e/format.spec.ts:52:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) (30.0s)
+  ✘   3 e2e/format.spec.ts:66:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range (5.7s)
+  ✘   4 e2e/format.spec.ts:75:3 › Tournament Format Selection › Random Format › rounds input is editable (30.0s)
+  ✘   5 e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (30.2s)
+  ✘   6 e2e/format.spec.ts:109:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (30.2s)
+  ✘   7 e2e/format.spec.ts:133:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (30.2s)
+  ✓   8 e2e/format.spec.ts:156:3 › Tournament Format Selection › Pre-Seed Format › switching player count updates fixed rounds (642ms)
+  ✘   9 e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again (5.6s)
+  ✘  10 e2e/format.spec.ts:176:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (30.2s)
+  ✘  11 e2e/format.spec.ts:215:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description (30.3s)
+  ✘  12 e2e/format.spec.ts:237:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description (30.2s)
+  ✘  13 e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description (30.3s)
+  ✘  14 e2e/format.spec.ts:273:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) (30.3s)
+  ✘  15 e2e/format.spec.ts:288:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (30.0s)
+  ✘  16 e2e/format.spec.ts:307:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches (8.5s)
 
 
-  1) e2e/test-form-errors.spec.ts:3:1 › test close round form with error logging ───────────────────
+  1) e2e/format.spec.ts:52:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) 
 
     [31mTest timeout of 30000ms exceeded.[39m
 
-    Error Context: test-results/test-form-errors-test-close-round-form-with-error-logging/error-context.md
+    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[name="name"]') to be visible[22m
+    [2m    60 × locator resolved to hidden <input name="name" type="hidden" class="svelte-1h1bjzz"/>[22m
 
-  1 failed
-    e2e/test-form-errors.spec.ts:3:1 › test close round form with error logging ────────────────────
-error: script "playwright" exited with code 1
+
+      52 | 		test('shows configurable rounds input (not select)', async ({ page }) => {
+      53 | 			await page.click('text=+ New Tournament');
+    > 54 | 			await page.waitForSelector('input[name="name"]');
+         | 			           ^
+      55 |
+      56 | 			await expect(page.locator('input[value="random-seed"]')).toBeChecked();
+      57 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:54:15
+
+    Error Context: test-results/format-Tournament-Format-S-3c7e0-le-rounds-input-not-select-/error-context.md
+
+  2) e2e/format.spec.ts:66:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveAttribute[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator:  locator('input[name="numRounds"]')
+    Expected: [32m"1"[39m
+    Received: [31m""[39m
+    Timeout:  5000ms
+
+    Call log:
+    [2m  - Expect "toHaveAttribute" with timeout 5000ms[22m
+    [2m  - waiting for locator('input[name="numRounds"]')[22m
+    [2m    14 × locator resolved to <input value="3" type="hidden" name="numRounds" class="svelte-1h1bjzz"/>[22m
+    [2m       - unexpected value "null"[22m
+
+
+      69 | 			const roundsInput = page.locator('input[name="numRounds"]');
+      70 | 			await expect(roundsInput).toHaveValue('3');
+    > 71 | 			await expect(roundsInput).toHaveAttribute('min', '1');
+         | 			                          ^
+      72 | 			await expect(roundsInput).toHaveAttribute('max', '10');
+      73 | 		});
+      74 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:71:30
+
+    Error Context: test-results/format-Tournament-Format-S-6cf35-sensible-defaults-and-range/error-context.md
+
+  3) e2e/format.spec.ts:75:3 › Tournament Format Selection › Random Format › rounds input is editable 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[name="numRounds"]')[22m
+    [2m    - locator resolved to <input value="3" type="hidden" name="numRounds" class="svelte-1h1bjzz"/>[22m
+    [2m    - fill("5")[22m
+    [2m  - attempting fill action[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m      - waiting 100ms[22m
+    [2m    58 × waiting for element to be visible, enabled and editable[22m
+    [2m       - element is not visible[22m
+    [2m     - retrying fill action[22m
+    [2m       - waiting 500ms[22m
+
+
+      77 |
+      78 | 			const roundsInput = page.locator('input[name="numRounds"]');
+    > 79 | 			await roundsInput.fill('5');
+         | 			                  ^
+      80 | 			await expect(roundsInput).toHaveValue('5');
+      81 | 		});
+      82 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:79:22
+
+    Error Context: test-results/format-Tournament-Format-S-dca08-at-rounds-input-is-editable/error-context.md
+
+  4) e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[name="name"]')[22m
+    [2m    - locator resolved to <input name="name" type="hidden" class="svelte-1h1bjzz"/>[22m
+    [2m    - fill("Random32 1779618055300")[22m
+    [2m  - attempting fill action[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m      - waiting 100ms[22m
+    [2m    59 × waiting for element to be visible, enabled and editable[22m
+    [2m       - element is not visible[22m
+    [2m     - retrying fill action[22m
+    [2m       - waiting 500ms[22m
+    [2m  - element was detached from the DOM, retrying[22m
+
+
+      86 |
+      87 | 			await page.click('text=+ New Tournament');
+    > 88 | 			await page.fill('input[name="name"]', tournamentName);
+         | 			           ^
+      89 |
+      90 | 			// Set rounds using the number input
+      91 | 			await page.locator('#numRounds').fill('2');
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:88:15
+
+    Error Context: test-results/format-Tournament-Format-S-38d0b-32-players-creates-8-courts/error-context.md
+
+  5) e2e/format.spec.ts:109:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[name="name"]')[22m
+    [2m    - locator resolved to <input name="name" type="hidden" class="svelte-1h1bjzz"/>[22m
+    [2m    - fill("PreSeed16 1779618085982")[22m
+    [2m  - attempting fill action[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m      - waiting 100ms[22m
+    [2m    59 × waiting for element to be visible, enabled and editable[22m
+    [2m       - element is not visible[22m
+    [2m     - retrying fill action[22m
+    [2m       - waiting 500ms[22m
+    [2m  - element was detached from the DOM, retrying[22m
+
+
+      112 |
+      113 | 			await page.click('text=+ New Tournament');
+    > 114 | 			await page.fill('input[name="name"]', tournamentName);
+          | 			           ^
+      115 |
+      116 | 			await page.click('input[value="preseed"]');
+      117 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:114:15
+
+    Error Context: test-results/format-Tournament-Format-S-95dea-layers-shows-3-fixed-rounds/error-context.md
+
+  6) e2e/format.spec.ts:133:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[name="name"]')[22m
+    [2m    - locator resolved to <input name="name" type="hidden" class="svelte-1h1bjzz"/>[22m
+    [2m    - fill("PreSeed32 1779618116802")[22m
+    [2m  - attempting fill action[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m      - waiting 100ms[22m
+    [2m    59 × waiting for element to be visible, enabled and editable[22m
+    [2m       - element is not visible[22m
+    [2m     - retrying fill action[22m
+    [2m       - waiting 500ms[22m
+    [2m  - element was detached from the DOM, retrying[22m
+
+
+      136 |
+      137 | 			await page.click('text=+ New Tournament');
+    > 138 | 			await page.fill('input[name="name"]', tournamentName);
+          | 			           ^
+      139 |
+      140 | 			await page.click('input[value="preseed"]');
+      141 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:138:15
+
+    Error Context: test-results/format-Tournament-Format-S-db64d-layers-shows-4-fixed-rounds/error-context.md
+
+  7) e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator:  locator('input[name="numRounds"]')
+    Expected: visible
+    Received: hidden
+    Timeout:  5000ms
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('input[name="numRounds"]')[22m
+    [2m    14 × locator resolved to <input value="3" type="hidden" name="numRounds" class="svelte-1h1bjzz"/>[22m
+    [2m       - unexpected value "hidden"[22m
+
+
+      171 |
+      172 | 			await page.click('input[value="random-seed"]');
+    > 173 | 			await expect(page.locator('input[name="numRounds"]')).toBeVisible();
+          | 			                                                      ^
+      174 | 		});
+      175 |
+      176 | 		test('accepts flexible name-with-points input', async ({ page }) => {
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:173:58
+
+    Error Context: test-results/format-Tournament-Format-S-e2ae8-om-shows-rounds-input-again/error-context.md
+
+  8) e2e/format.spec.ts:176:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[name="name"]')[22m
+    [2m    - locator resolved to <input name="name" type="hidden" class="svelte-1h1bjzz"/>[22m
+    [2m    - fill("FlexibleInput 1779618154528")[22m
+    [2m  - attempting fill action[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m      - waiting 100ms[22m
+    [2m    58 × waiting for element to be visible, enabled and editable[22m
+    [2m       - element is not visible[22m
+    [2m     - retrying fill action[22m
+    [2m       - waiting 500ms[22m
+    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:4173/"[22m
+    [2m    - waiting for element to be visible, enabled and editable[22m
+    [2m  - element was detached from the DOM, retrying[22m
+
+
+      179 |
+      180 | 			await page.click('text=+ New Tournament');
+    > 181 | 			await page.fill('input[name="name"]', tournamentName);
+          | 			           ^
+      182 |
+      183 | 			await page.click('input[value="preseed"]');
+      184 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:181:15
+
+    Error Context: test-results/format-Tournament-Format-S-57f6f-ible-name-with-points-input/error-context.md
+
+  9) e2e/format.spec.ts:215:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[name="name"]')[22m
+    [2m    - locator resolved to <input name="name" type="hidden" class="svelte-1h1bjzz"/>[22m
+    [2m    - fill("Leftover3p 1779618185275")[22m
+    [2m  - attempting fill action[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m      - waiting 100ms[22m
+    [2m    59 × waiting for element to be visible, enabled and editable[22m
+    [2m       - element is not visible[22m
+    [2m     - retrying fill action[22m
+    [2m       - waiting 500ms[22m
+    [2m  - element was detached from the DOM, retrying[22m
+
+
+      218 |
+      219 | 			await page.click('text=+ New Tournament');
+    > 220 | 			await page.fill('input[name="name"]', tournamentName);
+          | 			           ^
+      221 |
+      222 | 			// Enter 11 players on the create page
+      223 | 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:220:15
+
+    Error Context: test-results/format-Tournament-Format-S-18dac-rt-warning-with-description/error-context.md
+
+  10) e2e/format.spec.ts:237:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[name="name"]')[22m
+    [2m    - locator resolved to <input name="name" type="hidden" class="svelte-1h1bjzz"/>[22m
+    [2m    - fill("Leftover5p 1779618216095")[22m
+    [2m  - attempting fill action[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m      - waiting 100ms[22m
+    [2m    59 × waiting for element to be visible, enabled and editable[22m
+    [2m       - element is not visible[22m
+    [2m     - retrying fill action[22m
+    [2m       - waiting 500ms[22m
+    [2m  - element was detached from the DOM, retrying[22m
+
+
+      240 |
+      241 | 			await page.click('text=+ New Tournament');
+    > 242 | 			await page.fill('input[name="name"]', tournamentName);
+          | 			           ^
+      243 |
+      244 | 			// Enter 25 players on the create page
+      245 | 			const players = Array.from({ length: 25 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:242:15
+
+    Error Context: test-results/format-Tournament-Format-S-750b1-rt-warning-with-description/error-context.md
+
+  11) e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[name="name"]')[22m
+    [2m    - locator resolved to <input name="name" type="hidden" class="svelte-1h1bjzz"/>[22m
+    [2m    - fill("Leftover6p 1779618246863")[22m
+    [2m  - attempting fill action[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m      - waiting 100ms[22m
+    [2m    59 × waiting for element to be visible, enabled and editable[22m
+    [2m       - element is not visible[22m
+    [2m     - retrying fill action[22m
+    [2m       - waiting 500ms[22m
+    [2m  - element was detached from the DOM, retrying[22m
+
+
+      258 |
+      259 | 			await page.click('text=+ New Tournament');
+    > 260 | 			await page.fill('input[name="name"]', tournamentName);
+          | 			           ^
+      261 |
+      262 | 			// Enter 26 players on the create page
+      263 | 			const players = Array.from({ length: 26 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:260:15
+
+    Error Context: test-results/format-Tournament-Format-S-53ad7-rt-warning-with-description/error-context.md
+
+  12) e2e/format.spec.ts:273:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.fill: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[name="name"]')[22m
+    [2m    - locator resolved to <input name="name" type="hidden" class="svelte-1h1bjzz"/>[22m
+    [2m    - fill("Clean24 1779618277757")[22m
+    [2m  - attempting fill action[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m      - waiting 100ms[22m
+    [2m    59 × waiting for element to be visible, enabled and editable[22m
+    [2m       - element is not visible[22m
+    [2m     - retrying fill action[22m
+    [2m       - waiting 500ms[22m
+    [2m  - element was detached from the DOM, retrying[22m
+
+
+      276 |
+      277 | 			await page.click('text=+ New Tournament');
+    > 278 | 			await page.fill('input[name="name"]', tournamentName);
+          | 			           ^
+      279 |
+      280 | 			// Enter 24 players on the create page
+      281 | 			const players = Array.from({ length: 24 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:278:15
+
+    Error Context: test-results/format-Tournament-Format-S-7023c-ourts-message-no-leftovers-/error-context.md
+
+  13) e2e/format.spec.ts:288:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('input[name="name"]') to be visible[22m
+    [2m    61 × locator resolved to hidden <input name="name" type="hidden" class="svelte-1h1bjzz"/>[22m
+
+
+      288 | 		test('kick leftovers removes last players to make clean courts', async ({ page }) => {
+      289 | 			await page.click('text=+ New Tournament');
+    > 290 | 			await page.waitForSelector('input[name="name"]');
+          | 			           ^
+      291 |
+      292 | 			// Enter 17 players on the create page
+      293 | 			const players = Array.from({ length: 17 }, (_, i) => `Player${i + 1}`);
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:290:15
+
+    Error Context: test-results/format-Tournament-Format-S-e9162-layers-to-make-clean-courts/error-context.md
+
+  14) e2e/format.spec.ts:307:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches 
+
+    Test was interrupted.
+
+    Error: page.fill: Test ended.
+    Call log:
+    [2m  - waiting for locator('input[name="name"]')[22m
+    [2m    - locator resolved to <input name="name" type="hidden" class="svelte-1h1bjzz"/>[22m
+    [2m    - fill("3pCourt 1779618339231")[22m
+    [2m  - attempting fill action[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and editable[22m
+    [2m      - element is not visible[22m
+    [2m    - retrying fill action[22m
+    [2m      - waiting 100ms[22m
+    [2m    15 × waiting for element to be visible, enabled and editable[22m
+    [2m       - element is not visible[22m
+    [2m     - retrying fill action[22m
+    [2m       - waiting 500ms[22m
+    [2m  - element was detached from the DOM, retrying[22m
+
+
+      312 | 			await page.waitForURL('/tournament/create');
+      313 |
+    > 314 | 			await page.fill('input[name="name"]', tournamentName);
+          | 			           ^
+      315 | 			await page.fill('input[name="numRounds"]', '1');
+      316 |
+      317 | 			// Enter 11 players on the create page
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:314:15
+
+    Error Context: test-results/format-Tournament-Format-S-550e9-s-correct-number-of-matches/error-context.md
+
+  13 failed
+    e2e/format.spec.ts:52:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) 
+    e2e/format.spec.ts:66:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range 
+    e2e/format.spec.ts:75:3 › Tournament Format Selection › Random Format › rounds input is editable 
+    e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts 
+    e2e/format.spec.ts:109:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds 
+    e2e/format.spec.ts:133:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds 
+    e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again 
+    e2e/format.spec.ts:176:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input 
+    e2e/format.spec.ts:215:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description 
+    e2e/format.spec.ts:237:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description 
+    e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description 
+    e2e/format.spec.ts:273:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) 
+    e2e/format.spec.ts:288:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts 
+  1 interrupted
+    e2e/format.spec.ts:307:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches 
+  43 did not run
+  2 passed (6.1m)
+error: script "playwright" exited with code 130
