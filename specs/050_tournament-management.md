@@ -58,7 +58,7 @@ Combined form with:
 - Tournament name and status
 - Court cards showing:
   - Court number and size badge (3p/4p/5p/6p)
-  - **QR code at the top** - Players can scan to access the court page
+  - **QR code at the top** - Players can scan to access the court page (**stable URL** — persists across rounds and player retirements)
   - Player names
   - Matches completed (e.g., "2/3")
   - Shift badge (when virtual courts > physical courts)

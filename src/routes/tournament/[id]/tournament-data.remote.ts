@@ -1,6 +1,6 @@
 import { query } from '$app/server';
 import { db } from '$lib/server/db';
-import { tournament, courtRotation, match, player, courtAccess } from '$lib/server/db/schema';
+import { tournament, courtRotation, match, player, court } from '$lib/server/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import * as v from 'valibot';
 import {
@@ -106,20 +106,19 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 				(sum, size) => sum + matchCountForCourtSize(size),
 				0
 			);
-			const canceledMatchCount = allMatches.filter((m) => m.isCanceled).length;
-			const scoredMatchCount = allMatches.filter(
-				(m) => m.teamAScore !== null && m.teamBScore !== null
+			const completedMatchCount = allMatches.filter(
+				(m) =>
+					(m.teamAScore !== null && m.teamBScore !== null) || m.isCanceled
 			).length;
 			canCloseRound =
 				allMatches.length >= expectedMatchCount &&
-				scoredMatchCount + canceledMatchCount === expectedMatchCount;
+				completedMatchCount === expectedMatchCount;
 			console.log('canCloseRound debug:', {
 				tournamentId,
 				currentRound,
 				allMatchesLength: allMatches.length,
 				expectedMatchCount,
-				scoredMatchCount,
-				canceledMatchCount,
+				completedMatchCount,
 				canCloseRound,
 				matchDetails: allMatches.map((m) => ({
 					id: m.id,
@@ -151,9 +150,9 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		const matches = await db.select().from(match).where(eq(match.courtRotationId, rotation.id));
 
 		const access = await db
-			.select()
-			.from(courtAccess)
-			.where(eq(courtAccess.courtRotationId, rotation.id))
+			.select({ token: court.token })
+			.from(court)
+			.where(eq(court.id, rotation.courtId))
 			.limit(1);
 
 		const playerIds = [

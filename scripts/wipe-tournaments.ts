@@ -1,5 +1,5 @@
 import { db } from './db';
-import { tournament, player, courtRotation, match, courtAccess } from '../src/lib/server/db/schema';
+import { tournament, player, courtRotation, match, court } from '../src/lib/server/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 
 async function wipeAllTournaments() {
@@ -23,11 +23,11 @@ async function wipeAllTournaments() {
 		const rotationIds = rotations.map((r) => r.id);
 
 		if (rotationIds.length > 0) {
-			await db.delete(courtAccess).where(inArray(courtAccess.courtRotationId, rotationIds));
 			await db.delete(match).where(inArray(match.courtRotationId, rotationIds));
 		}
 
 		await db.delete(courtRotation).where(eq(courtRotation.tournamentId, id));
+		await db.delete(court).where(eq(court.tournamentId, id));
 		await db.delete(player).where(eq(player.tournamentId, id));
 	}
 

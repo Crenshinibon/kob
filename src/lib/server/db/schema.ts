@@ -45,8 +45,17 @@ export const player = pgTable('player', {
 	finalStanding: integer('final_standing')
 });
 
+export const court = pgTable('court', {
+	id: serial('id').primaryKey(),
+	tournamentId: integer('tournament_id').notNull(),
+	courtNumber: integer('court_number').notNull(),
+	token: text('token').notNull().unique(),
+	isActive: boolean('is_active').default(true)
+});
+
 export const courtRotation = pgTable('court_rotation', {
 	id: serial('id').primaryKey(),
+	courtId: integer('court_id').notNull(),
 	tournamentId: integer('tournament_id').notNull(),
 	roundNumber: integer('round_number').notNull(),
 	courtNumber: integer('court_number').notNull(),
@@ -115,13 +124,6 @@ export const match6Player = pgTable('match_6_player', {
 	fixedTeamScore: integer('fixed_team_score'),
 	rotatingTeamScore: integer('rotating_team_score'),
 	isCanceled: boolean('is_canceled').notNull().default(false)
-});
-
-export const courtAccess = pgTable('court_access', {
-	id: serial('id').primaryKey(),
-	courtRotationId: integer('court_rotation_id').notNull(),
-	token: text('token').notNull().unique(),
-	isActive: boolean('is_active').default(true)
 });
 
 export * from './auth.schema';

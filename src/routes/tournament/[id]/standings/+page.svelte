@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-
 	let { data }: { data: PageData } = $props();
 
 	const tournament = $derived(data.tournament);
@@ -90,7 +88,7 @@
 
 <main>
 	<header>
-		<a href={resolve(`/tournament/${tournament.id}`)}>← Back to Tournament</a>
+		<a href={`/tournament/${tournament.id}`}>← Back to Tournament</a>
 		<h1>{tournament.name}</h1>
 		{#if tournament.formatType}
 			<p>

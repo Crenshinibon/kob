@@ -2,7 +2,7 @@ import * as v from 'valibot';
 import { error, redirect } from '@sveltejs/kit';
 import { form, getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
-import { tournament, player, courtRotation, match, courtAccess } from '$lib/server/db/schema';
+import { tournament, player, courtRotation, match, court } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 import {
@@ -189,9 +189,21 @@ export const createTournamentForm = form(
 			const assignment = assignments[courtNum];
 			const size = courtSizes[courtNum] ?? 4;
 
+			const token = crypto.randomBytes(16).toString('hex');
+			const [newCourt] = await db
+				.insert(court)
+				.values({
+					tournamentId: newTournament.id,
+					courtNumber: assignment.courtNumber,
+					token,
+					isActive: true
+				})
+				.returning();
+
 			const [rotation] = await db
 				.insert(courtRotation)
 				.values({
+					courtId: newCourt.id,
 					tournamentId: newTournament.id,
 					roundNumber: 1,
 					courtNumber: assignment.courtNumber,
@@ -223,13 +235,6 @@ export const createTournamentForm = form(
 					});
 				}
 			}
-
-			const token = crypto.randomBytes(16).toString('hex');
-			await db.insert(courtAccess).values({
-				courtRotationId: rotation.id,
-				token,
-				isActive: true
-			});
 		}
 
 		redirect(303, `/tournament/${newTournament.id}`);

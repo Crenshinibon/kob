@@ -102,7 +102,7 @@ Same as tournament view - just shows all courts at once. No separate detailed vi
 No complex features:
 
 - No live query on court page (refresh for updates)
-- No token reset
+- No token reset (tokens are stable — live on `court` table, persist across rounds and retirements)
 - No override UI (admin can edit directly in DB if needed)
 - No conflict resolution (last save wins)
 - No undo/confirmation for score edits

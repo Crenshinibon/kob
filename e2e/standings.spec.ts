@@ -382,9 +382,9 @@ test.describe('Standings Calculation', () => {
 				matchIds.push(testId!.replace('match-form-', ''));
 			}
 
-			// Enter scores: Match 1: 21-19, Match 2: 21-18, Match 3: 21-20
+			// Enter scores: Match 1: 21-19, Match 2: 21-18, Match 3: 21-17
 			for (let i = 0; i < matchIds.length; i++) {
-				await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, String(21 - i));
+				await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');
 				await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, String(19 - i));
 				await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
 				await page.waitForSelector(`[data-testid="saved-${matchIds[i]}"]`);

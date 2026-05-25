@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { courtAccess, courtRotation, match, tournament, player } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { court, courtRotation, match, tournament, player } from '$lib/server/db/schema';
+import { eq, and } from 'drizzle-orm';
 
 import type { PageServerLoad } from './$types';
 import type { MatchData } from '$lib/server/tournament-logic';
@@ -14,26 +14,54 @@ import {
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const token = params.token;
 
-	// Get court access
-	const [access] = await db.select().from(courtAccess).where(eq(courtAccess.token, token));
+	// Get court by token
+	const [courtRecord] = await db.select().from(court).where(eq(court.token, token));
 
-	if (!access) throw error(404, 'Court not found');
-
-	// Get rotation
-	const [rotation] = await db
-		.select()
-		.from(courtRotation)
-		.where(eq(courtRotation.id, access.courtRotationId));
-
-	if (!rotation) throw error(404, 'Court rotation not found');
+	if (!courtRecord) throw error(404, 'Court not found');
 
 	// Get tournament
 	const [tourney] = await db
 		.select()
 		.from(tournament)
-		.where(eq(tournament.id, rotation.tournamentId));
+		.where(eq(tournament.id, courtRecord.tournamentId));
 
 	if (!tourney) throw error(404, 'Tournament not found');
+
+	const currentRound = tourney.currentRound || 0;
+
+	// Find rotation for current round on this court
+	let rotation: typeof courtRotation.$inferSelect | undefined;
+	if (currentRound > 0) {
+		const [found] = await db
+			.select()
+			.from(courtRotation)
+			.where(
+				and(eq(courtRotation.courtId, courtRecord.id), eq(courtRotation.roundNumber, currentRound))
+			);
+		rotation = found;
+	}
+
+	if (!rotation) {
+		return {
+			court: {
+				tournamentName: tourney.name,
+				courtNumber: courtRecord.courtNumber,
+				roundNumber: currentRound,
+				courtSize: 4,
+				playerNames: {},
+				minPoints: 21,
+				scoringLabel: '',
+				setsToWin: 1,
+				pointsToWin: 21,
+				decidingSetPoints: 15,
+				scoringOverrides: null
+			},
+			matches: [],
+			standings: [],
+			isActive: false,
+			isAuthenticated: !!locals.user
+		};
+	}
 
 	// Get matches
 	const matches = await db
@@ -124,7 +152,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		},
 		matches,
 		standings,
-		isActive: access.isActive && tourney.status === 'active',
+		isActive: courtRecord.isActive && tourney.status === 'active',
 		isAuthenticated: !!locals.user
 	};
 };

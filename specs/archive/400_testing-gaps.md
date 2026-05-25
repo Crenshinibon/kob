@@ -33,7 +33,7 @@ This ensures consistent results across runs and prevents flaky tests.
 Added `deleteTournament` server action that:
 
 - Verifies user authorization
-- Cascades deletion through all related tables (match, courtAccess, courtRotation, player)
+- Cascades deletion through all related tables (match, court, courtRotation, player)
 - Removes the tournament record
 
 ### 4. Unit Tests Added

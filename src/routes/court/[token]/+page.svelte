@@ -323,7 +323,9 @@
 														>(to {effectiveScoring.decidingSetPoints})</span
 													>{/if}
 											</h4>
-											{#if completedMatches.has(setMatch.id) && !editingMatches.has(setMatch.id)}
+											{#if setMatch.isCanceled}
+												<div class="canceled-notice">Canceled — scores will be averaged</div>
+											{:else if completedMatches.has(setMatch.id) && !editingMatches.has(setMatch.id)}
 												<div class="completed">
 													<p>
 														{getTeamDisplay(setMatch, 'a')}:
@@ -489,7 +491,9 @@
 											{/if}
 										</h3>
 
-										{#if completedMatches.has(match.id) && !editingMatches.has(match.id)}
+										{#if match.isCanceled}
+											<div class="canceled-notice">Canceled — scores will be averaged</div>
+										{:else if completedMatches.has(match.id) && !editingMatches.has(match.id)}
 											<div class="completed" transition:slide>
 												<p>
 													{getTeamDisplay(match, 'a')}:
@@ -627,14 +631,6 @@
 				{#each data.matches as match, index (match.id)}
 					{@const render = renderMatch(match, index)}
 					<div class="match" transition:slide>
-						{#if render.currentErrors.length > 0 && !render.isSaving}
-							<div class="error" transition:slide>
-								{#each render.currentErrors as msg, ei (ei)}
-									<p>{msg}</p>
-								{/each}
-							</div>
-						{/if}
-
 						<h3>
 							Match {render.index + 1}
 							{#if teamLabels().get(match.matchNumber)}
@@ -645,7 +641,18 @@
 							{/if}
 						</h3>
 
-						{#if completedMatches.has(match.id) && !editingMatches.has(match.id)}
+						{#if match.isCanceled}
+							<div class="canceled-notice">Canceled — scores will be averaged</div>
+						{:else}
+							{#if render.currentErrors.length > 0 && !render.isSaving}
+								<div class="error" transition:slide>
+									{#each render.currentErrors as msg, ei (ei)}
+										<p>{msg}</p>
+									{/each}
+								</div>
+							{/if}
+
+							{#if completedMatches.has(match.id) && !editingMatches.has(match.id)}
 							<div class="completed" transition:slide>
 								<p>
 									{getTeamDisplay(match, 'a')}:
@@ -762,6 +769,7 @@
 									</button>
 								</div>
 							</form>
+						{/if}
 						{/if}
 					</div>
 				{/each}

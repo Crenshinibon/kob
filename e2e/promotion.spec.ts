@@ -237,6 +237,7 @@ test.describe('Promotion and Relegation', () => {
 			await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');
 			await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '19');
 			await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
+			await page.waitForSelector(`[data-testid="saved-${matchIds[i]}"]`);
 		}
 
 		// Navigate to tournament page - button should still show waiting
@@ -258,11 +259,12 @@ test.describe('Promotion and Relegation', () => {
 			);
 			expect(courtMatchIds.length).toBe(3);
 
-			for (let i = 0; i < 3; i++) {
-				await page.fill(`[data-testid="team-a-score-${courtMatchIds[i]}"]`, '21');
-				await page.fill(`[data-testid="team-b-score-${courtMatchIds[i]}"]`, '19');
-				await page.click(`[data-testid="save-score-${courtMatchIds[i]}"]`);
-			}
+		for (let i = 0; i < 3; i++) {
+			await page.fill(`[data-testid="team-a-score-${courtMatchIds[i]}"]`, '21');
+			await page.fill(`[data-testid="team-b-score-${courtMatchIds[i]}"]`, '19');
+			await page.click(`[data-testid="save-score-${courtMatchIds[i]}"]`);
+			await page.waitForSelector(`[data-testid="saved-${courtMatchIds[i]}"]`);
+		}
 		}
 
 		// Navigate to tournament page and close round button should be enabled
@@ -405,6 +407,7 @@ test.describe('Promotion and Relegation', () => {
 				await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');
 				await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '19');
 				await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
+				await page.waitForSelector(`[data-testid="saved-${matchIds[i]}"]`);
 			}
 		}
 

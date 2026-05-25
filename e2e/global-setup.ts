@@ -4,7 +4,7 @@ import {
 	player,
 	courtRotation,
 	match,
-	courtAccess,
+	court,
 	match3Player,
 	match5Player,
 	match6Player
@@ -40,8 +40,7 @@ export default async function setup() {
 		const rotationIds = rotations.map((r) => r.id);
 
 		if (rotationIds.length > 0) {
-			// Delete court_access and matches for these rotations
-			await db.delete(courtAccess).where(inArray(courtAccess.courtRotationId, rotationIds));
+			// Delete matches for these rotations
 			await db.delete(match).where(inArray(match.courtRotationId, rotationIds));
 			await db.delete(match3Player).where(inArray(match3Player.courtRotationId, rotationIds));
 			await db.delete(match5Player).where(inArray(match5Player.courtRotationId, rotationIds));
@@ -50,6 +49,9 @@ export default async function setup() {
 
 		// Delete court_rotations
 		await db.delete(courtRotation).where(eq(courtRotation.tournamentId, id));
+
+		// Delete courts
+		await db.delete(court).where(eq(court.tournamentId, id));
 
 		// Delete players
 		await db.delete(player).where(eq(player.tournamentId, id));

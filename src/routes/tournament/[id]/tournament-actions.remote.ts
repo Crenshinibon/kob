@@ -2,9 +2,8 @@ import * as v from 'valibot';
 import { error, redirect } from '@sveltejs/kit';
 import { form, command, getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
-import { tournament, player, courtRotation, match, courtAccess } from '$lib/server/db/schema';
+import { tournament, player, courtRotation, match, court } from '$lib/server/db/schema';
 import { eq, and, inArray, isNull, or } from 'drizzle-orm';
-import crypto from 'crypto';
 import {
 	createInitialState,
 	addPlayers,
@@ -204,7 +203,6 @@ export const closeRoundForm = form(
 		if (existingNextRotations.length > 0) {
 			const existingIds = existingNextRotations.map((r) => r.id);
 			await db.delete(match).where(inArray(match.courtRotationId, existingIds));
-			await db.delete(courtAccess).where(inArray(courtAccess.courtRotationId, existingIds));
 			await db
 				.delete(courtRotation)
 				.where(
@@ -219,9 +217,17 @@ export const closeRoundForm = form(
 			const idx = assignment.courtNumber - 1;
 			const size = courtSizes[idx] ?? 4;
 
+			const [existingCourt] = await db
+				.select()
+				.from(court)
+				.where(
+					and(eq(court.tournamentId, tournamentId), eq(court.courtNumber, assignment.courtNumber))
+				);
+
 			const [rotation] = await db
 				.insert(courtRotation)
 				.values({
+					courtId: existingCourt.id,
 					tournamentId: tournamentId,
 					roundNumber: nextRoundNumber,
 					courtNumber: assignment.courtNumber,
@@ -265,24 +271,15 @@ export const closeRoundForm = form(
 					});
 				}
 			}
-
-			const token = crypto.randomBytes(16).toString('hex');
-			await db.insert(courtAccess).values({
-				courtRotationId: rotation.id,
-				token,
-				isActive: false
-			});
 		}
 
-		// Deactivate current round courts
-		for (const rotation of currentRotations) {
-			await db
-				.update(courtAccess)
-				.set({ isActive: false })
-				.where(eq(courtAccess.courtRotationId, rotation.id));
+		// Deactivate all courts for current round, activate for next round
+		const allCourts = await db.select().from(court).where(eq(court.tournamentId, tournamentId));
+
+		for (const c of allCourts) {
+			await db.update(court).set({ isActive: false }).where(eq(court.id, c.id));
 		}
 
-		// Activate next round courts
 		const newRotations = await db
 			.select()
 			.from(courtRotation)
@@ -294,12 +291,8 @@ export const closeRoundForm = form(
 			)
 			.orderBy(courtRotation.courtNumber);
 
-		const activeCourtCount = Math.min(physicalCourtCount, newRotations.length);
-		for (let i = 0; i < activeCourtCount; i++) {
-			await db
-				.update(courtAccess)
-				.set({ isActive: true })
-				.where(eq(courtAccess.courtRotationId, newRotations[i].id));
+		for (let i = 0; i < newRotations.length; i++) {
+			await db.update(court).set({ isActive: true }).where(eq(court.id, newRotations[i].courtId));
 		}
 
 		await db
@@ -336,10 +329,10 @@ export const deleteTournamentForm = form(
 
 		for (const rotation of rotations) {
 			await db.delete(match).where(eq(match.courtRotationId, rotation.id));
-			await db.delete(courtAccess).where(eq(courtAccess.courtRotationId, rotation.id));
 		}
 
 		await db.delete(courtRotation).where(eq(courtRotation.tournamentId, tournamentId));
+		await db.delete(court).where(eq(court.tournamentId, tournamentId));
 		await db.delete(player).where(eq(player.tournamentId, tournamentId));
 		await db.delete(tournament).where(eq(tournament.id, tournamentId));
 
@@ -507,7 +500,6 @@ export const retirePlayer = command(
 		const currentRotationIds = currentRotations.map((r) => r.id);
 		if (currentRotationIds.length > 0) {
 			await db.delete(match).where(inArray(match.courtRotationId, currentRotationIds));
-			await db.delete(courtAccess).where(inArray(courtAccess.courtRotationId, currentRotationIds));
 		}
 		await db
 			.delete(courtRotation)
@@ -620,9 +612,17 @@ export const retirePlayer = command(
 			const idx = assignment.courtNumber - 1;
 			const size = newCourtSizes[idx] ?? 4;
 
+			const [existingCourt] = await db
+				.select()
+				.from(court)
+				.where(
+					and(eq(court.tournamentId, tournamentId), eq(court.courtNumber, assignment.courtNumber))
+				);
+
 			const [newRotation] = await db
 				.insert(courtRotation)
 				.values({
+					courtId: existingCourt.id,
 					tournamentId: tournamentId,
 					roundNumber: currentRound,
 					courtNumber: assignment.courtNumber,
@@ -669,13 +669,6 @@ export const retirePlayer = command(
 					});
 				}
 			}
-
-			const token = crypto.randomBytes(16).toString('hex');
-			await db.insert(courtAccess).values({
-				courtRotationId: newRotation.id,
-				token,
-				isActive: true
-			});
 		}
 
 		getTournamentDataLive(tournamentId).reconnect();

@@ -6,9 +6,9 @@
 
 - **[030_auth-and-users.md](./030_auth-and-users.md)**: Simple auth: Admin login for management, anonymous access for players via court URLs.
 
-- **[040_database-schema.md](./040_database-schema.md)**: Schema: tournament (with scoring/retirement/timing/court config), player (with retirement), courtRotation (variable size 3-6), match (all court types, best-of-3, injury), courtAccess. Dead schema: match_3/5/6_player tables.
+- **[040_database-schema.md](./040_database-schema.md)**: Schema: tournament (with scoring/retirement/timing/court config), player (with retirement), court (stable tokens), courtRotation (variable size 3-6, linked to court), match (all court types, best-of-3, injury). Dead schema: match_3/5/6_player tables. Removed: courtAccess (replaced by `court` table).
 
-- **[050_tournament-management.md](./050_tournament-management.md)**: Flow: Create (with players, scoring, court config) → Run rounds → Finish. No draft state — tournaments start immediately. Uses remote functions + some legacy server actions.
+- **[050_tournament-management.md](./050_tournament-management.md)**: Flow: Create (with players, scoring, court config) → Run rounds → Finish. No draft state — tournaments start immediately. Uses remote functions (all legacy server actions removed). Stable court tokens persist across rounds/retirements.
 
 - **[060_court-operations.md](./060_court-operations.md)**: Mobile-optimized score entry. Supports 3p/4p/5p/6p courts. Best-of-3 set-by-set scoring. No live query on court page.
 

@@ -758,13 +758,13 @@ test.describe('Tournament Integration Tests', () => {
 			await page.selectOption('#retireReason', { value: 'injury' });
 			await page.click('.retire-form button');
 
-			// Verify tournament still shows Round 2 with 15 players (3 full courts + 1 3p court)
-			await page.waitForTimeout(1000);
+			// Wait for retirement to process and live query to refresh
+			await page.waitForTimeout(2000);
 			await page.waitForSelector('text=Round 2 of 2');
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBe(4);
 
-			// Complete Round 2 with remaining players
+			// Get court links (tokens are now stable across retirements)
 			const round2LinksSel = await page.locator('.qr-link a').all();
 			const round2Links: string[] = [];
 			for (const cl of round2LinksSel) {

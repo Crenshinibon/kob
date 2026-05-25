@@ -1,7 +1,7 @@
 import { form } from '$app/server';
 import { invalid } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { match, courtAccess, tournament, courtRotation } from '$lib/server/db/schema';
+import { match, court, tournament, courtRotation } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getMinPointsForSet } from '$lib/server/tournament-logic';
 import * as v from 'valibot';
@@ -59,17 +59,19 @@ async function getMatchContext(matchId: number) {
 	const [matchRecord] = await db.select().from(match).where(eq(match.id, matchId));
 	if (!matchRecord) return null;
 
-	const [access] = await db
-		.select()
-		.from(courtAccess)
-		.where(eq(courtAccess.courtRotationId, matchRecord.courtRotationId));
-
-	if (!access || !access.isActive) return { error: 'Court is not active' as const };
-
 	const [rotation] = await db
 		.select()
 		.from(courtRotation)
 		.where(eq(courtRotation.id, matchRecord.courtRotationId));
+
+	if (!rotation) return null;
+
+	const [courtRecord] = await db.select().from(court).where(eq(court.id, rotation.courtId));
+
+	if (!courtRecord || !courtRecord.isActive) return { error: 'Court is not active' as const };
+
+	if (matchRecord.isCanceled)
+		return { error: 'Match is canceled' as const };
 
 	const [tourney] = await db
 		.select()

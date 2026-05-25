@@ -22,6 +22,7 @@
 - [x] Removed duplicate `saveScore` legacy server action from `court/[token]/+page.server.ts` (dead code — `scores.remote.ts` handles it)
 - [x] Removed all legacy server actions — no more `export const actions` in any `+page.server.ts`
 - [x] Fixed E2E test timeouts for "Close Round" / "Finalize Tournament" buttons (removed `:not(:disabled)` selectors, added `{ timeout: 20000 }`)
+- [x] **Stable court tokens refactor**: Replaced `courtAccess` table with `court` table. Tokens created once at tournament creation, persist across rounds and player retirements. QR codes/bookmarked links remain valid throughout the tournament. `courtRotation.courtId` links rotations to their stable court. Court page resolves token→court→current round's rotation; shows "closed" when no rotation exists for current round.
 
 - [x] Use Bun's built-in capabilities for scripts instead of npx/tsx/npm (Fixed: db:wipe, db:cleanup use `bun`, auth:schema uses `bunx`, removed `dotenv` dependency, updated AGENTS.md with Bun-first policy)
 - [x] Integration tests (in tournament.spec.ts) "scoring modes" should go a step further and test that the scores must be entered as dictated by the selected mode. (Fixed: best-of-3 per-set validation, single-set min points, 5p min points E2E tests all pass)

@@ -219,6 +219,25 @@ See `670_player-retirement.md` for full retirement/injury spec.
 
 ---
 
+## ~~Stale Court Links After Retirement~~ [FIXED]
+
+### Problem
+
+- When a player retired between rounds, new `courtAccess` records were created with new tokens
+- QR codes, bookmarked links, and shared URLs became stale after retirement
+- Players scanning old QR codes got 404 errors
+
+### Fix Applied
+
+- Replaced `courtAccess` table with `court` table — tokens are created once at tournament creation and never change
+- `courtRotation.courtId` links round-specific rotations to their stable court entity
+- `retirePlayer` and `reportInjury` delete/recreate rotations but reuse existing court records (tokens unchanged)
+- `closeRoundForm` deactivates all courts then reactivates those in next round
+- Court page resolves token→court→current round's rotation; shows "closed" when no rotation exists
+- Migration: `drizzle/0009_stable_court_tokens.sql` migrates data from `courtAccess` to `court`
+
+---
+
 ## Files Affected
 
 - `src/routes/tournament/[id]/+page.svelte` - Delete form, reactivity warning, UI glitch, layout fix, retirement UI, injury UI

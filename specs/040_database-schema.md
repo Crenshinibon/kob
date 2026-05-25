@@ -58,6 +58,7 @@
 ```typescript
 {
   id: serial().primaryKey(),
+  courtId: integer().notNull(),      // FK to stable court entity
   tournamentId: integer().notNull(),
   roundNumber: integer().notNull(),
   courtNumber: integer().notNull(), // 1-N (depends on player count)
@@ -70,6 +71,20 @@
   player6Id: integer()              // nullable, for 6p courts
 }
 ```
+
+### court (stable entity with persistent tokens)
+
+```typescript
+{
+  id: serial().primaryKey(),
+  tournamentId: integer().notNull(),
+  courtNumber: integer().notNull(), // 1-N
+  token: text().notNull().unique(), // Stable URL token, persists across rounds
+  isActive: boolean().default(true) // Deactivated when round moves on
+}
+```
+
+The `court` table decouples the stable URL token from round-specific `courtRotation` records. When a round closes or a player retires, new `courtRotation` records are created for the same courts — the token never changes. This means QR codes, bookmarked links, and shared URLs remain valid throughout the tournament.
 
 ### match (used for ALL court sizes)
 
@@ -104,16 +119,9 @@ Present in schema file but never queried or inserted into. All 5p matches use th
 
 Present in schema file but never queried or inserted into. All 6p matches use the main `match` table.
 
-### courtAccess
+### courtAccess (REMOVED)
 
-```typescript
-{
-  id: serial().primaryKey(),
-  courtRotationId: integer().notNull(),
-  token: text().notNull().unique(),
-  isActive: boolean().default(true)
-}
-```
+Replaced by the `court` table. Tokens now live on the stable `court` entity instead of being tied to round-specific `courtRotation` records.
 
 ### auth schema (Better Auth)
 
