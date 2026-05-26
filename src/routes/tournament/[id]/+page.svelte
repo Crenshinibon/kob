@@ -8,7 +8,7 @@
 		reportInjury
 	} from './tournament-actions.remote';
 	import { getEffectiveScoring, getScoringLabel } from '$lib/tournament-logic';
-	import CourtQRCode from '../../../components/CourtQRCode.svelte';
+	import CourtQRCode from '$lib/components/CourtQRCode.svelte';
 
 	let { data } = $props<{
 		data: {
@@ -319,7 +319,8 @@
 												{
 													pointsToWin: tournament.pointsToWin ?? 21,
 													setsToWin: tournament.setsToWin ?? 1,
-													decidingSetPoints: tournament.decidingSetPoints ?? 15
+													decidingSetPoints: tournament.decidingSetPoints ?? 15,
+													winBy: tournament.winBy ?? 2
 												},
 												size,
 												{
@@ -368,7 +369,8 @@
 											{
 												pointsToWin: tournament.pointsToWin ?? 21,
 												setsToWin: tournament.setsToWin ?? 1,
-												decidingSetPoints: tournament.decidingSetPoints ?? 15
+												decidingSetPoints: tournament.decidingSetPoints ?? 15,
+												winBy: tournament.winBy ?? 2
 											},
 											size,
 											tournament.scoringOverrides
