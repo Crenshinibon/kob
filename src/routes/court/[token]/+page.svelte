@@ -373,6 +373,7 @@
 														const messages = [];
 														if (teamA < minPts && teamB < minPts) {
 															messages.push(`Winner must have at least ${minPts} points`);
+															return;
 														}
 
 														try {
@@ -528,6 +529,7 @@
 													.enhance(async ({ submit }) => {
 														savingMatches = new Set([...savingMatches, match.id]);
 														formErrors.delete(match.id);
+
 														try {
 															const result = await submit();
 															if (result) {
@@ -538,23 +540,19 @@
 																}
 															} else {
 																const serverIssues = render.scoreForm.fields.allIssues() ?? [];
-																const messages =
-																	serverIssues.length > 0
-																		? serverIssues.map((i: any) => i.message)
-																		: [
-																				`Winner must have at least ${data.court.minPoints ?? 21} points`
-																			];
-																formErrors.set(match.id, messages);
+																if (serverIssues.length > 0)
+																	formErrors.set(
+																		match.id,
+																		serverIssues.map((s) => s.message)
+																	);
 															}
 														} catch {
 															const serverIssues = render.scoreForm.fields.allIssues() ?? [];
-															const messages =
-																serverIssues.length > 0
-																	? serverIssues.map((i: any) => i.message)
-																	: [
-																			`Winner must have at least ${data.court.minPoints ?? 21} points`
-																		];
-															formErrors.set(match.id, messages);
+															if (serverIssues.length > 0)
+																formErrors.set(
+																	match.id,
+																	serverIssues.map((s) => s.message)
+																);
 														} finally {
 															savingMatches = new Set(
 																[...savingMatches].filter((id) => id !== match.id)

@@ -98,17 +98,28 @@ export const saveScore = form(baseScoreSchema, async (data, issue) => {
   const minScore = Math.min(teamAScore, teamBScore);
 
   if (maxScore < minPoints) {
-    invalid(
-      issue.teamAScore(`Winner must have at least ${minPoints} points`),
-      issue.teamBScore(`Winner must have at least ${minPoints} points`)
-    );
+    if (teamAScore > teamBScore) {
+      invalid(
+        issue.teamAScore(`Winner must have at least ${minPoints} points`),
+      )
+    } else {
+      invalid(
+        issue.teamBScore(`Winner must have at least ${minPoints} points`),
+      )
+    }
   }
 
   if (maxScore - minScore < effective.winBy) {
-    invalid(
-      issue.teamAScore(`Winner must win by at least ${effective.winBy} point${effective.winBy > 1 ? 's' : ''}`),
-      issue.teamBScore(`Winner must win by at least ${effective.winBy} point${effective.winBy > 1 ? 's' : ''}`)
-    );
+    if (teamAScore > teamBScore) {
+      invalid(
+        issue.teamAScore(`Winner must win by at least ${effective.winBy} point${effective.winBy > 1 ? 's' : ''}`),
+      )
+    } else {
+      invalid(
+        issue.teamBScore(`Winner must win by at least ${effective.winBy} point${effective.winBy > 1 ? 's' : ''}`),
+      )
+
+    }
   }
 
   await db.update(match).set({ teamAScore, teamBScore }).where(eq(match.id, matchId));
