@@ -313,12 +313,6 @@
 											...(formErrors.get(setMatch.id) ?? []),
 											...preflightIssues.map((i: any) => i.message)
 										]}
-										{@const setScoreSchema = createSetScoreSchema(
-											effectiveScoring.pointsToWin,
-											effectiveScoring.decidingSetPoints,
-											setNum,
-											effectiveScoring.setsToWin
-										)}
 										<div class="set-card" transition:slide>
 											<h4>
 												Set {setNum}{#if isDecidingSet(setNum, effectiveScoring.setsToWin)}
@@ -350,7 +344,6 @@
 													{/if}
 												</div>
 											{:else}
-												{@const formInstance = scoreForm.preflight(setScoreSchema)}
 												{#if currentErrors.length > 0 && !isSaving}
 													<div class="error">
 														{#each currentErrors as msg, ei (ei)}
@@ -360,16 +353,16 @@
 												{/if}
 												<form
 													data-testid="set-form-{setMatch.id}"
-													{...formInstance.enhance(async ({ submit }) => {
+													{...scoreForm.enhance(async ({ submit }) => {
 														savingMatches = new Set([...savingMatches, setMatch.id]);
 														formErrors.delete(setMatch.id);
 
-														if (!formInstance?.element) {
+														if (!scoreForm?.element) {
 															return;
 														}
 
 														// 2. Access .element directly from your new formInstance variable!
-														const formData = new FormData(formInstance.element);
+														const formData = new FormData(scoreForm.element);
 
 														const teamA = parseInt(formData.get('teamAScore') as string);
 														const teamB = parseInt(formData.get('teamBScore') as string);
