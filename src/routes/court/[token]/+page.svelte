@@ -214,7 +214,138 @@
 
 		return { match, scoreForm, currentErrors, isSaving, isEditing, index };
 	}
+
+	function getSetScoreSchema(setNumber: number) {
+		return createSetScoreSchema(
+			effectiveScoring.pointsToWin,
+			effectiveScoring.decidingSetPoints,
+			setNumber,
+			effectiveScoring.setsToWin,
+			effectiveScoring.winBy
+		);
+	}
+
+	async function handleScoreSubmit(
+		formInstance: {
+			submit: () => Promise<any>;
+			element: HTMLFormElement;
+			fields: { allIssues: () => Array<{ message: string }> | undefined };
+		},
+		matchId: number,
+		isEditing: boolean,
+		isSet?: boolean
+	) {
+		savingMatches = new Set([...savingMatches, matchId]);
+		formErrors.delete(matchId);
+		try {
+			const result = await formInstance.submit();
+			if (result) {
+				if (isSet) {
+					const formData = new FormData(formInstance.element);
+					savedSetScores.set(matchId, {
+						teamAScore: parseInt(formData.get('teamAScore') as string),
+						teamBScore: parseInt(formData.get('teamBScore') as string)
+					});
+				}
+				if (isEditing) {
+					editingMatches = new Set([...editingMatches].filter((id) => id !== matchId));
+				}
+			} else {
+				const serverIssues = formInstance.fields.allIssues() ?? [];
+				if (serverIssues.length > 0) {
+					formErrors.set(
+						matchId,
+						serverIssues.map((s) => s.message)
+					);
+				}
+			}
+		} catch {
+			const serverIssues = formInstance.fields.allIssues() ?? [];
+			if (serverIssues.length > 0) {
+				formErrors.set(
+					matchId,
+					serverIssues.map((s) => s.message)
+				);
+			}
+		} finally {
+			savingMatches = new Set([...savingMatches].filter((id) => id !== matchId));
+		}
+	}
 </script>
+
+{#snippet scoreFormFields(
+	formObj: any,
+	match: any,
+	matchId: number,
+	editing: boolean,
+	setNum: number | undefined,
+	formTestId: string
+)}
+	<form
+		data-testid="{formTestId}-form-{matchId}"
+		{...formObj.enhance(async (fi: any) => {
+			await handleScoreSubmit(fi, matchId, editing, setNum !== undefined);
+		})}
+	>
+		<input type="hidden" name="matchId" value={matchId} />
+		{#if setNum !== undefined}
+			<input type="hidden" name="setNumber" value={setNum} />
+		{/if}
+		<div class="teams">
+			<div class="team">
+				<p>{getTeamDisplay(match, 'a')}</p>
+				<input
+					data-testid="team-a-score-{matchId}"
+					type="number"
+					name="teamAScore"
+					min="0"
+					required
+					disabled={savingMatches.has(matchId)}
+					{...formObj.fields.teamAScore}
+				/>
+			</div>
+			<div class="vs">vs</div>
+			<div class="team">
+				<p>{getTeamDisplay(match, 'b')}</p>
+				<input
+					data-testid="team-b-score-{matchId}"
+					type="number"
+					name="teamBScore"
+					min="0"
+					required
+					disabled={savingMatches.has(matchId)}
+					{...formObj.fields.teamBScore}
+				/>
+			</div>
+		</div>
+		<div class="form-actions">
+			{#if editing}
+				<button
+					type="button"
+					class="btn-secondary"
+					onclick={() =>
+						(editingMatches = new Set([...editingMatches].filter((id) => id !== matchId)))}
+					disabled={savingMatches.has(matchId)}
+				>
+					Cancel
+				</button>
+			{/if}
+			<button
+				data-testid="save-score-{matchId}"
+				type="submit"
+				class="btn-primary"
+				disabled={savingMatches.has(matchId)}
+			>
+				{#if savingMatches.has(matchId)}
+					<span class="spinner"></span>
+					{editing ? 'Updating...' : 'Saving...'}
+				{:else}
+					{editing ? 'Update Score' : 'Save Score'}
+				{/if}
+			</button>
+		</div>
+	</form>
+{/snippet}
 
 <main>
 	<header>
@@ -305,7 +436,9 @@
 								{#each group.sets as setMatch (setMatch.id)}
 									{@const setNum = setMatch.setNumber}
 									{#if shouldShowSet(setNum, group.sets)}
-										{@const scoreForm = saveSetScore.for(setMatch.id)}
+										{@const scoreForm = saveSetScore
+											.for(setMatch.id)
+											.preflight(getSetScoreSchema(setNum))}
 										{@const isSaving = savingMatches.has(setMatch.id)}
 										{@const isEditing = editingMatches.has(setMatch.id)}
 										{@const preflightIssues = scoreForm.fields.allIssues() ?? []}
@@ -351,123 +484,14 @@
 														{/each}
 													</div>
 												{/if}
-												<form
-													data-testid="set-form-{setMatch.id}"
-													{...scoreForm.enhance(async ({ submit }) => {
-														savingMatches = new Set([...savingMatches, setMatch.id]);
-														formErrors.delete(setMatch.id);
-
-														if (!scoreForm?.element) {
-															return;
-														}
-
-														// 2. Access .element directly from your new formInstance variable!
-														const formData = new FormData(scoreForm.element);
-
-														const teamA = parseInt(formData.get('teamAScore') as string);
-														const teamB = parseInt(formData.get('teamBScore') as string);
-														const minPts = isDecidingSet(setNum, effectiveScoring.setsToWin)
-															? effectiveScoring.decidingSetPoints
-															: effectiveScoring.pointsToWin;
-
-														const messages = [];
-														if (teamA < minPts && teamB < minPts) {
-															messages.push(`Winner must have at least ${minPts} points`);
-															return;
-														}
-
-														try {
-															const result = await submit();
-															if (result) {
-																savedSetScores.set(setMatch.id, {
-																	teamAScore: teamA,
-																	teamBScore: teamB
-																});
-																if (isEditing) {
-																	editingMatches = new Set(
-																		[...editingMatches].filter((id) => id !== setMatch.id)
-																	);
-																}
-															} else {
-																const serverIssues = scoreForm.fields.allIssues() ?? [];
-																if (serverIssues.length > 0)
-																	formErrors.set(
-																		setMatch.id,
-																		serverIssues.map((s) => s.message)
-																	);
-															}
-														} catch {
-															const serverIssues = scoreForm.fields.allIssues() ?? [];
-															if (serverIssues.length > 0)
-																formErrors.set(
-																	setMatch.id,
-																	serverIssues.map((s) => s.message)
-																);
-														} finally {
-															savingMatches = new Set(
-																[...savingMatches].filter((id) => id !== setMatch.id)
-															);
-														}
-													})}
-												>
-													<input type="hidden" name="matchId" value={setMatch.id} />
-													<input type="hidden" name="setNumber" value={setNum} />
-													<div class="teams">
-														<div class="team">
-															<p>{getTeamDisplay(setMatch, 'a')}</p>
-															<input
-																data-testid="team-a-score-{setMatch.id}"
-																type="number"
-																name="teamAScore"
-																min="0"
-																required
-																disabled={savingMatches.has(setMatch.id)}
-																{...scoreForm.fields.teamAScore}
-															/>
-														</div>
-														<div class="vs">vs</div>
-														<div class="team">
-															<p>{getTeamDisplay(setMatch, 'b')}</p>
-															<input
-																data-testid="team-b-score-{setMatch.id}"
-																type="number"
-																name="teamBScore"
-																min="0"
-																required
-																disabled={savingMatches.has(setMatch.id)}
-																{...scoreForm.fields.teamBScore}
-															/>
-														</div>
-													</div>
-													<div class="form-actions">
-														{#if isEditing}
-															<button
-																type="button"
-																class="btn-secondary"
-																onclick={() =>
-																	(editingMatches = new Set(
-																		[...editingMatches].filter((id) => id !== setMatch.id)
-																	))}
-																disabled={savingMatches.has(setMatch.id)}
-															>
-																Cancel
-															</button>
-														{/if}
-														<button
-															data-testid="save-score-{setMatch.id}"
-															type="submit"
-															class="btn-primary"
-															disabled={savingMatches.has(setMatch.id)}
-														>
-															{#if savingMatches.has(setMatch.id)}
-																<span class="spinner"></span>
-																{isEditing ? 'Updating...' : 'Saving...'}
-															{:else}
-																{isEditing ? 'Update Score' : 'Save Score'}
-															{/if}
-														</button>
-													</div>
-												</form>
+												{@render scoreFormFields(
+													scoreForm,
+													setMatch,
+													setMatch.id,
+													isEditing,
+													setNum,
+													'set'
+												)}
 											{/if}
 										</div>
 									{/if}
@@ -522,107 +546,14 @@
 												{/if}
 											</div>
 										{:else}
-											<form
-												data-testid="match-form-{match.id}"
-												{...render.scoreForm
-													.preflight(dynamicScoreSchema)
-													.enhance(async ({ submit }) => {
-														savingMatches = new Set([...savingMatches, match.id]);
-														formErrors.delete(match.id);
-
-														try {
-															const result = await submit();
-															if (result) {
-																if (render.isEditing) {
-																	editingMatches = new Set(
-																		[...editingMatches].filter((id) => id !== match.id)
-																	);
-																}
-															} else {
-																const serverIssues = render.scoreForm.fields.allIssues() ?? [];
-																if (serverIssues.length > 0)
-																	formErrors.set(
-																		match.id,
-																		serverIssues.map((s) => s.message)
-																	);
-															}
-														} catch {
-															const serverIssues = render.scoreForm.fields.allIssues() ?? [];
-															if (serverIssues.length > 0)
-																formErrors.set(
-																	match.id,
-																	serverIssues.map((s) => s.message)
-																);
-														} finally {
-															savingMatches = new Set(
-																[...savingMatches].filter((id) => id !== match.id)
-															);
-														}
-													})}
-											>
-												<input type="hidden" name="matchId" value={match.id} />
-
-												<div class="teams">
-													<div class="team">
-														<p>{getTeamDisplay(match, 'a')}</p>
-														<input
-															data-testid="team-a-score-{match.id}"
-															type="number"
-															name="teamAScore"
-															min="0"
-															max="50"
-															required
-															disabled={savingMatches.has(match.id)}
-															{...render.scoreForm.fields.teamAScore}
-														/>
-													</div>
-
-													<div class="vs">vs</div>
-
-													<div class="team">
-														<p>{getTeamDisplay(match, 'b')}</p>
-														<input
-															data-testid="team-b-score-{match.id}"
-															type="number"
-															name="teamBScore"
-															min="0"
-															max="50"
-															required
-															disabled={savingMatches.has(match.id)}
-															{...render.scoreForm.fields.teamBScore}
-														/>
-													</div>
-												</div>
-
-												<div class="form-actions">
-													{#if render.isEditing}
-														<button
-															type="button"
-															class="btn-secondary"
-															onclick={() =>
-																(editingMatches = new Set(
-																	[...editingMatches].filter((id) => id !== match.id)
-																))}
-															disabled={savingMatches.has(match.id)}
-														>
-															Cancel
-														</button>
-													{/if}
-													<button
-														data-testid="save-score-{match.id}"
-														type="submit"
-														class="btn-primary"
-														disabled={savingMatches.has(match.id)}
-													>
-														{#if savingMatches.has(match.id)}
-															<span class="spinner"></span>
-															{render.isEditing ? 'Updating...' : 'Saving...'}
-														{:else}
-															{render.isEditing ? 'Update Score' : 'Save Score'}
-														{/if}
-													</button>
-												</div>
-											</form>
+											{@render scoreFormFields(
+												render.scoreForm.preflight(dynamicScoreSchema),
+												match,
+												match.id,
+												render.isEditing,
+												undefined,
+												'match'
+											)}
 										{/if}
 									</div>
 								{/each}
@@ -677,102 +608,14 @@
 									{/if}
 								</div>
 							{:else}
-								<form
-									data-testid="match-form-{match.id}"
-									{...render.scoreForm.preflight(dynamicScoreSchema).enhance(async ({ submit }) => {
-										savingMatches = new Set([...savingMatches, match.id]);
-										formErrors.delete(match.id);
-										try {
-											const result = await submit();
-											if (result) {
-												if (render.isEditing) {
-													editingMatches = new Set(
-														[...editingMatches].filter((id) => id !== match.id)
-													);
-												}
-											} else {
-												const serverIssues = render.scoreForm.fields.allIssues() ?? [];
-												const messages =
-													serverIssues.length > 0
-														? serverIssues.map((i: any) => i.message)
-														: [`Winner must have at least ${data.court.minPoints ?? 21} points`];
-												formErrors.set(match.id, messages);
-											}
-										} catch {
-											const serverIssues = render.scoreForm.fields.allIssues() ?? [];
-											const messages =
-												serverIssues.length > 0
-													? serverIssues.map((i: any) => i.message)
-													: [`Winner must have at least ${data.court.minPoints ?? 21} points`];
-											formErrors.set(match.id, messages);
-										} finally {
-											savingMatches = new Set([...savingMatches].filter((id) => id !== match.id));
-										}
-									})}
-								>
-									<input type="hidden" name="matchId" value={match.id} />
-
-									<div class="teams">
-										<div class="team">
-											<p>{getTeamDisplay(match, 'a')}</p>
-											<input
-												data-testid="team-a-score-{match.id}"
-												type="number"
-												name="teamAScore"
-												min="0"
-												max="50"
-												required
-												disabled={savingMatches.has(match.id)}
-												{...render.scoreForm.fields.teamAScore}
-											/>
-										</div>
-
-										<div class="vs">vs</div>
-
-										<div class="team">
-											<p>{getTeamDisplay(match, 'b')}</p>
-											<input
-												data-testid="team-b-score-{match.id}"
-												type="number"
-												name="teamBScore"
-												min="0"
-												max="50"
-												required
-												disabled={savingMatches.has(match.id)}
-												{...render.scoreForm.fields.teamBScore}
-											/>
-										</div>
-									</div>
-
-									<div class="form-actions">
-										{#if render.isEditing}
-											<button
-												type="button"
-												class="btn-secondary"
-												onclick={() =>
-													(editingMatches = new Set(
-														[...editingMatches].filter((id) => id !== match.id)
-													))}
-												disabled={savingMatches.has(match.id)}
-											>
-												Cancel
-											</button>
-										{/if}
-										<button
-											data-testid="save-score-{match.id}"
-											type="submit"
-											class="btn-primary"
-											disabled={savingMatches.has(match.id)}
-										>
-											{#if savingMatches.has(match.id)}
-												<span class="spinner"></span>
-												{render.isEditing ? 'Updating...' : 'Saving...'}
-											{:else}
-												{render.isEditing ? 'Update Score' : 'Save Score'}
-											{/if}
-										</button>
-									</div>
-								</form>
+								{@render scoreFormFields(
+									render.scoreForm.preflight(dynamicScoreSchema),
+									match,
+									match.id,
+									render.isEditing,
+									undefined,
+									'match'
+								)}
 							{/if}
 						{/if}
 					</div>

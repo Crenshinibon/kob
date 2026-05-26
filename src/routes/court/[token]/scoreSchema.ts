@@ -9,13 +9,8 @@ export function createScoreSchema(minPoints: number, winBy: number = 2) {
 			teamBScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number))
 		}),
 		v.check((input) => {
-			return (
-				input.teamAScore >= 0 &&
-				input.teamAScore <= 50 &&
-				input.teamBScore >= 0 &&
-				input.teamBScore <= 50
-			);
-		}, 'Scores must be between 0 and 50'),
+			return input.teamAScore >= 0 && input.teamBScore >= 0;
+		}, 'Scores must not be negative'),
 		v.check((input) => {
 			return input.teamAScore !== input.teamBScore;
 		}, 'Scores cannot be tied'),
@@ -23,11 +18,14 @@ export function createScoreSchema(minPoints: number, winBy: number = 2) {
 			const maxScore = Math.max(input.teamAScore, input.teamBScore);
 			return maxScore >= minPoints;
 		}, `Winner must have at least ${minPoints} points`),
-		v.check((input) => {
-			const maxScore = Math.max(input.teamAScore, input.teamBScore);
-			const minScore = Math.min(input.teamAScore, input.teamBScore);
-			return maxScore - minScore >= winBy;
-		}, `Winner must win by at least ${winBy} point${winBy > 1 ? 's' : ''}`)
+		v.check(
+			(input) => {
+				const maxScore = Math.max(input.teamAScore, input.teamBScore);
+				const minScore = Math.min(input.teamAScore, input.teamBScore);
+				return maxScore - minScore >= winBy;
+			},
+			`Winner must win by at least ${winBy} point${winBy > 1 ? 's' : ''}`
+		)
 	);
 }
 
@@ -48,13 +46,8 @@ export function createSetScoreSchema(
 			teamBScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number))
 		}),
 		v.check((input) => {
-			return (
-				input.teamAScore >= 0 &&
-				input.teamAScore <= 50 &&
-				input.teamBScore >= 0 &&
-				input.teamBScore <= 50
-			);
-		}, 'Scores must be between 0 and 50'),
+			return input.teamAScore >= 0 && input.teamBScore >= 0;
+		}, 'Scores must not be negative'),
 		v.check((input) => {
 			return input.teamAScore !== input.teamBScore;
 		}, 'Scores cannot be tied'),
@@ -62,10 +55,13 @@ export function createSetScoreSchema(
 			const maxScore = Math.max(input.teamAScore, input.teamBScore);
 			return maxScore >= minPoints;
 		}, `Winner must have at least ${minPoints} points`),
-		v.check((input) => {
-			const maxScore = Math.max(input.teamAScore, input.teamBScore);
-			const minScore = Math.min(input.teamAScore, input.teamBScore);
-			return maxScore - minScore >= winBy;
-		}, `Winner must win by at least ${winBy} point${winBy > 1 ? 's' : ''}`)
+		v.check(
+			(input) => {
+				const maxScore = Math.max(input.teamAScore, input.teamBScore);
+				const minScore = Math.min(input.teamAScore, input.teamBScore);
+				return maxScore - minScore >= winBy;
+			},
+			`Winner must win by at least ${winBy} point${winBy > 1 ? 's' : ''}`
+		)
 	);
 }
