@@ -370,6 +370,11 @@
 															? effectiveScoring.decidingSetPoints
 															: effectiveScoring.pointsToWin;
 
+														const messages = [];
+														if (teamA < minPts && teamB < minPts) {
+															messages.push(`Winner must have at least ${minPts} points`);
+														}
+
 														try {
 															const result = await submit();
 															if (result) {
@@ -384,19 +389,19 @@
 																}
 															} else {
 																const serverIssues = scoreForm.fields.allIssues() ?? [];
-																const messages =
-																	serverIssues.length > 0
-																		? serverIssues.map((i: any) => i.message)
-																		: [`Winner must have at least ${minPts} points`];
-																formErrors.set(setMatch.id, messages);
+																if (serverIssues.length > 0)
+																	formErrors.set(
+																		setMatch.id,
+																		serverIssues.map((s) => s.message)
+																	);
 															}
 														} catch {
 															const serverIssues = scoreForm.fields.allIssues() ?? [];
-															const messages =
-																serverIssues.length > 0
-																	? serverIssues.map((i: any) => i.message)
-																	: [`Winner must have at least ${minPts} points`];
-															formErrors.set(setMatch.id, messages);
+															if (serverIssues.length > 0)
+																formErrors.set(
+																	setMatch.id,
+																	serverIssues.map((s) => s.message)
+																);
 														} finally {
 															savingMatches = new Set(
 																[...savingMatches].filter((id) => id !== setMatch.id)
@@ -414,7 +419,6 @@
 																type="number"
 																name="teamAScore"
 																min="0"
-																max="50"
 																required
 																disabled={savingMatches.has(setMatch.id)}
 																{...scoreForm.fields.teamAScore}
@@ -428,7 +432,6 @@
 																type="number"
 																name="teamBScore"
 																min="0"
-																max="50"
 																required
 																disabled={savingMatches.has(setMatch.id)}
 																{...scoreForm.fields.teamBScore}
