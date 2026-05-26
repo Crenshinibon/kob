@@ -462,6 +462,7 @@
 													</div>
 												</form>
 											{/if}
+											{/if}
 										</div>
 									{/if}
 								{/each}
