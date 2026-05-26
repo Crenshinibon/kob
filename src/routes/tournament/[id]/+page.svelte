@@ -198,9 +198,9 @@
 
 				{#if tournament.status !== 'completed'}
 					<form
-						{...deleteTournamentForm.enhance(async ({ form }) => {
+						{...deleteTournamentForm.enhance(async ({ submit }) => {
 							try {
-								await form.submit();
+								await submit();
 							} catch {
 								// redirect happens on server
 							}
@@ -230,7 +230,8 @@
 										{
 											pointsToWin: tournament.pointsToWin ?? 21,
 											setsToWin: tournament.setsToWin ?? 1,
-											decidingSetPoints: tournament.decidingSetPoints ?? 15
+											decidingSetPoints: tournament.decidingSetPoints ?? 15,
+											winBy: tournament.winBy ?? 2
 										},
 										tournament.scoringOverrides
 									)}
