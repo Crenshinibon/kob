@@ -83,47 +83,4 @@ export const match = pgTable('match', {
 	injuredPlayerIds: jsonb('injured_player_ids').$type<number[]>()
 });
 
-export const match3Player = pgTable('match_3_player', {
-	id: serial('id').primaryKey(),
-	courtRotationId: integer('court_rotation_id').notNull(),
-	matchNumber: integer('match_number').notNull(),
-	setNumber: integer('set_number').notNull().default(1),
-	teamOfTwoPlayer1Id: integer('team_of_two_player_1_id').notNull(),
-	teamOfTwoPlayer2Id: integer('team_of_two_player_2_id').notNull(),
-	soloPlayerId: integer('solo_player_id').notNull(),
-	teamOfTwoScore: integer('team_of_two_score'),
-	soloPlayerScore: integer('solo_player_score'),
-	isCanceled: boolean('is_canceled').notNull().default(false)
-});
-
-export const match5Player = pgTable('match_5_player', {
-	id: serial('id').primaryKey(),
-	courtRotationId: integer('court_rotation_id').notNull(),
-	gameNumber: integer('game_number').notNull(),
-	runNumber: integer('run_number').notNull(),
-	setNumber: integer('set_number').notNull().default(1),
-	sideXPlayer1Id: integer('side_x_player_1_id').notNull(),
-	sideXPlayer2Id: integer('side_x_player_2_id').notNull(),
-	sideYFixedPlayerId: integer('side_y_fixed_player_id').notNull(),
-	sideYRotatingPlayerId: integer('side_y_rotating_player_id').notNull(),
-	sideXScore: integer('side_x_score'),
-	sideYScore: integer('side_y_score'),
-	isCanceled: boolean('is_canceled').notNull().default(false)
-});
-
-export const match6Player = pgTable('match_6_player', {
-	id: serial('id').primaryKey(),
-	courtRotationId: integer('court_rotation_id').notNull(),
-	gameNumber: integer('game_number').notNull(),
-	runNumber: integer('run_number').notNull(),
-	setNumber: integer('set_number').notNull().default(1),
-	fixedTeamPlayer1Id: integer('fixed_team_player_1_id').notNull(),
-	fixedTeamPlayer2Id: integer('fixed_team_player_2_id').notNull(),
-	rotatingTeamPlayer1Id: integer('rotating_team_player_1_id').notNull(),
-	rotatingTeamPlayer2Id: integer('rotating_team_player_2_id').notNull(),
-	fixedTeamScore: integer('fixed_team_score'),
-	rotatingTeamScore: integer('rotating_team_score'),
-	isCanceled: boolean('is_canceled').notNull().default(false)
-});
-
 export * from './auth.schema';

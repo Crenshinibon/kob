@@ -495,7 +495,7 @@ test.describe('Tournament Integration Tests', () => {
       const set3TestId = await set3Form.getAttribute('data-testid');
       const set3MatchId = set3TestId?.replace('set-form-', '');
 
-      await page.fill(`[data-testid="team-a-score-${set3MatchId}"]`, '21');
+      await page.fill(`[data-testid="team-a-score-${set3MatchId}"]`, '13');
       await page.fill(`[data-testid="team-b-score-${set3MatchId}"]`, '11');
       await page.click(`[data-testid="save-score-${set3MatchId}"]`);
 

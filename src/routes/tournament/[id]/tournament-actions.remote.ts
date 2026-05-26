@@ -648,7 +648,7 @@ export const retirePlayer = command(
           pointsToWin: tourney.pointsToWin ?? 21,
           setsToWin: tourney.setsToWin ?? 1,
           decidingSetPoints: tourney.decidingSetPoints ?? 15,
-          winBy: tourney.winBy,
+          winBy: tourney.winBy ?? 2,
         },
         tourney.scoringOverrides as Record<
           string,

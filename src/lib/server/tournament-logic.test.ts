@@ -990,9 +990,9 @@ describe('Non-standard rosters', () => {
 });
 
 describe('Scoring logic', () => {
-	const defaultConfig = { pointsToWin: 21, setsToWin: 1, decidingSetPoints: 15 };
-	const bestOf3Config = { pointsToWin: 21, setsToWin: 2, decidingSetPoints: 15 };
-	const customConfig = { pointsToWin: 25, setsToWin: 2, decidingSetPoints: 20 };
+	const defaultConfig = { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
+	const bestOf3Config = { pointsToWin: 21, winBy: 2, setsToWin: 2, decidingSetPoints: 15 };
+	const customConfig = { pointsToWin: 25, winBy: 2, setsToWin: 2, decidingSetPoints: 20 };
 
 	describe('isDecidingSet', () => {
 		it('single set: no deciding set', () => {
@@ -1055,7 +1055,7 @@ describe('Scoring logic', () => {
 			expect(getMinPointsForSet(3, 4, customConfig)).toBe(20);
 		});
 		it('custom pointsToWin=25 on 5p court, single set: 25 (not 15)', () => {
-			const customSingle = { pointsToWin: 25, setsToWin: 1, decidingSetPoints: 15 };
+			const customSingle = { pointsToWin: 25, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
 			expect(getMinPointsForSet(1, 5, customSingle)).toBe(25);
 		});
 	});

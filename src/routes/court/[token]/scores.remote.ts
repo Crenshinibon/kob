@@ -3,7 +3,7 @@ import { invalid } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { match, court, tournament, courtRotation } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { getMinPointsForSet } from '$lib/server/tournament-logic';
+import { getMinPointsForSet, getEffectiveScoring } from '$lib/server/tournament-logic';
 import * as v from 'valibot';
 
 const baseScoreSchema = v.pipe(
@@ -22,12 +22,7 @@ const baseScoreSchema = v.pipe(
 	}, 'Scores must be between 0 and 50'),
 	v.check((input) => {
 		return input.teamAScore !== input.teamBScore;
-	}, 'Scores cannot be tied'),
-	v.check((input) => {
-		const maxScore = Math.max(input.teamAScore, input.teamBScore);
-		const minScore = Math.min(input.teamAScore, input.teamBScore);
-		return maxScore - minScore >= 2;
-	}, 'Winner must win by at least 2 points')
+	}, 'Scores cannot be tied')
 );
 
 const setScoreSchema = v.pipe(
@@ -47,12 +42,7 @@ const setScoreSchema = v.pipe(
 	}, 'Scores must be between 0 and 50'),
 	v.check((input) => {
 		return input.teamAScore !== input.teamBScore;
-	}, 'Scores cannot be tied'),
-	v.check((input) => {
-		const maxScore = Math.max(input.teamAScore, input.teamBScore);
-		const minScore = Math.min(input.teamAScore, input.teamBScore);
-		return maxScore - minScore >= 2;
-	}, 'Winner must win by at least 2 points')
+	}, 'Scores cannot be tied')
 );
 
 async function getMatchContext(matchId: number) {
@@ -93,9 +83,15 @@ export const saveScore = form(baseScoreSchema, async (data, issue) => {
 	const { matchRecord, rotation, tourney } = ctx!;
 	const config = {
 		pointsToWin: tourney.pointsToWin ?? 21,
+		winBy: tourney.winBy ?? 2,
 		setsToWin: tourney.setsToWin ?? 1,
 		decidingSetPoints: tourney.decidingSetPoints ?? 15
 	};
+	const effective = getEffectiveScoring(
+		rotation.courtSize,
+		config,
+		tourney.scoringOverrides as any
+	);
 	const minPoints = getMinPointsForSet(
 		1,
 		rotation.courtSize,
@@ -103,11 +99,19 @@ export const saveScore = form(baseScoreSchema, async (data, issue) => {
 		tourney.scoringOverrides as any
 	);
 	const maxScore = Math.max(teamAScore, teamBScore);
+	const minScore = Math.min(teamAScore, teamBScore);
 
 	if (maxScore < minPoints) {
 		invalid(
 			issue.teamAScore(`Winner must have at least ${minPoints} points`),
 			issue.teamBScore(`Winner must have at least ${minPoints} points`)
+		);
+	}
+
+	if (maxScore - minScore < effective.winBy) {
+		invalid(
+			issue.teamAScore(`Winner must win by at least ${effective.winBy} point${effective.winBy > 1 ? 's' : ''}`),
+			issue.teamBScore(`Winner must win by at least ${effective.winBy} point${effective.winBy > 1 ? 's' : ''}`)
 		);
 	}
 
@@ -129,9 +133,15 @@ export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 	const { matchRecord, rotation, tourney } = ctx!;
 	const config = {
 		pointsToWin: tourney.pointsToWin ?? 21,
+		winBy: tourney.winBy ?? 2,
 		setsToWin: tourney.setsToWin ?? 1,
 		decidingSetPoints: tourney.decidingSetPoints ?? 15
 	};
+	const effective = getEffectiveScoring(
+		rotation.courtSize,
+		config,
+		tourney.scoringOverrides as any
+	);
 	const minPoints = getMinPointsForSet(
 		setNumber,
 		rotation.courtSize,
@@ -139,11 +149,19 @@ export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 		tourney.scoringOverrides as any
 	);
 	const maxScore = Math.max(teamAScore, teamBScore);
+	const minScore = Math.min(teamAScore, teamBScore);
 
 	if (maxScore < minPoints) {
 		invalid(
 			issue.teamAScore(`Winner must have at least ${minPoints} points`),
 			issue.teamBScore(`Winner must have at least ${minPoints} points`)
+		);
+	}
+
+	if (maxScore - minScore < effective.winBy) {
+		invalid(
+			issue.teamAScore(`Winner must win by at least ${effective.winBy} point${effective.winBy > 1 ? 's' : ''}`),
+			issue.teamBScore(`Winner must win by at least ${effective.winBy} point${effective.winBy > 1 ? 's' : ''}`)
 		);
 	}
 
