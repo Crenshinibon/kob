@@ -9,7 +9,7 @@
 
 ## Known Issues
 
-- [] Retiring a player, when the round is underway doesn't work, as it shouldn't work, but the retire player button should then be disabled ...
+- [] Retiring a player, when the round is underway doesn't work, as it shouldn't work, but the retire player button should then be disabled or not visible at all ...
 - [] A 4p court is (sometimes) "advertised" as a 6p court. But there are only 4 players listed. Need to add tests for redistribution of players after retirement. Points entry on this 6p court is disabled!? 
 - [ ] **E2E tests fail due to live query polling delay** — Tests wait for "Finalize Tournament" or "Close Round & Advance" button but it's not in the DOM until the 3-second live query poll refreshes `canCloseRound`. The disabled state renders as a completely different button ("⏳ Waiting for all scores..."). See `specs/860_e2e-live-query-timing.md`. (Previously two tests affected; now rare after save-wait fixes — tests that wait for `saved-` indicators complete saves before navigating, so `canCloseRound` is usually true on first live query yield.)
 - [ ] `winBy` validation hardcoded to 2 — Score validation in `scoreSchema.ts` and `scores.remote.ts` always requires win-by-2, ignoring tournament's `winBy` config (e.g., `winBy: 1`)
