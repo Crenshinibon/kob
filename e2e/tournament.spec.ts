@@ -67,7 +67,7 @@ test.describe('Tournament Integration Tests', () => {
   });
 
   test('complete 2-round tournament with score entry', async ({ page }) => {
-    // Generate unique tournament name
+    test.slow(); // This is a long integration test (4 courts × 6 matches + round closures)
     const tournamentName = `Integration Test Tournament ${Date.now()}`;
     testTournamentNames.push(tournamentName);
 
@@ -206,7 +206,9 @@ test.describe('Tournament Integration Tests', () => {
     await page.click(`text=${tournamentName}`);
     await page.waitForSelector('button:has-text("Finalize Tournament")', { timeout: 20000 });
     await page.click('button:has-text("Finalize Tournament")');
-    await page.waitForTimeout(1000);
+
+    // Wait for the redirect to standings (confirms form action completed)
+    await page.waitForURL(/\/tournament\/\d+\/standings/);
 
     // 10. Verify tournament completed
     await page.goto('/');
