@@ -125,10 +125,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		: playerIds.length;
 
 	const pointsToWin = tourney.pointsToWin ?? 21;
+	const winBy = tourney.winBy ?? 2;
 	const decidingSetPoints = tourney.decidingSetPoints ?? 15;
 	const setsToWin = tourney.setsToWin ?? 1;
 
-	const config = { pointsToWin, setsToWin, decidingSetPoints };
+	const config = { pointsToWin, winBy, setsToWin, decidingSetPoints };
 	const overrides = tourney.scoringOverrides as Record<
 		string,
 		{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
@@ -145,6 +146,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			playerNames,
 			minPoints,
 			scoringLabel,
+			winBy,
 			setsToWin,
 			pointsToWin,
 			decidingSetPoints,

@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { isDecidingSet, getMinPointsForSet } from '$lib/tournament-logic';
 
-export function createScoreSchema(minPoints: number) {
+export function createScoreSchema(minPoints: number, winBy: number = 2) {
 	return v.pipe(
 		v.object({
 			matchId: v.pipe(v.string(), v.nonEmpty()),
@@ -26,8 +26,8 @@ export function createScoreSchema(minPoints: number) {
 		v.check((input) => {
 			const maxScore = Math.max(input.teamAScore, input.teamBScore);
 			const minScore = Math.min(input.teamAScore, input.teamBScore);
-			return maxScore - minScore >= 2;
-		}, 'Winner must win by at least 2 points')
+			return maxScore - minScore >= winBy;
+		}, `Winner must win by at least ${winBy} point${winBy > 1 ? 's' : ''}`)
 	);
 }
 
@@ -35,7 +35,8 @@ export function createSetScoreSchema(
 	regularPoints: number,
 	decidingPoints: number,
 	setNumber: number,
-	setsToWin: number
+	setsToWin: number,
+	winBy: number = 2
 ) {
 	const minPoints = isDecidingSet(setNumber, setsToWin) ? decidingPoints : regularPoints;
 
@@ -64,7 +65,7 @@ export function createSetScoreSchema(
 		v.check((input) => {
 			const maxScore = Math.max(input.teamAScore, input.teamBScore);
 			const minScore = Math.min(input.teamAScore, input.teamBScore);
-			return maxScore - minScore >= 2;
-		}, 'Winner must win by at least 2 points')
+			return maxScore - minScore >= winBy;
+		}, `Winner must win by at least ${winBy} point${winBy > 1 ? 's' : ''}`)
 	);
 }

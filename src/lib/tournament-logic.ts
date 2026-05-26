@@ -836,15 +836,16 @@ export type ScoringOverrides = Record<
 
 export function getEffectiveScoring(
 	courtSize: number,
-	config: Pick<TournamentConfig, 'pointsToWin' | 'setsToWin' | 'decidingSetPoints'>,
+	config: Pick<TournamentConfig, 'pointsToWin' | 'setsToWin' | 'decidingSetPoints' | 'winBy'>,
 	overrides?: ScoringOverrides | null
-): { pointsToWin: number; setsToWin: number; decidingSetPoints: number } {
+): { pointsToWin: number; setsToWin: number; decidingSetPoints: number; winBy: number } {
 	const key = String(courtSize);
 	const ovr = overrides?.[key];
 	return {
 		pointsToWin: ovr?.pointsToWin ?? config.pointsToWin,
 		setsToWin: ovr?.setsToWin ?? config.setsToWin,
-		decidingSetPoints: ovr?.decidingSetPoints ?? config.decidingSetPoints
+		decidingSetPoints: ovr?.decidingSetPoints ?? config.decidingSetPoints,
+		winBy: ovr?.winBy ?? config.winBy
 	};
 }
 

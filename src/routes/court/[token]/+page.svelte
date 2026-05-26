@@ -31,13 +31,14 @@
 			data.court.courtSize,
 			{
 				pointsToWin: data.court.pointsToWin ?? 21,
+				winBy: data.court.winBy ?? 2,
 				setsToWin: data.court.setsToWin ?? 1,
 				decidingSetPoints: data.court.decidingSetPoints ?? 15
 			},
 			data.court.scoringOverrides
 		)
 	);
-	const dynamicScoreSchema = $derived(createScoreSchema(data.court.minPoints ?? 21));
+	const dynamicScoreSchema = $derived(createScoreSchema(data.court.minPoints ?? 21, effectiveScoring.winBy));
 	// Track completed matches locally for smooth transitions
 	let completedMatches = $derived<Set<number>>(
 		new Set(data.matches.filter((m: any) => m.teamAScore !== null).map((m: any) => m.id))
