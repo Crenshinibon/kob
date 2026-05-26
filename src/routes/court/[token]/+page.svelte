@@ -462,7 +462,6 @@
 													</div>
 												</form>
 											{/if}
-											{/if}
 										</div>
 									{/if}
 								{/each}
@@ -1076,6 +1075,17 @@
 	.error p {
 		margin: var(--spacing-xs) 0;
 		font-weight: 500;
+	}
+
+	.canceled-notice {
+		background-color: rgba(255, 187, 0, 0.1);
+		color: var(--accent-warning);
+		border: 2px solid var(--accent-warning);
+		padding: var(--spacing-sm);
+		border-radius: var(--radius-sm);
+		margin-bottom: var(--spacing-md);
+		font-weight: 500;
+		text-align: center;
 	}
 
 	.matches {

@@ -868,7 +868,9 @@ test.describe('Tournament Integration Tests', () => {
 			}
 			for (const url of courtUrls) {
 				await page.goto(url);
-				await page.waitForSelector('[data-testid^="match-form-"]');
+				// Some courts may have canceled matches with no score forms
+				const hasMatchForms = (await page.locator('[data-testid^="match-form-"]').count()) > 0;
+				if (!hasMatchForms) continue;
 				// Collect all match IDs first, then score them
 				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
 				const matchIds: string[] = [];
