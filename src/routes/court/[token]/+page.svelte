@@ -8,11 +8,64 @@
 	import { createScoreSchema, createSetScoreSchema } from './scoreSchema';
 	import { isDecidingSet, getEffectiveScoring } from '$lib/tournament-logic';
 
+	interface MatchRow {
+		id: number;
+		courtRotationId: number;
+		matchNumber: number;
+		setNumber: number;
+		teamAPlayer1Id: number;
+		teamAPlayer2Id: number;
+		teamBPlayer1Id: number;
+		teamBPlayer2Id: number;
+		teamAScore: number | null;
+		teamBScore: number | null;
+		isCanceled: boolean;
+		injuredPlayerIds: number[] | null;
+	}
+
+	interface StandingRow {
+		playerId: number;
+		rank: number;
+		points: number;
+		diff: number;
+		matchCount: number;
+		id: number;
+		name: string;
+		avgPoints?: number;
+		matchesPlayed: number;
+	}
+
+	interface CourtInfo {
+		tournamentName: string;
+		courtNumber: number;
+		roundNumber: number;
+		courtSize: number;
+		playerNames: Record<number, string>;
+		minPoints: number;
+		scoringLabel: string;
+		winBy: number;
+		setsToWin: number;
+		pointsToWin: number;
+		decidingSetPoints: number;
+		scoringOverrides: Record<
+			string,
+			{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
+		> | null;
+	}
+
+	interface ScoreSubmitForm {
+		submit(): Promise<boolean>;
+		readonly element: HTMLFormElement;
+		fields: {
+			allIssues(): Array<{ message: string }> | undefined;
+		};
+	}
+
 	let { data } = $props<{
 		data: {
-			court: any;
-			matches: any[];
-			standings: any[];
+			court: CourtInfo;
+			matches: MatchRow[];
+			standings: StandingRow[];
 			isActive: boolean;
 			isAuthenticated: boolean;
 		};
@@ -43,7 +96,7 @@
 	);
 	// Track completed matches locally for smooth transitions
 	let completedMatches = $derived<Set<number>>(
-		new Set(data.matches.filter((m: any) => m.teamAScore !== null).map((m: any) => m.id))
+		new Set(data.matches.filter((m: MatchRow) => m.teamAScore !== null).map((m: MatchRow) => m.id))
 	);
 	// Group matches by matchNumber for best-of-3 support
 	const matchGroups = $derived(() => {
@@ -51,8 +104,7 @@
 		const setsToWin = effectiveScoring.setsToWin;
 
 		if (setsToWin > 1) {
-			// Group matches by matchNumber
-			const groups = new Map<number, any[]>();
+			const groups = new Map<number, MatchRow[]>();
 			for (const m of data.matches) {
 				if (!groups.has(m.matchNumber)) {
 					groups.set(m.matchNumber, []);
@@ -64,13 +116,13 @@
 				.map(([matchNumber, sets]) => ({
 					type: 'sets' as const,
 					matchNumber,
-					sets: [...sets].sort((a: any, b: any) => a.setNumber - b.setNumber)
+					sets: [...sets].sort((a: MatchRow, b: MatchRow) => a.setNumber - b.setNumber)
 				}));
 		}
 
 		// For 5p/6p courts, group by runs
 		if (courtSize === 5 || courtSize === 6) {
-			const groups: Array<{ type: 'runs'; label: string; matches: any[] }> = [];
+			const groups: Array<{ type: 'runs'; label: string; matches: MatchRow[] }> = [];
 			for (let i = 0; i < data.matches.length; i += 2) {
 				const runNum = Math.floor(i / 2) + 1;
 				groups.push({
@@ -153,7 +205,7 @@
 		return byMatchNumber;
 	});
 
-	function getPlayerName(match: any, position: string) {
+	function getPlayerName(match: MatchRow, position: string) {
 		const names = data.court.playerNames;
 		switch (position) {
 			case 'a1':
@@ -167,7 +219,7 @@
 		}
 	}
 
-	function getTeamDisplay(match: any, team: 'a' | 'b'): string {
+	function getTeamDisplay(match: MatchRow, team: 'a' | 'b'): string {
 		const name1 = getPlayerName(match, team === 'a' ? 'a1' : 'b1');
 		const name2 = getPlayerName(match, team === 'a' ? 'a2' : 'b2');
 		const id1 = team === 'a' ? match.teamAPlayer1Id : match.teamBPlayer1Id;
@@ -182,7 +234,7 @@
 		return QRCode.toDataURL(url, { width: 200, margin: 2 });
 	}
 
-	function shouldShowSet(setNum: number, sets: any[]): boolean {
+	function shouldShowSet(setNum: number, sets: MatchRow[]): boolean {
 		if (!isDecidingSet(setNum, effectiveScoring.setsToWin)) return true;
 
 		const set1 = sets.find((s) => s.setNumber === 1);
@@ -194,7 +246,7 @@
 		const s2A = set2.teamAScore ?? savedSetScores.get(set2.id)?.teamAScore;
 		const s2B = set2.teamBScore ?? savedSetScores.get(set2.id)?.teamBScore;
 
-		if (s1A === null || s1B === null || s2A === null || s2B === null) return false;
+		if (s1A == null || s1B == null || s2A == null || s2B == null) return false;
 
 		const teamAWins = (s1A > s1B ? 1 : 0) + (s2A > s2B ? 1 : 0);
 		const teamBWins = (s1B > s1A ? 1 : 0) + (s2B > s2A ? 1 : 0);
@@ -202,14 +254,14 @@
 		return teamAWins >= 1 && teamBWins >= 1;
 	}
 
-	function renderMatch(match: any, index: number) {
+	function renderMatch(match: MatchRow, index: number) {
 		const scoreForm = saveScore.for(match.id);
 		const isSaving = savingMatches.has(match.id);
 		const isEditing = editingMatches.has(match.id);
 		const preflightIssues = scoreForm.fields.allIssues() ?? [];
 		const currentErrors = [
 			...(formErrors.get(match.id) ?? []),
-			...preflightIssues.map((i: any) => i.message)
+			...preflightIssues.map((i: { message: string }) => i.message)
 		];
 
 		return { match, scoreForm, currentErrors, isSaving, isEditing, index };
@@ -226,11 +278,7 @@
 	}
 
 	async function handleScoreSubmit(
-		formInstance: {
-			submit: () => Promise<any>;
-			element: HTMLFormElement;
-			fields: { allIssues: () => Array<{ message: string }> | undefined };
-		},
+		formInstance: ScoreSubmitForm,
 		matchId: number,
 		isEditing: boolean,
 		isSet?: boolean
@@ -274,8 +322,14 @@
 </script>
 
 {#snippet scoreFormFields(
-	formObj: any,
-	match: any,
+	formObj: {
+		enhance(cb: (fi: ScoreSubmitForm) => void | Promise<void>): Record<string, unknown>;
+		fields: ScoreSubmitForm['fields'] & {
+			teamAScore: Record<string, unknown>;
+			teamBScore: Record<string, unknown>;
+		};
+	},
+	match: MatchRow,
 	matchId: number,
 	editing: boolean,
 	setNum: number | undefined,
@@ -283,7 +337,7 @@
 )}
 	<form
 		data-testid="{formTestId}-form-{matchId}"
-		{...formObj.enhance(async (fi: any) => {
+		{...formObj.enhance(async (fi: ScoreSubmitForm) => {
 			await handleScoreSubmit(fi, matchId, editing, setNum !== undefined);
 		})}
 	>
@@ -444,7 +498,7 @@
 										{@const preflightIssues = scoreForm.fields.allIssues() ?? []}
 										{@const currentErrors = [
 											...(formErrors.get(setMatch.id) ?? []),
-											...preflightIssues.map((i: any) => i.message)
+											...preflightIssues.map((i: { message: string }) => i.message)
 										]}
 										<div class="set-card" transition:slide>
 											<h4>
