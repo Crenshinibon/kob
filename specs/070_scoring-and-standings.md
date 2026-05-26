@@ -35,7 +35,7 @@ Tiebreaker: if averages are equal, use total points (more games = more data), th
 
 ### Canceled Matches (Injury Handling)
 
-When a match is canceled (`isCanceled = true`), standings are calculated using average points per completed match instead of total points. Injured players receive 0 points for canceled matches.
+When a match is canceled (`isCanceled = true`), standings are calculated using average points per completed match instead of total points. Injured players receive 0 points for canceled matches. On the court page, canceled matches show "Canceled — scores will be averaged" notice instead of score entry forms. The server blocks scoring of canceled matches.
 
 ## Code
 

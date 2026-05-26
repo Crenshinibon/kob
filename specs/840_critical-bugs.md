@@ -238,6 +238,40 @@ See `670_player-retirement.md` for full retirement/injury spec.
 
 ---
 
+## ~~5p/6p Courts Inaccessible After Stable Token Refactor~~ [FIXED]
+
+### Problem
+
+- After migrating from `courtAccess` to `court` table, `isActive` was set based on physical court count (`courtNum < physicalCourtCount`)
+- Virtual courts (5p/6p in shift 2) were marked inactive, making them inaccessible
+- Court page showed "This court is closed" instead of match forms
+- Score saving blocked by `if (!courtRecord.isActive)` check in `scores.remote.ts`
+
+### Fix Applied
+
+- `create.remote.ts`: Set `isActive: true` for all courts at creation (they're all in round 1)
+- `closeRoundForm`: Activate ALL courts that have rotations in the next round (not just `physicalCourtCount`)
+- `isActive` now means "this court is part of the current round", not "this is a physical court"
+
+---
+
+## ~~canCloseRound Double-Counting Canceled+Scored Matches~~ [FIXED]
+
+### Problem
+
+- After reporting a mid-round injury with "cancel" option, matches on the injured player's court are marked `isCanceled: true`
+- If a match was both canceled AND had scores entered, it was counted in both `scoredMatchCount` and `canceledMatchCount`
+- `canCloseRound` check (`scoredMatchCount + canceledMatchCount === expectedMatchCount`) would never equal `expectedMatchCount` because the total exceeded it
+- Round could never be closed after injury
+
+### Fix Applied
+
+- Changed `canCloseRound` logic to count matches where `teamAScore !== null || isCanceled` (either scored OR canceled, no double-counting)
+- Court page shows "Canceled — scores will be averaged" notice for canceled matches instead of score entry forms
+- Server blocks scoring of canceled matches in `scores.remote.ts`
+
+---
+
 ## Files Affected
 
 - `src/routes/tournament/[id]/+page.svelte` - Delete form, reactivity warning, UI glitch, layout fix, retirement UI, injury UI
@@ -261,7 +295,7 @@ See `670_player-retirement.md` for full retirement/injury spec.
 
 ## Known Issues (Not Yet Fixed)
 
-1. **E2E tests fail due to live query polling delay**: Tests wait for "Finalize Tournament" / "Close Round & Advance" button but it's not rendered until the 3-second live query poll refreshes `canCloseRound`. The disabled state is a completely different DOM element ("⏳ Waiting for all scores..."). Affected tests: `promotion.spec.ts:275`, `tournament.spec.ts:810`. See `specs/860_e2e-live-query-timing.md`.
+1. **E2E tests fail due to live query polling delay** (rare): Tests wait for "Finalize Tournament" / "Close Round & Advance" button but it's not rendered until the 3-second live query poll refreshes `canCloseRound`. Largely mitigated by waiting for `saved-` indicators after score saves — saves complete before navigating, so `canCloseRound` is usually true on first live query yield. See `specs/860_e2e-live-query-timing.md`.
 2. **winBy hardcoding**: Score validation always requires win-by-2 regardless of tournament's `winBy` config
 3. **Dead schema tables**: `match_3_player`, `match_5_player`, `match_6_player` exist but are never used
 4. **Draft status unused**: Tournaments created as active, never use draft status

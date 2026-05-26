@@ -2,15 +2,7 @@
 
 ## Problem
 
-Two E2E tests fail because they wait for buttons that don't exist in the DOM until the live query refreshes:
-
-1. **`promotion.spec.ts:275`** — `final round completion marks tournament as completed`
-   - Waits for `button:has-text("Finalize Tournament"):not(:disabled)`
-   - Times out after 10 seconds
-
-2. **`tournament.spec.ts:810`** — `report mid-round injury with Cancel & Average option`
-   - Waits for `button:has-text("Close Round & Advance"):not(:disabled)`
-   - Times out after 15 seconds
+E2E tests can fail when they wait for "Close Round" / "Finalize Tournament" buttons that don't appear until the live query refreshes `canCloseRound`.
 
 ## Root Cause
 
@@ -23,60 +15,36 @@ The button rendering uses `{#if canCloseRound}` which switches between two **com
 | `true`          | `<button type="submit">Finalize Tournament</button>` (or "Close Round & Advance") |
 | `false`         | `<button disabled>⏳ Waiting for all scores...</button>`                          |
 
-The test selector `button:has-text("Finalize Tournament")` will **never match** while the "Waiting" button is rendered, because it's a different element entirely. The test needs to wait for the live query to refresh (up to 3 seconds) before the correct button appears.
+## Primary Fix: Wait for Save Completion
 
-This is a **timing issue**, not a logic bug. The close-round logic correctly handles canceled matches (`scoredMatchCount + canceledMatchCount === expectedMatchCount`).
-
-## Fix Options
-
-### Option A: Increase Test Timeout + Use Resilient Selectors
-
-- Use `waitForSelector` with a longer timeout (e.g., 20-30 seconds) to account for the 3-second polling cycle
-- First wait for the tournament page to load, then wait for the enabled button
-- Playwright's `waitForSelector` already retries — the issue is just insufficient timeout
+The main cause of failures was tests navigating away from court pages **before score saves completed**. The HTTP request would be aborted, the DB write never happened, and `canCloseRound` remained `false`. Fixed by adding `waitForSelector('[data-testid="saved-..."]')` after each score save:
 
 ```typescript
-// Before (fails):
-await page.waitForSelector('button:has-text("Finalize Tournament"):not(:disabled)', {
-	timeout: 10000
-});
+await page.click(`[data-testid="save-score-${matchId}"]`);
+await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
+```
 
-// After (works):
-await page.waitForSelector('button:has-text("Finalize Tournament")', {
-	timeout: 20000
+When saves complete before navigation, `canCloseRound` is already `true` when the tournament page loads, so the button appears on the first live query yield.
+
+## Secondary Fix: Increase Test Timeout
+
+For cases where the live query still needs a poll cycle, tests use `waitForSelector` with a 20-second timeout to account for the 3-second polling cycle:
+
+```typescript
+await page.waitForSelector('button:has-text("Close Round & Advance")', {
+    timeout: 20000
 });
 ```
 
-### Option B: Add `data-testid` Attributes to Distinguish Button States
+## Related Fixes
 
-- Add `data-testid="close-round-btn"` to the enabled button
-- Add `data-testid="waiting-for-scores-btn"` to the disabled button
-- Tests can wait for the specific testid instead of relying on button text
+- **`canCloseRound` double-counting bug** — Matches that were both canceled AND scored were counted twice, preventing round closure after injury. Fixed to count `teamAScore !== null || isCanceled` (no double-counting).
+- **`isActive` regression** — Virtual courts (5p/6p) were marked inactive after the stable token refactor, blocking score saves and making `canCloseRound` impossible to reach.
 
-### Option C: Reduce Polling Interval for Tests
+## Remaining Risk
 
-- In E2E test environment, reduce the live query polling interval from 3s to 500ms
-- This makes tests faster and less flaky without changing production behavior
-- Could be done via an environment variable or test-specific configuration
+Rare timing issues can still occur if:
+- A score save completes on the server but the live query hasn't polled yet when the test navigates to the tournament page
+- Network latency causes the first live query yield to return stale data
 
-### Option D: Force Refresh After Score Entry
-
-- After all scores are entered, call `liveQuery.reconnect()` or trigger a re-fetch
-- This would update `canCloseRound` immediately instead of waiting for the next poll
-- This is the cleanest fix but requires a way to trigger the refresh from the test
-
-## Recommendation
-
-**Option A** (increase timeout) is the quickest fix. **Option C** (reduce polling in tests) is a good follow-up to make the whole test suite faster. **Option D** would be ideal long-term but requires more implementation work.
-
-## Affected Tests
-
-| Test File                | Line | Button Text             | Current Timeout |
-| ------------------------ | ---- | ----------------------- | --------------- |
-| `e2e/promotion.spec.ts`  | 335  | "Finalize Tournament"   | 10s             |
-| `e2e/tournament.spec.ts` | 897  | "Close Round & Advance" | 15s             |
-
-## Related Issues
-
-- Live query doesn't reconnect after `retirePlayer` / `reportInjury` server actions
-- The disabled state being a different DOM element (not the same button with `disabled` attribute) makes CSS selectors like `:not(:disabled)` misleading
+These are mitigated by the 20-second timeout but could still cause intermittent failures.

@@ -8,7 +8,7 @@
 
 ## Known Issues
 
-- [ ] **E2E tests fail due to live query polling delay** — Tests wait for "Finalize Tournament" or "Close Round & Advance" button but it's not in the DOM until the 3-second live query poll refreshes `canCloseRound`. The disabled state renders as a completely different button ("⏳ Waiting for all scores..."). Two tests affected: `promotion.spec.ts:275` and `tournament.spec.ts:810`. See `specs/860_e2e-live-query-timing.md`.
+- [ ] **E2E tests fail due to live query polling delay** — Tests wait for "Finalize Tournament" or "Close Round & Advance" button but it's not in the DOM until the 3-second live query poll refreshes `canCloseRound`. The disabled state renders as a completely different button ("⏳ Waiting for all scores..."). See `specs/860_e2e-live-query-timing.md`. (Previously two tests affected; now rare after save-wait fixes — tests that wait for `saved-` indicators complete saves before navigating, so `canCloseRound` is usually true on first live query yield.)
 - [ ] `winBy` validation hardcoded to 2 — Score validation in `scoreSchema.ts` and `scores.remote.ts` always requires win-by-2, ignoring tournament's `winBy` config (e.g., `winBy: 1`)
 - [ ] Remove dead schema tables — `match_3_player`, `match_5_player`, `match_6_player` exist but are never used. All 3p/5p/6p matches go through the main `match` table with nullable player columns. Separate tables were the original plan for strong typing, but the current approach works and migrating would be high-risk for no user-visible benefit. Remove the dead tables and their Drizzle definitions.
 - [ ] Draft status unused — Tournaments skip draft status and go straight to active on creation. The `status: 'draft'` default in schema is misleading.
@@ -23,6 +23,11 @@
 - [x] Removed all legacy server actions — no more `export const actions` in any `+page.server.ts`
 - [x] Fixed E2E test timeouts for "Close Round" / "Finalize Tournament" buttons (removed `:not(:disabled)` selectors, added `{ timeout: 20000 }`)
 - [x] **Stable court tokens refactor**: Replaced `courtAccess` table with `court` table. Tokens created once at tournament creation, persist across rounds and player retirements. QR codes/bookmarked links remain valid throughout the tournament. `courtRotation.courtId` links rotations to their stable court. Court page resolves token→court→current round's rotation; shows "closed" when no rotation exists for current round.
+- [x] **Fixed `isActive` regression from stable tokens** — `court.isActive` was being set based on physical court count (`courtNum < physicalCourtCount`), making virtual courts (5p/6p in shift 2) inaccessible. Now all courts with rotations are active; `closeRoundForm` activates all courts that have rotations in the next round.
+- [x] **Fixed `canCloseRound` double-counting** — Matches that were both canceled AND scored were counted in both `scoredMatchCount` and `canceledMatchCount`, preventing round closure after injury. Fixed to count matches where `teamAScore !== null || isCanceled`.
+- [x] **Canceled match handling on court page** — Matches with `isCanceled: true` now show "Canceled — scores will be averaged" notice instead of score entry forms. Server blocks scoring of canceled matches in `scores.remote.ts`.
+- [x] **Fixed E2E tests not waiting for saves** — Tests that navigated away from court pages before save requests completed caused HTTP aborts and lost scores. Added `waitForSelector('[data-testid="saved-..."]')` after each save in `promotion.spec.ts`.
+- [x] **Fixed 3p standings test scores** — Test entered `20-18`, `19-17` which fail the 21-point minimum preflight check. Fixed to always use `21` for team A score.
 
 - [x] Use Bun's built-in capabilities for scripts instead of npx/tsx/npm (Fixed: db:wipe, db:cleanup use `bun`, auth:schema uses `bunx`, removed `dotenv` dependency, updated AGENTS.md with Bun-first policy)
 - [x] Integration tests (in tournament.spec.ts) "scoring modes" should go a step further and test that the scores must be entered as dictated by the selected mode. (Fixed: best-of-3 per-set validation, single-set min points, 5p min points E2E tests all pass)

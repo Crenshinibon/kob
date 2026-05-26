@@ -2,9 +2,9 @@
 
 ## Implementation Status
 
-**Between-rounds retirement**: ✅ IMPLEMENTED — Org can retire players between rounds via `retirePlayer` server action. Court configuration recalculates, redistribution applies.
+**Between-rounds retirement**: ✅ IMPLEMENTED — Org can retire players between rounds via `retirePlayer` remote command. Court configuration recalculates, redistribution applies. Stable court tokens persist across retirements.
 
-**Mid-round injury handling**: ⚠️ PARTIALLY IMPLEMENTED — `reportInjury` action exists for marking matches as canceled with `isCanceled` flag. Options A (substitute), B (cancel & average), C (solo play) are spec'd but only Option B (cancel & average) is implemented in the scoring logic. No UI for selecting between the three options.
+**Mid-round injury handling**: ⚠️ PARTIALLY IMPLEMENTED — `reportInjury` remote command exists for marking matches as canceled with `isCanceled` flag. Option B (cancel & average) is implemented. Canceled matches show "Canceled — scores will be averaged" on court page (no score entry form). Server blocks scoring of canceled matches. `canCloseRound` counts matches where `teamAScore !== null || isCanceled`. Options A (substitute) and C (solo play) need implementation.
 
 **Final round elimination**: ✅ IMPLEMENTED — Top court must have exactly 4 players. Extra players eliminated.
 

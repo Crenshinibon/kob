@@ -106,3 +106,4 @@ No complex features:
 - No override UI (admin can edit directly in DB if needed)
 - No conflict resolution (last save wins)
 - No undo/confirmation for score edits
+- Canceled matches show "Canceled — scores will be averaged" notice (no score entry form)
