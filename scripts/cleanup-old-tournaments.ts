@@ -1,6 +1,6 @@
 import { db } from './db';
 import { tournament, player, courtRotation, match, court } from '../src/lib/server/db/schema';
-import { eq, inArray, and, lt, sql } from 'drizzle-orm';
+import { eq, inArray, and, lt } from 'drizzle-orm';
 
 const CLOSED_TOURNAMENT_MAX_AGE_DAYS = 14;
 const INACTIVE_TOURNAMENT_MAX_AGE_DAYS = 31;

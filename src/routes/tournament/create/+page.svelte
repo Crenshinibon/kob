@@ -6,6 +6,7 @@
 		estimateRoundDurationMinutes,
 		type DurationConfig
 	} from '$lib/tournament-logic';
+	import { resolveRoute } from '$app/paths';
 	import { createTournamentForm } from './create.remote';
 
 	let createError = $state('');
@@ -184,7 +185,7 @@
 
 <main>
 	<header>
-		<a href="/">← Back</a>
+		<a href={resolveRoute('/')}>← Back</a>
 		<h1>Create Tournament</h1>
 	</header>
 
@@ -432,7 +433,8 @@
 					</p>
 					<div class="duration-breakdown">
 						<span>Setup: 15 min</span>
-						{#each Array(effectiveRounds) as _, r}
+						<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
+						{#each Array(effectiveRounds) as _, r (r)}
 							<span>Round {r + 1}: {durationEstimate!.roundDur} min</span>
 						{/each}
 						<span

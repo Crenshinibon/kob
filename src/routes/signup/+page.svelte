@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { resolveRoute } from '$app/paths';
+
 	let email = $state('');
 	let password = $state('');
 	let confirmPassword = $state('');
@@ -44,7 +46,7 @@
 				const data = await response.json();
 				error = data.message || 'Signup failed';
 			}
-		} catch (e) {
+		} catch {
 			error = 'Network error. Please try again.';
 		} finally {
 			loading = false;
@@ -82,7 +84,7 @@
 		</form>
 
 		<p class="switch">
-			Already have an account? <a href="/login">Log in</a>
+			Already have an account? <a href={resolveRoute('/login')}>Log in</a>
 		</p>
 	</div>
 </main>

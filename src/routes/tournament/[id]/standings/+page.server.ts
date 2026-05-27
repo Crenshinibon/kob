@@ -2,8 +2,12 @@ import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { tournament, courtRotation, match, player } from '$lib/server/db/schema';
-import { eq, and, inArray } from 'drizzle-orm';
-import { calculateCourtStandings, matchCountForCourtSize } from '$lib/server/tournament-logic';
+import { eq, and } from 'drizzle-orm';
+import {
+	calculateCourtStandings,
+	matchCountForCourtSize,
+	type MatchData
+} from '$lib/server/tournament-logic';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const user = locals.user;
@@ -92,7 +96,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			];
 
 			// Calculate court standings
-			const courtStandings = calculateCourtStandings(matches as any[], playerIds);
+			const courtStandings = calculateCourtStandings(matches as MatchData[], playerIds);
 
 			// Update player stats
 			courtStandings.forEach((standing) => {

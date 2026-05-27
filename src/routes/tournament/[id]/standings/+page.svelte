@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { resolveRoute } from '$app/paths';
+
 	let { data }: { data: PageData } = $props();
 
 	const tournament = $derived(data.tournament);
@@ -74,7 +76,6 @@
 			currentRoundPoints: number;
 			currentRoundDiff: number;
 		}>;
-		players?: Array<{ id: number; name: string }>;
 		courtSizes: number[];
 		retiredPlayers?: Array<{
 			id: number;
@@ -88,7 +89,9 @@
 
 <main>
 	<header>
-		<a href={`/tournament/${tournament.id}`}>← Back to Tournament</a>
+		<a href={resolveRoute('/tournament/[id]', { id: String(tournament.id) })}
+			>← Back to Tournament</a
+		>
 		<h1>{tournament.name}</h1>
 		{#if tournament.formatType}
 			<p>
@@ -271,7 +274,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.retiredPlayers as rp}
+						{#each data.retiredPlayers as rp (rp.id)}
 							<tr>
 								<td>{rp.name}</td>
 								<td>Round {rp.retiredRound}</td>

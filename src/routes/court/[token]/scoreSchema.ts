@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { isDecidingSet, getMinPointsForSet } from '$lib/tournament-logic';
+import { isDecidingSet } from '$lib/tournament-logic';
 
 export function createScoreSchema(minPoints: number, winBy: number = 2) {
 	return v.pipe(

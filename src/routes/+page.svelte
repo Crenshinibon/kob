@@ -1,8 +1,23 @@
 <script lang="ts">
+	import { resolveRoute } from '$app/paths';
+
+	interface TournamentSummary {
+		id: number;
+		name: string;
+		status: string;
+		currentRound: number;
+		numRounds: number;
+	}
+
 	let {
 		data
 	}: {
-		data: { user?: { id: string }; active: any[]; finished: any[]; archived: any[] };
+		data: {
+			user?: { id: string };
+			active: TournamentSummary[];
+			finished: TournamentSummary[];
+			archived: TournamentSummary[];
+		};
 	} = $props();
 </script>
 
@@ -21,15 +36,15 @@
 			</h1>
 		</div>
 		{#if data?.user}
-			<a href="/tournament/create" class="btn-primary">+ New Tournament</a>
+			<a href={resolveRoute('/tournament/create')} class="btn-primary">+ New Tournament</a>
 		{:else}
-			<a href="/login" class="btn-primary btn-disabled">+ New Tournament</a>
+			<a href={resolveRoute('/login')} class="btn-primary btn-disabled">+ New Tournament</a>
 		{/if}
 	</header>
 
 	{#if !data?.user}
 		<section class="login-prompt">
-			<p>Please <a href="/login">log in</a> to manage tournaments.</p>
+			<p>Please <a href={resolveRoute('/login')}>log in</a> to manage tournaments.</p>
 		</section>
 	{:else}
 		<!-- Active Tournaments -->
@@ -38,7 +53,10 @@
 				<h2>Active Tournaments</h2>
 				<div class="tournament-list">
 					{#each data.active as tournament (tournament.id)}
-						<a href="/tournament/{tournament.id}" class="tournament-card">
+						<a
+							href={resolveRoute('/tournament/[id]', { id: String(tournament.id) })}
+							class="tournament-card"
+						>
 							<h3>{tournament.name}</h3>
 							<span class="status active">active</span>
 							<p class="round">Round {tournament.currentRound} of {tournament.numRounds}</p>
@@ -54,7 +72,10 @@
 				<h2>Finished Tournaments</h2>
 				<div class="tournament-list">
 					{#each data.finished as tournament (tournament.id)}
-						<a href="/tournament/{tournament.id}" class="tournament-card">
+						<a
+							href={resolveRoute('/tournament/[id]', { id: String(tournament.id) })}
+							class="tournament-card"
+						>
 							<h3>{tournament.name}</h3>
 							<span class="status completed">completed</span>
 						</a>
@@ -69,7 +90,10 @@
 				<h2>Archived Tournaments</h2>
 				<div class="tournament-list">
 					{#each data.archived as tournament (tournament.id)}
-						<a href="/tournament/{tournament.id}" class="tournament-card">
+						<a
+							href={resolveRoute('/tournament/[id]', { id: String(tournament.id) })}
+							class="tournament-card"
+						>
 							<h3>{tournament.name}</h3>
 							<span class="status archived">archived</span>
 						</a>
@@ -81,7 +105,9 @@
 		{#if data.active.length === 0 && data.finished.length === 0 && data.archived.length === 0}
 			<section class="empty">
 				<p>No tournaments yet.</p>
-				<a href="/tournament/create" class="btn-primary">Create your first tournament</a>
+				<a href={resolveRoute('/tournament/create')} class="btn-primary"
+					>Create your first tournament</a
+				>
 			</section>
 		{/if}
 	{/if}

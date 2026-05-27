@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition';
-	import { SvelteMap } from 'svelte/reactivity';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { browser } from '$app/environment';
 	import QRCode from 'qrcode';
 
@@ -74,10 +74,8 @@
 	// Track which matches are being saved
 	let savingMatches = $state<Set<number>>(new Set());
 	let editingMatches = $state<Set<number>>(new Set());
-	let savedSetScores = $state<SvelteMap<number, { teamAScore: number; teamBScore: number }>>(
-		new SvelteMap()
-	);
-	let formErrors = $state<SvelteMap<number, string[]>>(new SvelteMap());
+	let savedSetScores = new SvelteMap<number, { teamAScore: number; teamBScore: number }>();
+	let formErrors = new SvelteMap<number, string[]>();
 	// Dynamic score schema based on court's minimum points
 	const effectiveScoring = $derived(
 		getEffectiveScoring(
@@ -104,7 +102,7 @@
 		const setsToWin = effectiveScoring.setsToWin;
 
 		if (setsToWin > 1) {
-			const groups = new Map<number, MatchRow[]>();
+			const groups = new SvelteMap<number, MatchRow[]>();
 			for (const m of data.matches) {
 				if (!groups.has(m.matchNumber)) {
 					groups.set(m.matchNumber, []);
@@ -191,7 +189,7 @@
 	// 4p: AB vs CD, AC vs BD, AD vs BC
 	// 5p/6p: parallel style
 	const teamLabels = $derived.by(() => {
-		const byMatchNumber = new Map<number, { teamA: string; teamB: string }>();
+		const byMatchNumber = new SvelteMap<number, { teamA: string; teamB: string }>();
 		for (const m of data.matches) {
 			if (byMatchNumber.has(m.matchNumber)) continue;
 			const nameA1 = getPlayerName(m, 'a1');
@@ -206,7 +204,7 @@
 	});
 
 	const injuredPlayerIds = $derived.by(() => {
-		const ids = new Set<number>();
+		const ids = new SvelteSet<number>();
 		for (const m of data.matches) {
 			if (m.injuredPlayerIds) {
 				for (const id of m.injuredPlayerIds) ids.add(id);
@@ -456,7 +454,7 @@
 					{/if}
 					{#if formatExplanation!.runDetails}
 						<div class="run-details">
-							{#each formatExplanation!.runDetails as run}
+							{#each formatExplanation!.runDetails as run (run.label)}
 								<p class="run-detail">
 									<strong>{run.label}:</strong>
 									{run.description}
@@ -478,7 +476,7 @@
 				class:five-player={data.court.courtSize === 5}
 				class:six-player={data.court.courtSize === 6}
 			>
-				{#each Object.entries(data.court.playerNames) as [id, name], i}
+				{#each Object.entries(data.court.playerNames) as [id, name], i (id)}
 					<div class="player-card" class:injured={injuredPlayerIds.has(Number(id))}>
 						<span class="player-letter">{String.fromCharCode(65 + i)}</span>
 						<span class="player-name">{name}</span>
@@ -500,8 +498,8 @@
 								Match {group.matchNumber}
 								{#if teamLabels.get(group.matchNumber)}
 									<span class="team-label">
-										{@html `${teamLabels.get(group.matchNumber)!.teamA}`} vs
-										{@html `${teamLabels.get(group.matchNumber)!.teamB}`}
+										{teamLabels.get(group.matchNumber)!.teamA} vs
+										{teamLabels.get(group.matchNumber)!.teamB}
 									</span>
 								{/if}
 							</h3>
@@ -589,8 +587,8 @@
 											Match {render.index + 1}
 											{#if teamLabels.get(match.matchNumber)}
 												<span class="team-label">
-													{@html `${teamLabels.get(match.matchNumber)!.teamA}`} vs
-													{@html `${teamLabels.get(match.matchNumber)!.teamB}`}
+													{teamLabels.get(match.matchNumber)!.teamA} vs
+													{teamLabels.get(match.matchNumber)!.teamB}
 												</span>
 											{/if}
 										</h3>
@@ -643,8 +641,8 @@
 							Match {render.index + 1}
 							{#if teamLabels.get(match.matchNumber)}
 								<span class="team-label">
-									{@html `${teamLabels.get(match.matchNumber)!.teamA}`} vs
-									{@html `${teamLabels.get(match.matchNumber)!.teamB}`}
+									{teamLabels.get(match.matchNumber)!.teamA} vs
+									{teamLabels.get(match.matchNumber)!.teamB}
 								</span>
 							{/if}
 						</h3>

@@ -7,6 +7,7 @@
 		retirePlayer,
 		reportInjury
 	} from './tournament-actions.remote';
+	import { resolveRoute } from '$app/paths';
 	import { getEffectiveScoring, getScoringLabel } from '$lib/tournament-logic';
 	import CourtQRCode from '$lib/components/CourtQRCode.svelte';
 
@@ -89,14 +90,17 @@
 	{:else}
 		<main>
 			<header>
-				<a href="/">← Dashboard</a>
+				<a href={resolveRoute('/')}>← Dashboard</a>
 				<h1>{tournament.name}</h1>
 				{#if isActive}
 					<p>Round {currentRound} of {tournament.numRounds}</p>
 				{:else}
 					<p class="status-completed">Completed</p>
 				{/if}
-				<a href="/tournament/{tournament.id}/standings" class="standings-link">📊 View Standings</a>
+				<a
+					href={resolveRoute('/tournament/[id]/standings', { id: String(tournament.id) })}
+					class="standings-link">📊 View Standings</a
+				>
 				{#if isActive && !isConnected}
 					<button class="btn-reconnect" onclick={() => liveQuery.reconnect()}>
 						🔄 Reconnecting...
@@ -121,7 +125,7 @@
 					{/if}
 					{#if shifts.length > 1}
 						<div class="shift-list">
-							{#each shifts as shift, si}
+							{#each shifts as shift, si (si)}
 								<span class="shift-badge" class:active={si === 0}
 									>Shift {si + 1}: C{shift.join(', C')}</span
 								>
@@ -178,7 +182,10 @@
 
 						{#if court.token}
 							<div class="qr-link">
-								<a href="/court/{court.token}" target="_blank">Open Court Page →</a>
+								<a
+									href={resolveRoute('/court/[token]', { token: String(court.token) })}
+									target="_blank">Open Court Page →</a
+								>
 							</div>
 						{/if}
 					</div>
@@ -225,7 +232,7 @@
 							<div class="scoring-grid">
 								{#each courtSizes
 									.filter((s, i, a) => a.indexOf(s) === i)
-									.sort((a, b) => a - b) as size}
+									.sort((a, b) => a - b) as size (size)}
 									{@const effective = getEffectiveScoring(
 										size,
 										{
@@ -340,7 +347,15 @@
 								<button
 									class="btn-primary"
 									onclick={async () => {
-										const merged: Record<string, any> = { ...(tournament.scoringOverrides ?? {}) };
+										const merged: Record<
+											string,
+											{
+												pointsToWin?: number;
+												winBy?: number;
+												setsToWin?: number;
+												decidingSetPoints?: number;
+											}
+										> = { ...(tournament.scoringOverrides ?? {}) };
 										for (const [k, v] of Object.entries(localOverrides)) {
 											merged[k] = { ...(merged[k] ?? {}), ...v };
 										}
@@ -364,7 +379,7 @@
 							<div class="scoring-summary">
 								{#each courtSizes
 									.filter((s, i, a) => a.indexOf(s) === i)
-									.sort((a, b) => a - b) as size}
+									.sort((a, b) => a - b) as size (size)}
 									<span class="scoring-badge"
 										>{size}p: {getScoringLabel(
 											{
@@ -403,8 +418,8 @@
 								<label for="retirePlayerId">Select player to retire</label>
 								<select id="retirePlayerId" bind:value={retirePlayerId} required>
 									<option value="">— Select player —</option>
-									{#each courts as court}
-										{#each court.players as p}
+									{#each courts as court (court.courtNumber)}
+										{#each court.players as p (p.id)}
 											{#if !p.retired}
 												<option value={p.id}>{p.name} (Court {court.courtNumber})</option>
 											{/if}
@@ -455,8 +470,8 @@
 								<label for="injuryPlayerId">Select injured player</label>
 								<select id="injuryPlayerId" bind:value={injuryPlayerId} required>
 									<option value="">— Select player —</option>
-									{#each courts as court}
-										{#each court.players as p}
+									{#each courts as court (court.courtNumber)}
+										{#each court.players as p (p.id)}
 											{#if !p.retired}
 												<option value={p.id}>{p.name} (Court {court.courtNumber})</option>
 											{/if}

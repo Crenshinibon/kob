@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolveRoute } from '$app/paths';
 
 	let dismissed = $state(false);
 	let mounted = $state(false);
@@ -21,7 +22,11 @@
 		<div class="cookie-content">
 			<p>
 				This site uses essential cookies for authentication and security.
-				<button type="button" onclick={() => goto('/privacy')} class="cookie-link-btn">
+				<button
+					type="button"
+					onclick={() => goto(resolveRoute('/privacy'))}
+					class="cookie-link-btn"
+				>
 					Learn more
 				</button>
 			</p>

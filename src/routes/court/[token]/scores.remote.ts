@@ -3,7 +3,11 @@ import { invalid } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { match, court, tournament, courtRotation } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { getMinPointsForSet, getEffectiveScoring } from '$lib/server/tournament-logic';
+import {
+	getMinPointsForSet,
+	getEffectiveScoring,
+	type ScoringOverrides
+} from '$lib/server/tournament-logic';
 import * as v from 'valibot';
 
 const baseScoreSchema = v.pipe(
@@ -79,13 +83,13 @@ export const saveScore = form(baseScoreSchema, async (data, issue) => {
 	const effective = getEffectiveScoring(
 		rotation.courtSize,
 		config,
-		tourney.scoringOverrides as any
+		tourney.scoringOverrides as ScoringOverrides | null
 	);
 	const minPoints = getMinPointsForSet(
 		matchRecord.setNumber,
 		rotation.courtSize,
 		config,
-		tourney.scoringOverrides as any
+		tourney.scoringOverrides as ScoringOverrides | null
 	);
 	const maxScore = Math.max(teamAScore, teamBScore);
 	const minScore = Math.min(teamAScore, teamBScore);
@@ -139,13 +143,13 @@ export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 	const effective = getEffectiveScoring(
 		rotation.courtSize,
 		config,
-		tourney.scoringOverrides as any
+		tourney.scoringOverrides as ScoringOverrides | null
 	);
 	const minPoints = getMinPointsForSet(
 		setNumber,
 		rotation.courtSize,
 		config,
-		tourney.scoringOverrides as any
+		tourney.scoringOverrides as ScoringOverrides | null
 	);
 	const maxScore = Math.max(teamAScore, teamBScore);
 	const minScore = Math.min(teamAScore, teamBScore);
