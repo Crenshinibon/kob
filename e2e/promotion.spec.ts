@@ -557,8 +557,8 @@ test.describe('Promotion and Relegation', () => {
 				);
 
 				for (let i = 0; i < matchIds.length; i++) {
-					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '15');
-					await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '13');
+					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');
+					await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '19');
 					await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
 					await page.waitForSelector(`[data-testid="saved-${matchIds[i]}"]`);
 				}
@@ -569,7 +569,9 @@ test.describe('Promotion and Relegation', () => {
 			await page.waitForSelector('button:has-text("Close Round")', { timeout: 20000 });
 			await page.click('button:has-text("Close Round")');
 
+			// Verify Round 2 started - live query updates automatically
 			await page.waitForSelector('text=Round 2 of 2');
+			// Wait for court cards to render
 			await page.waitForSelector('.court-card');
 
 			// Verify 5p court still exists in Round 2 with 5 players
@@ -630,8 +632,8 @@ test.describe('Promotion and Relegation', () => {
 				);
 
 				for (let i = 0; i < matchIds.length; i++) {
-					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '15');
-					await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '13');
+					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');
+					await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '19');
 					await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
 					await page.waitForSelector(`[data-testid="saved-${matchIds[i]}"]`);
 				}

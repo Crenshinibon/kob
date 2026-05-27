@@ -747,8 +747,11 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForSelector('text=Round 2 of 2');
 
 			// Retire a player before Round 2 scores are entered
+			// Wait for live query to settle before interacting (re-renders can detach DOM elements)
+			await page.waitForTimeout(1500);
 			await page.click('summary:has-text("Retire a Player")');
 			await page.waitForSelector('.retire-form');
+			await page.waitForTimeout(500);
 			const retireOptions = await page.locator('#retirePlayerId option').allTextContents();
 			const player1RetireOption = retireOptions.find((opt) => opt.includes('Player1'));
 			if (!player1RetireOption) {
@@ -758,7 +761,8 @@ test.describe('Tournament Integration Tests', () => {
 			}
 			await page.selectOption('#retirePlayerId', { label: player1RetireOption.trim() });
 			await page.selectOption('#retireReason', { value: 'injury' });
-			await page.click('.retire-form button');
+			await page.waitForTimeout(500);
+			await page.click('.retire-form button', { timeout: 10000 });
 
 			// Wait for retirement to process and live query to refresh
 			await page.waitForTimeout(2000);
