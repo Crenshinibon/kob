@@ -125,7 +125,7 @@ Players distributed in snake pattern based on seed points. Works for any court c
 
 #### Redistribution
 
-Recursive splitting: after each round, split into winner/loser groups using the largest power-of-2, then recursively split each group.
+Bracket split: after each round, split courts into winner and loser brackets using `splitSize` (for power-of-2: N/2 winners; otherwise: largest power-of-2 winners). All players are grouped by finish tier (1sts, then 2nds, etc.), sorted by performance within each tier, and the top performers fill the winner bracket. Within each bracket, players are snake-distributed across courts for mixing.
 
 ## 7. Tournament Conclusion
 

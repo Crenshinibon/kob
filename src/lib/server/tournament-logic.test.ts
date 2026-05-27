@@ -480,47 +480,119 @@ describe('redistributePreseedRecursive', () => {
 		).toEqual([{ courtNumber: 1, playerIds: [1] }]);
 	});
 
-	it('handles 3 courts (2W + 1L)', () => {
-		const results = [1, 5, 9].map((id, i) =>
-			mockCourtResult(i + 1, [
-				{ playerId: id, rank: 1, points: 63 - i * 5, diff: 0, matchCount: 3 }
+	it('3 courts: 2W+1L, all 1st/2nd in winners, best 3rds promoted', () => {
+		const results = [1, 2, 3].map((c) =>
+			mockCourtResult(c, [
+				{ playerId: 4 * c - 3, rank: 1, points: 68 - c * 5, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c - 2, rank: 2, points: 55 - c * 5, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c - 1, rank: 3, points: 45 - c * 5, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c, rank: 4, points: 35 - c * 5, diff: 0, matchCount: 3 }
 			])
 		);
 		const a = redistributePreseedRecursive(results);
-		expect(a.length).toBe(3);
-		expect(a[0].playerIds).toEqual([1]);
-		expect(a[1].playerIds).toEqual([5]);
-		expect(a[2].playerIds).toEqual([9]);
+
+		expect(a).toHaveLength(3);
+		for (const c of a) expect(c.playerIds).toHaveLength(4);
+
+		const winnerPlayers = [...a[0].playerIds, ...a[1].playerIds];
+		const loserPlayers = a[2].playerIds;
+
+		// All 1sts (1,5,9) and 2nds (2,6,10) in winners
+		for (const p of [1, 5, 9, 2, 6, 10]) expect(winnerPlayers).toContain(p);
+		// Best 3rds (3,7) promoted to winners, worst 3rd (11) to losers
+		expect(winnerPlayers).toContain(3);
+		expect(winnerPlayers).toContain(7);
+		expect(loserPlayers).toContain(11);
+		// All 4ths go to losers
+		for (const p of [4, 8, 12]) expect(loserPlayers).toContain(p);
+
+		// No 1st+2nd from same original court on the same new court
+		for (const court of a) {
+			const ids = court.playerIds;
+			// If court has a 1st from origin C, it must not have the 2nd from same origin C
+			const c1First = ids.includes(1);
+			const c1Second = ids.includes(2);
+			expect(c1First && c1Second).toBe(false);
+			const c2First = ids.includes(5);
+			const c2Second = ids.includes(6);
+			expect(c2First && c2Second).toBe(false);
+			const c3First = ids.includes(9);
+			const c3Second = ids.includes(10);
+			expect(c3First && c3Second).toBe(false);
+		}
+
+		// Each winner court has a mix (not all 1sts on one court)
+		const c1Firsts = a[0].playerIds.filter((id) => [1, 5, 9].includes(id)).length;
+		const c2Firsts = a[1].playerIds.filter((id) => [1, 5, 9].includes(id)).length;
+		expect(c1Firsts).toBeGreaterThanOrEqual(1);
+		expect(c2Firsts).toBeGreaterThanOrEqual(1);
 	});
 
-	it('handles 5 courts (4W + 1L)', () => {
-		const results = Array.from({ length: 5 }, (_, i) =>
-			mockCourtResult(i + 1, [
-				{ playerId: i * 4 + 1, rank: 1, points: 100 - i * 5, diff: 0, matchCount: 3 }
+	it('4 courts: 2W+2L', () => {
+		const results = [1, 2, 3, 4].map((c) =>
+			mockCourtResult(c, [
+				{ playerId: 4 * c - 3, rank: 1, points: 70 - c * 3, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c - 2, rank: 2, points: 55 - c * 3, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c - 1, rank: 3, points: 40 - c * 3, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c, rank: 4, points: 25 - c * 3, diff: 0, matchCount: 3 }
 			])
 		);
 		const a = redistributePreseedRecursive(results);
-		expect(a.length).toBe(5);
-		expect(a[0].playerIds).toEqual([1]);
-		expect(a[4].playerIds).toEqual([17]);
+
+		expect(a).toHaveLength(4);
+		for (const c of a) expect(c.playerIds).toHaveLength(4);
+
+		const winnerPlayers = [...a[0].playerIds, ...a[1].playerIds];
+		const loserPlayers = [...a[2].playerIds, ...a[3].playerIds];
+
+		for (const p of [1, 5, 9, 13, 2, 6, 10, 14]) expect(winnerPlayers).toContain(p);
+		for (const p of [3, 7, 11, 15, 4, 8, 12, 16]) expect(loserPlayers).toContain(p);
+
+		// No 1st+2nd from the same original court on the same new court
+		for (const court of a) {
+			const ids = court.playerIds;
+			for (let c = 0; c < 4; c++) {
+				const first = ids.includes(4 * c + 1);
+				const second = ids.includes(4 * c + 2);
+				expect(first && second).toBe(false);
+			}
+		}
 	});
 
-	it('preserves all players', () => {
+	it('8 courts: 4W+4L, preserves all 32 players, no same-origin 1st+2nd', () => {
 		const results = Array.from({ length: 8 }, (_, i) =>
 			mockCourtResult(
 				i + 1,
 				Array.from({ length: 4 }, (_, j) => ({
 					playerId: i * 4 + j + 1,
 					rank: j + 1,
-					points: 0,
+					points: 60 - i * 5 - j * 10,
 					diff: 0,
 					matchCount: 3
 				}))
 			)
 		);
 		const a = redistributePreseedRecursive(results);
-		const total = a.reduce((s, c) => s + c.playerIds.length, 0);
-		expect(total).toBe(32);
+		const allIds = a.flatMap((c) => c.playerIds);
+		expect(allIds).toHaveLength(32);
+		expect([...new Set(allIds)]).toHaveLength(32);
+
+		expect(a).toHaveLength(8);
+		for (const c of a) expect(c.playerIds).toHaveLength(4);
+
+		const winnerPlayers = a.slice(0, 4).flatMap((c) => c.playerIds);
+		for (let i = 0; i < 8; i++) expect(winnerPlayers).toContain(i * 4 + 1);
+		for (let i = 0; i < 8; i++) expect(winnerPlayers).toContain(i * 4 + 2);
+
+		// No 1st+2nd from same original court on the same new winner court
+		for (const court of a.slice(0, 4)) {
+			const ids = court.playerIds;
+			for (let c = 0; c < 8; c++) {
+				const first = ids.includes(c * 4 + 1);
+				const second = ids.includes(c * 4 + 2);
+				expect(first && second).toBe(false);
+			}
+		}
 	});
 });
 

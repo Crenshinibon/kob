@@ -603,18 +603,28 @@ export const retirePlayer = command(
 			}
 		}
 
-		const allPlayerIds = nextAssignments.flatMap((a) => a.playerIds);
-		const uniquePlayerIds = [...new Set(allPlayerIds)];
-		uniquePlayerIds.sort((a, b) => a - b);
+		let finalAssignments: { courtNumber: number; playerIds: number[] }[];
 
-		const finalAssignments: { courtNumber: number; playerIds: number[] }[] = [];
-		let offset = 0;
-		for (let i = 0; i < newCourtSizes.length; i++) {
-			finalAssignments.push({
-				courtNumber: i + 1,
-				playerIds: uniquePlayerIds.slice(offset, offset + newCourtSizes[i])
-			});
-			offset += newCourtSizes[i];
+		if (tourney.formatType === 'preseed') {
+			// Use preseed assignments directly to preserve bracket mixing
+			finalAssignments = nextAssignments.map((a) => ({
+				courtNumber: a.courtNumber,
+				playerIds: [...a.playerIds]
+			}));
+		} else {
+			const allPlayerIds = nextAssignments.flatMap((a) => a.playerIds);
+			const uniquePlayerIds = [...new Set(allPlayerIds)];
+			uniquePlayerIds.sort((a, b) => a - b);
+
+			finalAssignments = [];
+			let offset = 0;
+			for (let i = 0; i < newCourtSizes.length; i++) {
+				finalAssignments.push({
+					courtNumber: i + 1,
+					playerIds: uniquePlayerIds.slice(offset, offset + newCourtSizes[i])
+				});
+				offset += newCourtSizes[i];
+			}
 		}
 
 		for (const assignment of finalAssignments) {

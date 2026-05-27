@@ -8,10 +8,12 @@
 
 **Deliverables**:
 
-1. **Recursive preseed redistribution** (`redistributePreseedRecursive`)
-   - Takes `CourtResult[]`, `currentRound`, `totalRounds`
-   - Implements recursive splitting: largest power-of-2 winner group + remainder loser group
-   - Returns `CourtAssignment[]`
+1. **Preseed redistribution** (`redistributePreseedRecursive`)
+   - Takes `CourtResult[]` and optional `courtSizes`
+   - Groups all players by finish tier (1sts, 2nds, 3rds, 4ths)
+   - Sorts each tier by performance (points desc, diff desc, playerId asc)
+   - Flattens tiers and splits into winner/loser brackets via `splitSize`
+   - Distributes each bracket's players across its courts with origin mixing (prevents 1st+2nd from same previous court on the same new court)
    - Pure function, no DB, no HTTP
 
 2. **Generalized vertical seeding** (`redistributeLadder` extension)

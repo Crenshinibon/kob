@@ -308,6 +308,13 @@ function splitSize(n: number): number {
 
 export { splitSize };
 
+type PlayerWithOrigin = {
+	playerId: number;
+	originCourt: number;
+	points: number;
+	diff: number;
+};
+
 export function redistributePreseedRecursive(
 	courtResults: readonly CourtResult[],
 	courtSizes?: readonly number[]
@@ -320,17 +327,25 @@ export function redistributePreseedRecursive(
 	if (N === 1)
 		return [{ courtNumber: 1, playerIds: courtResults[0].standings.map((s) => s.playerId) }];
 
-	// Build tiers: group players by finish position (1sts, 2nds, 3rds, 4ths)
+	// Build tiers grouped by finish position, keeping origin court info
 	const maxRank = Math.max(...courtResults.map((c) => c.standings.length));
-	const tiers: number[][] = [];
+	const tiers: PlayerWithOrigin[][] = [];
 
 	for (let rank = 0; rank < maxRank; rank++) {
-		const players = courtResults
-			.map((c) => c.standings[rank])
-			.filter((s): s is CourtStandings => s !== undefined)
-			.sort((a, b) => b.points - a.points || b.diff - a.diff || a.playerId - b.playerId)
-			.map((s) => s.playerId);
-		tiers.push(players);
+		const tier: PlayerWithOrigin[] = [];
+		for (const c of courtResults) {
+			const s = c.standings[rank];
+			if (s) {
+				tier.push({
+					playerId: s.playerId,
+					originCourt: c.courtNumber,
+					points: s.points,
+					diff: s.diff
+				});
+			}
+		}
+		tier.sort((a, b) => b.points - a.points || b.diff - a.diff || a.playerId - b.playerId);
+		tiers.push(tier);
 	}
 
 	// Flatten by finish tier: all 1sts, then all 2nds, then all 3rds, then all 4ths
@@ -349,18 +364,59 @@ export function redistributePreseedRecursive(
 	let courtNumber = 1;
 
 	if (W > 0) {
-		for (const a of snakeDistribute(winnerPlayers, winnerSizes)) {
-			assignments.push({ courtNumber: courtNumber++, playerIds: a.playerIds });
+		const w = distributeMixed(winnerPlayers, winnerSizes);
+		for (const pids of w) {
+			assignments.push({ courtNumber: courtNumber++, playerIds: pids });
 		}
 	}
 
 	if (loserSizes.length > 0) {
-		for (const a of snakeDistribute(loserPlayers, loserSizes)) {
-			assignments.push({ courtNumber: courtNumber++, playerIds: a.playerIds });
+		const l = distributeMixed(loserPlayers, loserSizes);
+		for (const pids of l) {
+			assignments.push({ courtNumber: courtNumber++, playerIds: pids });
 		}
 	}
 
 	return assignments;
+}
+
+function distributeMixed(players: PlayerWithOrigin[], courtSizes: number[]): number[][] {
+	const courtCount = courtSizes.length;
+	if (courtCount <= 1) return [players.map((p) => p.playerId)];
+
+	const slots = courtSizes.map(() => ({ playerIds: [] as number[], origins: new Set<number>() }));
+
+	for (const p of players) {
+		let best = -1;
+		let minLoad = Infinity;
+
+		// Prefer a court that doesn't already have a player from this origin
+		for (let i = 0; i < courtCount; i++) {
+			if (slots[i].playerIds.length >= courtSizes[i]) continue;
+			if (slots[i].origins.has(p.originCourt)) continue;
+			if (slots[i].playerIds.length < minLoad) {
+				minLoad = slots[i].playerIds.length;
+				best = i;
+			}
+		}
+
+		// Fall back: all remaining courts have this origin, pick least loaded
+		if (best === -1) {
+			minLoad = Infinity;
+			for (let i = 0; i < courtCount; i++) {
+				if (slots[i].playerIds.length >= courtSizes[i]) continue;
+				if (slots[i].playerIds.length < minLoad) {
+					minLoad = slots[i].playerIds.length;
+					best = i;
+				}
+			}
+		}
+
+		slots[best].playerIds.push(p.playerId);
+		slots[best].origins.add(p.originCourt);
+	}
+
+	return slots.map((s) => s.playerIds);
 }
 
 // ============================================================================

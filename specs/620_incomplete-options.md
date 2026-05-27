@@ -132,22 +132,24 @@ The winner group's depth determines the total rounds. The loser group plays alon
 
 #### Preseed Split Algorithm
 
+The recursive split determines bracket structure (how many winner/loser courts each round). Player assignment within each bracket uses **origin-mixing distribution of the sorted-by-finish-tier player pool** (1st and 2nd place from the same original court must NOT land on the same new court) — the function is NOT recursive itself.
+
 ```
-function splitCourts(courts):
-    N = courts.length
-    if N == 1: return (no more splits needed)
+function redistributePreseed(N_courts, courtStandings):
+    // 1. Group all players by finish tier (1sts, 2nds, 3rds, 4ths)
+    // 2. Sort each tier by performance (points desc, diff desc, playerId asc)
+    // 3. Flatten by tier: [all 1sts..., all 2nds..., all 3rds..., all 4ths...]
 
-    winnerCount = largestPowerOf2(N)  // e.g., 7→4, 5→4, 3→2, 6→4
-    loserCount = N - winnerCount
+    winnerCount = splitSize(N_courts)   // power-of-2: N/2; otherwise: largest power-of-2
+    loserCount = N_courts - winnerCount
 
-    // Sort all players by court finish (1st places first, then 2nd, etc.)
-    // Winner group gets the top performers
-    // Loser group gets the rest
-
-    // Recursively split each group
-    splitCourts(winnerGroup)
-    splitCourts(loserGroup)
+    // 4. Top N winner performers go to winner bracket
+    // 5. Remainder go to loser bracket
+    // 6. Distribute each bracket's players across its courts using origin mixing
+    //    (1st+2nd from the same previous court must NOT land on the same new court)
 ```
+
+**Key change from earlier drafts**: Players are NOT recursively re-split within a single redistribution step. Each `closeRound` calls this function once to produce the next round's assignments. The recursive bracket structure emerges across rounds (the winners split again next round, then again, until all courts are in their final bracket).
 
 ### Timing Impact
 

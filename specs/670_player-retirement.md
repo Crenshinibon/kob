@@ -212,16 +212,17 @@ The current round is played with the restructured courts. When the round closes 
 
 1. The total active player count is reduced by all retired players.
 2. `calculateCourtSizes()` determines the new court configuration.
-3. Standard redistribution (ladder for random-seed, recursive split for preseed) assigns players to courts.
+3. Standard redistribution (ladder for random-seed, bracket split for preseed) assigns players to courts.
 4. Top courts are filled first. The bottom court gets whatever format the leftover players dictate.
 
-**Preseed special case — bracket promotion**: Preseed uses recursive binary splitting. Each round, the winner bracket halves: all 16 players in round 1, top 8 in round 2, top 4 in round 3 (final). The loser bracket follows the same halving for the bottom half.
+**Preseed special case — bracket promotion**: In preseed, the winner bracket gets `splitSize(N) × 4` players (top finishers from each finish tier). Each round the winner bracket shrinks — e.g. for 4 courts: 16 players round 1, top 8 (winners) round 2, top 4 (final) round 3. The loser bracket receives the remaining players.
 
 When retirements reduce the winner bracket below its expected player count, the top player(s) from the loser bracket are **promoted** to fill the gap. The promotion criteria is: **1st-place player from the highest court in the loser bracket** — the player closest to the winner/loser boundary, who would have been the first pick for promotion.
 
 **When is promotion needed?** Only when the winner bracket has fewer players than the expected count after binary split. If 1 player retires from a 4p winner-bracket court (3 remain), the bracket still has enough players for the next round's split (3 is still ≥ half of 4 = 2). The 3rd-place player on that court is relegated to the loser bracket next round as usual. No promotion needed.
 
 **Example where promotion IS needed (preseed, 16 players)**:
+
 - Round 2: Winner bracket C1 (4p), C2 (4p). Loser bracket C3 (4p), C4 (4p).
 - 3 players retire from C1, 1 from C2 (pre-scoring, Option C each time).
 - C1 has 1 player left (does not play). C2 has 3 players (plays 3p).
@@ -231,6 +232,7 @@ When retirements reduce the winner bracket below its expected player count, the 
 - But if 4+ players had retired from the winner bracket (leaving <4), the top player(s) from C3 would be promoted to fill the winner bracket for round 3.
 
 **Example where promotion IS needed (extreme case)**:
+
 - Round 2: C1 (4p), C2 (4p), C3 (4p), C4 (4p).
 - All 4 players on C1 retire. C2 has 3 players left.
 - Winner bracket has 0 + 3 = 3 players. Need 4 for round 3's winner bracket.
