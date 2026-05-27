@@ -4,7 +4,7 @@
 
 **Between-rounds retirement**: ✅ IMPLEMENTED — Org can retire players between rounds via `retirePlayer` remote command. Court configuration recalculates, redistribution applies. Stable court tokens persist across retirements.
 
-**Mid-round injury handling**: ⚠️ PARTIALLY IMPLEMENTED — `reportInjury` remote command exists for marking matches as canceled with `isCanceled` flag. Option B (cancel & average) is fully implemented. Option A (substitute) is partially implemented — server marks matches with `injuredPlayerIds`, scoring logic gives 0 points to injured player, court page shows injury banner and "Injured" tag on player card. Option C (solo play / 2v1) is not implemented. "Retire a Player" and "Report Injury" now have conditional visibility: retire only shows pre-scoring, injury only shows mid-round.
+**Mid-round injury handling**: ⚠️ PARTIALLY IMPLEMENTED — `reportInjury` remote command exists for marking matches as canceled with `isCanceled` flag. Option B (cancel & average) is fully implemented. Option A (substitute) is partially implemented — server marks matches with `injuredPlayerIds`, scoring logic gives 0 points to injured player, court page shows injury banner and "Injured" tag on player card. Option C (restructure court) is not implemented. "Retire a Player" and "Report Injury" now have conditional visibility: retire only shows pre-scoring, injury only shows mid-round.
 
 **Final round elimination**: ✅ IMPLEMENTED — Top court must have exactly 4 players. Extra players eliminated.
 
@@ -123,11 +123,25 @@ If the retirement happens between rounds (before final round starts), normal red
 
 ## Mid-Round Injury Handling
 
-When a player gets hurt during an active round, the organizer cannot change the court's configuration (e.g., converting a 4-player court to a 3-player court) because games have already been played, and converting formats mid-round makes scoring and standings mathematically inconsistent and unfair.
+There are two distinct scenarios depending on whether the court has already recorded match results.
 
-Instead, the remaining unplayed matches for that court must be handled in one of the following three ways.
+### Scenario 1: No Scores Yet on the Court (Pre-Scoring)
 
-### Option A: Physical Play with a Neutral Substitute (Recommended)
+If the injury is reported before any matches on that court have been scored, the court format can still be changed. The organizer can choose between:
+
+- **Option A (Substitute)** — same as below.
+- **Option B (Cancel & Average)** — same as below, though trivial since no matches are completed yet (all canceled, all players get 0 for the round).
+- **Option C (Restructure Court)** — Remove the injured player, recalculate the court format, and regenerate matches. The remaining players stay on this court and play the new format. See Option C details below.
+
+**Option C is only available when no scores have been entered for the court.**
+
+### Scenario 2: Scores Already Entered on the Court (Mid-Round)
+
+When a player gets hurt during an active round and the court already has match results, the organizer **cannot change the court's configuration** (e.g., converting a 4-player court to a 3-player court) because games have already been played, and converting formats mid-round makes scoring and standings mathematically inconsistent and unfair.
+
+Only Options A and B are viable in this scenario. The remaining unplayed matches for that court must be handled in one of the following two ways.
+
+### Option A: Physical Play with a Neutral Substitute (Recommended for mid-round)
 
 - **Concept**: A temporary substitute player (not part of the court's standings) replaces the injured player for the remaining matches/sets of the current round.
 - **Sourcing the Substitute**:
@@ -140,6 +154,7 @@ Instead, the remaining unplayed matches for that court must be handled in one of
   3. The opponents receive their **actual points scored** in the match.
   4. The injured player receives **0 points** (forfeit) for the matches they missed.
 - **Database Implementation**: The match is entered normally with the injured player's ID in the slot. Since the substitute is temporary and doesn't get points, keeping the injured player's ID in the match record allows the partner's points to be computed naturally.
+- **Works on**: All court sizes (4p, 5p, 6p, 3p). No format change needed.
 - **Pros**: Standard 2v2 gameplay is preserved. No mathematical skewing. Partners can still play and earn points. Opponents don't get free 21-0 wins that distort tournament-wide standings.
 
 ### Option B: Cancel & Average (Mathematical Solution)
@@ -156,20 +171,77 @@ Instead, the remaining unplayed matches for that court must be handled in one of
      - P4 gets 0 points.
      - Court Standings for the round: P1 & P2 (1st place, 21.0 avg pts) > P3 (3rd place, 18.0 avg pts) > P4 (4th place, 0 avg pts).
 - **Database Implementation**:
-  1. Add an `isCanceled` column (boolean, default false) to the match tables: `match`, `match_3_player`, `match_5_player`, and `match_6_player`.
-  2. Canceled matches are marked `is_canceled = true` and their scores are left as `null`.
-  3. When calculating standings for a court, if any match has `is_canceled = true`, the system automatically ranks players on that court by average points per completed match and average point differential per completed match, instead of total points.
+  1. Canceled matches are marked `is_canceled = true` and their scores are left as `null`.
+  2. When calculating standings for a court, if any match has `is_canceled = true`, the system automatically ranks players on that court by average points per completed match and average point differential per completed match, instead of total points.
 - **Non-Standard Courts (5p/6p)**: Since 5-player and 6-player courts already use average points per game to rank players (due to uneven match distributions), Option B is trivial: the system simply cancels games involving the injured player, and ranks the remaining players by their averages over the games they completed.
+- **Works on**: All court sizes (4p, 5p, 6p, 3p). No format change needed.
 - **Pros**: Does not require a physical substitute. Fairly handles the situation without forcing arbitrary 0-21 forfeits that penalize the healthy partner and boost opponents.
 
-### Option C: Play Solo (2v1)
+### Option C: Restructure Court (Pre-Scoring Only)
 
-- **Concept**: The remaining matches are played as scheduled, but the team with the injured player plays as a 1-player team.
-- **Rules**:
-  1. The solo player gets 3 touches (using the 3-player court solo player rule).
-  2. Matches are scored exactly as played.
-- **Pros**: Keeps the games active without requiring a substitute.
-- **Cons**: Extremely physically demanding and unfair for the solo player, who is almost guaranteed to lose by a large margin (hurting their standing points and point differential).
+- **Concept**: Remove the injured player and change the court format to match the new player count. The remaining players stay on the same court. Matches are deleted and regenerated for the new court size.
+- **When available**: Only when **no scores have been entered** for the court yet. If any match has a score, this option is not available.
+- **Key principle**: The non-standard court (3p/5p/6p) is always the **bottom court**. When a court is restructured mid-round, the remaining players stay on their current court number and play the new format. The court format changes (e.g., 4p→3p), but the court number and the players' relative rankings are preserved. For the **next round**, the standard redistribution logic recalculates all court assignments — filling top courts first, and the bottom court absorbs whatever format the new player count dictates.
+
+#### Single-court restructure (one player injured)
+
+| Current        | After Removal  | Current Round Action                                                                                                                                                                                                                                                                        |
+| -------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 6p (6 players) | 5p (5 players) | Delete 4 six-player matches, generate 4 five-player matches. 5 remaining players stay on this court.                                                                                                                                                                                        |
+| 5p (5 players) | 4p (4 players) | Delete 4 five-player matches, generate 3 four-player matches. 4 remaining players stay on this court.                                                                                                                                                                                       |
+| 4p (4 players) | 3p (3 players) | Delete 3 four-player matches, generate 3 three-player matches. 3 remaining players stay on this court.                                                                                                                                                                                      |
+| 3p (3 players) | 2 players left | **Court does not play this round.** Both remaining players are treated as if they won the court (1st and 2nd place, broken by playerId). For the next round, the standard `calculateCourtSizes` logic determines the new bottom court format (likely a 6p court absorbing these 2 players). |
+
+#### Multiple injuries on the same court (pre-scoring)
+
+When 2+ players are injured on the same court before any scores are entered, the court may drop to 2 or fewer players:
+
+| Current         | Players Left | Current Round Action                                                                                                  |
+| --------------- | ------------ | --------------------------------------------------------------------------------------------------------------------- |
+| 4p → 2 injuries | 2 players    | **Court does not play this round.** Both treated as 1st and 2nd place (by playerId). Next round: full redistribution. |
+| 4p → 3 injuries | 1 player     | **Court does not play this round.** Player treated as 1st place. Next round: full redistribution.                     |
+| 3p → 2 injuries | 1 player     | Same as above.                                                                                                        |
+| 5p → 2 injuries | 3 players    | Restructure to 3p. Generate 3 three-player matches.                                                                   |
+| 6p → 2 injuries | 4 players    | Restructure to 4p. Generate 3 four-player matches.                                                                    |
+
+When a court does not play, its surviving players receive 0 points for the current round (no matches played) but are ranked at the top of their court for redistribution purposes.
+
+#### Cross-court impact for next round
+
+The current round is played with the restructured courts. When the round closes and the next round begins:
+
+1. The total active player count is reduced by all retired players.
+2. `calculateCourtSizes()` determines the new court configuration.
+3. Standard redistribution (ladder for random-seed, recursive split for preseed) assigns players to courts.
+4. Top courts are filled first. The bottom court gets whatever format the leftover players dictate.
+
+**Preseed special case — bracket promotion**: When a player retires from a winner-bracket court (top half), the winner bracket now has fewer players. The top player(s) from the loser bracket are **promoted** to the winner bracket to maintain 4-player courts at the top. This is the natural result of the recursive redistribution — it fills top courts first, pulling the best-available players up regardless of their previous bracket.
+
+**Example (preseed, 16 players)**:
+
+- Round 2: Winner bracket has 8 players (C1, C2), Loser bracket has 8 players (C3, C4).
+- Player on C1 retires pre-scoring (Option C). C1 becomes a 3p court.
+- Round 2 plays with C1(3p), C2(4p), C3(4p), C4(4p).
+- Round 3: 15 active players. `calculateCourtSizes(15)` = 3×4p + 1×3p = 4 courts.
+- Redistribution: Top 12 players fill 3 courts of 4p. The 3rd-place player from the old C1 (3p court) may be relegated down, and a top player from the old loser bracket (C3/C4) is promoted up to fill the 4p courts. The bottom 3 players form a 3p court.
+
+**Random-seed**: No bracket concept. Standard ladder redistribution (2 up, 2 down) handles it naturally. The restructured court's players are ranked by their court position and redistributed normally.
+
+#### Injured player handling
+
+The injured player is marked as retired (`retiredAt`, `retiredRound`, `retiredCourt`, `retirementReason`, `finalStanding` set), same as between-rounds retirement. They are excluded from all future rounds.
+
+#### Database Implementation
+
+- Delete all matches for the court's current rotation.
+- Delete the rotation row.
+- If the court can still play (3+ players): create a new rotation with the updated `courtSize` and remaining player IDs. Generate new matches.
+- If the court cannot play (2 or fewer players): no new rotation or matches for this court this round. The surviving players get a "bye" with 0 points.
+- Update tournament's `courtSizes` and `playerCount` in DB.
+- Trigger `getTournamentDataLive(tournamentId).reconnect()`.
+
+- **Pros**: Clean format transition. No canceled matches. No substitute needed. Court plays the correct format for the remaining players.
+- **Cons**: Only works before scoring starts. Cannot be used once any match has a score.
 
 ---
 
@@ -177,17 +249,43 @@ Instead, the remaining unplayed matches for that court must be handled in one of
 
 ### 1. Reporting an Injury
 
-During an active round, the organizer sees a "Report Injury" button next to each court or next to each player name on the tournament dashboard/court view.
+During an active round, the organizer sees a "Report Injury" section on the tournament page (visible only when the round has scores — `hasScores === true`).
 
 ### 2. Selecting the Handling Option
 
-Clicking "Report Injury" for a player opens a modal:
+Clicking "Report Injury" for a player opens a selection. The available options depend on whether the injured player's court already has scores:
+
+**When the court has NO scores yet** (all three options available):
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ Report Injury: Player D (Court 2)                       │
 │                                                          │
-│ How would you like to handle the remaining matches?       │
+│ How would you like to handle this?                       │
+│                                                          │
+│ ( ) Restructure Court (Recommended)                      │
+│     Remove Player D and change court format.             │
+│     6p→5p, 5p→4p, 4p→3p. Matches regenerated.          │
+│                                                          │
+│ ( ) Use a Substitute                                     │
+│     Play 2v2 with a temporary substitute.                │
+│     Scores are entered normally.                         │
+│                                                          │
+│ ( ) Cancel & Average                                     │
+│     Cancel all matches for Player D.                     │
+│     Standings calculated using average points.           │
+│                                                          │
+│ [Confirm Injury] [Cancel]                                │
+└─────────────────────────────────────────────────────────┘
+```
+
+**When the court HAS scores** (only Options A and B available):
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Report Injury: Player D (Court 2)                       │
+│                                                          │
+│ How would you like to handle the remaining matches?      │
 │                                                          │
 │ ( ) Use a Substitute (Recommended)                       │
 │     Matches remain on the schedule. Play 2v2 with a      │
@@ -197,9 +295,8 @@ Clicking "Report Injury" for a player opens a modal:
 │     Cancel remaining matches for Player D. Court         │
 │     standings will be calculated using average points.   │
 │                                                          │
-│ ( ) Play Solo (2v1)                                      │
-│     Matches remain on the schedule. Player D's partner   │
-│     plays solo (3 touches). Scores entered normally.     │
+│ ⚠ Restructure Court is not available because this        │
+│   court already has match results.                       │
 │                                                          │
 │ [Confirm Injury] [Cancel]                                │
 └─────────────────────────────────────────────────────────┘
@@ -207,16 +304,20 @@ Clicking "Report Injury" for a player opens a modal:
 
 ### 3. Court View Updates
 
-- **If Substitute or Play Solo is selected**: The court view displays Player D as "Injured" but the remaining matches remain active for score entry.
-- **If Cancel & Average is selected**: The remaining matches involving Player D are marked as "Canceled" and disabled in the UI. The organizer only enters scores for any matches that did not involve Player D.
+- **If Restructure Court (Option C) is selected**: The court page reloads with the new format (e.g., 5p instead of 6p). Matches are regenerated. The injured player's name is removed. Other players on the court see new match pairings. If the court drops below 3 players (cannot play), the court page shows "Court inactive this round — not enough players."
+- **If Substitute (Option A) is selected**: The court view displays Player D as "Injured" but the remaining matches remain active for score entry.
+- **If Cancel & Average (Option B) is selected**: The remaining matches involving Player D are marked as "Canceled" and disabled in the UI. The organizer only enters scores for any matches that did not involve Player D.
 
 ### 4. Closing the Round
 
 When the organizer closes the round:
 
-1. The injured player is marked as retired (`retiredAt` set to current timestamp, `retiredRound` set to current round).
-2. The standings for the court are calculated. If Option B (Cancel & Average) was used, the standings are calculated using averages of completed matches.
-3. For subsequent rounds, the retired player is excluded from court assignment generation, and the court configuration is recalculated for the remaining players (applying the standard retirement rules).
+1. The injured player is already marked as retired (`retiredAt` set at time of injury report, `retiredRound` set to current round).
+2. The standings for the court are calculated:
+   - If Option A (Substitute) was used: normal standings calculation. The injured player gets 0 points for matches they missed.
+   - If Option B (Cancel & Average) was used: standings are calculated using averages of completed matches.
+   - If Option C (Restructure) was used: normal standings for the restructured court. If the court did not play (2 or fewer players), surviving players get 0 points but are ranked 1st/2nd on their court for redistribution.
+3. For subsequent rounds, the retired player is excluded from court assignment generation, and the court configuration is recalculated for the remaining players (applying the standard retirement rules). Top courts fill first; loser-bracket players may be promoted to fill winner-bracket courts (preseed).
 
 ## Final Round Exception
 
@@ -428,8 +529,9 @@ finalStanding: integer('final_standing'); // set when tournament completes
 Add an `isCanceled` column (boolean, not null, default false) to all match tables to support Option B (Cancel & Average):
 
 ```typescript
-// match, match3Player, match5Player, match6Player all get:
+// match table:
 isCanceled: boolean('is_canceled').notNull().default(false);
+injuredPlayerIds: jsonb('injured_player_ids').$type<number[]>();
 ```
 
 ### Court Rotation
@@ -438,7 +540,90 @@ No changes needed. The existing court rotation system handles variable court siz
 
 ## Decisions (Previously Open Questions)
 
-1. **Forfeited/Injured matches**: In-progress rounds can be handled via physical substitution, cancellation & averaging (using average points per completed match to calculate standings), or playing solo (2v1). Auto-forfeit 0-21 is only used as a fallback if no other option is selected.
+1. **Forfeited/Injured matches**: Two scenarios: (a) Pre-scoring — full restructure (Option C), substitute (Option A), or cancel & average (Option B). (b) Mid-round with scores — only substitute (Option A) or cancel & average (Option B). The old "Play Solo (2v1)" option is removed — it was physically unfair and rarely used. Restructure (Option C) replaces it for pre-scoring situations and is much cleaner.
 2. **Replacement timing**: Only before the tournament starts. No mid-tournament replacements.
 3. **Final round elimination**: The org should see which players are eliminated from the final round before it starts.
 4. **Tiebreaker for elimination**: Compare by average points per round first (normalizes across court sizes), then total points, then diff, then playerId.
+
+## Implementation Plan: Option C (Restructure Court)
+
+### Overview
+
+Option C allows the organizer to remove an injured player from a court **before any scores are entered** and restructure the court to the correct smaller format. The remaining players stay on the same court and play the new format. If a court drops below 3 players, it does not play this round — surviving players are treated as if they won the court (by playerId). For the next round, the standard redistribution logic handles everything, including promoting loser-bracket players to fill winner-bracket courts when needed (preseed).
+
+### Phase 1: Server-Side Logic
+
+**File: `tournament-actions.remote.ts`**
+
+1. Extend the `reportInjury` validation schema to accept `option: 'substitute' | 'cancel' | 'restructure'`.
+2. In the `reportInjury` handler, add a `restructure` branch:
+   - Verify the court has NO scores (`hasScores` check — for restructure, require `!hasScores`; error if scores exist).
+   - Get the injured player's current rotation and court.
+   - Mark the player as retired (`retiredAt`, `retiredRound`, `retiredCourt`, `retirementReason`, `finalStanding`).
+   - Calculate the new player count on the court (current - 1, or current - N for multiple injuries).
+   - **If 3+ players remain**: Delete the court's current matches and rotation. Create a new rotation with the updated `courtSize` and remaining player IDs. Generate new matches using `generateAllMatchesForAssignment()`. Update `court.courtSize`.
+   - **If 2 or fewer players remain**: Delete the court's current matches and rotation. Deactivate the court for this round. Surviving players are assigned a "bye" with 0 points and ranked 1st/2nd by playerId on their court for redistribution purposes.
+   - Update tournament's `courtSizes` and `playerCount` in DB.
+   - Trigger `getTournamentDataLive(tournamentId).reconnect()`.
+
+**File: `tournament-logic.ts`**
+
+3. No new pure functions needed. The existing `calculateCourtSizes()`, `generateAllMatchesForAssignment()`, `recalculateCourtConfigAfterRetirement()`, and `calculateRetiredStanding()` are sufficient. The `reportInjury` handler composes these.
+
+### Phase 2: Redistribution for Next Round
+
+**No new code needed** — the existing `closeRoundForm` already recalculates `courtSizes` for the reduced player count and applies the standard redistribution (ladder for random-seed, `redistributePreseedRecursive` for preseed). The preseed redistribution naturally promotes the best-available players to fill top courts, including pulling players from the loser bracket into the winner bracket when the winner bracket is underfilled due to retirements.
+
+### Phase 3: UI Changes
+
+**File: `tournament/[id]/+page.svelte`**
+
+4. Add `'restructure'` to the `injuryOption` type: `type = 'substitute' | 'cancel' | 'restructure' | ''`.
+5. Add a third radio option in the injury form:
+   ```svelte
+   <label class="radio-label">
+   	<input type="radio" bind:group={injuryOption} value="restructure" required />
+   	<span class="radio-title">Restructure Court</span>
+   	<span class="radio-desc">
+   		Remove injured player and change court format. Matches regenerated.
+   	</span>
+   </label>
+   ```
+6. Make the restructure option conditional: only show when `!hasScores`. When `hasScores` is true, show a disabled label with explanation:
+   ```svelte
+   {#if hasScores}
+   	<label class="radio-label disabled">
+   		<input type="radio" disabled />
+   		<span class="radio-title">Restructure Court (unavailable)</span>
+   		<span class="radio-desc">Not available — court already has match results.</span>
+   	</label>
+   {:else}
+   	<!-- active restructure option -->
+   {/if}
+   ```
+7. The `reportInjury` call in the button `onclick` already passes `injuryOption` — no change needed there.
+8. **Court page update**: When a court has no rotation (because it was deactivated due to <3 players), show "Court inactive this round — not enough players" instead of match forms.
+
+### Phase 4: Edge Cases & Testing
+
+9. **3p court dissolution** (court cannot play): When a player on a 3p court is restructured out, the 2 remaining players get a bye. Test with 11 players (2×4p + 1×3p). Verify that next round's redistribution creates a valid court configuration (e.g., 2×4p + 1×6p with the 2 bye players joining the bottom court).
+10. **4p→3p on a top court**: Verify that the top court's 3 remaining players play 3p format. Verify that the 3rd-place player is relegated in the next round's redistribution. For preseed: verify that a loser-bracket player is promoted to fill the winner bracket.
+11. **5p→4p transition**: Verify match count changes from 4 (5p) to 3 (4p) and match pairings are correct.
+12. **6p→5p transition**: Verify match count stays at 4 but the match format changes from 6p parallel runs to 5p parallel runs.
+13. **Multiple injuries on same court**: Test 4p court losing 2 players (2 remain → court does not play). Verify surviving players ranked by playerId.
+14. **E2E tests**: Add tests for each scenario in `tournament.spec.ts` under the "Player Retirement" describe block.
+
+### Phase 5: Cleanup
+
+15. Remove any references to "Play Solo (2v1)" from code comments, validation schemas, and UI.
+16. Update `TO_FIX.md` to mark Option C as complete.
+
+### Effort Estimate
+
+| Phase                   | Effort                                                                | Risk                             |
+| ----------------------- | --------------------------------------------------------------------- | -------------------------------- |
+| Phase 1: Server logic   | Medium — reuses existing `retirePlayer` patterns                      | Low — well-tested pure functions |
+| Phase 2: Redistribution | None — existing logic handles it                                      | None                             |
+| Phase 3: UI             | Low — add radio option with conditional rendering                     | Low                              |
+| Phase 4: Testing        | Medium — 5 scenarios (6p→5p, 5p→4p, 4p→3p, 3p dissolve, multi-injury) | Low                              |
+| Phase 5: Cleanup        | Trivial                                                               | None                             |
