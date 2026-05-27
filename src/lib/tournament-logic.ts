@@ -309,25 +309,58 @@ function splitSize(n: number): number {
 export { splitSize };
 
 export function redistributePreseedRecursive(
-	courtResults: readonly CourtResult[]
+	courtResults: readonly CourtResult[],
+	courtSizes?: readonly number[]
 ): CourtAssignment[] {
 	const N = courtResults.length;
 	if (N === 0) return [];
+
+	const sizes = courtSizes ?? Array(N).fill(4);
+
 	if (N === 1)
 		return [{ courtNumber: 1, playerIds: courtResults[0].standings.map((s) => s.playerId) }];
 
-	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
+	// Build tiers: group players by finish position (1sts, 2nds, 3rds, 4ths)
+	const maxRank = Math.max(...courtResults.map((c) => c.standings.length));
+	const tiers: number[][] = [];
+
+	for (let rank = 0; rank < maxRank; rank++) {
+		const players = courtResults
+			.map((c) => c.standings[rank])
+			.filter((s): s is CourtStandings => s !== undefined)
+			.sort((a, b) => b.points - a.points || b.diff - a.diff || a.playerId - b.playerId)
+			.map((s) => s.playerId);
+		tiers.push(players);
+	}
+
+	// Flatten by finish tier: all 1sts, then all 2nds, then all 3rds, then all 4ths
+	const allPlayers = tiers.flat();
+
+	// Split into winner and loser brackets
 	const W = splitSize(N);
-	const winners = sorted.slice(0, W);
-	const losers = sorted.slice(W);
+	const winnerSizes = sizes.slice(0, W);
+	const loserSizes = sizes.slice(W);
+	const totalWinnerSlots = winnerSizes.reduce((s, sz) => s + sz, 0);
 
-	const w = redistributePreseedRecursive(winners);
-	const l = redistributePreseedRecursive(losers);
+	const winnerPlayers = allPlayers.slice(0, totalWinnerSlots);
+	const loserPlayers = allPlayers.slice(totalWinnerSlots);
 
-	return [
-		...w.map((a, i) => ({ courtNumber: i + 1, playerIds: a.playerIds })),
-		...l.map((a, i) => ({ courtNumber: W + i + 1, playerIds: a.playerIds }))
-	];
+	const assignments: CourtAssignment[] = [];
+	let courtNumber = 1;
+
+	if (W > 0) {
+		for (const a of snakeDistribute(winnerPlayers, winnerSizes)) {
+			assignments.push({ courtNumber: courtNumber++, playerIds: a.playerIds });
+		}
+	}
+
+	if (loserSizes.length > 0) {
+		for (const a of snakeDistribute(loserPlayers, loserSizes)) {
+			assignments.push({ courtNumber: courtNumber++, playerIds: a.playerIds });
+		}
+	}
+
+	return assignments;
 }
 
 // ============================================================================
