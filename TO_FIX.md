@@ -2,14 +2,12 @@
 
 ## ToDo
 
-- [ ] Solo play (Option C from `670_player-retirement.md`): Allow a 2v1 format when a player is injured mid-round and no substitute is available. Needs server-side validation schema update, UI radio option, and scoring logic.
-
 ## Known Issues
-
-- [ ] **E2E tests fail due to live query polling delay** — Tests wait for "Finalize Tournament" or "Close Round & Advance" button but it's not in the DOM until the 3-second live query poll refreshes `canCloseRound`. The disabled state renders as a completely different button ("⏳ Waiting for all scores..."). See `specs/860_e2e-live-query-timing.md`. (Previously two tests affected; now rare after save-wait fixes — tests that wait for `saved-` indicators complete saves before navigating, so `canCloseRound` is usually true on first live query yield.)
 
 ## Done
 
+- [x] Solo play (Option C from `670_player-retirement.md`): Allow a 2v1 format when a player is injured mid-round and no substitute is available. Needs server-side validation schema update, UI radio option, and scoring logic.
+- [x] **E2E tests fail due to live query polling delay** — Tests wait for "Finalize Tournament" or "Close Round & Advance" button but it's not in the DOM until the 3-second live query poll refreshes `canCloseRound`. The disabled state renders as a completely different button ("⏳ Waiting for all scores..."). See `specs/860_e2e-live-query-timing.md`. (Previously two tests affected; now rare after save-wait fixes — tests that wait for `saved-` indicators complete saves before navigating, so `canCloseRound` is usually true on first live query yield.)
 - [x] **Retire/Report Injury conditional visibility** — "Retire a Player" only visible when no scores entered yet (pre-round); "Report Injury" only visible when scores exist (mid-round). Added `hasScores` to live query data. Added descriptive notes to each section.
 - [x] **Substitute indicator on court page** — When `injuredPlayerIds` is set on matches, the court page shows an injury banner, marks the injured player card with a warning border and "Injured" tag.
 - [x] **E2E tests for 5p/6p court redistribution** — Added `5p court redistributes correctly after round` (21 players) and `6p court redistributes correctly after round` (22 players) tests in `promotion.spec.ts`.
