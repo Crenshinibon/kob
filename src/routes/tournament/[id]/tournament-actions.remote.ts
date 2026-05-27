@@ -12,7 +12,7 @@ import {
 	calculateCourtSizes,
 	calculateCourtStandings,
 	recalculateCourtConfigAfterRetirement,
-	redistributePreseedRecursive,
+	processPreseedTransition,
 	verticalSeeding,
 	ladderRedistribute,
 	generateAllMatchesForAssignment,
@@ -595,7 +595,7 @@ export const retirePlayer = command(
 
 			const formatType = tourney.formatType as FormatType;
 			if (formatType === 'preseed') {
-				nextAssignments = redistributePreseedRecursive(results);
+				nextAssignments = processPreseedTransition(results, newCourtSizes, prevRound === 1);
 			} else if (prevRound === 1) {
 				nextAssignments = verticalSeeding(results, newCourtSizes.length, newCourtSizes);
 			} else {
