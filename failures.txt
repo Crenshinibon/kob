@@ -28,3 +28,4 @@ Running 63 tests using 1 worker
   ✓  20 e2e/format.spec.ts:440:3 › Tournament Format Selection › Player Count Range (8-64) › below 8 players shows minimum warning and button is disabled (666ms)
   ✓  21 e2e/format.spec.ts:451:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (6.3s)
   ✓  22 e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning and button is disabled (560ms)
+  ✓  23 e2e/preseed.spec.ts:142:2 › Preseed Tournament › 16-player preseed: verify snake seeding, origin mixing, and standings (50.9s)
