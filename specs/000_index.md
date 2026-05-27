@@ -41,14 +41,14 @@
   - **[730_i18n-implementation.md](./730_i18n-implementation.md)**: 7 implementation phases, file changes, testing strategy.
 
 - **[800_bug-fixes-index.md](./800_bug-fixes-index.md)**: Bug fixes from user testing and code review.
-  - **[840_critical-bugs.md](./840_critical-bugs.md)**: Critical bugs: all fixed (radio buttons, org override, delete, best-of-3, score validation, UI glitch, reactivity, E2E config, auto-cleanup). Remaining: player removal mid-round, winBy hardcoding.
+  - **[840_critical-bugs.md](./840_critical-bugs.md)**: Critical bugs: all fixed (radio buttons, org override, delete, best-of-3, score validation, UI glitch, reactivity, E2E config, auto-cleanup, winBy, dead tables, draft status, broken link, courtSize mismatch, $derived.by). Remaining: live query polling delay (rare).
   - **[850_bun-migration.md](./850_bun-migration.md)**: Migrate package.json scripts from npx/tsx/npm to Bun-native tooling [COMPLETE]
   - **[860_e2n-live-query-timing.md](./860_e2e-live-query-timing.md)**: E2E tests fail due to live query polling delay (3s). Two tests affected. Fix: increase timeout or reduce polling interval.
 - **Archived**: [810](./archive/810_match-display-bugs.md), [811](./archive/811-closeRound-requested-error.md), [812](./archive/812-standings-ranking-bug.md), [813](./archive/813-qr-live-query-bugs.md), [814](./archive/814-fetch-errors.md)
 
-- **[820_ux-improvements.md](./820_ux-improvements.md)**: UX improvements: [ALL FIXED except v1 banner] radio buttons, player count validation, format explanations, org override, cleanup scripts, UI glitch
+- **[820_ux-improvements.md](./820_ux-improvements.md)**: UX improvements: [ALL FIXED] radio buttons, player count validation, format explanations, org override, cleanup scripts, UI glitch, v1 banner
 
-- **[830_test-improvements.md](./830_test-improvements.md)**: Test improvements: [MOSTLY FIXED] auto cleanup, E2E config, scoring mode tests, non-standard standings tests. Remaining: 5p/6p redistribution E2E tests
+- **[830_test-improvements.md](./830_test-improvements.md)**: Test improvements: [ALL FIXED] auto cleanup, E2E config, scoring mode tests, non-standard standings tests, 5p/6p redistribution E2E tests
 
 - **Archived specs** (completed, no longer active references):
   - **[110_score-saving-ux.md](./archive/110_score-saving-ux.md)**: Score saving UX fixes

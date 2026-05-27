@@ -64,6 +64,13 @@
       "when": 1779393078561,
       "tag": "0008_magical_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779500000000,
+      "tag": "0010_drop_dead_match_tables",
+      "breakpoints": true
     }
   ]
 }

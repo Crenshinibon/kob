@@ -18,6 +18,12 @@
 
 <div class="app-container">
 	{#if data?.user}
+		<div class="v1-banner">
+			Beta: Tournament data may be wiped. Closed tournaments are auto-deleted after 14 days.
+		</div>
+	{/if}
+
+	{#if data?.user}
 		<nav class="top-nav">
 			<span class="user-email">{data.user.email}</span>
 			<button onclick={handleSignOut} class="btn-signout">Sign Out</button>
@@ -65,6 +71,15 @@
 		min-height: 100vh;
 		background-color: var(--bg-primary);
 		color: var(--text-primary);
+	}
+
+	.v1-banner {
+		text-align: center;
+		padding: var(--spacing-xs) var(--spacing-md);
+		background-color: var(--accent-warning);
+		color: var(--bg-primary);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
 	}
 
 	.top-nav {

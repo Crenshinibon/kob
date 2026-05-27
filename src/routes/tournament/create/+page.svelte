@@ -86,7 +86,7 @@
 					: ''
 	);
 
-	const leftoverDescription = $derived(() => {
+	const leftoverDescription = $derived.by(() => {
 		if (leftoverCount === 0) return null;
 		if (leftoverCount === 1) {
 			return {
@@ -151,7 +151,7 @@
 		computedPlayerCount >= minPlayers ? calculateCourtSizes(computedPlayerCount) : []
 	);
 
-	const durationEstimate = $derived(() => {
+	const durationEstimate = $derived.by(() => {
 		if (computedPlayerCount < minPlayers) return null;
 
 		const dur = estimateTournamentDuration(
@@ -353,12 +353,12 @@
 				{#if leftoverCount > 0}
 					<div class="leftover-info">
 						<p class="leftover-label">{leftoverLabel}</p>
-						{#if leftoverDescription()}
+						{#if leftoverDescription}
 							<div class="leftover-description">
-								<p class="leftover-format">{leftoverDescription()!.format}</p>
-								<p class="leftover-scoring">{leftoverDescription()!.scoring}</p>
-								<p class="leftover-ranking">Ranking: {leftoverDescription()!.ranking}</p>
-								<p class="leftover-rules">{leftoverDescription()!.rules}</p>
+								<p class="leftover-format">{leftoverDescription!.format}</p>
+								<p class="leftover-scoring">{leftoverDescription!.scoring}</p>
+								<p class="leftover-ranking">Ranking: {leftoverDescription!.ranking}</p>
+								<p class="leftover-rules">{leftoverDescription!.rules}</p>
 							</div>
 							<div class="leftover-actions">
 								<button type="button" class="btn-small" onclick={removeLastPlayers}>
@@ -423,20 +423,20 @@
 			{/if}
 		</div>
 
-		{#if durationEstimate() && computedPlayerCount >= minPlayers}
+		{#if durationEstimate && computedPlayerCount >= minPlayers}
 			<div class="field duration-estimate">
 				<span class="label">Estimated Duration</span>
 				<div class="duration-box">
 					<p class="duration-total">
-						~{Math.floor(durationEstimate()!.total / 60)}h {durationEstimate()!.total % 60}min
+						~{Math.floor(durationEstimate!.total / 60)}h {durationEstimate!.total % 60}min
 					</p>
 					<div class="duration-breakdown">
 						<span>Setup: 15 min</span>
 						{#each Array(effectiveRounds) as _, r}
-							<span>Round {r + 1}: {durationEstimate()!.roundDur} min</span>
+							<span>Round {r + 1}: {durationEstimate!.roundDur} min</span>
 						{/each}
 						<span
-							>Based on: {durationEstimate()!.courts} courts, {computedPlayerCount} players, {scoringMode ===
+							>Based on: {durationEstimate!.courts} courts, {computedPlayerCount} players, {scoringMode ===
 							'single-21'
 								? 'one set to 21'
 								: scoringMode === 'best-of-3'

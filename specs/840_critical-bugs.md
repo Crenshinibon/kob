@@ -296,7 +296,17 @@ See `670_player-retirement.md` for full retirement/injury spec.
 ## Known Issues (Not Yet Fixed)
 
 1. **E2E tests fail due to live query polling delay** (rare): Tests wait for "Finalize Tournament" / "Close Round & Advance" button but it's not rendered until the 3-second live query poll refreshes `canCloseRound`. Largely mitigated by waiting for `saved-` indicators after score saves — saves complete before navigating, so `canCloseRound` is usually true on first live query yield. See `specs/860_e2e-live-query-timing.md`.
-2. **winBy hardcoding**: Score validation always requires win-by-2 regardless of tournament's `winBy` config
-3. **Dead schema tables**: `match_3_player`, `match_5_player`, `match_6_player` exist but are never used
-4. **Draft status unused**: Tournaments created as active, never use draft status
-5. **Broken `/tournament/[id]/players` link**: Dashboard links to this route but it doesn't exist
+
+## ~~Previously Known Issues~~ [FIXED]
+
+~~2. **winBy hardcoding**: Score validation always requires win-by-2 regardless of tournament's `winBy` config~~ — FIXED: All paths use `getEffectiveScoring()` from tournament config.
+
+~~3. **Dead schema tables**: `match_3_player`, `match_5_player`, `match_6_player` exist but are never used~~ — FIXED: Removed from Drizzle schema; migration `0010_drop_dead_match_tables.sql` drops them from DB.
+
+~~4. **Draft status unused**: Tournaments created as active, never use draft status~~ — FIXED: Removed draft section from dashboard, schema default changed to `'active'`.
+
+~~5. **Broken `/tournament/[id]/players` link**: Dashboard links to this route but it doesn't exist~~ — FIXED: Dashboard now links to `/tournament/{id}`.
+
+~~6. **4p court advertised as 6p court**: `courtSize` mismatch between rotation data and tournament-level array~~ — FIXED: `closeRoundForm` uses `finalConfig.courtSizes`; court page prefers `rotation.courtSize`; `generateAllMatchesForAssignment` uses `playerIds.length` as fallback.
+
+~~7. **`matchGroups()` returns functions**: `$derived(() => ...)` instead of `$derived.by(() => ...)`~~ — FIXED: All 5 instances converted to `$derived.by()` with `()` removed from usage sites.

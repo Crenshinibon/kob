@@ -4,7 +4,7 @@ export const tournament = pgTable('tournament', {
 	id: serial('id').primaryKey(),
 	orgId: text('org_id').notNull(),
 	name: text('name').notNull(),
-	status: text('status').notNull().default('draft'),
+	status: text('status').notNull().default('active'),
 	currentRound: integer('current_round').default(0),
 	numRounds: integer('num_rounds').notNull().default(3),
 	formatType: text('format_type').notNull().default('random-seed'),

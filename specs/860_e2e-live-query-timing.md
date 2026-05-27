@@ -32,7 +32,7 @@ For cases where the live query still needs a poll cycle, tests use `waitForSelec
 
 ```typescript
 await page.waitForSelector('button:has-text("Close Round & Advance")', {
-    timeout: 20000
+	timeout: 20000
 });
 ```
 
@@ -44,6 +44,7 @@ await page.waitForSelector('button:has-text("Close Round & Advance")', {
 ## Remaining Risk
 
 Rare timing issues can still occur if:
+
 - A score save completes on the server but the live query hasn't polled yet when the test navigates to the tournament page
 - Network latency causes the first live query yield to return stale data
 

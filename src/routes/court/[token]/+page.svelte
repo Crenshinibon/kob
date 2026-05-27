@@ -99,7 +99,7 @@
 		new Set(data.matches.filter((m: MatchRow) => m.teamAScore !== null).map((m: MatchRow) => m.id))
 	);
 	// Group matches by matchNumber for best-of-3 support
-	const matchGroups = $derived(() => {
+	const matchGroups = $derived.by(() => {
 		const courtSize = data.court.courtSize;
 		const setsToWin = effectiveScoring.setsToWin;
 
@@ -137,7 +137,7 @@
 	});
 
 	// Format explanation for non-standard courts
-	const formatExplanation = $derived(() => {
+	const formatExplanation = $derived.by(() => {
 		const courtSize = data.court.courtSize;
 		if (courtSize === 3) {
 			return {
@@ -190,7 +190,7 @@
 	// 3p: A vs B, A vs B, B vs A (solo rotation)
 	// 4p: AB vs CD, AC vs BD, AD vs BC
 	// 5p/6p: parallel style
-	const teamLabels = $derived(() => {
+	const teamLabels = $derived.by(() => {
 		const byMatchNumber = new Map<number, { teamA: string; teamB: string }>();
 		for (const m of data.matches) {
 			if (byMatchNumber.has(m.matchNumber)) continue;
@@ -203,6 +203,16 @@
 			byMatchNumber.set(m.matchNumber, { teamA, teamB });
 		}
 		return byMatchNumber;
+	});
+
+	const injuredPlayerIds = $derived.by(() => {
+		const ids = new Set<number>();
+		for (const m of data.matches) {
+			if (m.injuredPlayerIds) {
+				for (const id of m.injuredPlayerIds) ids.add(id);
+			}
+		}
+		return ids;
 	});
 
 	function getPlayerName(match: MatchRow, position: string) {
@@ -436,17 +446,17 @@
 	{:else}
 		<section class="players-section">
 			<h3>Players on This Court ({data.court.courtSize}p)</h3>
-			{#if formatExplanation()}
+			{#if formatExplanation}
 				<div class="format-explanation">
-					<h4>{formatExplanation()!.title}</h4>
-					<p>{formatExplanation()!.description}</p>
-					<p class="format-detail">Scoring: {formatExplanation()!.scoring}</p>
-					{#if formatExplanation()!.ranking}
-						<p class="format-detail">Ranking: {formatExplanation()!.ranking}</p>
+					<h4>{formatExplanation!.title}</h4>
+					<p>{formatExplanation!.description}</p>
+					<p class="format-detail">Scoring: {formatExplanation!.scoring}</p>
+					{#if formatExplanation!.ranking}
+						<p class="format-detail">Ranking: {formatExplanation!.ranking}</p>
 					{/if}
-					{#if formatExplanation()!.runDetails}
+					{#if formatExplanation!.runDetails}
 						<div class="run-details">
-							{#each formatExplanation()!.runDetails as run}
+							{#each formatExplanation!.runDetails as run}
 								<p class="run-detail">
 									<strong>{run.label}:</strong>
 									{run.description}
@@ -456,6 +466,12 @@
 					{/if}
 				</div>
 			{/if}
+			{#if injuredPlayerIds.size > 0}
+				<div class="injury-notice">
+					<span class="injury-badge">🤕 Injury</span>
+					A substitute is playing for the injured player. Scores are entered normally.
+				</div>
+			{/if}
 			<div
 				class="player-cards"
 				class:three-player={data.court.courtSize === 3}
@@ -463,26 +479,29 @@
 				class:six-player={data.court.courtSize === 6}
 			>
 				{#each Object.entries(data.court.playerNames) as [id, name], i}
-					<div class="player-card">
+					<div class="player-card" class:injured={injuredPlayerIds.has(Number(id))}>
 						<span class="player-letter">{String.fromCharCode(65 + i)}</span>
 						<span class="player-name">{name}</span>
+						{#if injuredPlayerIds.has(Number(id))}
+							<span class="injured-tag">Injured</span>
+						{/if}
 					</div>
 				{/each}
 			</div>
 		</section>
 
 		<section class="matches">
-			{#if matchGroups()}
-				{#each matchGroups() as group (group.type === 'sets' ? `sets-${group.matchNumber}` : group.label)}
+			{#if matchGroups}
+				{#each matchGroups as group (group.type === 'sets' ? `sets-${group.matchNumber}` : group.label)}
 					<div class="match-run">
 						{#if group.type === 'sets'}
 							<!-- Best-of-3: group by match number -->
 							<h3 class="run-label">
 								Match {group.matchNumber}
-								{#if teamLabels().get(group.matchNumber)}
+								{#if teamLabels.get(group.matchNumber)}
 									<span class="team-label">
-										{@html `${teamLabels().get(group.matchNumber)!.teamA}`} vs
-										{@html `${teamLabels().get(group.matchNumber)!.teamB}`}
+										{@html `${teamLabels.get(group.matchNumber)!.teamA}`} vs
+										{@html `${teamLabels.get(group.matchNumber)!.teamB}`}
 									</span>
 								{/if}
 							</h3>
@@ -568,10 +587,10 @@
 
 										<h3>
 											Match {render.index + 1}
-											{#if teamLabels().get(match.matchNumber)}
+											{#if teamLabels.get(match.matchNumber)}
 												<span class="team-label">
-													{@html `${teamLabels().get(match.matchNumber)!.teamA}`} vs
-													{@html `${teamLabels().get(match.matchNumber)!.teamB}`}
+													{@html `${teamLabels.get(match.matchNumber)!.teamA}`} vs
+													{@html `${teamLabels.get(match.matchNumber)!.teamB}`}
 												</span>
 											{/if}
 										</h3>
@@ -622,10 +641,10 @@
 					<div class="match" transition:slide>
 						<h3>
 							Match {render.index + 1}
-							{#if teamLabels().get(match.matchNumber)}
+							{#if teamLabels.get(match.matchNumber)}
 								<span class="team-label">
-									{@html `${teamLabels().get(match.matchNumber)!.teamA}`} vs
-									{@html `${teamLabels().get(match.matchNumber)!.teamB}`}
+									{@html `${teamLabels.get(match.matchNumber)!.teamA}`} vs
+									{@html `${teamLabels.get(match.matchNumber)!.teamB}`}
 								</span>
 							{/if}
 						</h3>
@@ -943,18 +962,41 @@
 		min-width: 60px;
 	}
 
-	.player-letter {
-		font-size: var(--font-size-xs);
-		font-weight: 700;
-		color: var(--text-muted);
-		margin-bottom: 2px;
+	.player-card.injured {
+		border-color: var(--accent-warning);
+		background-color: var(--bg-secondary);
+		opacity: 0.7;
 	}
 
-	.player-name {
+	.injured-tag {
+		font-size: var(--font-size-xs);
+		color: var(--accent-warning);
+		font-weight: 700;
+		text-transform: uppercase;
+		margin-top: 2px;
+	}
+
+	.injury-notice {
+		background-color: var(--bg-card);
+		border: 1px solid var(--accent-warning);
+		border-radius: var(--radius-sm);
+		padding: var(--spacing-sm) var(--spacing-md);
+		margin-bottom: var(--spacing-sm);
 		font-size: var(--font-size-sm);
-		font-weight: 600;
-		color: var(--text-primary);
-		text-align: center;
+		color: var(--text-secondary);
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+	}
+
+	.injury-badge {
+		background-color: var(--accent-warning);
+		color: var(--bg-primary);
+		padding: 2px var(--spacing-xs);
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		white-space: nowrap;
 	}
 
 	.standings-note {

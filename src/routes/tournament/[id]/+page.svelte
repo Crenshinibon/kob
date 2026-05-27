@@ -73,6 +73,7 @@
 	{@const currentRound = state?.currentRound ?? 0}
 	{@const canCloseRound = state?.canCloseRound ?? false}
 	{@const isFinalRound = state?.isFinalRound ?? false}
+	{@const hasScores = state?.hasScores ?? false}
 	{@const courtSizes = state?.courtSizes ?? []}
 	{@const physicalCourtCount = state?.physicalCourtCount ?? 4}
 	{@const shifts = state?.shifts ?? []}
@@ -390,11 +391,14 @@
 				</section>
 			{/if}
 
-			{#if isActive && currentRound > 0}
+			{#if isActive && currentRound > 0 && !hasScores}
 				<section class="retire-section">
 					<details>
 						<summary class="btn-retire-header">Retire a Player</summary>
 						<div class="retire-form">
+							<p class="retire-note">
+								Remove a player before any scores are entered. Courts will be redistributed.
+							</p>
 							<div class="field">
 								<label for="retirePlayerId">Select player to retire</label>
 								<select id="retirePlayerId" bind:value={retirePlayerId} required>
@@ -437,11 +441,16 @@
 						</div>
 					</details>
 				</section>
+			{/if}
 
+			{#if isActive && currentRound > 0 && hasScores}
 				<section class="injury-section">
 					<details>
 						<summary class="btn-injury-header">Report Injury</summary>
 						<div class="injury-form">
+							<p class="injury-note">
+								Handle a player injury mid-round. Choose how to handle remaining matches.
+							</p>
 							<div class="field">
 								<label for="injuryPlayerId">Select injured player</label>
 								<select id="injuryPlayerId" bind:value={injuryPlayerId} required>
@@ -945,6 +954,20 @@
 		color: var(--accent-error);
 		margin-left: 4px;
 		font-weight: 700;
+	}
+
+	.retire-note {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		margin: 0;
+		padding-bottom: var(--spacing-xs);
+	}
+
+	.injury-note {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		margin: 0;
+		padding-bottom: var(--spacing-xs);
 	}
 
 	.injury-section {

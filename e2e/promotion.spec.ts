@@ -259,12 +259,12 @@ test.describe('Promotion and Relegation', () => {
 			);
 			expect(courtMatchIds.length).toBe(3);
 
-		for (let i = 0; i < 3; i++) {
-			await page.fill(`[data-testid="team-a-score-${courtMatchIds[i]}"]`, '21');
-			await page.fill(`[data-testid="team-b-score-${courtMatchIds[i]}"]`, '19');
-			await page.click(`[data-testid="save-score-${courtMatchIds[i]}"]`);
-			await page.waitForSelector(`[data-testid="saved-${courtMatchIds[i]}"]`);
-		}
+			for (let i = 0; i < 3; i++) {
+				await page.fill(`[data-testid="team-a-score-${courtMatchIds[i]}"]`, '21');
+				await page.fill(`[data-testid="team-b-score-${courtMatchIds[i]}"]`, '19');
+				await page.click(`[data-testid="save-score-${courtMatchIds[i]}"]`);
+				await page.waitForSelector(`[data-testid="saved-${courtMatchIds[i]}"]`);
+			}
 		}
 
 		// Navigate to tournament page and close round button should be enabled
@@ -509,6 +509,152 @@ test.describe('Promotion and Relegation', () => {
 			await page.waitForSelector('.standings tbody tr');
 			const playerCount = await page.locator('.standings tbody tr').count();
 			expect(playerCount).toBe(3);
+		});
+
+		test('5p court redistributes correctly after round', async ({ page }) => {
+			test.setTimeout(90000);
+			const tournamentName = `5pRedist ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.waitForSelector('text=+ New Tournament');
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="n:numRounds"]', '2');
+
+			// 21 players = 5×4p + 1×5p (leftover = 1)
+			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+/);
+			const tournamentIdMatch = page.url().match(/\/tournament\/(\d+)/);
+			const tournamentId = tournamentIdMatch ? tournamentIdMatch[1] : null;
+
+			await page.waitForSelector('.qr-link a');
+
+			// Verify 5p court exists
+			const fivePBadge = page.locator('.court-size-badge:has-text("5p")');
+			await expect(fivePBadge).toBeVisible();
+
+			// Complete Round 1 on all courts
+			const courtLinksSel = await page.locator('.qr-link a').all();
+			const courtLinks: string[] = [];
+			for (const cl of courtLinksSel) {
+				const url = await cl.getAttribute('href');
+				if (url) courtLinks.push(url);
+			}
+
+			for (const courtUrl of courtLinks) {
+				await page.goto(courtUrl);
+				await page.waitForSelector('[data-testid^="match-form-"]');
+				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
+				const matchIds = await Promise.all(
+					matchForms.map(async (form) => {
+						const testId = await form.getAttribute('data-testid');
+						return testId?.replace('match-form-', '');
+					})
+				);
+
+				for (let i = 0; i < matchIds.length; i++) {
+					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '15');
+					await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '13');
+					await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
+					await page.waitForSelector(`[data-testid="saved-${matchIds[i]}"]`);
+				}
+			}
+
+			// Close Round 1
+			await page.goto(`/tournament/${tournamentId}`);
+			await page.waitForSelector('button:has-text("Close Round")', { timeout: 20000 });
+			await page.click('button:has-text("Close Round")');
+
+			await page.waitForSelector('text=Round 2 of 2');
+			await page.waitForSelector('.court-card');
+
+			// Verify 5p court still exists in Round 2 with 5 players
+			const fivePCourtCard = page
+				.locator('.court-card:has(.court-size-badge:has-text("5p"))')
+				.first();
+			const fivePCourtLink = fivePCourtCard.locator('.qr-link a').first();
+			const fivePCourtUrl = await fivePCourtLink.getAttribute('href');
+			await page.goto(fivePCourtUrl || '');
+			await page.waitForSelector('.standings tbody tr');
+			const playerCount = await page.locator('.standings tbody tr').count();
+			expect(playerCount).toBe(5);
+		});
+
+		test('6p court redistributes correctly after round', async ({ page }) => {
+			test.setTimeout(90000);
+			const tournamentName = `6pRedist ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.waitForSelector('text=+ New Tournament');
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="n:numRounds"]', '2');
+
+			// 22 players = 4×4p + 1×6p (leftover = 2)
+			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+
+			await page.click('button[type="submit"]');
+
+			await page.waitForURL(/\/tournament\/\d+/);
+			const tournamentIdMatch = page.url().match(/\/tournament\/(\d+)/);
+			const tournamentId = tournamentIdMatch ? tournamentIdMatch[1] : null;
+
+			await page.waitForSelector('.qr-link a');
+
+			// Verify 6p court exists
+			const sixPBadge = page.locator('.court-size-badge:has-text("6p")');
+			await expect(sixPBadge).toBeVisible();
+
+			// Complete Round 1 on all courts
+			const courtLinksSel = await page.locator('.qr-link a').all();
+			const courtLinks: string[] = [];
+			for (const cl of courtLinksSel) {
+				const url = await cl.getAttribute('href');
+				if (url) courtLinks.push(url);
+			}
+
+			for (const courtUrl of courtLinks) {
+				await page.goto(courtUrl);
+				await page.waitForSelector('[data-testid^="match-form-"]');
+				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
+				const matchIds = await Promise.all(
+					matchForms.map(async (form) => {
+						const testId = await form.getAttribute('data-testid');
+						return testId?.replace('match-form-', '');
+					})
+				);
+
+				for (let i = 0; i < matchIds.length; i++) {
+					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '15');
+					await page.fill(`[data-testid="team-b-score-${matchIds[i]}"]`, '13');
+					await page.click(`[data-testid="save-score-${matchIds[i]}"]`);
+					await page.waitForSelector(`[data-testid="saved-${matchIds[i]}"]`);
+				}
+			}
+
+			// Close Round 1
+			await page.goto(`/tournament/${tournamentId}`);
+			await page.waitForSelector('button:has-text("Close Round")', { timeout: 20000 });
+			await page.click('button:has-text("Close Round")');
+
+			await page.waitForSelector('text=Round 2 of 2');
+			await page.waitForSelector('.court-card');
+
+			// Verify 6p court still exists in Round 2 with 6 players
+			const sixPCourtCard = page
+				.locator('.court-card:has(.court-size-badge:has-text("6p"))')
+				.first();
+			const sixPCourtLink = sixPCourtCard.locator('.qr-link a').first();
+			const sixPCourtUrl = await sixPCourtLink.getAttribute('href');
+			await page.goto(sixPCourtUrl || '');
+			await page.waitForSelector('.standings tbody tr');
+			const playerCount = await page.locator('.standings tbody tr').count();
+			expect(playerCount).toBe(6);
 		});
 	});
 });

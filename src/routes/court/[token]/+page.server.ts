@@ -119,10 +119,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		).length
 	}));
 
-	const courtSize = (tourney as any).courtSizes
-		? ((JSON.parse((tourney as any).courtSizes) as number[])[rotation.courtNumber - 1] ??
-			playerIds.length)
-		: playerIds.length;
+	const courtSize = rotation.courtSize ?? playerIds.length;
 
 	const pointsToWin = tourney.pointsToWin ?? 21;
 	const winBy = tourney.winBy ?? 2;

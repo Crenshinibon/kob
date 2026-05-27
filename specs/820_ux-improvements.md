@@ -23,11 +23,12 @@
 - `getEffectiveScoring()` merges base config with overrides
 - All consumers use centralized scoring functions
 
-## V1 Data Wipe Banner
+## ~~V1 Data Wipe Banner~~ [FIXED]
 
-- Show banner indicating this is v1 and data will be wiped
+- Show banner indicating this is beta and data will be wiped
 - Manage user expectations about data persistence
 - Auto-cleanup jobs: delete closed tournaments older than 14 days, delete inactive tournaments older than 31 days
+- Banner added to layout for authenticated users
 
 ## ~~Tournament Cleanup Script~~ [FIXED]
 

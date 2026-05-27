@@ -2,7 +2,7 @@
 	let {
 		data
 	}: {
-		data: { user?: { id: string }; active: any[]; draft: any[]; finished: any[]; archived: any[] };
+		data: { user?: { id: string }; active: any[]; finished: any[]; archived: any[] };
 	} = $props();
 </script>
 
@@ -48,22 +48,6 @@
 			</section>
 		{/if}
 
-		<!-- Draft Tournaments -->
-		{#if data.draft.length > 0}
-			<section class="tournaments">
-				<h2>Draft Tournaments</h2>
-				<div class="tournament-list">
-					{#each data.draft as tournament (tournament.id)}
-						<a href="/tournament/{tournament.id}/players" class="tournament-card">
-							<h3>{tournament.name}</h3>
-							<span class="status draft">draft</span>
-							<p class="round">{tournament.numRounds} rounds planned</p>
-						</a>
-					{/each}
-				</div>
-			</section>
-		{/if}
-
 		<!-- Finished Tournaments -->
 		{#if data.finished.length > 0}
 			<section class="tournaments">
@@ -94,7 +78,7 @@
 			</section>
 		{/if}
 
-		{#if data.active.length === 0 && data.draft.length === 0 && data.finished.length === 0 && data.archived.length === 0}
+		{#if data.active.length === 0 && data.finished.length === 0 && data.archived.length === 0}
 			<section class="empty">
 				<p>No tournaments yet.</p>
 				<a href="/tournament/create" class="btn-primary">Create your first tournament</a>
@@ -258,11 +242,6 @@
 	.status.archived {
 		background-color: var(--status-archived-bg);
 		color: var(--status-archived-text);
-	}
-
-	.status.draft {
-		background-color: var(--status-draft-bg);
-		color: var(--status-draft-text);
 	}
 
 	.round {

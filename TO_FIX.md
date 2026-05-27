@@ -2,24 +2,25 @@
 
 ## ToDo
 
-- [ ] On the Tournament page, we have "Report Injury" and we have "Retire a Player". With the latter we can select "injury" as the reason. What are the differences here. Shouldn't retire/reportInjury basically be the same and do the same? At least at the tournament level? Maybe the retire button should only exist for rounds that haven't scores yet, so that redistribution of players is viable. And the "report Injury" button should only be visible on running rounds.
-- [ ] Mid-round player removal: There should be a way to remove a player during an active round and handle it gracefully. Adjusting the court format mid-round is not viable (already-played matches), so Options A (substitute) and C (solo play) from `670_player-retirement.md` need implementation. The cancel & average (Option B) is implemented in scoring logic but lacks UI.
-- [ ] Add E2E tests for 5p / 6p court redistribution
-- [ ] We need a banner (for v1) to show that the data will be wiped
+- [ ] Solo play (Option C from `670_player-retirement.md`): Allow a 2v1 format when a player is injured mid-round and no substitute is available. Needs server-side validation schema update, UI radio option, and scoring logic.
 
 ## Known Issues
 
-- [] Retiring a player, when the round is underway doesn't work, as it shouldn't work, but the retire player button should then be disabled or not visible at all ...
-- [] A 4p court is (sometimes) "advertised" as a 6p court. But there are only 4 players listed. Need to add tests for redistribution of players after retirement. Points entry on this 6p court is disabled!? 
 - [ ] **E2E tests fail due to live query polling delay** — Tests wait for "Finalize Tournament" or "Close Round & Advance" button but it's not in the DOM until the 3-second live query poll refreshes `canCloseRound`. The disabled state renders as a completely different button ("⏳ Waiting for all scores..."). See `specs/860_e2e-live-query-timing.md`. (Previously two tests affected; now rare after save-wait fixes — tests that wait for `saved-` indicators complete saves before navigating, so `canCloseRound` is usually true on first live query yield.)
-- [ ] `winBy` validation hardcoded to 2 — Score validation in `scoreSchema.ts` and `scores.remote.ts` always requires win-by-2, ignoring tournament's `winBy` config (e.g., `winBy: 1`)
-- [ ] Remove dead schema tables — `match_3_player`, `match_5_player`, `match_6_player` exist but are never used. All 3p/5p/6p matches go through the main `match` table with nullable player columns. Separate tables were the original plan for strong typing, but the current approach works and migrating would be high-risk for no user-visible benefit. Remove the dead tables and their Drizzle definitions.
-- [ ] Draft status unused — Tournaments skip draft status and go straight to active on creation. The `status: 'draft'` default in schema is misleading.
-- [ ] Broken `/tournament/[id]/players` link — Dashboard links to this route but it doesn't exist. Player management is now on the creation form.
-- [ ] `matchGroups()` and other derived functions return functions instead of values (unusual Svelte 5 pattern)
 
 ## Done
 
+- [x] **Retire/Report Injury conditional visibility** — "Retire a Player" only visible when no scores entered yet (pre-round); "Report Injury" only visible when scores exist (mid-round). Added `hasScores` to live query data. Added descriptive notes to each section.
+- [x] **Substitute indicator on court page** — When `injuredPlayerIds` is set on matches, the court page shows an injury banner, marks the injured player card with a warning border and "Injured" tag.
+- [x] **E2E tests for 5p/6p court redistribution** — Added `5p court redistributes correctly after round` (21 players) and `6p court redistributes correctly after round` (22 players) tests in `promotion.spec.ts`.
+- [x] **v1 data wipe banner** — Added yellow banner in layout for authenticated users: "Beta: Tournament data may be wiped. Closed tournaments are auto-deleted after 14 days."
+- [x] **Retire player button hidden during active round** — Retire section now conditional on `!hasScores`; server already rejected mid-round retirement with 400 error.
+- [x] **4p court advertised as 6p court** — Fixed `closeRoundForm` to use `finalConfig.courtSizes` for final round elimination, updating tournament's `courtSizes` in DB. Fixed court page server to prefer `rotation.courtSize` over tournament-level array. Fixed `generateAllMatchesForAssignment` fallback to use `assignment.playerIds.length`.
+- [x] **`winBy` validation hardcoded to 2** — Was already fixed; all paths use `getEffectiveScoring()` from tournament config. Marked as resolved.
+- [x] **Dead schema tables** — `match_3_player`, `match_5_player`, `match_6_player` removed from Drizzle schema. Migration `0010_drop_dead_match_tables.sql` drops them from the database.
+- [x] **Draft status unused** — Removed draft section from dashboard UI and server. Schema default changed from `'draft'` to `'active'`. No code ever creates draft tournaments.
+- [x] **Broken `/tournament/[id]/players` link** — Fixed dashboard link to point to `/tournament/{id}` instead of the non-existent `/tournament/{id}/players` route.
+- [x] **`matchGroups()` returns functions** — Changed 5 instances of `$derived(() => ...)` to `$derived.by(() => ...)` in court page and create page. Removed all `()` call syntax from usage sites.
 - [x] Migrated `retirePlayer` and `reportInjury` to remote commands in `tournament-actions.remote.ts` with live query reconnect
 - [x] Migrated `create` tournament action to remote form in `create.remote.ts`
 - [x] Removed duplicate `saveScore` legacy server action from `court/[token]/+page.server.ts` (dead code — `scores.remote.ts` handles it)
