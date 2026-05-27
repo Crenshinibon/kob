@@ -43,7 +43,7 @@
 - Single-set min points validation tested
 - 5p min points validation tested
 
-## Tournament Deletion Tests
+## ~Tournament Deletion Tests~ FIXED
 
 - E2E test for deleting tournament from detail page
 - Test verifies both successful deletion and cancellation

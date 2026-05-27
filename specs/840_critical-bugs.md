@@ -1,4 +1,4 @@
-# 840 Critical Bugs from User Testing
+# 840 Critical Bugs from User Testing - DONE
 
 ## ~~Match Format & Win By Inputs Should Be Radio Buttons~~ [FIXED]
 
@@ -110,7 +110,7 @@ Three related issues with best-of-3 score entry:
 
 ---
 
-## Player Removal During Tournament
+## ~Player Removal During Tournament~ DONE
 
 ### Problem
 
