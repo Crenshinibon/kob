@@ -1,7 +1,3 @@
-Don't put so much emphasize on the the @specs/080_promotion-relegation.md the preseed description is broken there, as we have established earlier in this conversation. Also don't flatten all players into one list and take the top players this is also not correct.
-
-As discussed earlier in this conversation. Preseed should work as follows (I take the 12p case to make it obvious in the not so clean case)
-
 ## Initial first round, all winner bracket. Snake-Distribution by WVV score.
 
 Court 1:
