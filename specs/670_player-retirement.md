@@ -215,15 +215,27 @@ The current round is played with the restructured courts. When the round closes 
 3. Standard redistribution (ladder for random-seed, recursive split for preseed) assigns players to courts.
 4. Top courts are filled first. The bottom court gets whatever format the leftover players dictate.
 
-**Preseed special case — bracket promotion**: When a player retires from a winner-bracket court (top half), the winner bracket now has fewer players. The top player(s) from the loser bracket are **promoted** to the winner bracket to maintain 4-player courts at the top. This is the natural result of the recursive redistribution — it fills top courts first, pulling the best-available players up regardless of their previous bracket.
+**Preseed special case — bracket promotion**: Preseed uses recursive binary splitting. Each round, the winner bracket halves: all 16 players in round 1, top 8 in round 2, top 4 in round 3 (final). The loser bracket follows the same halving for the bottom half.
 
-**Example (preseed, 16 players)**:
+When retirements reduce the winner bracket below its expected player count, the top player(s) from the loser bracket are **promoted** to fill the gap. The promotion criteria is: **1st-place player from the highest court in the loser bracket** — the player closest to the winner/loser boundary, who would have been the first pick for promotion.
 
-- Round 2: Winner bracket has 8 players (C1, C2), Loser bracket has 8 players (C3, C4).
-- Player on C1 retires pre-scoring (Option C). C1 becomes a 3p court.
-- Round 2 plays with C1(3p), C2(4p), C3(4p), C4(4p).
-- Round 3: 15 active players. `calculateCourtSizes(15)` = 3×4p + 1×3p = 4 courts.
-- Redistribution: Top 12 players fill 3 courts of 4p. The 3rd-place player from the old C1 (3p court) may be relegated down, and a top player from the old loser bracket (C3/C4) is promoted up to fill the 4p courts. The bottom 3 players form a 3p court.
+**When is promotion needed?** Only when the winner bracket has fewer players than the expected count after binary split. If 1 player retires from a 4p winner-bracket court (3 remain), the bracket still has enough players for the next round's split (3 is still ≥ half of 4 = 2). The 3rd-place player on that court is relegated to the loser bracket next round as usual. No promotion needed.
+
+**Example where promotion IS needed (preseed, 16 players)**:
+- Round 2: Winner bracket C1 (4p), C2 (4p). Loser bracket C3 (4p), C4 (4p).
+- 3 players retire from C1, 1 from C2 (pre-scoring, Option C each time).
+- C1 has 1 player left (does not play). C2 has 3 players (plays 3p).
+- Round 2 plays: C1 inactive, C2(3p), C3(4p), C4(4p).
+- Round 3: 12 active players. Expected: winner bracket needs 4 players, loser bracket needs 8.
+- Winner bracket has 1 (from C1) + 3 (from C2) = 4 players. Just enough — no promotion needed.
+- But if 4+ players had retired from the winner bracket (leaving <4), the top player(s) from C3 would be promoted to fill the winner bracket for round 3.
+
+**Example where promotion IS needed (extreme case)**:
+- Round 2: C1 (4p), C2 (4p), C3 (4p), C4 (4p).
+- All 4 players on C1 retire. C2 has 3 players left.
+- Winner bracket has 0 + 3 = 3 players. Need 4 for round 3's winner bracket.
+- 1st-place player from C3 (highest loser-bracket court) is promoted to the winner bracket.
+- Round 3: Winner bracket = 3 from C2 + 1 promoted from C3 = 4 players. Loser bracket = remaining 7 players → 1×4p + 1×3p.
 
 **Random-seed**: No bracket concept. Standard ladder redistribution (2 up, 2 down) handles it naturally. The restructured court's players are ranked by their court position and redistributed normally.
 
