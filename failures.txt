@@ -1,1 +1,17 @@
 $ playwright test --last-failed "--workers=1" "--reporter=list"
+🧹 Cleaning up old test tournaments...
+🗑️ Found 39 tournaments older than 1 hour
+✅ Cleaned up 39 old tournaments
+
+Running 63 tests using 1 worker
+
+  ✓   1 e2e/demo.test.ts:3:1 › home page has expected h1 (206ms)
+[2m[WebServer] [22m[2m2026-05-27T15:50:12.640Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
+  ✓   2 e2e/format.spec.ts:52:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) (858ms)
+  ✓   3 e2e/format.spec.ts:66:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range (515ms)
+  ✓   4 e2e/format.spec.ts:75:3 › Tournament Format Selection › Random Format › rounds input is editable (531ms)
+  ✓   5 e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (3.8s)
+  ✓   6 e2e/format.spec.ts:109:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (3.3s)
+  ✓   7 e2e/format.spec.ts:133:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (4.5s)
+  ✓   8 e2e/format.spec.ts:156:3 › Tournament Format Selection › Pre-Seed Format › switching player count updates fixed rounds (559ms)
+  ✓   9 e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again (609ms)
