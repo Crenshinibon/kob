@@ -110,36 +110,35 @@ Three related issues with best-of-3 score entry:
 
 ---
 
-## Player Removal During Tournament (Partially Implemented)
+## Player Removal During Tournament
 
 ### Problem
 
-- No way to remove a player from tournament **during an active round**
-- Between rounds, the `retirePlayer` server action exists and works
-- Mid-round injury handling (`reportInjury` action) exists but needs more testing
-- Adjusting court format (e.g., 4p to 3p) mid-round is not viable due to already-played matches
+- No way to remove a player from tournament **during an active round** (mid-round court restructuring with scores already entered is not viable — we do not change court sizes mid-round)
+- Between rounds, the `retirePlayer` remote command works
+- Mid-round injury handling (`reportInjury` remote command) handles injuries mid-round with two options
 
 ### What's Implemented
 
-- `retirePlayer` command in `tournament-actions.remote.ts`: works between rounds, recalculates court config, redistributes, reconnects live query
-- `reportInjury` command in `tournament-actions.remote.ts`: marks match as canceled, injured player IDs tracked, reconnects live query
-- Retirement UI: collapsible form on tournament page, between rounds only
-- Injury reporting UI: collapsible form on tournament page, during active rounds
+- `retirePlayer` command: works between rounds, recalculates court config, redistributes, reconnects live query
+- `reportInjury` command with two options:
+  - **Cancel & Average**: Cancels remaining matches on injured player's court. Standings use average points.
+  - **Substitute**: Remaining matches are scored normally. Injured player's name displays as "SUBST" on the court page and gets 0 points for substituted matches.
+- UI: collapsible forms for retirement (between rounds) and injury reporting (mid-round), both on tournament page
 - `calculateRetiredStanding()`: computes final standing for retired players
-- `recalculateCourtConfigAfterRetirement()`: adjusts court sizes after removal
-- Standings handle canceled matches using average points per completed match
+- `recalculateCourtConfigAfterRetirement()`: adjusts court sizes after between-rounds retirement
+- Standings handle canceled matches and injured-substitute players correctly
 
-### What's Not Implemented
+### Not Applicable
 
-- Mid-round player removal (changing court size while matches are in progress)
-- Physical substitute flow for injured players (Option A from `670_player-retirement.md`)
-- Solo play option for injured players (Option C from `670_player-retirement.md`)
-- UI for selecting injury handling option (substitute vs cancel vs solo)
+- Mid-round player removal (changing court size mid-round) — out of scope
+- Solo play option — out of scope
 
 ### Location
 
 - Tournament view (`src/routes/tournament/[id]/+page.svelte`)
-- Server actions (`src/routes/tournament/[id]/tournament-actions.remote.ts`)
+- Court page (`src/routes/court/[token]/+page.svelte`) — "SUBST" display for substitute players
+- Remote functions (`src/routes/tournament/[id]/tournament-actions.remote.ts`)
 
 ### Spec Reference
 

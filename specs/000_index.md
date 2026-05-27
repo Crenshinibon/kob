@@ -15,6 +15,9 @@
 - **[070_scoring-and-standings.md](./070_scoring-and-standings.md)**: Points = your score each match. Tiebreakers: points → differential → playerId (deterministic). 5p/6p use average points per game. Canceled matches use averages. Scoring modes: single-21, best-of-3, custom. Per-court-type overrides.
 
 - **[080_promotion-relegation.md](./080_promotion-relegation.md)**: Random Seed: Round 1 redistributes by rank (vertical seeding), Round 2+ uses ladder system (2 up, 2 down). Preseed: recursive tiered redistribution. All work for 8-64 players (2-16 courts). Non-standard bottom court for leftovers.
+  - **[081_preseed-example-12p.md](./081_preseed-example-12p.md)**: 12 players (3 courts, 3 rounds) — bracket tree: 3→2W+1L→1F+1L(W)+1L. Shows origin mixing on first split, recursive halving on second.
+  - **[082_preseed-example-16p.md](./082_preseed-example-16p.md)**: 16 players (4 courts, 3 rounds) — balanced bracket tree: 4→2W+2L→1F+1L(W)+1TL+1BL. Canonical preseed example.
+  - **[083_preseed-example-20p.md](./083_preseed-example-20p.md)**: 20 players (5 courts, 4 rounds) — asymmetric bracket: 5→4W+1L→2WW+2LW+1L→1F+1L(WW)+1TL+1BL+1L. 3-level tree.
 
 - **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export]
 
@@ -43,14 +46,15 @@
 - **[800_bug-fixes-index.md](./800_bug-fixes-index.md)**: Bug fixes from user testing and code review.
   - **[840_critical-bugs.md](./840_critical-bugs.md)**: Critical bugs: all fixed (radio buttons, org override, delete, best-of-3, score validation, UI glitch, reactivity, E2E config, auto-cleanup, winBy, dead tables, draft status, broken link, courtSize mismatch, $derived.by). Remaining: live query polling delay (rare).
   - **[850_bun-migration.md](./850_bun-migration.md)**: Migrate package.json scripts from npx/tsx/npm to Bun-native tooling [COMPLETE]
-  - **[860_e2n-live-query-timing.md](./860_e2e-live-query-timing.md)**: E2E tests fail due to live query polling delay (3s). Two tests affected. Fix: increase timeout or reduce polling interval.
+  - **[860_e2e-live-query-timing.md](./860_e2e-live-query-timing.md)**: E2E tests fail due to live query polling delay (3s). Two tests affected. Fix: increase timeout or reduce polling interval.
 - **Archived**: [810](./archive/810_match-display-bugs.md), [811](./archive/811-closeRound-requested-error.md), [812](./archive/812-standings-ranking-bug.md), [813](./archive/813-qr-live-query-bugs.md), [814](./archive/814-fetch-errors.md)
 
 - **[820_ux-improvements.md](./820_ux-improvements.md)**: UX improvements: [ALL FIXED] radio buttons, player count validation, format explanations, org override, cleanup scripts, UI glitch, v1 banner
 
 - **[830_test-improvements.md](./830_test-improvements.md)**: Test improvements: [ALL FIXED] auto cleanup, E2E config, scoring mode tests, non-standard standings tests, 5p/6p redistribution E2E tests
 
-- **Archived specs** (completed, no longer active references):
+- **Archived specs** (completed or superseded, no longer active references):
+  - **[084_preseed-example-20p-injury-retirement.md](./archive/084_preseed-example-20p-injury-retirement.md)**: [SUPERSEDED by 083 + 670] Used old flat-redistribution algorithm. Retirement behavior documented in 670_player-retirement.md.
   - **[110_score-saving-ux.md](./archive/110_score-saving-ux.md)**: Score saving UX fixes
   - **[400_testing-gaps.md](./archive/400_testing-gaps.md)**: Testing gaps and pre-launch checklist
   - **[500_production-readiness-progress.md](./archive/500_production-readiness-progress.md)**: Production readiness progress log

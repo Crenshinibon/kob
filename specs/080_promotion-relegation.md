@@ -93,17 +93,16 @@ After each round, players are grouped by finish position (1sts, then 2nds, then 
 
 ## Implementation
 
-```typescript
-function redistributePlayers(courtResults, courtSizes, isPreseed) {
-	if (isPreseed) {
-		return redistributePreseedRecursive(courtResults, courtSizes);
-	} else {
-		return redistributeLadder(courtResults, courtSizes);
-	}
-}
-```
+See `src/lib/server/tournament-logic.ts`:
 
-Pure functions extracted to `src/lib/server/tournament-logic.ts` with comprehensive unit tests.
+- **`closeRound(results, sizes, format)`** — entry point for Round 1 transitions (calls `redistributeLadder` or `processPreseedTransition`)
+- **`redistributeLadder(results, sizes)`** — Random Seed ladder redistribution (2 up, 2 down)
+- **`processPreseedTransition(results, sizes, isFirstSplit)`** — recursive bracket splitting for Preseed
+  - R1→R2 uses `isFirstSplit=true` (flat tiers + origin mixing via `distributeGroup`)
+  - Subsequent rounds: splits results by `splitSize(N)` into winners/losers, recurses into each bracket, falls through to `redistributePreseedRecursive` when `splitSize(N) <= 1`
+- **`redistributePreseedRecursive(results, sizes)`** — flat tier-based redistribution within a single bracket
+- **`distributeGroup(players, courtCount)`** — origin-mixing distribution (1st+2nd from same origin never on same new court)
+- **`splitSize(N)`** — largest power of 2 ≤ N
 
 **Extended support**: All redistribution algorithms work for 8-64 players (2-16 courts). Vertical seeding uses a cascade pattern that works for any court count. Ladder (2-up/2-down) works for any court count >= 2. Preseed supports any court count through bracket splitting — players grouped by finish tier, sorted by performance, then distributed within winner/loser brackets with origin mixing (avoiding 1st+2nd from the same original court on the same new court).
 

@@ -213,17 +213,23 @@
 		return ids;
 	});
 
-	function getPlayerName(match: MatchRow, position: string) {
-		const names = data.court.playerNames;
+	function getPlayerDisplayName(playerId: number): string {
+		if (injuredPlayerIds.has(playerId)) return 'SUBST';
+		return data.court.playerNames[playerId] || '—';
+	}
+
+	function getPlayerName(match: MatchRow, position: string): string {
 		switch (position) {
 			case 'a1':
-				return names[match.teamAPlayer1Id] || '—';
+				return getPlayerDisplayName(match.teamAPlayer1Id);
 			case 'a2':
-				return names[match.teamAPlayer2Id] || '—';
+				return getPlayerDisplayName(match.teamAPlayer2Id);
 			case 'b1':
-				return names[match.teamBPlayer1Id] || '—';
+				return getPlayerDisplayName(match.teamBPlayer1Id);
 			case 'b2':
-				return names[match.teamBPlayer2Id] || '—';
+				return getPlayerDisplayName(match.teamBPlayer2Id);
+			default:
+				return '—';
 		}
 	}
 
@@ -477,11 +483,12 @@
 				class:six-player={data.court.courtSize === 6}
 			>
 				{#each Object.entries(data.court.playerNames) as [id, name], i (id)}
-					<div class="player-card" class:injured={injuredPlayerIds.has(Number(id))}>
+					{@const pid = Number(id)}
+					<div class="player-card" class:injured={injuredPlayerIds.has(pid)}>
 						<span class="player-letter">{String.fromCharCode(65 + i)}</span>
-						<span class="player-name">{name}</span>
-						{#if injuredPlayerIds.has(Number(id))}
-							<span class="injured-tag">Injured</span>
+						<span class="player-name">{injuredPlayerIds.has(pid) ? 'SUBST' : name}</span>
+						{#if injuredPlayerIds.has(pid)}
+							<span class="injured-tag">Sub</span>
 						{/if}
 					</div>
 				{/each}
