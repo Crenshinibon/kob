@@ -1120,4 +1120,115 @@ test.describe('Tournament Integration Tests', () => {
 			await expect(statusBadge).toBeVisible();
 		});
 	});
+
+	test.describe('Scoring Overrides', () => {
+		test('override 5p court points-to-win and verify score entry', async ({ page }) => {
+			test.setTimeout(90000);
+			const tournamentName = `ScoreOvrd5p ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			// Create 21-player tournament (5×4p + 1×5p)
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="n:numRounds"]', '2');
+			const players = Array.from({ length: 21 }, (_, i) => `P${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button[type="submit"]');
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('text=Round 1 of 2');
+
+			// Override 5p court scoring: change pointsToWin from 15 to 10
+			await page.click('summary:has-text("Court Scoring Configuration")');
+			await page.waitForSelector('.scoring-summary');
+			await page.click('.btn-edit');
+			await page.waitForSelector('.scoring-grid');
+
+			// Find the 5p fieldset and change points to win to 10
+			const fieldset = page.locator('fieldset.scoring-fieldset:has(legend:text("5p"))');
+			await expect(fieldset).toBeVisible();
+			const pointsInput = fieldset.locator('label:has-text("Points to win") input');
+			await pointsInput.fill('10');
+			await page.click('button:has-text("Save Scoring")');
+			await page.waitForTimeout(1500);
+
+			// Verify the summary badge shows the new scoring
+			const badge5p = page.locator('.scoring-badge:has-text("5p")');
+			await expect(badge5p).toContainText('1 set to 10');
+
+			// Navigate to the 5p court (the 5th court link)
+			const allLinks = await page.locator('.qr-link a').all();
+			expect(allLinks.length).toBe(5);
+			const link5 = await allLinks[4].getAttribute('href');
+			await page.goto(link5 || '');
+			await page.waitForSelector('[data-testid^="match-form-"]');
+
+			// Verify label shows the overridden scoring
+			const formatInfo = page.locator('.scoring-label');
+			await expect(formatInfo).toContainText('to 10');
+
+			// Enter a score of 10-8 (would fail with default 15-point min but valid with override)
+			const forms = await page.locator('[data-testid^="match-form-"]').all();
+			expect(forms.length).toBe(4);
+			const firstTestId = await forms[0].getAttribute('data-testid');
+			const firstMatchId = firstTestId?.replace('match-form-', '');
+			await page.fill(`[data-testid="team-a-score-${firstMatchId}"]`, '10');
+			await page.fill(`[data-testid="team-b-score-${firstMatchId}"]`, '8');
+			await page.click(`[data-testid="save-score-${firstMatchId}"]`);
+			await page.waitForSelector(`[data-testid="saved-${firstMatchId}"]`);
+		});
+
+		test('override 3p court to best-of-3 and verify set entry', async ({ page }) => {
+			test.setTimeout(90000);
+			const tournamentName = `ScoreOvrd3p ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			// Create 11-player tournament (2×4p + 1×3p)
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="n:numRounds"]', '2');
+			const players = Array.from({ length: 11 }, (_, i) => `Q${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button[type="submit"]');
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('text=Round 1 of 2');
+
+			// Override 3p to best-of-3
+			await page.click('summary:has-text("Court Scoring Configuration")');
+			await page.waitForSelector('.scoring-summary');
+			await page.click('.btn-edit');
+			await page.waitForSelector('.scoring-grid');
+
+			const fieldset = page.locator('fieldset.scoring-fieldset:has(legend:text("3p"))');
+			await expect(fieldset).toBeVisible();
+			const setsInput = fieldset.locator('label:has-text("Sets to win") input');
+			await setsInput.fill('2');
+			await page.click('button:has-text("Save Scoring")');
+			await page.waitForTimeout(1500);
+
+			// Verify badge shows best-of-3
+			const badge3p = page.locator('.scoring-badge:has-text("3p")');
+			await expect(badge3p).toContainText('Best of 2');
+
+			// Navigate to the 3p court (3rd court link)
+			const allLinks = await page.locator('.qr-link a').all();
+			expect(allLinks.length).toBe(3);
+			const link3 = await allLinks[2].getAttribute('href');
+			await page.goto(link3 || '');
+			await page.waitForSelector('[data-testid^="match-form-"]');
+
+			// Verify set 1, 2, 3 labels appear (best-of-3 shows all 3 sets)
+			await expect(page.locator('text=Set 1')).toBeVisible();
+			await expect(page.locator('text=Set 2')).toBeVisible();
+
+			// Enter score for set 1 of the first match
+			const forms = await page.locator('[data-testid^="match-form-"]').all();
+			expect(forms.length).toBe(3);
+			const firstTestId = await forms[0].getAttribute('data-testid');
+			const firstMatchId = firstTestId?.replace('match-form-', '');
+			await page.fill(`[data-testid="team-a-score-${firstMatchId}"]`, '21');
+			await page.fill(`[data-testid="team-b-score-${firstMatchId}"]`, '19');
+			await page.click(`[data-testid="save-score-${firstMatchId}"]`);
+			await page.waitForSelector(`[data-testid="saved-${firstMatchId}"]`);
+		});
+	});
 });

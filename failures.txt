@@ -1,32 +1,47 @@
 $ playwright test --last-failed "--workers=1" "--reporter=list"
 🧹 Cleaning up old test tournaments...
-🗑️ Found 84 tournaments older than 1 hour
-✅ Cleaned up 84 old tournaments
+✅ No old tournaments to clean up
 
-Running 1 test using 1 worker
+Running 16 tests using 1 worker
 
-[2m[WebServer] [22m[2m2026-05-28T20:26:11.287Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
-  ✘  1 e2e/tournament.spec.ts:1005:3 › Tournament Integration Tests › Player Retirement › retire a player causing non-standard bottom court and complete tournament (21.2s)
+[2m[WebServer] [22m[2m2026-05-28T20:35:27.293Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
+  ✓   1 e2e/format.spec.ts:343:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games (3.5s)
+  ✓   2 e2e/format.spec.ts:379:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games (3.3s)
+  ✓   3 e2e/promotion.spec.ts:440:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution (12.8s)
+  ✓   4 e2e/promotion.spec.ts:514:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court redistributes correctly after round (20.7s)
+  ✓   5 e2e/promotion.spec.ts:589:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court redistributes correctly after round (20.5s)
+  ✓   6 e2e/standings.spec.ts:257:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking (3.2s)
+  ✓   7 e2e/standings.spec.ts:288:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking (3.7s)
+  ✓   8 e2e/standings.spec.ts:319:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking (3.9s)
+  ✓   9 e2e/standings.spec.ts:350:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings rank correctly after score entry (5.6s)
+  ✓  10 e2e/standings.spec.ts:404:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings rank correctly after score entry (4.5s)
+  ✓  11 e2e/standings.spec.ts:533:3 › Standings Calculation › Non-Standard Court Score Validation › 5p court accepts 15-point scores (4.4s)
+  ✓  12 e2e/standings.spec.ts:569:3 › Standings Calculation › Non-Standard Court Score Validation › 3p court accepts 21-point scores (same as 4p) (4.1s)
+  ✓  13 e2e/tournament.spec.ts:697:3 › Tournament Integration Tests › Player Retirement › retire a player between rounds and continue tournament (34.9s)
+  ✓  14 e2e/tournament.spec.ts:815:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Cancel & Average option (17.0s)
+  ✘  15 e2e/tournament.spec.ts:907:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Substitute option (26.4s)
+  ✓  16 e2e/tournament.spec.ts:1005:3 › Tournament Integration Tests › Player Retirement › retire a player causing non-standard bottom court and complete tournament (34.0s)
 
 
-  1) e2e/tournament.spec.ts:1005:3 › Tournament Integration Tests › Player Retirement › retire a player causing non-standard bottom court and complete tournament 
+  1) e2e/tournament.spec.ts:907:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Substitute option 
 
-    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+    TimeoutError: page.waitForSelector: Timeout 20000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('button:has-text("Close Round & Advance")') to be visible[22m
 
-    Expected: [32m5[39m
-    Received: [31m4[39m
 
-      1074 | 			await page.waitForSelector('text=Round 2 of 2');
-      1075 | 			const courtCardsAfter = await page.locator('.court-card').count();
-    > 1076 | 			expect(courtCardsAfter).toBe(5);
-           | 			                        ^
-      1077 |
-      1078 | 			// Verify 3-player court exists
-      1079 | 			const courtSizes = await page.locator('.court-card .court-size-tag').allTextContents();
-        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:1076:28
+       996 | 			await page.click(`text=${tournamentName}`);
+       997 | 			await page.waitForURL(/\/tournament\/\d+/);
+    >  998 | 			await page.waitForSelector('button:has-text("Close Round & Advance")', {
+           | 			           ^
+       999 | 				timeout: 20000
+      1000 | 			});
+      1001 | 			await page.click('button:has-text("Close Round & Advance")');
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:998:15
 
-    Error Context: test-results/tournament-Tournament-Inte-971e0-urt-and-complete-tournament/error-context.md
+    Error Context: test-results/tournament-Tournament-Inte-f026c-jury-with-Substitute-option/error-context.md
 
   1 failed
-    e2e/tournament.spec.ts:1005:3 › Tournament Integration Tests › Player Retirement › retire a player causing non-standard bottom court and complete tournament 
+    e2e/tournament.spec.ts:907:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Substitute option 
+  15 passed (3.5m)
 error: script "playwright" exited with code 1

@@ -63,15 +63,7 @@ courtSize: integer('court_size').default(4); // 3, 4, 5, or 6
 isWaiting: boolean('is_waiting').default(false); // For virtual courts on break
 ```
 
-**New tables** (see Phase 4 for full schemas):
-
-- `match3Player` — for 3-player courts (2v1 format)
-- `match5Player` — for 5-player courts (parallel games)
-- `match6Player` — for 6-player courts (parallel games)
-
-Existing `match` table is unchanged (4-player courts only).
-
-**Migration**: Drizzle migration to add new columns and tables.
+**No separate match tables** — decided against special 3p/5p/6p tables. The single `match` table was extended with nullable `player5Id`/`player6Id` columns (for 5p/6p parallel games), `set_number` for best-of-3, and `injuredPlayerIds`/`isCanceled` for injury handling. A single query path serves all court sizes, keeping the standings page and score entry simple. See [`040_database-schema.md`](./040_database-schema.md) for the current schema.
 
 ### Phase 3: Player Input Updates
 
@@ -146,129 +138,40 @@ Game 4: C+D vs B+F (scored when B+F on court)
 
 Roles randomized each round. 4 players play 3 games, 2 players play 2 games (diff ≤ 1). **No partnership repeats across runs** — if two players were partners in Run 1, they are not partners in Run 2. Ranking by average points per round.
 
-**Schema**: Instead of reusing the existing `match` table (designed for 2v2), create separate tables per court type. This avoids if-cascades in all layers (DB queries, server logic, UI components).
-
-**Existing table** (updated with set_number for best-of-3 support):
+**Schema**: A single `match` table handles all court sizes. Key columns:
 
 ```typescript
-// match — for 4-player courts (2v2)
+// match — single table for all court types (3p, 4p, 5p, 6p)
 {
   id: serial('id').primaryKey(),
   courtRotationId: integer('court_rotation_id').notNull(),
   matchNumber: integer('match_number').notNull(),
-  setNumber: integer('set_number').notNull().default(1),  // NEW: for best-of-3
+  setNumber: integer('set_number').notNull().default(1),  // for best-of-3
   teamAPlayer1Id: integer('team_a_player_1_id').notNull(),
-  teamAPlayer2Id: integer('team_a_player_2_id').notNull(),
+  teamAPlayer2Id: integer('team_a_player_2_id'),
   teamBPlayer1Id: integer('team_b_player_1_id').notNull(),
-  teamBPlayer2Id: integer('team_b_player_2_id').notNull(),
+  teamBPlayer2Id: integer('team_b_player_2_id'),
   teamAScore: integer('team_a_score'),
-  teamBScore: integer('team_b_score')
+  teamBScore: integer('team_b_score'),
+  isCanceled: boolean('is_canceled').notNull().default(false),
+  injuredPlayerIds: jsonb('injured_player_ids').$type<number[]>()
 }
 ```
 
-**New table for 3-player courts** (updated with set_number):
+- `teamAPlayer2Id`/`teamBPlayer2Id` are nullable for 3p courts (solo player vs pair)
+- 5p/6p parallel games use the same columns — one team is fixed, the other rotates per game number
+- `setNumber` supports best-of-3 format (sets 1, 2, 3)
+- `injuredPlayerIds` tracks substitute-played matches for injury handling
 
-```typescript
-// match3Player — 2v1 format, 3 matches per round
-{
-  id: serial('id').primaryKey(),
-  courtRotationId: integer('court_rotation_id').notNull(),
-  matchNumber: integer('match_number').notNull(),  // 1, 2, 3
-  setNumber: integer('set_number').notNull().default(1),  // NEW: for best-of-3
-  teamOfTwoPlayer1Id: integer('team_of_two_player_1_id').notNull(),
-  teamOfTwoPlayer2Id: integer('team_of_two_player_2_id').notNull(),
-  soloPlayerId: integer('solo_player_id').notNull(),
-  teamOfTwoScore: integer('team_of_two_score'),
-  soloPlayerScore: integer('solo_player_score')
-}
-```
+**Benefits of single-table approach**:
 
-**New table for 5-player courts** (updated with set_number):
-
-```typescript
-// match5Player — parallel games, 4 games per round (2 runs × 2 games)
-{
-  id: serial('id').primaryKey(),
-  courtRotationId: integer('court_rotation_id').notNull(),
-  gameNumber: integer('game_number').notNull(),  // 1, 2, 3, 4
-  runNumber: integer('run_number').notNull(),    // 1 or 2
-  setNumber: integer('set_number').notNull().default(1),  // NEW: for best-of-3
-  sideXPlayer1Id: integer('side_x_player_1_id').notNull(),  // fixed team
-  sideXPlayer2Id: integer('side_x_player_2_id').notNull(),
-  sideYFixedPlayerId: integer('side_y_fixed_player_id').notNull(),
-  sideYRotatingPlayerId: integer('side_y_rotating_player_id').notNull(),
-  sideXScore: integer('side_x_score'),
-  sideYScore: integer('side_y_score')
-}
-```
-
-**New table for 6-player courts** (updated with set_number):
-
-```typescript
-// match6Player — parallel games, 4 games per round (2 runs × 2 games)
-{
-  id: serial('id').primaryKey(),
-  courtRotationId: integer('court_rotation_id').notNull(),
-  gameNumber: integer('game_number').notNull(),  // 1, 2, 3, 4
-  runNumber: integer('run_number').notNull(),    // 1 or 2
-  setNumber: integer('set_number').notNull().default(1),  // NEW: for best-of-3
-  fixedTeamPlayer1Id: integer('fixed_team_player_1_id').notNull(),
-  fixedTeamPlayer2Id: integer('fixed_team_player_2_id').notNull(),
-  rotatingTeamPlayer1Id: integer('rotating_team_player_1_id').notNull(),
-  rotatingTeamPlayer2Id: integer('rotating_team_player_2_id').notNull(),
-  fixedTeamScore: integer('fixed_team_score'),
-  rotatingTeamScore: integer('rotating_team_score')
-}
-```
-
-**Benefits**:
-
-- Each table has exactly the fields needed — no nullable columns
-- Each court type has its own UI component — no conditional rendering
-- Each court type has its own score validation logic
-- Each court type has its own standings calculation
-- Clean separation, easy to extend if new court types are needed
-
-**Trade-off**: More tables and more code, but each piece is simpler and self-contained.
-
-### Alternative Approach: Generic Match Table
-
-Instead of separate tables per court size, a single `match` table with a `court_size` discriminator column could be used:
-
-```typescript
-// Generic match table alternative
-{
-  id: serial('id').primaryKey(),
-  courtRotationId: integer('court_rotation_id').notNull(),
-  matchNumber: integer('match_number').notNull(),
-  courtSize: integer('court_size').notNull(),  // 3, 4, 5, or 6
-  // Generic player slots (not all used for every court size):
-  teamAPlayer1Id: integer('team_a_player_1_id').notNull(),
-  teamAPlayer2Id: integer('team_a_player_2_id'),  // nullable for 3p
-  teamBPlayer1Id: integer('team_b_player_1_id').notNull(),
-  teamBPlayer2Id: integer('team_b_player_2_id'),  // nullable for 3p
-  // Extra slots for 5p/6p (parallel games):
-  runNumber: integer('run_number'),  // 1 or 2, for 5p/6p courts
-  gameNumber: integer('game_number'),
-  teamAScore: integer('team_a_score'),
-  teamBScore: integer('team_b_score')
-}
-```
-
-**Pros**:
-
-- Single query path for all match data (simpler standings page)
+- Single query path for all match data — simpler standings page and score entry
 - No schema proliferation — fewer tables to migrate and maintain
 - Easier to add new court types in the future
+- Consistent UI rendering — one component set adapts to court size
+- `calculateCourtStandings()` handles all court sizes with a single algorithm
 
-**Cons**:
-
-- Nullable columns for teamAPlayer2Id/teamBPlayer2Id break strict typing
-- Mixed semantics in one table (round-robin matches vs parallel games)
-- Harder to enforce correctness at the DB level (e.g., 5p game must have runNumber)
-- Application code needs `if (courtSize === 3) ... else if (courtSize === 5) ...` branches anyway
-
-**Recommendation**: Separate tables were chosen for cleaner separation and stricter typing. Revisit if the number of court types grows beyond 4.
+**Trade-off**: Nullable `teamAPlayer2Id`/`teamBPlayer2Id` columns break strict 2v2 typing, but this is handled cleanly in application code (3p: pair vs solo, 5p/6p: fixed vs rotating team).
 
 ### Phase 5: Close Round with Variable Court Sizes
 
@@ -276,7 +179,7 @@ Instead of separate tables per court size, a single `match` table with a `court_
 
 **Changes to `src/routes/tournament/[id]/+page.server.ts`**:
 
-- `calculateCourtStandings()`: Existing for 4p. Create `calculateCourtStandings3p()`, `calculateCourtStandings5p()`, `calculateCourtStandings6p()`
+- `calculateCourtStandings()`: Single function handles all court sizes (3p/4p/5p/6p) with tiebreakers (points → diff → playerId). Uses averages for 5p/6p and when any match is canceled.
 - `redistributePlayers()`: Use the new recursive preseed or generalized ladder
 - Match generation: use the appropriate match generator based on court size
 - Handle virtual court rotation (which physical courts are active)
@@ -296,14 +199,12 @@ Instead of separate tables per court size, a single `match` table with a `court_
 
 **Court page** (`/court/[token]`):
 
-- Adapt layout for 3p, 5p, 6p courts
-- **3p court**: Show 3 match cards (A+B vs C, A+C vs B, B+C vs A). Solo player highlighted.
-- **4p court**: Show 3 match cards (standard A+B vs C+D, etc.)
-- **5p court**: Show 4 game cards grouped into 2 runs. Display current rotation state (who is active, who is waiting to swap). Show "Run 1" and "Run 2" sections with game-by-game scores.
-- **6p court**: Show 4 game cards grouped into 2 runs. Display rotating pairs. Show "Run 1" and "Run 2" sections.
-- Show correct number of match/game cards per court type
-- Adjust standings display (using cross-court-size normalization)
-- Waiting players on 5p/6p courts see which run they're in and when they enter
+- Single template adapts to all court sizes (3p, 4p, 5p, 6p)
+- Shows correct number of match cards (3 for 3p/4p, 4 for 5p/6p)
+- Displays players in a horizontal card layout with letter labels (A-F)
+- Format note per court type (3p: 2v1 rotation, 5p/6p: parallel games to 15)
+- For 5p/6p: matches grouped by run with "Run 1" / "Run 2" labels
+- Best-of-3 mode shows per-set entry (Set 1/2/3) with deciding set rules
 
 **Standings page** (`/tournament/[id]/standings`):
 

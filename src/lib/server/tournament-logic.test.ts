@@ -22,6 +22,7 @@ import {
 	getMaxSets,
 	getMinPointsForSet,
 	getScoringLabel,
+	getEffectiveScoring,
 	recalculateCourtConfigAfterRetirement,
 	getPreseedBracketRange,
 	calculateRetiredStanding,
@@ -1275,6 +1276,92 @@ describe('Scoring logic', () => {
 		});
 		it('custom', () => {
 			expect(getScoringLabel(customConfig, 4)).toBe('Best of 2 (25pt, deciding: 20pt)');
+		});
+	});
+
+	describe('getEffectiveScoring', () => {
+		const baseConfig = { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
+
+		it('returns base config when no overrides', () => {
+			const result = getEffectiveScoring(4, baseConfig, null);
+			expect(result).toEqual({ pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 });
+		});
+
+		it('returns base config when overrides is undefined', () => {
+			const result = getEffectiveScoring(4, baseConfig, undefined);
+			expect(result).toEqual({ pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 });
+		});
+
+		it('returns base config when overrides has no entry for the court size', () => {
+			const overrides = { '5': { pointsToWin: 15 } };
+			const result = getEffectiveScoring(4, baseConfig, overrides);
+			expect(result.pointsToWin).toBe(21);
+		});
+
+		it('applies override for matching court size', () => {
+			const overrides = { '5': { pointsToWin: 15 } };
+			const result = getEffectiveScoring(5, baseConfig, overrides);
+			expect(result.pointsToWin).toBe(15);
+		});
+
+		it('partial override: only changes specified fields', () => {
+			const overrides = { '3': { setsToWin: 2, decidingSetPoints: 20 } };
+			const result = getEffectiveScoring(3, baseConfig, overrides);
+			expect(result.pointsToWin).toBe(21); // unchanged
+			expect(result.winBy).toBe(2); // unchanged
+			expect(result.setsToWin).toBe(2); // overridden
+			expect(result.decidingSetPoints).toBe(20); // overridden
+		});
+
+		it('applies to all court sizes independently', () => {
+			const overrides = {
+				'3': { pointsToWin: 25 },
+				'5': { pointsToWin: 10 },
+				'6': { pointsToWin: 18 }
+			};
+			expect(getEffectiveScoring(3, baseConfig, overrides).pointsToWin).toBe(25);
+			expect(getEffectiveScoring(5, baseConfig, overrides).pointsToWin).toBe(10);
+			expect(getEffectiveScoring(6, baseConfig, overrides).pointsToWin).toBe(18);
+			expect(getEffectiveScoring(4, baseConfig, overrides).pointsToWin).toBe(21); // no override
+		});
+	});
+
+	describe('getMinPointsForSet with overrides', () => {
+		const baseConfig = { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
+
+		it('override changes 5p from 15 to 10', () => {
+			const overrides = { '5': { pointsToWin: 10 } };
+			expect(getMinPointsForSet(1, 5, baseConfig, overrides)).toBe(10);
+		});
+
+		it('override changes 3p to best-of-3 with custom deciding set', () => {
+			const overrides = { '3': { setsToWin: 2, decidingSetPoints: 10 } };
+			expect(getMinPointsForSet(1, 3, baseConfig, overrides)).toBe(21);
+			expect(getMinPointsForSet(3, 3, baseConfig, overrides)).toBe(10);
+		});
+
+		it('override on 6p changes pointsToWin', () => {
+			const overrides = { '6': { pointsToWin: 10 } };
+			expect(getMinPointsForSet(1, 6, baseConfig, overrides)).toBe(10);
+		});
+	});
+
+	describe('getScoringLabel with overrides', () => {
+		const baseConfig = { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
+
+		it('override changes 5p label', () => {
+			const overrides = { '5': { pointsToWin: 10 } };
+			expect(getScoringLabel(baseConfig, 5, overrides)).toBe('1 set to 10');
+		});
+
+		it('override changes 3p to best-of-3', () => {
+			const overrides = { '3': { setsToWin: 2, decidingSetPoints: 10 } };
+			expect(getScoringLabel(baseConfig, 3, overrides)).toBe('Best of 2 (21pt, deciding: 10pt)');
+		});
+
+		it('no override falls through to default', () => {
+			expect(getScoringLabel(baseConfig, 5)).toBe('1 set to 15');
+			expect(getScoringLabel(baseConfig, 4)).toBe('1 set to 21');
 		});
 	});
 });

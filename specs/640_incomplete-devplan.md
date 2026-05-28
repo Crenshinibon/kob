@@ -248,15 +248,17 @@ All redistribution algorithms implemented as pure functions with immutable state
 - ~~Phase 10: Wait Time Forecasting~~ ✅
 - ~~Phase 11: Player Retirement~~ ✅
 
-## Known Issues
+## Known Issues (All Resolved)
 
-1. **Dead schema tables**: `match_3_player`, `match_5_player`, `match_6_player` exist in schema but are never used. Decision: remove them. The current single-table approach with nullable columns works; migrating to separate tables is high-risk for no user-visible benefit.
-2. **Hardcoded winBy**: Score validation always requires win-by-2 regardless of tournament's `winBy` config.
-3. **Draft status unused**: Tournaments skip draft status and go straight to active on creation.
-4. **No `/tournament/[id]/players` route**: The dashboard links to this page but it doesn't exist.
-5. **Legacy server actions**: `retirePlayer`, `reportInjury`, and `create` are still legacy server actions, not remote functions.
-6. **Duplicate `saveScore`**: Both a legacy server action and a remote form exist for score saving.
-7. **Live query gaps**: `retirePlayer` and `reportInjury` don't trigger live query reconnect.
+All previously identified issues have been fixed in the course of development:
+
+1. ~~**Dead schema tables**: `match_3_player`, `match_5_player`, `match_6_player`~~ → FIXED: Removed from schema via migration `0010_drop_dead_match_tables.sql`.
+2. ~~**Hardcoded winBy**: Score validation always required win-by-2~~ → FIXED: All paths use `getEffectiveScoring()` from tournament config.
+3. ~~**Draft status unused**: Tournaments skip draft status~~ → FIXED: Draft section removed, schema defaults to `'active'`.
+4. ~~**No `/tournament/[id]/players` route**~~ → FIXED: Dashboard links to `/tournament/{id}`.
+5. ~~**Legacy server actions**: `retirePlayer`, `reportInjury`, `create`~~ → FIXED: All migrated to remote functions (`command()`).
+6. ~~**Duplicate `saveScore`**: Both legacy action and remote form~~ → FIXED: Legacy action removed; `scores.remote.ts` handles all score saves.
+7. ~~**Live query gaps**: `retirePlayer`/`reportInjury` didn't reconnect~~ → FIXED: Both call `getTournamentDataLive().reconnect()`. See `specs/840_critical-bugs.md` for details.
 
 ## Risks & Dependencies
 
