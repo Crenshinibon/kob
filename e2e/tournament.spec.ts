@@ -1069,14 +1069,14 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForTimeout(500);
 			await page.click('.retire-form button', { timeout: 10000 });
 
-			// Wait for retirement — should now have 15 players on 4×4p + 1×3p
+			// Wait for retirement — should now have 15 players on 3×4p + 1×3p = 4 courts
 			await page.waitForTimeout(2000);
 			await page.waitForSelector('text=Round 2 of 2');
 			const courtCardsAfter = await page.locator('.court-card').count();
-			expect(courtCardsAfter).toBe(5);
+			expect(courtCardsAfter).toBe(4);
 
 			// Verify 3-player court exists
-			const courtSizes = await page.locator('.court-card .court-size-tag').allTextContents();
+			const courtSizes = await page.locator('.court-card .court-size-badge').allTextContents();
 			const has3pCourt = courtSizes.some((s) => s.includes('3p'));
 			expect(has3pCourt).toBeTruthy();
 
