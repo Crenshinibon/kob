@@ -722,7 +722,7 @@ test.describe('Tournament Integration Tests', () => {
 			for (const url of courtLinks) {
 				await page.goto(url);
 				await page.waitForSelector('[data-testid^="match-form-"]');
-				// Collect all match IDs first before scoring (forms disappear after scoring)
+				await page.waitForTimeout(800);
 				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
 				const matchIds: string[] = [];
 				for (const form of matchForms) {
@@ -764,8 +764,9 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForTimeout(500);
 			await page.click('.retire-form button', { timeout: 10000 });
 
-			// Wait for retirement to process and live query to refresh
-			// Wait for court-card elements to appear (they are removed/readded on reconnect)
+			// Wait for retirement to process and live query to refresh fully
+			await page.waitForTimeout(2000);
+			await page.waitForSelector('text=Round 2 of 2');
 			await page.waitForSelector('.court-card', { timeout: 10000 });
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBe(4);
@@ -781,6 +782,7 @@ test.describe('Tournament Integration Tests', () => {
 			for (const url of round2Links) {
 				await page.goto(url);
 				await page.waitForSelector('[data-testid^="match-form-"]');
+				await page.waitForTimeout(800);
 				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
 				const matchIds: string[] = [];
 				for (const form of matchForms) {
@@ -862,6 +864,8 @@ test.describe('Tournament Integration Tests', () => {
 
 			// Verify Player1 shows as retired on the court
 			await page.waitForSelector('.player.retired', { timeout: 10000 });
+			// Wait for live query to settle after reporting injury
+			await page.waitForTimeout(2000);
 
 			// Complete remaining matches on all courts
 			const allCourtLinks = await page.locator('.qr-link a').all();
@@ -871,11 +875,11 @@ test.describe('Tournament Integration Tests', () => {
 				if (url) courtUrls.push(url);
 			}
 			for (const url of courtUrls) {
-				await page.goto(url);
-				// Some courts may have canceled matches with no score forms
 				const hasMatchForms = (await page.locator('[data-testid^="match-form-"]').count()) > 0;
 				if (!hasMatchForms) continue;
-				// Collect all match IDs first, then score them
+				await page.goto(url);
+				await page.waitForSelector('[data-testid^="match-form-"]');
+				await page.waitForTimeout(800);
 				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
 				const matchIds: string[] = [];
 				for (const form of matchForms) {
@@ -895,6 +899,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.goto('/');
 			await page.click(`text=${tournamentName}`);
 			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForTimeout(2000);
 			await page.waitForSelector('button:has-text("Close Round & Advance")', {
 				timeout: 20000
 			});
@@ -949,7 +954,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('.injury-form button');
 
 			// Verify Player1 shows as retired
-			await page.waitForTimeout(1000);
+			await page.waitForTimeout(2000);
 			const retiredPlayer = page.locator('.player.retired').first();
 			await expect(retiredPlayer).toBeVisible();
 
@@ -975,9 +980,11 @@ test.describe('Tournament Integration Tests', () => {
 				if (url) courtUrls.push(url);
 			}
 			for (const url of courtUrls) {
-				await page.goto(url);
 				const hasMatchForms = (await page.locator('[data-testid^="match-form-"]').count()) > 0;
 				if (!hasMatchForms) continue;
+				await page.goto(url);
+				await page.waitForSelector('[data-testid^="match-form-"]');
+				await page.waitForTimeout(800);
 				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
 				const matchIds: string[] = [];
 				for (const form of matchForms) {
@@ -997,6 +1004,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.goto('/');
 			await page.click(`text=${tournamentName}`);
 			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForTimeout(2000);
 			await page.waitForSelector('button:has-text("Close Round & Advance")', {
 				timeout: 20000
 			});
