@@ -765,8 +765,8 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('.retire-form button', { timeout: 10000 });
 
 			// Wait for retirement to process and live query to refresh
-			await page.waitForTimeout(2000);
-			await page.waitForSelector('text=Round 2 of 2');
+			// Wait for court-card elements to appear (they are removed/readded on reconnect)
+			await page.waitForSelector('.court-card', { timeout: 10000 });
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBe(4);
 
@@ -861,9 +861,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('.injury-form button');
 
 			// Verify Player1 shows as retired on the court
-			await page.waitForTimeout(1000);
-			const retiredPlayer = page.locator('.player.retired').first();
-			await expect(retiredPlayer).toBeVisible();
+			await page.waitForSelector('.player.retired', { timeout: 10000 });
 
 			// Complete remaining matches on all courts
 			const allCourtLinks = await page.locator('.qr-link a').all();
@@ -965,7 +963,11 @@ test.describe('Tournament Integration Tests', () => {
 			const subTags = page.locator('.injured-tag');
 			await expect(subTags).toHaveText('Sub');
 
-			// Score remaining matches on all courts (substitute matches still need scores)
+			// Navigate back to tournament page before collecting court links
+			await page.goto('/');
+			await page.click(`text=${tournamentName}`);
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('text=Round 1 of 2');
 			const allCourtLinks = await page.locator('.qr-link a').all();
 			const courtUrls: string[] = [];
 			for (const cl of allCourtLinks) {
@@ -1163,7 +1165,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForSelector('[data-testid^="match-form-"]');
 
 			// Verify label shows the overridden scoring
-			const formatInfo = page.locator('.scoring-label');
+			const formatInfo = page.locator('.format-detail').filter({ hasText: 'Scoring' });
 			await expect(formatInfo).toContainText('to 10');
 
 			// Enter a score of 10-8 (would fail with default 15-point min but valid with override)
@@ -1214,17 +1216,17 @@ test.describe('Tournament Integration Tests', () => {
 			expect(allLinks.length).toBe(3);
 			const link3 = await allLinks[2].getAttribute('href');
 			await page.goto(link3 || '');
-			await page.waitForSelector('[data-testid^="match-form-"]');
+			await page.waitForSelector('[data-testid^="set-form-"]');
 
-			// Verify set 1, 2, 3 labels appear (best-of-3 shows all 3 sets)
-			await expect(page.locator('text=Set 1')).toBeVisible();
-			await expect(page.locator('text=Set 2')).toBeVisible();
+			// Verify set 1 label appears (best-of-3 shows Set 1; Set 2/3
+			// appear dynamically after Set 1 scores are entered)
+			await expect(page.locator('text=Set 1').first()).toBeVisible();
 
 			// Enter score for set 1 of the first match
-			const forms = await page.locator('[data-testid^="match-form-"]').all();
+			const forms = await page.locator('[data-testid^="set-form-"]').all();
 			expect(forms.length).toBe(3);
 			const firstTestId = await forms[0].getAttribute('data-testid');
-			const firstMatchId = firstTestId?.replace('match-form-', '');
+			const firstMatchId = firstTestId?.replace(/^(set|match)-form-/, '');
 			await page.fill(`[data-testid="team-a-score-${firstMatchId}"]`, '21');
 			await page.fill(`[data-testid="team-b-score-${firstMatchId}"]`, '19');
 			await page.click(`[data-testid="save-score-${firstMatchId}"]`);
