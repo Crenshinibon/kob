@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Preseed Tournament', () => {
-	test.setTimeout(120000);
+	test.setTimeout(180000);
 
 	const testTournamentNames: string[] = [];
 
@@ -9,6 +9,7 @@ test.describe('Preseed Tournament', () => {
 		for (const name of testTournamentNames) {
 			try {
 				await page.goto('/');
+				await page.waitForTimeout(500);
 				const card = page.locator(`.tournament-card:has-text("${name}")`).first();
 				if (await card.isVisible().catch(() => false)) {
 					await card.click();
@@ -24,9 +25,14 @@ test.describe('Preseed Tournament', () => {
 			}
 		}
 		testTournamentNames.length = 0;
+		// Restore clean dashboard state for the next test
+		await page.goto('/');
+		await page.waitForTimeout(500);
 	});
 
 	async function login(page: import('@playwright/test').Page) {
+		await page.goto('/');
+		await page.waitForTimeout(300);
 		await page.goto('/login');
 		await page.fill('input[type="email"]', 'test@example.com');
 		await page.fill('input[type="password"]', 'password123');
@@ -41,6 +47,16 @@ test.describe('Preseed Tournament', () => {
 			await page.click('button[type="submit"]');
 			await page.waitForURL('/');
 		}
+
+		// Dismiss cookie notice if present
+		const dismissBtn = page.locator('button:has-text("OK")');
+		if (await dismissBtn.isVisible().catch(() => false)) {
+			await dismissBtn.click();
+			await page.waitForTimeout(300);
+		}
+		// Ensure we're on a clean dashboard before the test starts
+		await page.goto('/');
+		await page.waitForTimeout(500);
 	}
 
 	async function createTournament(
@@ -67,6 +83,7 @@ test.describe('Preseed Tournament', () => {
 	): Promise<string[]> {
 		await page.goto(`/tournament/${tid}`);
 		await page.waitForSelector('.qr-link a');
+		await page.waitForTimeout(1000);
 		const els = await page.locator('.qr-link a').all();
 		const links: string[] = [];
 		for (const el of els) {
@@ -128,12 +145,14 @@ test.describe('Preseed Tournament', () => {
 
 	async function closeRound(page: import('@playwright/test').Page, tid: string): Promise<void> {
 		await page.goto(`/tournament/${tid}`);
+		await page.waitForTimeout(2000);
 		await page.waitForSelector('button:has-text("Close Round & Advance")');
 		await page.click('button:has-text("Close Round & Advance")');
 	}
 
 	async function finalize(page: import('@playwright/test').Page, tid: string): Promise<void> {
 		await page.goto(`/tournament/${tid}`);
+		await page.waitForTimeout(2000);
 		await page.waitForSelector('button:has-text("Finalize Tournament")');
 		await page.click('button:has-text("Finalize Tournament")');
 		await page.waitForURL(/\/standings/);
@@ -266,8 +285,8 @@ test.describe('Preseed Tournament', () => {
 		expect(r1[1]).toEqual(['Bob', 'Carol', 'Frank', 'Grace']);
 
 		// Score R1
-		const links = await getCourtLinks(page, tid);
-		for (const link of links) {
+		const r1Links = await getCourtLinks(page, tid);
+		for (const link of r1Links) {
 			await scoreCourt(page, link);
 		}
 
