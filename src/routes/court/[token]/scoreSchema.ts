@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { isDecidingSet } from '$lib/tournament-logic';
+import { isDecidingSet, isValidFinalScore } from '$lib/tournament-logic';
 
 export function createScoreSchema(minPoints: number, winBy: number = 2) {
 	return v.pipe(
@@ -15,17 +15,10 @@ export function createScoreSchema(minPoints: number, winBy: number = 2) {
 			return input.teamAScore !== input.teamBScore;
 		}, 'Scores cannot be tied'),
 		v.check((input) => {
-			const maxScore = Math.max(input.teamAScore, input.teamBScore);
-			return maxScore >= minPoints;
-		}, `Winner must have at least ${minPoints} points`),
-		v.check(
-			(input) => {
-				const maxScore = Math.max(input.teamAScore, input.teamBScore);
-				const minScore = Math.min(input.teamAScore, input.teamBScore);
-				return maxScore - minScore >= winBy;
-			},
-			`Winner must win by at least ${winBy} point${winBy > 1 ? 's' : ''}`
-		)
+			const winner = Math.max(input.teamAScore, input.teamBScore);
+			const loser = Math.min(input.teamAScore, input.teamBScore);
+			return isValidFinalScore(winner, loser, minPoints, winBy);
+		}, `Invalid score: winner must reach ${minPoints} with a ${winBy}-point lead (or deuce rules apply)`)
 	);
 }
 
@@ -52,16 +45,9 @@ export function createSetScoreSchema(
 			return input.teamAScore !== input.teamBScore;
 		}, 'Scores cannot be tied'),
 		v.check((input) => {
-			const maxScore = Math.max(input.teamAScore, input.teamBScore);
-			return maxScore >= minPoints;
-		}, `Winner must have at least ${minPoints} points`),
-		v.check(
-			(input) => {
-				const maxScore = Math.max(input.teamAScore, input.teamBScore);
-				const minScore = Math.min(input.teamAScore, input.teamBScore);
-				return maxScore - minScore >= winBy;
-			},
-			`Winner must win by at least ${winBy} point${winBy > 1 ? 's' : ''}`
-		)
+			const winner = Math.max(input.teamAScore, input.teamBScore);
+			const loser = Math.min(input.teamAScore, input.teamBScore);
+			return isValidFinalScore(winner, loser, minPoints, winBy);
+		}, `Invalid score: winner must reach ${minPoints} with a ${winBy}-point lead (or deuce rules apply)`)
 	);
 }

@@ -27,6 +27,7 @@ import {
 	getPreseedBracketRange,
 	calculateRetiredStanding,
 	getFinalRoundCourtConfig,
+	isValidFinalScore,
 	type FormatType,
 	type TournamentState,
 	type CourtResult,
@@ -1487,6 +1488,141 @@ describe('calculateCourtStandings with canceled matches', () => {
 		// p2: 0 (injured in match 1) + 23 + 20 = 43
 		const p2 = result.find((s) => s.playerId === 2);
 		expect(p2?.points).toBe(43);
+	});
+});
+
+// ============================================================================
+// isValidFinalScore
+// ============================================================================
+
+describe('isValidFinalScore', () => {
+	const WB2 = { minPoints: 21, winBy: 2 };
+	const WB1 = { minPoints: 21, winBy: 1 };
+	const DS15 = { minPoints: 15, winBy: 2 };
+	const DS10 = { minPoints: 10, winBy: 2 };
+
+	// ===== winBy=2, minPoints=21 =====
+
+	it('21-19: valid (target reached, win by 2)', () => {
+		expect(isValidFinalScore(21, 19, WB2.minPoints, WB2.winBy)).toBe(true);
+	});
+
+	it('21-11: valid (winner at 21, loser not in striking distance)', () => {
+		expect(isValidFinalScore(21, 11, WB2.minPoints, WB2.winBy)).toBe(true);
+	});
+
+	it('21-0: valid (winner at 21)', () => {
+		expect(isValidFinalScore(21, 0, WB2.minPoints, WB2.winBy)).toBe(true);
+	});
+
+	it('25-11: INVALID (should have ended at 21-11)', () => {
+		expect(isValidFinalScore(25, 11, WB2.minPoints, WB2.winBy)).toBe(false);
+	});
+
+	it('22-11: INVALID (should have ended at 21-11)', () => {
+		expect(isValidFinalScore(22, 11, WB2.minPoints, WB2.winBy)).toBe(false);
+	});
+
+	it('30-11: INVALID (blowout, should have ended at 21-11)', () => {
+		expect(isValidFinalScore(30, 11, WB2.minPoints, WB2.winBy)).toBe(false);
+	});
+
+	it('22-20: valid (deuce, winner = loser + 2)', () => {
+		expect(isValidFinalScore(22, 20, WB2.minPoints, WB2.winBy)).toBe(true);
+	});
+
+	it('23-21: valid (deuce extended)', () => {
+		expect(isValidFinalScore(23, 21, WB2.minPoints, WB2.winBy)).toBe(true);
+	});
+
+	it('30-28: valid (extended deuce)', () => {
+		expect(isValidFinalScore(30, 28, WB2.minPoints, WB2.winBy)).toBe(true);
+	});
+
+	it('21-20: INVALID (only win by 1, needs 2)', () => {
+		expect(isValidFinalScore(21, 20, WB2.minPoints, WB2.winBy)).toBe(false);
+	});
+
+	it('20-18: INVALID (winner below minPoints)', () => {
+		expect(isValidFinalScore(20, 18, WB2.minPoints, WB2.winBy)).toBe(false);
+	});
+
+	it('21-21: INVALID (tied — can never be a final score)', () => {
+		expect(isValidFinalScore(21, 21, WB2.minPoints, WB2.winBy)).toBe(false);
+	});
+
+	// ===== winBy=1, minPoints=21 =====
+
+	it('21-20: valid (win by 1, target reached)', () => {
+		expect(isValidFinalScore(21, 20, WB1.minPoints, WB1.winBy)).toBe(true);
+	});
+
+	it('21-0: valid (win by 1, target reached)', () => {
+		expect(isValidFinalScore(21, 0, WB1.minPoints, WB1.winBy)).toBe(true);
+	});
+
+	it('22-21: INVALID (winBy=1, game always ends at exactly minPoints)', () => {
+		expect(isValidFinalScore(22, 21, WB1.minPoints, WB1.winBy)).toBe(false);
+	});
+
+	it('21-19: valid (winBy=1, reached 21 with 2-point lead)', () => {
+		expect(isValidFinalScore(21, 19, WB1.minPoints, WB1.winBy)).toBe(true);
+	});
+
+	it('25-11: INVALID (should have ended at 21-11)', () => {
+		expect(isValidFinalScore(25, 11, WB1.minPoints, WB1.winBy)).toBe(false);
+	});
+
+	// ===== deciding set to 15, winBy=2 =====
+
+	it('15-13: valid (deciding set, target reached)', () => {
+		expect(isValidFinalScore(15, 13, DS15.minPoints, DS15.winBy)).toBe(true);
+	});
+
+	it('16-14: valid (deciding set deuce)', () => {
+		expect(isValidFinalScore(16, 14, DS15.minPoints, DS15.winBy)).toBe(true);
+	});
+
+	it('17-11: INVALID (deciding set, should have ended at 15-11)', () => {
+		expect(isValidFinalScore(17, 11, DS15.minPoints, DS15.winBy)).toBe(false);
+	});
+
+	it('15-14: INVALID (deciding set, only win by 1)', () => {
+		expect(isValidFinalScore(15, 14, DS15.minPoints, DS15.winBy)).toBe(false);
+	});
+
+	it('13-11: INVALID (deciding set, winner below minPoints)', () => {
+		expect(isValidFinalScore(13, 11, DS15.minPoints, DS15.winBy)).toBe(false);
+	});
+
+	// ===== custom minPoints=10, winBy=2 =====
+
+	it('10-8: valid (custom 10pt target)', () => {
+		expect(isValidFinalScore(10, 8, DS10.minPoints, DS10.winBy)).toBe(true);
+	});
+
+	it('11-9: valid (custom 10pt deuce)', () => {
+		expect(isValidFinalScore(11, 9, DS10.minPoints, DS10.winBy)).toBe(true);
+	});
+
+	it('12-6: INVALID (custom 10pt, should have ended at 10-6)', () => {
+		expect(isValidFinalScore(12, 6, DS10.minPoints, DS10.winBy)).toBe(false);
+	});
+
+	// ===== edge cases =====
+
+	it('can never have winner below minPoints', () => {
+		expect(isValidFinalScore(1, 0, 21, 2)).toBe(false);
+		expect(isValidFinalScore(0, 0, 21, 2)).toBe(false);
+	});
+
+	it('negative scores are invalid (caller should handle)', () => {
+		// isValidFinalScore assumes non-negative input from caller
+		expect(isValidFinalScore(-1, 0, 21, 2)).toBe(false);
+	});
+
+	it('identical high scores not valid (caller checks tie separately)', () => {
+		expect(isValidFinalScore(30, 30, 21, 2)).toBe(false);
 	});
 });
 

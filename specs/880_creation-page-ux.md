@@ -75,11 +75,12 @@ Fix the CSS to align labels with knob positions:
 .range-labels {
 	display: flex;
 	justify-content: space-between;
-	padding: 0 calc(knobWidth / 2);  /* offset by half knob width */
+	padding: 0 calc(knobWidth / 2); /* offset by half knob width */
 }
 ```
 
 The knob width varies by browser/OS. A practical approach:
+
 - Set `padding: 0 8px` on the `.range-labels` container to visually align
 - Or wrap the slider in a container and use the same padding on labels
 
@@ -108,6 +109,7 @@ Alternatively, restructure the slider container to use CSS Grid with the slider 
 But the `.info-box` class (lines 643-650) applies `background-color: var(--bg-input)` and `border: var(--border-thickness) solid var(--border-default)` — making it look like an input field.
 
 **Fix**: Change the preseed rounds display to not look like an input. Options:
+
 - Use a plain `<p>` or `<span>` with muted text
 - Style `.info-box` differently (remove background/border when used for display-only content)
 - Use a different class like `.info-text` that's purely a display element
@@ -144,6 +146,7 @@ Missing: explanation that retirement reshuffles ALL courts (recalculates all ass
 **Fix**: Update the notes:
 
 Retire section:
+
 ```
 Remove a player before any scores are entered. This will reshuffle ALL courts
 (recalculate all player assignments). The retired player is removed for the
@@ -151,6 +154,7 @@ remainder of the tournament.
 ```
 
 Injury section:
+
 ```
 Handle a player injury mid-round. This only affects the player's current court
 for the current round. Other courts continue normally. At the end of the round,
@@ -159,10 +163,10 @@ the injured player can either continue (substitute) or be retired.
 
 ## Summary of Changes
 
-| # | Change | File | Complexity |
-| - | ------ | ---- | ---------- |
-| 1 | Win-by explainer text | `create/+page.svelte` | Trivial |
-| 2 | WVV CSV import tip + tab delimiter | `create/+page.svelte` | Trivial |
-| 3 | Slider knob/label alignment | `create/+page.svelte` CSS | Small |
-| 4 | Auto-calculated rounds styling | `create/+page.svelte` CSS | Trivial |
-| 5 | Retirement/injury explainer text | `[id]/+page.svelte` | Trivial |
+| #   | Change                             | File                      | Complexity |
+| --- | ---------------------------------- | ------------------------- | ---------- |
+| 1   | Win-by explainer text              | `create/+page.svelte`     | Trivial    |
+| 2   | WVV CSV import tip + tab delimiter | `create/+page.svelte`     | Trivial    |
+| 3   | Slider knob/label alignment        | `create/+page.svelte` CSS | Small      |
+| 4   | Auto-calculated rounds styling     | `create/+page.svelte` CSS | Trivial    |
+| 5   | Retirement/injury explainer text   | `[id]/+page.svelte`       | Trivial    |

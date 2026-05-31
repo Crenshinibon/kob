@@ -104,9 +104,8 @@ test.describe('Tournament Integration Tests', () => {
 		await page.click('button[type="submit"]');
 
 		// Tournament is already started, verify it shows courts
-			await page.waitForURL(/\/tournament\/\d+/);
-			await page.waitForSelector('text=Round 1 of 2');
-			const tournamentUrl = page.url();
+		await page.waitForURL(/\/tournament\/\d+/);
+		await page.waitForSelector('text=Round 1 of 2');
 		const courtCards = await page.locator('.court-card').count();
 		expect(courtCards).toBe(4);
 
@@ -601,6 +600,67 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click(`[data-testid="save-score-${matchId}"]`);
 			await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 		});
+	});
+
+	test('rejects blowout scores (deuce-aware validation)', async ({ page }) => {
+		const tournamentName = `BlowoutValidation ${Date.now()}`;
+		testTournamentNames.push(tournamentName);
+
+		await page.waitForSelector('text=+ New Tournament');
+		await page.click('text=+ New Tournament');
+		await page.fill('input[name="name"]', tournamentName);
+
+		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+		await page.fill('textarea[name="names"]', players.join('\n'));
+		await page.click('button[type="submit"]');
+
+		await page.waitForURL(/\/tournament\/\d+/);
+		await page.waitForSelector('.qr-link a');
+
+		const courtUrl = await page.locator('.qr-link a').first().getAttribute('href');
+		await page.goto(courtUrl || '');
+		await page.waitForSelector('[data-testid^="match-form-"]');
+
+		const allForms = await page.locator('[data-testid^="match-form-"]').all();
+		expect(allForms.length).toBe(3);
+
+		const matchIds = await Promise.all(
+			allForms.map(async (f) => {
+				const tid = await f.getAttribute('data-testid');
+				return tid?.replace('match-form-', '');
+			})
+		);
+		const [m1, m2, m3] = matchIds;
+
+		// 1. Blowout: 25-11 should be rejected (game should have ended at 21-11)
+		await page.fill(`[data-testid="team-a-score-${m1}"]`, '25');
+		await page.fill(`[data-testid="team-b-score-${m1}"]`, '11');
+		await page.click(`[data-testid="save-score-${m1}"]`);
+		await expect(page.locator('.error')).toContainText('deuce', { timeout: 5000 });
+
+		// 2. Blowout: 22-11 should be rejected (game should have ended at 21-11)
+		await page.fill(`[data-testid="team-a-score-${m1}"]`, '22');
+		await page.fill(`[data-testid="team-b-score-${m1}"]`, '11');
+		await page.click(`[data-testid="save-score-${m1}"]`);
+		await expect(page.locator('.error')).toContainText('deuce', { timeout: 5000 });
+
+		// 3. Deuce: 22-20 should be accepted (valid extended play)
+		await page.fill(`[data-testid="team-a-score-${m1}"]`, '22');
+		await page.fill(`[data-testid="team-b-score-${m1}"]`, '20');
+		await page.click(`[data-testid="save-score-${m1}"]`);
+		await page.waitForSelector(`[data-testid="saved-${m1}"]`);
+
+		// 4. Extended deuce: 30-28 should be accepted on second match
+		await page.fill(`[data-testid="team-a-score-${m2}"]`, '30');
+		await page.fill(`[data-testid="team-b-score-${m2}"]`, '28');
+		await page.click(`[data-testid="save-score-${m2}"]`);
+		await page.waitForSelector(`[data-testid="saved-${m2}"]`);
+
+		// 5. Standard valid: 21-19 should be accepted on third match
+		await page.fill(`[data-testid="team-a-score-${m3}"]`, '21');
+		await page.fill(`[data-testid="team-b-score-${m3}"]`, '19');
+		await page.click(`[data-testid="save-score-${m3}"]`);
+		await page.waitForSelector(`[data-testid="saved-${m3}"]`);
 	});
 
 	test.describe('Virtual Courts (Physical < Virtual)', () => {

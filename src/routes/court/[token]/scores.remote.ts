@@ -6,6 +6,7 @@ import { eq, and } from 'drizzle-orm';
 import {
 	getMinPointsForSet,
 	getEffectiveScoring,
+	isValidFinalScore,
 	type ScoringOverrides
 } from '$lib/server/tournament-logic';
 import * as v from 'valibot';
@@ -70,10 +71,10 @@ export const saveScore = form(baseScoreSchema, async (data, issue) => {
 	const teamBScore = data.teamBScore;
 
 	const ctx = await getMatchContext(matchId);
-	if (!ctx) invalid(issue.teamAScore('Invalid match'));
-	if (ctx && 'error' in ctx) invalid(issue.teamAScore(ctx.error ?? 'Court error'));
+	if (!ctx) return invalid(issue.teamAScore('Invalid match'));
+	if ('error' in ctx) return invalid(issue.teamAScore(ctx.error ?? 'Court error'));
 
-	const { matchRecord, rotation, tourney } = ctx!;
+	const { matchRecord, rotation, tourney } = ctx;
 	const config = {
 		pointsToWin: tourney.pointsToWin ?? 21,
 		winBy: tourney.winBy ?? 2,
@@ -91,28 +92,20 @@ export const saveScore = form(baseScoreSchema, async (data, issue) => {
 		config,
 		tourney.scoringOverrides as ScoringOverrides | null
 	);
-	const maxScore = Math.max(teamAScore, teamBScore);
-	const minScore = Math.min(teamAScore, teamBScore);
+	const winner = Math.max(teamAScore, teamBScore);
+	const loser = Math.min(teamAScore, teamBScore);
 
-	if (maxScore < minPoints) {
+	if (!isValidFinalScore(winner, loser, minPoints, effective.winBy)) {
 		if (teamAScore > teamBScore) {
-			invalid(issue.teamAScore(`Winner must have at least ${minPoints} points`));
-		} else {
-			invalid(issue.teamBScore(`Winner must have at least ${minPoints} points`));
-		}
-	}
-
-	if (maxScore - minScore < effective.winBy) {
-		if (teamAScore > teamBScore) {
-			invalid(
+			return invalid(
 				issue.teamAScore(
-					`Winner must win by at least ${effective.winBy} point${effective.winBy > 1 ? 's' : ''}`
+					`Invalid score: winner must reach ${minPoints} with a ${effective.winBy}-point lead (or deuce rules apply)`
 				)
 			);
 		} else {
-			invalid(
+			return invalid(
 				issue.teamBScore(
-					`Winner must win by at least ${effective.winBy} point${effective.winBy > 1 ? 's' : ''}`
+					`Invalid score: winner must reach ${minPoints} with a ${effective.winBy}-point lead (or deuce rules apply)`
 				)
 			);
 		}
@@ -130,10 +123,10 @@ export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 	const teamBScore = data.teamBScore;
 
 	const ctx = await getMatchContext(matchId);
-	if (!ctx) invalid(issue.teamAScore('Invalid match'));
-	if (ctx && 'error' in ctx) invalid(issue.teamAScore(ctx.error ?? 'Court error'));
+	if (!ctx) return invalid(issue.teamAScore('Invalid match'));
+	if ('error' in ctx) return invalid(issue.teamAScore(ctx.error ?? 'Court error'));
 
-	const { matchRecord, rotation, tourney } = ctx!;
+	const { matchRecord, rotation, tourney } = ctx;
 	const config = {
 		pointsToWin: tourney.pointsToWin ?? 21,
 		winBy: tourney.winBy ?? 2,
@@ -151,23 +144,16 @@ export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 		config,
 		tourney.scoringOverrides as ScoringOverrides | null
 	);
-	const maxScore = Math.max(teamAScore, teamBScore);
-	const minScore = Math.min(teamAScore, teamBScore);
+	const winner = Math.max(teamAScore, teamBScore);
+	const loser = Math.min(teamAScore, teamBScore);
 
-	if (maxScore < minPoints) {
-		invalid(
-			issue.teamAScore(`Winner must have at least ${minPoints} points`),
-			issue.teamBScore(`Winner must have at least ${minPoints} points`)
-		);
-	}
-
-	if (maxScore - minScore < effective.winBy) {
-		invalid(
+	if (!isValidFinalScore(winner, loser, minPoints, effective.winBy)) {
+		return invalid(
 			issue.teamAScore(
-				`Winner must win by at least ${effective.winBy} point${effective.winBy > 1 ? 's' : ''}`
+				`Invalid score: winner must reach ${minPoints} with a ${effective.winBy}-point lead (or deuce rules apply)`
 			),
 			issue.teamBScore(
-				`Winner must win by at least ${effective.winBy} point${effective.winBy > 1 ? 's' : ''}`
+				`Invalid score: winner must reach ${minPoints} with a ${effective.winBy}-point lead (or deuce rules apply)`
 			)
 		);
 	}

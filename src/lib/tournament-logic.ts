@@ -1016,6 +1016,34 @@ export function getMaxSets(setsToWin: number): number {
 	return setsToWin >= 2 ? setsToWin * 2 - 1 : 1;
 }
 
+/**
+ * Validates a final score according to beach volleyball rules:
+ * - Winner must reach exactly minPoints unless loser is within striking distance (deuce)
+ * - Winner must lead by at least winBy
+ *
+ * @param winnerScore - The winning team's final score
+ * @param loserScore - The losing team's final score
+ * @param minPoints - Points needed to win a set (e.g., 21 for standard, 15 for deciding/5p)
+ * @param winBy - Minimum winning margin (e.g., 2)
+ */
+export function isValidFinalScore(
+	winnerScore: number,
+	loserScore: number,
+	minPoints: number,
+	winBy: number
+): boolean {
+	if (winnerScore < minPoints) return false;
+	if (winnerScore - loserScore < winBy) return false;
+	// winBy=1: no deuce possible, game always ends at exactly minPoints
+	if (winBy === 1) return winnerScore === minPoints;
+	// If loser is not within striking distance, winner must be exactly minPoints
+	if (loserScore < minPoints - winBy + 1) {
+		return winnerScore === minPoints;
+	}
+	// Deuce: winner must have exactly loser_score + winBy
+	return winnerScore === loserScore + winBy;
+}
+
 export function getMinPointsForSet(
 	setNumber: number,
 	courtSize: number,
