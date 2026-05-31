@@ -6,7 +6,7 @@
 
 - **[030_auth-and-users.md](./030_auth-and-users.md)**: Simple auth: Admin login for management, anonymous access for players via court URLs.
 
-- **[040_database-schema.md](./040_database-schema.md)**: Schema: tournament (with scoring/retirement/timing/court config), player (with retirement), court (stable tokens), courtRotation (variable size 3-6, linked to court), match (all court types, best-of-3, injury). Dead schema: match_3/5/6_player tables. Removed: courtAccess (replaced by `court` table).
+- **[040_database-schema.md](./040_database-schema.md)**: Schema: tournament (with scoring/retirement/timing/court config), player (with retirement), court (stable tokens), courtRotation (variable size 3-6, linked to court), match (all court types, best-of-3, injury). Removed: match_3/5/6_player tables (dead schema, dropped via migration), courtAccess (replaced by `court` table).
 
 - **[050_tournament-management.md](./050_tournament-management.md)**: Flow: Create (with players, scoring, court config) → Run rounds → Finish. No draft state — tournaments start immediately. Uses remote functions (all legacy server actions removed). Stable court tokens persist across rounds/retirements.
 
@@ -25,7 +25,7 @@
 
 - **[120_gotchas.md](./120_gotchas.md)**: Development lessons, common issues, and workarounds encountered during implementation and testing.
 
-- **[200_kob-32.md](./200_kob-32.md)**: 32-player Preseed format with points-based seeding and tiered redistribution. Supports both Random Seed and Preseed formats for 16 and 32 players.
+- **[200_kob-32.md](./200_kob-32.md)**: 32-player (8-court) format specification. Points-based snake seeding, tiered redistribution, bracket visualization. Both Random Seed and Preseed for 16 and 32 players.
 
 - **[300_pluggable-formats.md](./300_pluggable-formats.md)**: [PLANNED EXTENSION] Extensible architecture for supporting multiple tournament formats. Not yet implemented.
 
@@ -44,18 +44,22 @@
   - **[730_i18n-implementation.md](./730_i18n-implementation.md)**: 7 implementation phases, file changes, testing strategy.
 
 - **[800_bug-fixes-index.md](./800_bug-fixes-index.md)**: Bug fixes from user testing and code review.
-  - **[840_critical-bugs.md](./840_critical-bugs.md)**: Critical bugs: all fixed (radio buttons, org override, delete, best-of-3, score validation, UI glitch, reactivity, E2E config, auto-cleanup, winBy, dead tables, draft status, broken link, courtSize mismatch, $derived.by). Remaining: live query polling delay (rare).
-  - **[850_bun-migration.md](./850_bun-migration.md)**: Migrate package.json scripts from npx/tsx/npm to Bun-native tooling [COMPLETE]
   - **[860_e2e-live-query-timing.md](./860_e2e-live-query-timing.md)**: E2E tests fail due to live query polling delay (3s). Two tests affected. Fix: increase timeout or reduce polling interval.
-- **Archived**: [810](./archive/810_match-display-bugs.md), [811](./archive/811-closeRound-requested-error.md), [812](./archive/812-standings-ranking-bug.md), [813](./archive/813-qr-live-query-bugs.md), [814](./archive/814-fetch-errors.md)
 
-- **[820_ux-improvements.md](./820_ux-improvements.md)**: UX improvements: [ALL FIXED] radio buttons, player count validation, format explanations, org override, cleanup scripts, UI glitch, v1 banner
-
-- **[830_test-improvements.md](./830_test-improvements.md)**: Test improvements: [ALL FIXED] auto cleanup, E2E config, scoring mode tests, non-standard standings tests, 5p/6p redistribution E2E tests
+- **[830_test-improvements.md](./830_test-improvements.md)**: Test improvements: [ALL FIXED] auto cleanup, E2E config, scoring mode tests, non-standard standings tests, 5p/6p redistribution E2E tests.
 
 - **Archived specs** (completed or superseded, no longer active references):
   - **[084_preseed-example-20p-injury-retirement.md](./archive/084_preseed-example-20p-injury-retirement.md)**: [SUPERSEDED by 083 + 670] Used old flat-redistribution algorithm. Retirement behavior documented in 670_player-retirement.md.
-  - **[110_score-saving-ux.md](./archive/110_score-saving-ux.md)**: Score saving UX fixes
-  - **[400_testing-gaps.md](./archive/400_testing-gaps.md)**: Testing gaps and pre-launch checklist
-  - **[500_production-readiness-progress.md](./archive/500_production-readiness-progress.md)**: Production readiness progress log
-  - **[800_e2e-fixes-and-improvements.md](./archive/800_e2e-fixes-and-improvements.md)**: E2E test fixes and tournament creation simplification
+  - **[110_score-saving-ux.md](./archive/110_score-saving-ux.md)**: Score saving UX fixes [COMPLETE]
+  - **[400_testing-gaps.md](./archive/400_testing-gaps.md)**: Testing gaps and pre-launch checklist [COMPLETE]
+  - **[500_production-readiness-progress.md](./archive/500_production-readiness-progress.md)**: Production readiness progress log [COMPLETE]
+  - **[800_e2e-fixes-and-improvements.md](./archive/800_e2e-fixes-and-improvements.md)**: E2E test fixes and tournament creation simplification [COMPLETE]
+  - **[810_match-display-bugs.md](./archive/810_match-display-bugs.md)**: 3p/5p/6p court matchup display bugs [COMPLETE]
+  - **[811-closeRound-requested-error.md](./archive/811-closeRound-requested-error.md)**: closeRound errors with requested() outside context [COMPLETE]
+  - **[812-standings-ranking-bug.md](./archive/812-standings-ranking-bug.md)**: Standings ranking by court position first, not points [COMPLETE]
+  - **[813-qr-live-query-bugs.md](./archive/813-qr-live-query-bugs.md)**: QR codes not loading/updating, live query not working [COMPLETE]
+  - **[814-fetch-errors.md](./archive/814-fetch-errors.md)**: Failed to fetch errors in browser console [COMPLETE]
+  - **[820_ux-improvements.md](./archive/820_ux-improvements.md)**: UX improvements: radio buttons, player count validation, format explanations, org override, cleanup scripts, UI glitch, v1 banner [ALL FIXED]
+  - **[840_critical-bugs.md](./archive/840_critical-bugs.md)**: Critical bug fixes: radio buttons, org override, delete, best-of-3, score validation, UI glitch, reactivity, E2E config, auto-cleanup, winBy, dead tables, draft status, broken link, courtSize mismatch, $derived.by, stable court tokens, closed round double-counting, 5p/6p accessibility [ALL FIXED]. Remaining live query timing issue documented in 860_e2e-live-query-timing.md.
+  - **[850_bun-migration.md](./archive/850_bun-migration.md)**: Migrate scripts from npx/tsx/npm to Bun-native tooling [COMPLETE]
+  - **[850_injury-e2e-fix.md](./archive/850_injury-e2e-fix.md)**: Fix injury E2E tests (cancel & substitute) [COMPLETE]

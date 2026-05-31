@@ -9,7 +9,7 @@
   id: serial().primaryKey(),
   orgId: text().notNull(), // user.id from Better Auth
   name: text().notNull(),
-  status: text().notNull().default('draft'), // 'draft', 'active', 'completed'
+  status: text().notNull().default('active'), // 'active', 'completed'
   currentRound: integer().default(0),
   numRounds: integer().notNull().default(3),
   formatType: text().notNull().default('random-seed'), // 'random-seed' | 'preseed'
@@ -105,19 +105,7 @@ The `court` table decouples the stable URL token from round-specific `courtRotat
 }
 ```
 
-**Note**: 3p/5p/6p matches are stored in the same `match` table using the same `teamAScore`/`teamBScore` columns. The separate `match_3_player`, `match_5_player`, `match_6_player` tables exist in the schema but are **unused dead schema** and should be removed. The original plan was separate tables per court type for strong DB-level typing, but the current approach (nullable player columns, application-layer enforcement) works well enough that migration carries more risk than benefit.
-
-### match_3_player (UNUSED - dead schema)
-
-Present in schema file but never queried or inserted into. All 3p matches use the main `match` table.
-
-### match_5_player (UNUSED - dead schema)
-
-Present in schema file but never queried or inserted into. All 5p matches use the main `match` table.
-
-### match_6_player (UNUSED - dead schema)
-
-Present in schema file but never queried or inserted into. All 6p matches use the main `match` table.
+**Note**: 3p/5p/6p matches are stored in the same `match` table using the same `teamAScore`/`teamBScore` columns. The separate `match_3_player`, `match_5_player`, `match_6_player` tables were created in early schema versions but have since been **REMOVED** (migration `0010_drop_dead_match_tables.sql`). All matches use a single `match` table with nullable player columns.
 
 ### courtAccess (REMOVED)
 
