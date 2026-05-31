@@ -45,8 +45,13 @@
 
 - **[800_bug-fixes-index.md](./800_bug-fixes-index.md)**: Bug fixes from user testing and code review.
   - **[860_e2e-live-query-timing.md](./860_e2e-live-query-timing.md)**: E2E tests fail due to live query polling delay (3s). Two tests affected. Fix: increase timeout or reduce polling interval.
+- **[870_score-entry-validation.md](./870_score-entry-validation.md)**: CRITICAL — score validation in `scores.remote.ts` doesn't abort on `invalid()` (saves invalid scores) and allows blowout scores (e.g., 25-11 for a 21-point set). Fix: add `return` before `invalid()` calls + implement deuce-aware validation rule.
+- **[880_creation-page-ux.md](./880_creation-page-ux.md)**: UX polish: win-by explainer, WVV CSV import tip + tab delimiter, court count slider knob alignment, auto-calculated rounds display styling, retirement/injury explainer text.
+- **[890_injury-retirement-improvements.md](./890_injury-retirement-improvements.md)**: Disable "Report Injury" when all round results entered. Add undo capability for both retirement and injury reports.
 
 - **[830_test-improvements.md](./830_test-improvements.md)**: Test improvements: [ALL FIXED] auto cleanup, E2E config, scoring mode tests, non-standard standings tests, 5p/6p redistribution E2E tests.
+
+- **[900_logging-reduction.md](./900_logging-reduction.md)**: Remove single leftover `console.log` in `tournament-data.remote.ts` (only logging statement in entire `src/`). Future-proofing with dev-mode gating suggestion.
 
 - **Archived specs** (completed or superseded, no longer active references):
   - **[084_preseed-example-20p-injury-retirement.md](./archive/084_preseed-example-20p-injury-retirement.md)**: [SUPERSEDED by 083 + 670] Used old flat-redistribution algorithm. Retirement behavior documented in 670_player-retirement.md.

@@ -114,22 +114,6 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 			canCloseRound =
 				allMatches.length >= expectedMatchCount && completedMatchCount === expectedMatchCount;
 			hasScores = allMatches.some((m) => m.teamAScore !== null);
-			console.log('canCloseRound debug:', {
-				tournamentId,
-				currentRound,
-				allMatchesLength: allMatches.length,
-				expectedMatchCount,
-				completedMatchCount,
-				canCloseRound,
-				matchDetails: allMatches.map((m) => ({
-					id: m.id,
-					courtRotationId: m.courtRotationId,
-					matchNumber: m.matchNumber,
-					isCanceled: m.isCanceled,
-					teamAScore: m.teamAScore,
-					teamBScore: m.teamBScore
-				}))
-			});
 		}
 		isFinalRound = currentRound >= tourney.numRounds;
 	}
