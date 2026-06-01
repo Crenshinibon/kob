@@ -186,13 +186,6 @@
 		box-shadow: var(--glow-primary);
 	}
 
-	.btn-disabled {
-		background-color: var(--bg-secondary);
-		color: var(--text-muted);
-		border-color: var(--border-default);
-		pointer-events: none;
-	}
-
 	.login-prompt,
 	.empty {
 		text-align: center;
