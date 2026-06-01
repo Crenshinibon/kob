@@ -1,3 +1,1 @@
 $ playwright test "--workers=1" "--reporter=list"
-🧹 Cleaning up old test tournaments...
-🗑️ Found 185 tournaments older than 1 hour

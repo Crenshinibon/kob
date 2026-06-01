@@ -2,16 +2,17 @@
 
 ## ToDo
 
-- [] not so obvious what "win by" means, we should add a small explainer, like: "points difference to win a set", also make sure that this setting is working correctly when entering scores. Is the setting respected on the court page?
-- [] explain how to get players from WVV site into tournament, make a tip. Here we need a small help text. That explains the process from copying the players from the CVS download from the tournament page from the official WVV management site. There is a "Meldungen" area here you can download the CSV. From this CSV you copy the "spieler 1" and "wvv" columns (remove the "shirt1" column) and paste it into the "Players" field.
-- [] court-count "slider" doesn't start at the beginning and doesn't end at the end. When selecting 1, the "knob" is not above the 1, same with 16.
-- [] Auto-Calculated "Number of Rounds" should not look like an input. Just display the Number (and put, Auto-Calculated behind it)
-- [] Max number of points doesn't respect settings! I can enter 11 vs. 25 but this is not legal for a 21 points set. This is a major problem. You can only win by more than 21 (15, or the configured number) if winBy == 2 "enforces" it.
-- [] Also we need to explain that retire "reshuffles" the courts. And "injury" only affects the players current court, for the current round.
-- [] reduce log output. We are logging a lot of stuff. We need to reduce it or put it behind an effective switch for production.
+(no remaining items)
 
 ## Done
 
+- [x] "win by" explainer — added tooltip: "Points difference required to win a set" and radio labels "2 points (deuce possible)" / "1 point (first to N wins)"
+- [x] WVV CSV import help — collapsible tip explaining CSV from "Meldungen", copy "spieler 1" and "wvv" columns
+- [x] Retire/injury explainer — retire section explains reshuffling ALL courts; injury section explains only affects current court for current round
+- [x] Court-count slider knob alignment — CSS grid layout aligns "1" and "16" labels with slider at extremes. Spec 880.
+- [x] Auto-calculated rounds display — plain `<span class="info-text">`, no border/background. Spec 880.
+- [x] Reduce log output — no `console.log` in `src/`, Drizzle has no debug logger. Spec 900.
+- [x] Deuce-aware blowout score validation — `isValidFinalScore()` blocks overshoot scores (25-11, 22-11 rejected; 21-19, 22-20, 30-28 accepted). 28 unit tests + E2E test `rejects blowout scores`. Spec 870.
 - [x] Report Injury should be disabled when all results are entered for every round. Added `isComplete` per court + `allCourtsComplete` flag shows hint instead of form when all courts done.
 - [x] Undo "Injury - Report / Retirement". Added undo retirement and undo injury buttons with 5-minute window. Undo cleared when any new scores entered on affected court. E2E tests for all three undo flows.
 - [x] Solo play (Option C from `670_player-retirement.md`): Allow a 2v1 format when a player is injured mid-round and no substitute is available. Needs server-side validation schema update, UI radio option, and scoring logic.
