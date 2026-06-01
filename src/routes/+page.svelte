@@ -39,7 +39,7 @@
 		{#if data?.user}
 			<a href="/tournament/create" class="btn-primary">{m.new_tournament()}</a>
 		{:else}
-			<a href="/login" class="btn-primary btn-disabled">{m.new_tournament()}</a>
+			<a href="/login" class="btn-primary">{m.login()}</a>
 		{/if}
 	</header>
 
@@ -60,7 +60,9 @@
 						>
 							<h3>{tournament.name}</h3>
 							<span class="status active">{m.status_active()}</span>
-							<p class="round">{m.round_label({ current: tournament.currentRound, total: tournament.numRounds })}</p>
+							<p class="round">
+								{m.round_label({ current: tournament.currentRound, total: tournament.numRounds })}
+							</p>
 						</a>
 					{/each}
 				</div>
@@ -106,9 +108,7 @@
 		{#if data.active.length === 0 && data.finished.length === 0 && data.archived.length === 0}
 			<section class="empty">
 				<p>{m.no_tournaments()}</p>
-				<a href="/tournament/create" class="btn-primary"
-					>{m.create_first()}</a
-				>
+				<a href="/tournament/create" class="btn-primary">{m.create_first()}</a>
 			</section>
 		{/if}
 	{/if}
