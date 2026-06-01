@@ -437,7 +437,7 @@
 										});
 										editingScoring = false;
 										localOverrides = {};
-									}}>{m.save()}</button
+									}}>Save Scoring</button
 								>
 								<button
 									class="btn-secondary"
