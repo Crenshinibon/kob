@@ -43,7 +43,7 @@ Win By: 2 points (deuce possible) / 1 point (first to N wins)
 **Fix**: Add a help text line below the textarea (or as a `<details>` expandable tip):
 
 ```
-Tip: From the WVV management site, download the CSV from "Meldungen".
+Tip: From the WVV management site, download the CSV from "Setzliste".
 Copy the "spieler 1" and "wvv" columns and paste them here.
 (One name per line, optionally with points: "Name 1234")
 ```
