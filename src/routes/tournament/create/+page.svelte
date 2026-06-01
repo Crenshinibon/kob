@@ -32,11 +32,11 @@
 	function handlePaste(e: ClipboardEvent) {
 		const pastedText = e.clipboardData?.getData('text') || '';
 
-		if (textareaEl && (pastedText.includes(',') || pastedText.includes(';'))) {
+		if (textareaEl && /[,;\t]/.test(pastedText)) {
 			e.preventDefault();
 
 			const names = pastedText
-				.split(/[,;]+/)
+				.split(/[,;\t]+/)
 				.map((n) => n.trim())
 				.filter((n) => n.length > 0);
 
@@ -282,13 +282,16 @@
 				<div class="radio-group">
 					<label class="radio-label">
 						<input type="radio" name="n:winBy" value="2" bind:group={winBy} />
-						<span class="radio-text">2 points</span>
+						<span class="radio-text">2 points (deuce possible)</span>
 					</label>
 					<label class="radio-label">
 						<input type="radio" name="n:winBy" value="1" bind:group={winBy} />
-						<span class="radio-text">1 point</span>
+						<span class="radio-text">1 point (first to N wins)</span>
 					</label>
 				</div>
+				<p class="field-hint">
+					Points difference required to win a set (e.g., 21-19 with win-by-2)
+				</p>
 			</div>
 			{#if setsToWin === '1'}
 				<div class="field">
@@ -343,6 +346,18 @@
 				placeholder="Alice 1250&#10;Bob 1100&#10;Carol 950&#10;..."
 				required
 			></textarea>
+			<p class="hint">
+				One name per line, optionally with seed points:<br />
+				<code>Name 1250</code>
+			</p>
+			<details class="import-tip">
+				<summary class="import-tip-summary">WVV CSV import</summary>
+				<p class="import-tip-text">
+					From the WVV management site, download the CSV from "Meldungen".<br />
+					Copy the "spieler 1" and "wvv" columns and paste them here.<br />
+					Tab-separated columns are supported.
+				</p>
+			</details>
 			<p class="count">{computedPlayerCount} names entered</p>
 			{#if computedPlayerCount > 0 && computedPlayerCount < minPlayers}
 				<p class="info warn">Minimum {minPlayers} players required</p>
@@ -381,19 +396,21 @@
 
 		<div class="field">
 			<label for="physicalCourts">Physical Courts: {physicalCourts}</label>
-			<input
-				type="range"
-				id="physicalCourts"
-				name="n:physicalCourts"
-				bind:value={physicalCourts}
-				min={1}
-				max={16}
-				step={1}
-			/>
-			<div class="range-labels">
-				<span>1</span>
-				<span>{physicalCourts} courts</span>
-				<span>16</span>
+			<div class="range-container">
+				<input
+					type="range"
+					id="physicalCourts"
+					name="n:physicalCourts"
+					bind:value={physicalCourts}
+					min={1}
+					max={16}
+					step={1}
+				/>
+				<div class="range-labels">
+					<span>1</span>
+					<span class="range-current">{physicalCourts} courts</span>
+					<span>16</span>
+				</div>
 			</div>
 			{#if physicalCourts < Math.ceil(computedPlayerCount / 4)}
 				<p class="info">
@@ -406,7 +423,7 @@
 		<div class="field">
 			<span class="label">Number of Rounds</span>
 			{#if formatType === 'preseed'}
-				<div class="info-box">{effectiveRounds} rounds (auto-calculated)</div>
+				<span class="info-text">{effectiveRounds} rounds (auto-calculated)</span>
 				<input type="hidden" name="n:numRounds" value={effectiveRounds} />
 			{:else}
 				<div class="rounds-config">
@@ -569,17 +586,30 @@
 		transform: scale(1.02);
 	}
 
-	input[type='range'] {
+	.range-container {
+		display: grid;
+		grid-template-columns: 1fr;
+	}
+
+	.range-container input[type='range'] {
 		width: 100%;
 		accent-color: var(--accent-primary);
 		margin: var(--spacing-sm) 0;
+		grid-row: 1;
 	}
 
 	.range-labels {
-		display: flex;
-		justify-content: space-between;
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
 		font-size: var(--font-size-sm);
 		color: var(--text-muted);
+		grid-row: 2;
+	}
+
+	.range-current {
+		text-align: center;
+		font-weight: 600;
+		color: var(--text-secondary);
 	}
 
 	textarea {
@@ -616,6 +646,48 @@
 		margin-top: var(--spacing-xs);
 	}
 
+	.hint {
+		margin: var(--spacing-xs) 0 0 0;
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		line-height: 1.5;
+	}
+
+	.hint code {
+		background-color: var(--bg-secondary);
+		padding: 1px 6px;
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-sm);
+	}
+
+	.import-tip {
+		margin-top: var(--spacing-xs);
+	}
+
+	.import-tip-summary {
+		font-size: var(--font-size-sm);
+		color: var(--accent-primary);
+		cursor: pointer;
+		font-weight: 500;
+	}
+
+	.import-tip-text {
+		margin: var(--spacing-xs) 0 0 0;
+		padding: var(--spacing-sm);
+		background-color: var(--bg-secondary);
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		line-height: 1.5;
+	}
+
+	.field-hint {
+		margin: 0;
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+		font-style: italic;
+	}
+
 	.leftover-actions {
 		display: flex;
 		gap: var(--spacing-sm);
@@ -640,13 +712,10 @@
 		color: var(--text-primary);
 	}
 
-	.info-box {
-		padding: var(--spacing-sm) var(--spacing-md);
-		background-color: var(--bg-input);
-		color: var(--text-muted);
-		border: var(--border-thickness) solid var(--border-default);
-		border-radius: var(--radius-sm);
+	.info-text {
 		font-size: var(--font-size-base);
+		color: var(--text-muted);
+		font-weight: 500;
 	}
 
 	.radio-group {

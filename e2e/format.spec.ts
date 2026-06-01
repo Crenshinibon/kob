@@ -117,7 +117,7 @@ test.describe('Tournament Format Selection', () => {
 
 			// Pre-seed hides the rounds input and shows auto-calculated
 			await expect(page.locator('input[name="n:numRounds"]')).not.toBeVisible();
-			await expect(page.locator('.info-box:has-text("rounds")')).toBeVisible();
+			await expect(page.locator('.info-text:has-text("rounds")')).toBeVisible();
 
 			// Enter players with points on the create page
 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1} ${100 - i * 5}`);
@@ -159,8 +159,8 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('input[value="preseed"]');
 
 			// Note: round count depends on player count entered on the next page
-			// The info-box shows the calculated rounds based on current player input
-			await expect(page.locator('.info-box:has-text("rounds")')).toBeVisible();
+			// The info-text shows the calculated rounds based on current player input
+			await expect(page.locator('.info-text:has-text("rounds")')).toBeVisible();
 		});
 
 		test('switching from Pre-Seed to Random shows rounds input again', async ({ page }) => {

@@ -412,7 +412,9 @@
 						<summary class="btn-retire-header">Retire a Player</summary>
 						<div class="retire-form">
 							<p class="retire-note">
-								Remove a player before any scores are entered. Courts will be redistributed.
+								Remove a player before any scores are entered. This will reshuffle ALL courts
+								(recalculate all player assignments). The retired player is removed for the
+								remainder of the tournament.
 							</p>
 							<div class="field">
 								<label for="retirePlayerId">Select player to retire</label>
@@ -464,7 +466,9 @@
 						<summary class="btn-injury-header">Report Injury</summary>
 						<div class="injury-form">
 							<p class="injury-note">
-								Handle a player injury mid-round. Choose how to handle remaining matches.
+								Handle a player injury mid-round. This only affects the player's current court for
+								the current round. Other courts continue normally. At the end of the round, the
+								injured player can either continue (substitute) or be retired.
 							</p>
 							<div class="field">
 								<label for="injuryPlayerId">Select injured player</label>
