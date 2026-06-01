@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolveRoute } from '$app/paths';
+	import * as m from '$lib/paraglide/messages';
 
 	let { data }: { data: PageData } = $props();
 

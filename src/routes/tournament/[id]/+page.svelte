@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getTournamentDataLive, type CourtDisplayData } from './tournament-data.remote';
+	import * as m from '$lib/paraglide/messages';
 	import {
 		closeRoundForm,
 		deleteTournamentForm,
@@ -164,7 +165,7 @@
 				<a href={resolveRoute('/')}>← Dashboard</a>
 				<h1>{tournament.name}</h1>
 				{#if isActive}
-					<p>Round {currentRound} of {tournament.numRounds}</p>
+					<p>{m.round_label({ current: currentRound, total: tournament.numRounds })}</p>
 				{:else}
 					<p class="status-completed">Completed</p>
 				{/if}
@@ -198,7 +199,7 @@
 						<div class="shift-list">
 							{#each shifts as shift, si (si)}
 								<span class="shift-badge" class:active={si === 0}
-									>Shift {si + 1}: C{shift.join(', C')}</span
+									>{m.shift_label({ current: si + 1, total: shifts.length })}</span
 								>
 							{/each}
 						</div>
@@ -210,7 +211,7 @@
 				{#each courts as court (court.courtNumber)}
 					<div class="court-card">
 						<div class="court-header">
-							<h2>Court {court.courtNumber}</h2>
+							<h2>{m.court_label({ number: court.courtNumber })}</h2>
 							<div class="court-meta">
 								<span
 									class="court-size-badge"
@@ -268,7 +269,7 @@
 					<form {...closeRoundForm}>
 						<input {...closeRoundForm.fields.tournamentId.as('hidden', tournament.id)} />
 						<button type="submit" class="btn-primary">
-							{isFinalRound ? 'Finalize Tournament' : 'Close Round & Advance'}
+							{isFinalRound ? m.finalize_tournament() : m.close_round()}
 						</button>
 					</form>
 				{:else if isActive}
@@ -436,14 +437,14 @@
 										});
 										editingScoring = false;
 										localOverrides = {};
-									}}>Save Scoring</button
+									}}>{m.save()}</button
 								>
 								<button
 									class="btn-secondary"
 									onclick={() => {
 										editingScoring = false;
 										localOverrides = {};
-									}}>Cancel</button
+									}}>{m.cancel()}</button
 								>
 							</div>
 						{:else}
@@ -480,7 +481,7 @@
 			{#if isActive && currentRound > 0 && !hasScores}
 				<section class="retire-section">
 					<details>
-						<summary class="btn-retire-header">Retire a Player</summary>
+						<summary class="btn-retire-header">{m.retire_player()}</summary>
 						<div class="retire-form">
 							<p class="retire-note">
 								Remove a player before any scores are entered. This will reshuffle ALL courts
@@ -524,7 +525,7 @@
 									retireReason = '';
 								}}
 							>
-								Retire Player
+								{m.retire_confirm()}
 							</button>
 
 							{#if undoableRetirements.length > 0}
@@ -559,7 +560,7 @@
 			{#if isActive && currentRound > 0 && hasScores && !allCourtsComplete}
 				<section class="injury-section">
 					<details>
-						<summary class="btn-injury-header">Report Injury</summary>
+						<summary class="btn-injury-header">{m.report_injury()}</summary>
 						<div class="injury-form">
 							<p class="injury-note">
 								Handle a player injury mid-round. This only affects the player's current court for
@@ -612,7 +613,7 @@
 									injuryOption = '';
 								}}
 							>
-								Confirm Injury
+								{m.injury_confirm()}
 							</button>
 
 							{#each undoableInjuries as ui (ui.id)}
@@ -646,7 +647,7 @@
 			{#if isActive && currentRound > 0 && hasScores && allCourtsComplete}
 				<section class="injury-section">
 					<details>
-						<summary class="btn-injury-header">Report Injury</summary>
+						<summary class="btn-injury-header">{m.report_injury()}</summary>
 						<div class="injury-form">
 							<p class="info-muted">
 								All courts finished for this round. To retire a player because of injury, proceed to

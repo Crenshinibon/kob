@@ -2,7 +2,8 @@
 
 ## ToDo
 
-(no remaining items)
+- [] deprecation warnings in project.inlang settings.json
+- 
 
 ## Done
 

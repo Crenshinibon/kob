@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CookieNotice from '$lib/components/CookieNotice.svelte';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import * as m from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 
 	let {
@@ -20,7 +21,7 @@
 <div class="app-container">
 	{#if data?.user}
 		<div class="v1-banner">
-			Beta: Tournament data may be wiped. Closed tournaments are auto-deleted after 14 days.
+			{m.v1_banner()}
 		</div>
 	{/if}
 
@@ -28,7 +29,7 @@
 		<nav class="top-nav">
 			<LanguageSwitcher />
 			<span class="user-email">{data.user.email}</span>
-			<button onclick={handleSignOut} class="btn-signout">Sign Out</button>
+			<button onclick={handleSignOut} class="btn-signout">{m.sign_out()}</button>
 		</nav>
 	{/if}
 

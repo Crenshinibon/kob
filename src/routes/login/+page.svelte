@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolveRoute } from '$app/paths';
+	import * as m from '$lib/paraglide/messages';
 
 	let email = $state('');
 	let password = $state('');
@@ -34,7 +35,7 @@
 
 <main>
 	<div class="auth-container">
-		<h1>Log In</h1>
+		<h1>{m.login()}</h1>
 
 		{#if error}
 			<div class="error">{error}</div>
@@ -42,22 +43,22 @@
 
 		<form onsubmit={handleSubmit}>
 			<div class="field">
-				<label for="email">Email</label>
+				<label for="email">{m.email()}</label>
 				<input type="email" id="email" bind:value={email} required />
 			</div>
 
 			<div class="field">
-				<label for="password">Password</label>
+				<label for="password">{m.password()}</label>
 				<input type="password" id="password" bind:value={password} required />
 			</div>
 
 			<button type="submit" class="btn-primary" disabled={loading}>
-				{loading ? 'Logging in...' : 'Log In'}
+				{loading ? 'Logging in...' : m.login()}
 			</button>
 		</form>
 
 		<p class="switch">
-			Don't have an account? <a href={resolveRoute('/signup')}>Sign up</a>
+			{m.no_account()} <a href={resolveRoute('/signup')}>{m.sign_up()}</a>
 		</p>
 	</div>
 </main>

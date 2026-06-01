@@ -7,6 +7,7 @@
 		type DurationConfig
 	} from '$lib/tournament-logic';
 	import { resolveRoute } from '$app/paths';
+	import * as m from '$lib/paraglide/messages';
 	import { createTournamentForm } from './create.remote';
 
 	let createError = $state('');
@@ -186,7 +187,7 @@
 <main>
 	<header>
 		<a href={resolveRoute('/')}>← Back</a>
-		<h1>Create Tournament</h1>
+		<h1>{m.create_submit()}</h1>
 	</header>
 
 	<form {...createTournamentForm}>
@@ -195,7 +196,7 @@
 		{/if}
 
 		<div class="field">
-			<label for="name">Tournament Name</label>
+			<label for="name">{m.create_tournament_name()}</label>
 			<input
 				type="text"
 				id="name"
@@ -214,7 +215,7 @@
 						<input type="radio" name="formatType" value="random-seed" bind:group={formatType} />
 					</div>
 					<span class="radio-content">
-						<strong>Random</strong>
+						<strong>{m.create_random_seed()}</strong>
 						<small>First round random placement, then ladder system with flexible rounds</small>
 					</span>
 				</label>
@@ -223,7 +224,7 @@
 						<input type="radio" name="formatType" value="preseed" bind:group={formatType} />
 					</div>
 					<span class="radio-content">
-						<strong>Pre-Seed</strong>
+						<strong>{m.create_preseed()}</strong>
 						<small>Seeding based on WVV points, recursive splitting rounds</small>
 					</span>
 				</label>
@@ -238,7 +239,7 @@
 						<input type="radio" name="scoringMode" value="single-21" bind:group={scoringMode} />
 					</div>
 					<span class="radio-content">
-						<strong>One Set to 21</strong>
+						<strong>{m.scoring_single_set()}</strong>
 						<small>Single set, first to 21, win by 2</small>
 					</span>
 				</label>
@@ -247,7 +248,7 @@
 						<input type="radio" name="scoringMode" value="best-of-3" bind:group={scoringMode} />
 					</div>
 					<span class="radio-content">
-						<strong>Best of 3</strong>
+						<strong>{m.scoring_best_of_3()}</strong>
 						<small>First to 2 sets (21pt), deciding set to 15, win by 2</small>
 					</span>
 				</label>
@@ -256,7 +257,7 @@
 						<input type="radio" name="scoringMode" value="custom" bind:group={scoringMode} />
 					</div>
 					<span class="radio-content">
-						<strong>Custom</strong>
+						<strong>{m.create_custom()}</strong>
 						<small>Set your own point targets and set count</small>
 					</span>
 				</label>
@@ -295,7 +296,7 @@
 			</div>
 			{#if setsToWin === '1'}
 				<div class="field">
-					<label for="pointsToWin">Set Points</label>
+					<label for="pointsToWin">{m.create_points_to_win()}</label>
 					<input
 						type="number"
 						id="pointsToWin"
@@ -320,7 +321,7 @@
 					/>
 				</div>
 				<div class="field">
-					<label for="decidingSetPoints">Deciding Set Points</label>
+					<label for="decidingSetPoints">{m.create_deciding_set_points()}</label>
 					<input
 						type="number"
 						id="decidingSetPoints"
@@ -335,7 +336,7 @@
 		</div>
 
 		<div class="field">
-			<label for="names">Player Names</label>
+			<label for="names">{m.create_player_names()}</label>
 			<textarea
 				id="names"
 				name="names"
@@ -395,7 +396,7 @@
 		</div>
 
 		<div class="field">
-			<label for="physicalCourts">Physical Courts: {physicalCourts}</label>
+			<label for="physicalCourts">{m.create_physical_courts()}: {physicalCourts}</label>
 			<div class="range-container">
 				<input
 					type="range"
@@ -472,7 +473,7 @@
 			class="btn-primary"
 			disabled={computedPlayerCount < minPlayers || computedPlayerCount > maxPlayers}
 		>
-			Create Tournament
+			{m.create_submit()}
 		</button>
 	</form>
 </main>

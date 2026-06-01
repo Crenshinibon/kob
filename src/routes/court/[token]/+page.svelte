@@ -3,6 +3,7 @@
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { browser } from '$app/environment';
 	import QRCode from 'qrcode';
+	import * as msg from '$lib/paraglide/messages';
 
 	import { saveScore, saveSetScore } from './scores.remote';
 	import { createScoreSchema, createSetScoreSchema } from './scoreSchema';

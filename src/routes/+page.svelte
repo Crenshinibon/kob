@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolveRoute } from '$app/paths';
+	import * as m from '$lib/paraglide/messages';
 
 	interface TournamentSummary {
 		id: number;
@@ -36,21 +37,21 @@
 			</h1>
 		</div>
 		{#if data?.user}
-			<a href={resolveRoute('/tournament/create')} class="btn-primary">+ New Tournament</a>
+			<a href={resolveRoute('/tournament/create')} class="btn-primary">{m.new_tournament()}</a>
 		{:else}
-			<a href={resolveRoute('/login')} class="btn-primary btn-disabled">+ New Tournament</a>
+			<a href={resolveRoute('/login')} class="btn-primary btn-disabled">{m.new_tournament()}</a>
 		{/if}
 	</header>
 
 	{#if !data?.user}
 		<section class="login-prompt">
-			<p>Please <a href={resolveRoute('/login')}>log in</a> to manage tournaments.</p>
+			<p>{m.login_prompt()}</p>
 		</section>
 	{:else}
 		<!-- Active Tournaments -->
 		{#if data.active.length > 0}
 			<section class="tournaments">
-				<h2>Active Tournaments</h2>
+				<h2>{m.active_tournaments()}</h2>
 				<div class="tournament-list">
 					{#each data.active as tournament (tournament.id)}
 						<a
@@ -58,8 +59,8 @@
 							class="tournament-card"
 						>
 							<h3>{tournament.name}</h3>
-							<span class="status active">active</span>
-							<p class="round">Round {tournament.currentRound} of {tournament.numRounds}</p>
+							<span class="status active">{m.status_active()}</span>
+							<p class="round">{m.round_label({ current: tournament.currentRound, total: tournament.numRounds })}</p>
 						</a>
 					{/each}
 				</div>
@@ -69,7 +70,7 @@
 		<!-- Finished Tournaments -->
 		{#if data.finished.length > 0}
 			<section class="tournaments">
-				<h2>Finished Tournaments</h2>
+				<h2>{m.finished_tournaments()}</h2>
 				<div class="tournament-list">
 					{#each data.finished as tournament (tournament.id)}
 						<a
@@ -77,7 +78,7 @@
 							class="tournament-card"
 						>
 							<h3>{tournament.name}</h3>
-							<span class="status completed">completed</span>
+							<span class="status completed">{m.status_completed()}</span>
 						</a>
 					{/each}
 				</div>
@@ -87,7 +88,7 @@
 		<!-- Archived Tournaments -->
 		{#if data.archived.length > 0}
 			<section class="tournaments">
-				<h2>Archived Tournaments</h2>
+				<h2>{m.archived_tournaments()}</h2>
 				<div class="tournament-list">
 					{#each data.archived as tournament (tournament.id)}
 						<a
@@ -95,7 +96,7 @@
 							class="tournament-card"
 						>
 							<h3>{tournament.name}</h3>
-							<span class="status archived">archived</span>
+							<span class="status archived">{m.status_archived()}</span>
 						</a>
 					{/each}
 				</div>
@@ -104,9 +105,9 @@
 
 		{#if data.active.length === 0 && data.finished.length === 0 && data.archived.length === 0}
 			<section class="empty">
-				<p>No tournaments yet.</p>
+				<p>{m.no_tournaments()}</p>
 				<a href={resolveRoute('/tournament/create')} class="btn-primary"
-					>Create your first tournament</a
+					>{m.create_first()}</a
 				>
 			</section>
 		{/if}
@@ -115,7 +116,7 @@
 
 <footer class="imprint">
 	<details>
-		<summary>Imprint / Legal Notice</summary>
+		<summary>{m.imprint_title()}</summary>
 		<div class="imprint-content">
 			<p><strong>ACCOMADE - Dirk Porsche</strong></p>
 			<p>Sollbrüggenstr. 14<br />47800 Krefeld<br />Germany</p>
