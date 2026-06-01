@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolveRoute } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import * as m from '$lib/paraglide/messages';
 
 	let { data }: { data: PageData } = $props();
@@ -90,7 +90,7 @@
 
 <main>
 	<header>
-		<a href={resolveRoute('/tournament/[id]', { id: String(tournament.id) })}
+		<a href={resolve('/tournament/[id]', { id: String(tournament.id) })}
 			>{m.standings_back()}</a
 		>
 		<h1>{tournament.name}</h1>

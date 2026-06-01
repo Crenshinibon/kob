@@ -6,7 +6,6 @@
 		estimateRoundDurationMinutes,
 		type DurationConfig
 	} from '$lib/tournament-logic';
-	import { resolveRoute } from '$app/paths';
 	import * as m from '$lib/paraglide/messages';
 	import { createTournamentForm } from './create.remote';
 
@@ -186,7 +185,7 @@
 
 <main>
 	<header>
-		<a href={resolveRoute('/')}>← Back</a>
+		<a href="/">← Back</a>
 		<h1>{m.create_submit()}</h1>
 	</header>
 

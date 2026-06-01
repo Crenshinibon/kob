@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { resolveRoute } from '$app/paths';
 
 	function handleBack() {
-		goto(resolveRoute('/'));
+		goto('/');
 	}
 </script>
 

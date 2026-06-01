@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { resolveRoute } from '$app/paths';
 
 	let dismissed = $state(false);
 	let mounted = $state(false);
@@ -24,7 +23,7 @@
 				This site uses essential cookies for authentication and security.
 				<button
 					type="button"
-					onclick={() => goto(resolveRoute('/privacy'))}
+					onclick={() => goto('/privacy')}
 					class="cookie-link-btn"
 				>
 					Learn more

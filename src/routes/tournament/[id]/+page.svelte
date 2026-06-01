@@ -10,7 +10,7 @@
 		undoRetirement,
 		undoInjury
 	} from './tournament-actions.remote';
-	import { resolveRoute } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { getEffectiveScoring, getScoringLabel } from '$lib/tournament-logic';
 	import CourtQRCode from '$lib/components/CourtQRCode.svelte';
 
@@ -162,7 +162,7 @@
 	{:else}
 		<main>
 			<header>
-				<a href={resolveRoute('/')}>← Dashboard</a>
+				<a href="/">← Dashboard</a>
 				<h1>{tournament.name}</h1>
 				{#if isActive}
 					<p>{m.round_label({ current: currentRound, total: tournament.numRounds })}</p>
@@ -170,7 +170,7 @@
 					<p class="status-completed">Completed</p>
 				{/if}
 				<a
-					href={resolveRoute('/tournament/[id]/standings', { id: String(tournament.id) })}
+					href={resolve('/tournament/[id]/standings', { id: String(tournament.id) })}
 					class="standings-link">📊 View Standings</a
 				>
 				{#if isActive && !isConnected}
@@ -255,7 +255,7 @@
 						{#if court.token}
 							<div class="qr-link">
 								<a
-									href={resolveRoute('/court/[token]', { token: String(court.token) })}
+									href={resolve('/court/[token]', { token: String(court.token) })}
 									target="_blank">Open Court Page →</a
 								>
 							</div>

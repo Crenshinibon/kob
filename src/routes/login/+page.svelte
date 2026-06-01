@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolveRoute } from '$app/paths';
 	import * as m from '$lib/paraglide/messages';
 
 	let email = $state('');
@@ -58,7 +57,7 @@
 		</form>
 
 		<p class="switch">
-			{m.no_account()} <a href={resolveRoute('/signup')}>{m.sign_up()}</a>
+			{m.no_account()} <a href="/signup">{m.sign_up()}</a>
 		</p>
 	</div>
 </main>

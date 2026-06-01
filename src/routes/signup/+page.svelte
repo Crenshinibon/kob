@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { resolveRoute } from '$app/paths';
-
 	let email = $state('');
 	let password = $state('');
 	let confirmPassword = $state('');
@@ -84,7 +82,7 @@
 		</form>
 
 		<p class="switch">
-			Already have an account? <a href={resolveRoute('/login')}>Log in</a>
+			Already have an account? <a href="/login">Log in</a>
 		</p>
 	</div>
 </main>
