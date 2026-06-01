@@ -1145,16 +1145,24 @@ export const undoInjury = command(
 			.from(match)
 			.where(eq(match.courtRotationId, playerRotation.id));
 
-		const hasFreshScores = rotationMatches.some(
-			(m) => m.teamAScore !== null && !m.injuredPlayerIds?.includes(playerId)
-		);
+		const hasCanceled = rotationMatches.some((m) => m.isCanceled);
+		const hasInjuredFlag = rotationMatches.some((m) => m.injuredPlayerIds?.includes(playerId));
+
+		let hasFreshScores = false;
+		if (hasCanceled) {
+			// For cancel: a scored + canceled match means fresh scores entered after cancel
+			hasFreshScores = rotationMatches.some((m) => m.teamAScore !== null && m.isCanceled);
+		} else if (hasInjuredFlag) {
+			// For substitute: a scored match with injuredPlayerIds means fresh scores entered after substitution
+			hasFreshScores = rotationMatches.some(
+				(m) => m.teamAScore !== null && (m.injuredPlayerIds ?? []).includes(playerId)
+			);
+		}
 		if (hasFreshScores) {
 			error(400, 'Cannot undo injury: scores have been entered on this court');
 		}
 
 		// Determine injury type and revert
-		const hasCanceled = rotationMatches.some((m) => m.isCanceled);
-		const hasInjuredFlag = rotationMatches.some((m) => m.injuredPlayerIds?.includes(playerId));
 
 		if (hasCanceled) {
 			// Undo cancel: revert isCanceled on the player's unmatched matches

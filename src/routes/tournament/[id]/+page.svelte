@@ -85,12 +85,28 @@
 		rp: { id: number; name: string; injuredAt: Date | null; retiredAt: Date | null },
 		courts: CourtDisplayData[]
 	): { canUndoInjury: boolean; courtComplete: boolean } {
-		const court = courts.find((c) => c.players.some((p) => p.id === rp.id));
-		if (!court) return { canUndoInjury: false, courtComplete: false };
-		const hasFreshScores = court.matches.some(
-			(m) => m.teamAScore !== null && !(m.injuredPlayerIds ?? []).includes(rp.id)
+		const court = courts.find((c) =>
+			c.players.some((p) => p.id === rp.id)
 		);
-		return { canUndoInjury: !hasFreshScores, courtComplete: court.isComplete };
+		if (!court) return { canUndoInjury: false, courtComplete: false };
+		// Determine injury type from match state:
+		// - Cancel: some matches are isCanceled on this court
+		// - Substitute: some matches have injuredPlayerIds for this player
+		const hasCanceled = court.matches.some((m) => m.isCanceled);
+		const hasInjuredFlag = court.matches.some(
+			(m) => (m.injuredPlayerIds ?? []).includes(rp.id)
+		);
+		let hasProgressed = false;
+		if (hasCanceled) {
+			// For cancel: a scored + canceled match means fresh scores (pre-injury scores are not canceled)
+			hasProgressed = court.matches.some((m) => m.teamAScore !== null && m.isCanceled);
+		} else if (hasInjuredFlag) {
+			// For substitute: a scored match with injuredPlayerIds means fresh scores
+			hasProgressed = court.matches.some(
+				(m) => m.teamAScore !== null && (m.injuredPlayerIds ?? []).includes(rp.id)
+			);
+		}
+		return { canUndoInjury: !hasProgressed, courtComplete: court.isComplete };
 	}
 </script>
 
