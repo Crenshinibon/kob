@@ -7,13 +7,13 @@
 - [] court-count "slider" doesn't start at the beginning and doesn't end at the end. When selecting 1, the "knob" is not above the 1, same with 16.
 - [] Auto-Calculated "Number of Rounds" should not look like an input. Just display the Number (and put, Auto-Calculated behind it)
 - [] Max number of points doesn't respect settings! I can enter 11 vs. 25 but this is not legal for a 21 points set. This is a major problem. You can only win by more than 21 (15, or the configured number) if winBy == 2 "enforces" it.
-- [] Report Injury should be disabled when all results are entered for every round. You would use "Retire" at the start of the next round.
-- [] Undo "Injury - Report / Retirement". We need a way to undo the retirement/injury report if the Org made a mistake.
 - [] Also we need to explain that retire "reshuffles" the courts. And "injury" only affects the players current court, for the current round.
 - [] reduce log output. We are logging a lot of stuff. We need to reduce it or put it behind an effective switch for production.
 
 ## Done
 
+- [x] Report Injury should be disabled when all results are entered for every round. Added `isComplete` per court + `allCourtsComplete` flag shows hint instead of form when all courts done.
+- [x] Undo "Injury - Report / Retirement". Added undo retirement and undo injury buttons with 5-minute window. Undo cleared when any new scores entered on affected court. E2E tests for all three undo flows.
 - [x] Solo play (Option C from `670_player-retirement.md`): Allow a 2v1 format when a player is injured mid-round and no substitute is available. Needs server-side validation schema update, UI radio option, and scoring logic.
 - [x] **E2E tests fail due to live query polling delay** — Tests wait for "Finalize Tournament" or "Close Round & Advance" button but it's not in the DOM until the 3-second live query poll refreshes `canCloseRound`. The disabled state renders as a completely different button ("⏳ Waiting for all scores..."). See `specs/860_e2e-live-query-timing.md`. (Previously two tests affected; now rare after save-wait fixes — tests that wait for `saved-` indicators complete saves before navigating, so `canCloseRound` is usually true on first live query yield.)
 - [x] **Retire/Report Injury conditional visibility** — "Retire a Player" only visible when no scores entered yet (pre-round); "Report Injury" only visible when scores exist (mid-round). Added `hasScores` to live query data. Added descriptive notes to each section.
