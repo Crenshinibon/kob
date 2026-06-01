@@ -16,11 +16,12 @@ Two improvements for injury and retirement handling.
 {#if isActive && currentRound > 0 && hasScores}
 ```
 
-This shows the "Report Injury" section whenever there are any scores in the current round. But it does not account for which *specific courts* are still playable.
+This shows the "Report Injury" section whenever there are any scores in the current round. But it does not account for which _specific courts_ are still playable.
 
 **Requirement**: Per-court granularity.
+
 - Once a court's matches are all complete (scored or canceled = `isComplete`), the players assigned to that court cannot be picked for injury reporting.
-- When *all* courts are complete, the entire Report Injury section deactivates and shows a hint.
+- When _all_ courts are complete, the entire Report Injury section deactivates and shows a hint.
 
 #### Player-level filter
 
@@ -30,7 +31,7 @@ Add an `isComplete` flag to each court in `TournamentDisplayData`:
 
 ```ts
 // per court
-isComplete: matches.every(m => (m.teamAScore !== null && m.teamBScore !== null) || m.isCanceled);
+isComplete: matches.every((m) => (m.teamAScore !== null && m.teamBScore !== null) || m.isCanceled);
 ```
 
 Then in the player dropdown, exclude players whose court `isComplete === true`.
@@ -57,8 +58,8 @@ proceed to the next round and use the "Retire a Player" functionality.
 When constructing the player dropdown, cross-reference each player's court `isComplete`:
 
 ```ts
-const eligiblePlayers = currentRoundData.players.filter(p => {
-	const court = courts.find(c => c.players.includes(p.id));
+const eligiblePlayers = currentRoundData.players.filter((p) => {
+	const court = courts.find((c) => c.players.includes(p.id));
 	return court && !court.isComplete;
 });
 ```
@@ -77,6 +78,7 @@ const eligiblePlayers = currentRoundData.players.filter(p => {
 #### Shared constraints (all undo operations)
 
 All undo operations are capped by **both** of these conditions:
+
 1. **No scores entered** in the affected round — if any match has real scores, undo is unavailable.
 2. **Time window** — undo must be requested within **5 minutes** of the original action. Store `actionTimestamp` on the tournament or player row.
 
@@ -95,6 +97,7 @@ If either constraint fails, the undo button is hidden.
 **No `currentRound > 0` guard**: Accidental retirement can happen in round 1 just as easily. Remove the round-number constraint.
 
 **Implementation**:
+
 1. New remote function: `undoRetirement(tournamentId: number, playerId: number)`
 2. Guards:
    - No scores entered on ANY match this round
@@ -109,17 +112,20 @@ If either constraint fails, the undo button is hidden.
 **Location**: `src/routes/tournament/[id]/tournament-actions.remote.ts` — `reportInjury`
 
 **Current behavior**: Two branches:
+
 - **Substitute**: Replaces injured player with a substitute (creates new match entry rows with sub)
 - **Cancel**: Cancels remaining matches for the injured player's court (sets `isCanceled: true` on unmatched matches)
 
 **Undo approach — two variants**:
 
 **Undo Cancel** (simpler):
+
 - Finds the injured player's canceled matches this round
 - Sets `isCanceled = false` (or deletes the cancel marker)
 - No reshuffling needed — other courts were unaffected
 
 **Undo Substitute** (more complex):
+
 - Removes substitute player's match entries
 - Re-adds original injured player's match entries
 - If scores were entered with the substitute, the operation is BLOCKED (undo button disappears as soon as the court progresses with scores)
@@ -144,6 +150,7 @@ If either constraint fails, the undo button is hidden.
 ```
 
 `rp.canUndoRetire` is derived from:
+
 - `Date.now() - rp.retiredAt < 5 * 60 * 1000` (within 5 min)
 - `noScoresEnteredThisRound` (no match data yet this round)
 
@@ -159,6 +166,7 @@ When `canUndoRetire` becomes `false`, the button disappears.
 ```
 
 `canUndoInjury` derived from:
+
 - `Date.now() - injuryState.reportedAt < 5 * 60 * 1000`
 - `noScoresEnteredOnAffectedCourt` (court hasn't progressed with scores)
 
@@ -172,6 +180,7 @@ When `canUndoRetire` becomes `false`, the button disappears.
 ```
 
 `canUndoInjury` derived from:
+
 - `Date.now() - injuryState.reportedAt < 5 * 60 * 1000`
 - `noScoresEnteredOnAffectedCourt` — but for substitute, also check that the **substitute's matches have no scores**. As soon as any match on the injured player's court (whether played by sub or original player) gets a score, undo is blocked.
 

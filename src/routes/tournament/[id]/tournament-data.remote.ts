@@ -23,6 +23,7 @@ export interface CourtDisplayData {
 	totalShifts?: number;
 	waitMinutes?: number;
 	waitLabel?: string;
+	isComplete: boolean;
 }
 
 export interface TournamentDisplayData {
@@ -43,7 +44,10 @@ export interface TournamentDisplayData {
 		name: string;
 		retiredRound: number | null;
 		retirementReason: string | null;
+		retiredAt: Date | null;
+		injuredAt: Date | null;
 	}[];
+	allCourtsComplete: boolean;
 	error?: string;
 }
 
@@ -77,7 +81,9 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 			id: p.id,
 			name: p.name,
 			retiredRound: p.retiredRound,
-			retirementReason: p.retirementReason
+			retirementReason: p.retirementReason,
+			retiredAt: p.retiredAt,
+			injuredAt: p.injuredAt
 		}));
 	const activePlayerCount = dbPlayers.filter((p) => !p.retiredAt).length;
 
@@ -163,14 +169,21 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 
 		const size = rotation.courtSize ?? courtSizes[rotation.courtNumber - 1] ?? 4;
 
+		const isComplete =
+			matches.length > 0 &&
+			matches.every((m) => (m.teamAScore !== null && m.teamBScore !== null) || m.isCanceled);
+
 		courts.push({
 			courtNumber: rotation.courtNumber,
 			courtSize: size,
 			matches,
 			token: access[0]?.token ?? null,
-			players: rotationPlayers
+			players: rotationPlayers,
+			isComplete
 		});
 	}
+
+	const allCourtsComplete = courts.length > 0 && courts.every((c) => c.isComplete);
 
 	const physicalCourtCount = tourney.physicalCourtCount ?? 4;
 	const virtualCourtCount = courts.length;
@@ -218,7 +231,8 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		roundDuration,
 		currentPlayerCount: players.length,
 		activePlayerCount,
-		retiredPlayers
+		retiredPlayers,
+		allCourtsComplete
 	};
 }
 

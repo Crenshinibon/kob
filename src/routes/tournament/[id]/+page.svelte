@@ -1,11 +1,13 @@
 <script lang="ts">
-	import { getTournamentDataLive } from './tournament-data.remote';
+	import { getTournamentDataLive, type CourtDisplayData } from './tournament-data.remote';
 	import {
 		closeRoundForm,
 		deleteTournamentForm,
 		updateScoringOverrides,
 		retirePlayer,
-		reportInjury
+		reportInjury,
+		undoRetirement,
+		undoInjury
 	} from './tournament-actions.remote';
 	import { resolveRoute } from '$app/paths';
 	import { getEffectiveScoring, getScoringLabel } from '$lib/tournament-logic';
@@ -43,6 +45,14 @@
 	let retireReason = $state('');
 	let injuryPlayerId = $state(0);
 	let injuryOption = $state<'substitute' | 'cancel' | ''>('');
+	let now = $state(Date.now());
+
+	$effect(() => {
+		const id = setInterval(() => {
+			now = Date.now();
+		}, 1000);
+		return () => clearInterval(id);
+	});
 
 	function getMatchStatus(matches: { teamAScore: number | null }[]): string {
 		const completed = matches.filter((m) => m.teamAScore !== null).length;
@@ -64,6 +74,24 @@
 			e.preventDefault();
 		}
 	}
+
+	function isUndoableRetirement(rp: { retiredAt: Date | null; injuredAt: Date | null }): boolean {
+		return (
+			!!rp.retiredAt && !rp.injuredAt && now - new Date(rp.retiredAt).getTime() < 5 * 60 * 1000
+		);
+	}
+
+	function computeInjuryUndo(
+		rp: { id: number; name: string; injuredAt: Date | null; retiredAt: Date | null },
+		courts: CourtDisplayData[]
+	): { canUndoInjury: boolean; courtComplete: boolean } {
+		const court = courts.find((c) => c.players.some((p) => p.id === rp.id));
+		if (!court) return { canUndoInjury: false, courtComplete: false };
+		const hasFreshScores = court.matches.some(
+			(m) => m.teamAScore !== null && !(m.injuredPlayerIds ?? []).includes(rp.id)
+		);
+		return { canUndoInjury: !hasFreshScores, courtComplete: court.isComplete };
+	}
 </script>
 
 {#await liveQuery}
@@ -82,6 +110,33 @@
 	{@const isActive = tournament?.status === 'active'}
 	{@const gridClass = courts.length > 4 ? 'courts courts-8' : 'courts'}
 	{@const virtualCourtCount = courtSizes.length}
+	{@const allCourtsComplete = state?.allCourtsComplete ?? false}
+	{@const retiredPlayers = state?.retiredPlayers ?? []}
+	{@const FIVE_MIN_MS = 5 * 60 * 1000}
+	{@const eligibleInjuryPlayers = (() => {
+		const result: { id: number; name: string; courtNumber: number }[] = [];
+		for (const court of courts) {
+			if (court.isComplete) continue;
+			for (const p of court.players) {
+				if (!p.retired) result.push({ id: p.id, name: p.name, courtNumber: court.courtNumber });
+			}
+		}
+		return result;
+	})()}
+	{@const undoableRetirements = retiredPlayers.filter(
+		(rp: { retiredAt: Date | null; injuredAt: Date | null }) => isUndoableRetirement(rp)
+	)}
+	{@const undoableInjuries = (() => {
+		return retiredPlayers
+			.filter(
+				(rp: { injuredAt: Date | null; retiredAt: Date | null }) =>
+					rp.injuredAt && rp.retiredAt && now - new Date(rp.injuredAt).getTime() < 5 * 60 * 1000
+			)
+			.map((rp: { id: number; name: string; injuredAt: Date | null; retiredAt: Date | null }) => {
+				const undo = computeInjuryUndo(rp, courts);
+				return { ...rp, ...undo };
+			});
+	})()}
 
 	{#if !tournament}
 		<div class="loading">Loading tournament...</div>
@@ -455,12 +510,37 @@
 							>
 								Retire Player
 							</button>
+
+							{#if undoableRetirements.length > 0}
+								<div class="undo-list">
+									<span class="undo-label">Recently retired (can undo):</span>
+									{#each undoableRetirements as rp (rp.id)}
+										{@const remaining = Math.max(
+											0,
+											FIVE_MIN_MS - (now - new Date(rp.retiredAt!).getTime())
+										)}
+										{@const secondsLeft = Math.ceil(remaining / 1000)}
+										<div class="undo-item">
+											<span class="undo-desc">{rp.name} — {secondsLeft}s left</span>
+											<button
+												class="btn-undo"
+												onclick={async () => {
+													await undoRetirement({
+														tournamentId: data.tournamentId,
+														playerId: rp.id
+													});
+												}}>Undo</button
+											>
+										</div>
+									{/each}
+								</div>
+							{/if}
 						</div>
 					</details>
 				</section>
 			{/if}
 
-			{#if isActive && currentRound > 0 && hasScores}
+			{#if isActive && currentRound > 0 && hasScores && !allCourtsComplete}
 				<section class="injury-section">
 					<details>
 						<summary class="btn-injury-header">Report Injury</summary>
@@ -474,12 +554,8 @@
 								<label for="injuryPlayerId">Select injured player</label>
 								<select id="injuryPlayerId" bind:value={injuryPlayerId} required>
 									<option value="">— Select player —</option>
-									{#each courts as court (court.courtNumber)}
-										{#each court.players as p (p.id)}
-											{#if !p.retired}
-												<option value={p.id}>{p.name} (Court {court.courtNumber})</option>
-											{/if}
-										{/each}
+									{#each eligibleInjuryPlayers as ep (ep.id)}
+										<option value={ep.id}>{ep.name} (Court {ep.courtNumber})</option>
 									{/each}
 								</select>
 							</div>
@@ -522,6 +598,44 @@
 							>
 								Confirm Injury
 							</button>
+
+							{#each undoableInjuries as ui (ui.id)}
+								{@const remaining = Math.max(
+									0,
+									FIVE_MIN_MS - (now - new Date(ui.retiredAt as string | Date).getTime())
+								)}
+								{@const secondsLeft = Math.ceil(remaining / 1000)}
+								{#if ui.canUndoInjury}
+									<div class="undo-item">
+										<span class="undo-desc"
+											>Injury reported for {ui.name} — {secondsLeft}s left</span
+										>
+										<button
+											class="btn-undo"
+											onclick={async () => {
+												await undoInjury({
+													tournamentId: data.tournamentId,
+													playerId: ui.id
+												});
+											}}>Undo</button
+										>
+									</div>
+								{/if}
+							{/each}
+						</div>
+					</details>
+				</section>
+			{/if}
+
+			{#if isActive && currentRound > 0 && hasScores && allCourtsComplete}
+				<section class="injury-section">
+					<details>
+						<summary class="btn-injury-header">Report Injury</summary>
+						<div class="injury-form">
+							<p class="info-muted">
+								All courts finished for this round. To retire a player because of injury, proceed to
+								the next round and use the "Retire a Player" functionality.
+							</p>
 						</div>
 					</details>
 				</section>
@@ -1073,5 +1187,62 @@
 
 	.injury-form .btn-danger {
 		align-self: flex-start;
+	}
+
+	.info-muted {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		margin: 0;
+		padding: var(--spacing-sm);
+	}
+
+	.undo-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+		margin-top: var(--spacing-sm);
+		padding-top: var(--spacing-sm);
+		border-top: 1px solid var(--border-default);
+	}
+
+	.undo-label {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		font-weight: 600;
+	}
+
+	.undo-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-xs) var(--spacing-sm);
+		background-color: var(--bg-secondary);
+		border-radius: var(--radius-sm);
+	}
+
+	.undo-desc {
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+	}
+
+	.btn-undo {
+		background-color: transparent;
+		color: var(--accent-warning);
+		border: 2px solid var(--accent-warning);
+		padding: 2px 10px;
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		flex-shrink: 0;
+	}
+
+	.btn-undo:hover {
+		background-color: var(--accent-warning);
+		color: var(--bg-primary);
 	}
 </style>

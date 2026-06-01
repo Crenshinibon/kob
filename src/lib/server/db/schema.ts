@@ -42,7 +42,8 @@ export const player = pgTable('player', {
 	retiredRound: integer('retired_round'),
 	retiredCourt: integer('retired_court'),
 	retirementReason: text('retirement_reason'),
-	finalStanding: integer('final_standing')
+	finalStanding: integer('final_standing'),
+	injuredAt: timestamp('injured_at')
 });
 
 export const court = pgTable('court', {
