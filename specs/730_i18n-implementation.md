@@ -299,4 +299,4 @@ for (const locale of locales.slice(1)) {
 2. **Layout breakage**: German/French strings can be 30-50% longer than English
 3. **Maintenance burden**: Every new UI string needs 4 translations
 4. **SvelteKit integration**: Paraglide may have edge cases with SSR/hydration
-5. **Court access URLs**: Anonymous court pages — how to determine locale without user context?
+5. **Court access URLs**: Anonymous court pages — how to determine locale without user context? **DECIDED**: Use `Accept-Language` header, fallback to `en`.
