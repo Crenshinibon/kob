@@ -2,11 +2,11 @@
 
 ## ToDo
 
-- [] deprecation warnings in project.inlang settings.json
-- 
+
 
 ## Done
 
+- [x] deprecation warnings in project.inlang settings.json
 - [x] "win by" explainer — added tooltip: "Points difference required to win a set" and radio labels "2 points (deuce possible)" / "1 point (first to N wins)"
 - [x] WVV CSV import help — collapsible tip explaining CSV from "Meldungen", copy "spieler 1" and "wvv" columns
 - [x] Retire/injury explainer — retire section explains reshuffling ALL courts; injury section explains only affects current court for current round
