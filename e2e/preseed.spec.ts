@@ -148,6 +148,9 @@ test.describe('Preseed Tournament', () => {
 		await page.waitForTimeout(2000);
 		await page.waitForSelector('button:has-text("Close Round & Advance")');
 		await page.click('button:has-text("Close Round & Advance")');
+		// Wait for round to actually close before returning
+		await page.waitForTimeout(3000);
+		await page.waitForSelector('.qr-link a');
 	}
 
 	async function finalize(page: import('@playwright/test').Page, tid: string): Promise<void> {
@@ -292,7 +295,6 @@ test.describe('Preseed Tournament', () => {
 
 		// Close R1 → R2 (final round)
 		await closeRound(page, tid);
-		await page.waitForSelector('.qr-link a');
 
 		// R2: verify structure
 		const r2 = await getRoundPlayers(page, tid);
