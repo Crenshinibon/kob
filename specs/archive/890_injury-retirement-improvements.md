@@ -1,4 +1,4 @@
-# 890 Injury/Retirement Improvements [WIP]
+# 890 Injury/Retirement Improvements [FIXED]
 
 ## Items
 
