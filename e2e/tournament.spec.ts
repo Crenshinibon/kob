@@ -1060,9 +1060,10 @@ test.describe('Tournament Integration Tests', () => {
       await expect(retiredPlayer).toBeVisible();
 
       // Visit the injured player's court and verify "SUBST" label
-      const firstCourtLink = await page.locator('.qr-link a').first();
-      const firstCourtUrl = await firstCourtLink.getAttribute('href');
-      await page.goto(firstCourtUrl || '');
+      const subCourtLinks = await page.locator('.qr-link a').all();
+      const subTargetLink = subCourtLinks[player1Court - 1] || subCourtLinks[0];
+      const subCourtUrl = await subTargetLink.getAttribute('href');
+      await page.goto(subCourtUrl || '');
       await page.waitForSelector('.player-card.injured');
       const substNames = page.locator('.player-card.injured .player-name');
       await expect(substNames).toHaveText('SUBST');
@@ -1362,6 +1363,9 @@ test.describe('Tournament Integration Tests', () => {
       await page.click('input[value="substitute"]');
       await page.waitForTimeout(500);
       await page.click('.injury-form button');
+
+      // Wait for command to complete before navigating fresh
+      await page.waitForTimeout(2000);
 
       // Navigate to a fresh page to ensure clean state
       await page.goto(tournamentUrl);
