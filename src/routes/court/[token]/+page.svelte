@@ -430,23 +430,23 @@
 	</header>
 
 	<section class="qr-section">
-		<h2>Share Court Access</h2>
+		<h2>{msg.court_share_access()}</h2>
 		{#await generateQR()}
-			<div class="qr-loading">Loading QR...</div>
+			<div class="qr-loading">{msg.loading_qr()}</div>
 		{:then qrDataUrl}
 			<div class="qr-code">
 				<img src={qrDataUrl} alt="QR code for this court" />
-				<p class="qr-hint">Share this QR code with your court partners</p>
+				<p class="qr-hint">{msg.court_share_hint()}</p>
 			</div>
 		{:catch}
-			<div class="qr-error">Failed to load QR</div>
+			<div class="qr-error">{msg.failed_load_qr()}</div>
 		{/await}
 	</section>
 
 	{#if !data.isActive}
 		<div class="closed" transition:slide>
-			<h2>This court is closed</h2>
-			<p>Scores have been finalized. Stand by for next round assignments.</p>
+			<h2>{msg.court_closed_heading()}</h2>
+			<p>{msg.court_closed_message()}</p>
 		</div>
 	{:else}
 		<section class="players-section">
@@ -705,7 +705,7 @@
 
 	{#if data.standings.length > 0}
 		<section class="standings" transition:slide>
-			<h2>Current Standings</h2>
+			<h2>{msg.court_standings()}</h2>
 			{#if data.court.courtSize === 3}
 				<p class="standings-note">
 					3-player court: solo rotation format — each player takes a turn solo

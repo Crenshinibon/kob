@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import { error, redirect } from '@sveltejs/kit';
 import { form, command, getRequestEvent } from '$app/server';
+import * as m from '$lib/paraglide/messages';
 import { db } from '$lib/server/db';
 import { tournament, player, courtRotation, match, court } from '$lib/server/db/schema';
 import { eq, and, inArray, isNull, or } from 'drizzle-orm';
@@ -39,14 +40,14 @@ export const closeRoundForm = form(
 	async ({ tournamentId }) => {
 		const event = getRequestEvent();
 		const user = event.locals.user;
-		if (!user) error(401, 'Unauthorized');
+		if (!user) error(401, m.login_prompt());
 
 		const [tourney] = await db
 			.select()
 			.from(tournament)
 			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
 
-		if (!tourney) error(404, 'Not found');
+		if (!tourney) error(404, m.tournament_not_found());
 		if (tourney.status !== 'active') error(400, 'Tournament not active');
 
 		const currentRound = tourney.currentRound || 1;
@@ -394,20 +395,20 @@ export const retirePlayer = command(
 	async ({ tournamentId, playerId, reason }) => {
 		const event = getRequestEvent();
 		const user = event.locals.user;
-		if (!user) error(401, 'Unauthorized');
+		if (!user) error(401, m.unauthorized());
 
 		const [tourney] = await db
 			.select()
 			.from(tournament)
 			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
-		if (!tourney) error(404, 'Tournament not found');
-		if (tourney.status !== 'active') error(400, 'Tournament not active');
+		if (!tourney) error(404, m.tournament_not_found());
+		if (tourney.status !== 'active') error(400, m.tournament_not_active());
 
 		const [targetPlayer] = await db
 			.select()
 			.from(player)
 			.where(and(eq(player.id, playerId), eq(player.tournamentId, tournamentId)));
-		if (!targetPlayer) error(404, 'Player not found');
+		if (!targetPlayer) error(404, m.player_not_found());
 		if (targetPlayer.retiredAt) error(400, 'Player already retired');
 
 		const currentRound = tourney.currentRound || 0;

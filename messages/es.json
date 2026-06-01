@@ -19,7 +19,6 @@
 	"retire_player": "Retirar jugador",
 	"view_standings": "Ver clasificación",
 	"court_label": "Cancha {number}",
-
 	"create_title": "Crear torneo",
 	"create_tournament_name": "Nombre del torneo",
 	"create_player_names": "Jugadores",
@@ -55,7 +54,6 @@
 	"create_courts_label": "canchas",
 	"create_auto_calculated": "{count} rondas (calculado automáticamente)",
 	"create_scoring_default": "El modo de puntuación se aplica a todas las canchas de 4 jugadores.",
-
 	"court_title": "Cancha {number}",
 	"court_match": "Partido {number}",
 	"court_team_a": "Equipo A",
@@ -72,18 +70,15 @@
 	"court_closed": "Esta cancha no está programada para la ronda {round}.",
 	"court_qr_code": "Código QR",
 	"court_injury_banner": "Se ha reportado una lesión en esta cancha.",
-
 	"standings_title": "Clasificación final",
 	"standings_place": "Lugar",
 	"standings_player": "Jugador",
 	"standings_points": "Puntos",
 	"standings_diff": "Dif.",
 	"standings_court_history": "Historial de canchas",
-
 	"status_active": "activo",
 	"status_completed": "finalizado",
 	"status_archived": "archivado",
-
 	"save": "Guardar",
 	"cancel": "Cancelar",
 	"delete": "Eliminar",
@@ -102,7 +97,6 @@
 	"close_round": "Cerrar ronda",
 	"finalize_tournament": "Finalizar torneo",
 	"waiting_for_scores": "Esperando resultados...",
-
 	"login": "Iniciar sesión",
 	"sign_up": "Registrarse",
 	"email": "Correo electrónico",
@@ -111,20 +105,40 @@
 	"login_prompt": "Inicia sesión para gestionar torneos.",
 	"no_account": "¿No tienes cuenta?",
 	"has_account": "¿Ya tienes cuenta?",
-
 	"imprint_title": "Aviso legal",
 	"imprint_legal_note": "Este sitio web se opera de acuerdo con los requisitos de la Ley de Servicios Digitales (DSA) de la UE. El aviso legal proporciona la información legalmente requerida sobre el proveedor del servicio.",
-
 	"shifts_remaining": "{count} turnos restantes",
 	"virtual_court_info": "Hay más canchas que canchas físicas. Esta ronda se jugará en {count} turnos.",
 	"shift_label": "Turno {current} de {total}",
 	"physical_court": "Cancha física {number}",
-
 	"format_random_seed": "Semilla aleatoria",
 	"format_preseed": "Preclasificación",
 	"scoring_single_set": "Set único",
 	"scoring_best_of_3": "Mejor de 3",
 	"scoring_custom": "Personalizado",
 	"scoring_mode_override": "Personalizar puntuación",
-	"scoring_override_hint": "Personaliza la puntuación para diferentes tamaños de cancha."
+	"scoring_override_hint": "Personaliza la puntuación para diferentes tamaños de cancha.",
+	"standings_rounds": "Rondas",
+	"standings_empty": "Aún no hay clasificación.",
+	"standings_empty_hint": "Completa al menos una ronda.",
+	"standings_winners": "Ganadores",
+	"standings_complete_rankings": "Clasificación completa",
+	"standings_achievements": "Logros",
+	"standings_retired_players": "Jugadores retirados",
+	"standings_back": "← Volver al torneo",
+	"standings_retired_round": "Retirado tras ronda",
+	"standings_reason": "Motivo",
+	"achievement_most_improved": "Mayor mejora",
+	"achievement_consistent": "Más constante",
+	"achievement_court_champion": "Campeón de cancha",
+	"court_share_access": "Compartir acceso",
+	"court_share_hint": "Comparte este código QR con tus compañeros",
+	"court_closed_heading": "Esta cancha está cerrada",
+	"court_closed_message": "Los resultados han sido finalizados. Espera las próximas asignaciones.",
+	"court_avg": "Prom.",
+	"tournament_not_found": "Torneo no encontrado",
+	"player_not_found": "Jugador no encontrado",
+	"not_found": "No encontrado",
+	"unauthorized": "No autorizado",
+	"tournament_not_active": "Torneo inactivo"
 }

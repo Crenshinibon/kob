@@ -19,7 +19,6 @@
 	"retire_player": "Spieler entfernen",
 	"view_standings": "Rangliste anzeigen",
 	"court_label": "Platz {number}",
-
 	"create_title": "Turnier erstellen",
 	"create_tournament_name": "Turniername",
 	"create_player_names": "Spieler",
@@ -55,7 +54,6 @@
 	"create_courts_label": "Plätze",
 	"create_auto_calculated": "{count} Runden (automatisch berechnet)",
 	"create_scoring_default": "Zählweise gilt für alle 4-Spieler-Plätze.",
-
 	"court_title": "Platz {number}",
 	"court_match": "Spiel {number}",
 	"court_team_a": "Team A",
@@ -72,18 +70,15 @@
 	"court_closed": "Dieser Platz ist für Runde {round} nicht eingeplant.",
 	"court_qr_code": "QR-Code",
 	"court_injury_banner": "Auf diesem Platz wurde eine Verletzung gemeldet.",
-
 	"standings_title": "Endstand",
 	"standings_place": "Platz",
 	"standings_player": "Spieler",
 	"standings_points": "Punkte",
 	"standings_diff": "Diff",
 	"standings_court_history": "Platzhistorie",
-
 	"status_active": "aktiv",
 	"status_completed": "beendet",
 	"status_archived": "archiviert",
-
 	"save": "Speichern",
 	"cancel": "Abbrechen",
 	"delete": "Löschen",
@@ -102,7 +97,6 @@
 	"close_round": "Runde abschließen",
 	"finalize_tournament": "Turnier abschließen",
 	"waiting_for_scores": "Warte auf alle Ergebnisse...",
-
 	"login": "Anmelden",
 	"sign_up": "Registrieren",
 	"email": "E-Mail",
@@ -111,20 +105,40 @@
 	"login_prompt": "Bitte melde dich an, um Turniere zu verwalten.",
 	"no_account": "Noch kein Konto?",
 	"has_account": "Bereits ein Konto?",
-
 	"imprint_title": "Impressum / Rechtliche Hinweise",
 	"imprint_legal_note": "Diese Website wird gemäß den Anforderungen des EU Digital Services Act (DSA) betrieben. Das Impressum enthält rechtlich erforderliche Informationen über den Diensteanbieter.",
-
 	"shifts_remaining": "{count} Durchgänge verbleibend",
 	"virtual_court_info": "Es gibt mehr Plätze als physische Plätze. Diese Runde wird in {count} Durchgängen gespielt.",
 	"shift_label": "Durchgang {current} von {total}",
 	"physical_court": "Physischer Platz {number}",
-
 	"format_random_seed": "Zufalls-Seeding",
 	"format_preseed": "Platzierungssetzung",
 	"scoring_single_set": "Ein Satz",
 	"scoring_best_of_3": "Best of 3",
 	"scoring_custom": "Benutzerdefiniert",
 	"scoring_mode_override": "Zählweise-Anpassungen",
-	"scoring_override_hint": "Zählweise für verschiedene Platzgrößen anpassen."
+	"scoring_override_hint": "Zählweise für verschiedene Platzgrößen anpassen.",
+	"standings_rounds": "Runden",
+	"standings_empty": "Noch keine Rangliste verfügbar.",
+	"standings_empty_hint": "Schließe mindestens eine Runde ab.",
+	"standings_winners": "Gewinner",
+	"standings_complete_rankings": "Gesamtrangliste",
+	"standings_achievements": "Turnier-Auszeichnungen",
+	"standings_retired_players": "Ausgeschiedene Spieler",
+	"standings_back": "← Zurück zum Turnier",
+	"standings_retired_round": "Ausgeschieden nach Runde",
+	"standings_reason": "Grund",
+	"achievement_most_improved": "Meiste Verbesserung",
+	"achievement_consistent": "Konstantester Spieler",
+	"achievement_court_champion": "Platz-Champion",
+	"court_share_access": "Zugang teilen",
+	"court_share_hint": "Teile diesen QR-Code mit deinen Platzpartnern",
+	"court_closed_heading": "Dieser Platz ist geschlossen",
+	"court_closed_message": "Ergebnisse wurden gespeichert. Warte auf die nächste Runde.",
+	"court_avg": "Durchschn.",
+	"tournament_not_found": "Turnier nicht gefunden",
+	"player_not_found": "Spieler nicht gefunden",
+	"not_found": "Nicht gefunden",
+	"unauthorized": "Nicht autorisiert",
+	"tournament_not_active": "Turnier ist nicht aktiv"
 }

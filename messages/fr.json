@@ -19,7 +19,6 @@
 	"retire_player": "Retirer un joueur",
 	"view_standings": "Voir le classement",
 	"court_label": "Terrain {number}",
-
 	"create_title": "Créer un tournoi",
 	"create_tournament_name": "Nom du tournoi",
 	"create_player_names": "Joueurs",
@@ -55,7 +54,6 @@
 	"create_courts_label": "terrains",
 	"create_auto_calculated": "{count} tours (calculé automatiquement)",
 	"create_scoring_default": "Le mode de score s'applique à tous les terrains à 4 joueurs.",
-
 	"court_title": "Terrain {number}",
 	"court_match": "Match {number}",
 	"court_team_a": "Équipe A",
@@ -72,18 +70,15 @@
 	"court_closed": "Ce terrain n'est pas prévu pour le tour {round}.",
 	"court_qr_code": "QR Code",
 	"court_injury_banner": "Une blessure a été signalée sur ce terrain.",
-
 	"standings_title": "Classement final",
 	"standings_place": "Place",
 	"standings_player": "Joueur",
 	"standings_points": "Points",
 	"standings_diff": "Diff",
 	"standings_court_history": "Historique des terrains",
-
 	"status_active": "actif",
 	"status_completed": "terminé",
 	"status_archived": "archivé",
-
 	"save": "Enregistrer",
 	"cancel": "Annuler",
 	"delete": "Supprimer",
@@ -102,7 +97,6 @@
 	"close_round": "Clôturer le tour",
 	"finalize_tournament": "Finaliser le tournoi",
 	"waiting_for_scores": "En attente des scores...",
-
 	"login": "Connexion",
 	"sign_up": "Inscription",
 	"email": "E-mail",
@@ -111,20 +105,40 @@
 	"login_prompt": "Veuillez vous connecter pour gérer les tournois.",
 	"no_account": "Pas de compte ?",
 	"has_account": "Déjà un compte ?",
-
 	"imprint_title": "Mentions légales",
 	"imprint_legal_note": "Ce site est exploité conformément aux exigences du Digital Services Act (DSA) de l'UE. Les mentions légales fournissent les informations requises sur le fournisseur de services.",
-
 	"shifts_remaining": "{count} rotations restantes",
 	"virtual_court_info": "Plus de terrains que de terrains physiques. Ce tour se jouera en {count} rotations.",
 	"shift_label": "Rotation {current} sur {total}",
 	"physical_court": "Terrain physique {number}",
-
 	"format_random_seed": "Tirage aléatoire",
 	"format_preseed": "Têtes de série",
 	"scoring_single_set": "Set unique",
 	"scoring_best_of_3": "Meilleur des 3",
 	"scoring_custom": "Personnalisé",
 	"scoring_mode_override": "Personnalisation du score",
-	"scoring_override_hint": "Personnalisez le score pour différentes tailles de terrain."
+	"scoring_override_hint": "Personnalisez le score pour différentes tailles de terrain.",
+	"standings_rounds": "Tours",
+	"standings_empty": "Aucun classement disponible.",
+	"standings_empty_hint": "Terminez au moins un tour.",
+	"standings_winners": "Gagnants",
+	"standings_complete_rankings": "Classement complet",
+	"standings_achievements": "Récompenses",
+	"standings_retired_players": "Joueurs retirés",
+	"standings_back": "← Retour au tournoi",
+	"standings_retired_round": "Retiré après le tour",
+	"standings_reason": "Raison",
+	"achievement_most_improved": "Plus grande progression",
+	"achievement_consistent": "Le plus régulier",
+	"achievement_court_champion": "Champion du terrain",
+	"court_share_access": "Partager l'accès",
+	"court_share_hint": "Partagez ce QR code avec vos partenaires",
+	"court_closed_heading": "Ce terrain est fermé",
+	"court_closed_message": "Les scores ont été finalisés. Attendez les prochaines affectations.",
+	"court_avg": "Moy.",
+	"tournament_not_found": "Tournoi introuvable",
+	"player_not_found": "Joueur introuvable",
+	"not_found": "Introuvable",
+	"unauthorized": "Non autorisé",
+	"tournament_not_active": "Tournoi inactif"
 }

@@ -91,29 +91,29 @@
 <main>
 	<header>
 		<a href={resolveRoute('/tournament/[id]', { id: String(tournament.id) })}
-			>← Back to Tournament</a
+			>{m.standings_back()}</a
 		>
 		<h1>{tournament.name}</h1>
 		{#if tournament.formatType}
 			<p>
-				Total Standings - Round {tournament.currentRound} of {tournament.numRounds}
-				· {tournament.formatType === 'preseed' ? 'Preseed' : 'Random Seed'}
+				{m.standings_title()} · {m.round_label({ current: tournament.currentRound, total: tournament.numRounds })}
+				· {tournament.formatType === 'preseed' ? m.format_preseed() : m.format_random_seed()}
 			</p>
 		{:else}
-			<p>Total Standings - Round {tournament.currentRound} of {tournament.numRounds}</p>
+			<p>{m.standings_title()} · {m.round_label({ current: tournament.currentRound, total: tournament.numRounds })}</p>
 		{/if}
 	</header>
 
 	{#if standings.length === 0}
 		<section class="empty">
-			<p>No standings available yet.</p>
-			<p>Complete at least one round to see total standings.</p>
+			<p>{m.standings_empty()}</p>
+			<p>{m.standings_empty_hint()}</p>
 		</section>
 	{:else}
 		<!-- Podium Section -->
 		{#if tournament.status === 'completed' || tournament.currentRound >= 2}
 			<section class="podium-section">
-				<h2>Winners</h2>
+				<h2>{m.standings_winners()}</h2>
 				<div class="podium">
 					{#if second}
 						<div class="podium-place second">
@@ -148,15 +148,15 @@
 
 		<!-- Total Standings Table -->
 		<section class="standings-section">
-			<h2>Complete Rankings</h2>
+			<h2>{m.standings_complete_rankings()}</h2>
 			<table class="standings-table">
 				<thead>
 					<tr>
-						<th>Rank</th>
-						<th>Player</th>
-						<th>Points</th>
-						<th>Diff</th>
-						<th>Rounds</th>
+						<th>{m.standings_place()}</th>
+						<th>{m.standings_player()}</th>
+						<th>{m.standings_points()}</th>
+						<th>{m.standings_diff()}</th>
+						<th>{m.standings_rounds()}</th>
 						{#if tournament.currentRound > 1}
 							{#each Array.from({ length: tournament.currentRound }, (_, i) => i) as i (i)}
 								<th>R{i + 1}</th>
@@ -215,7 +215,7 @@
 		<!-- Achievement Categories -->
 		{#if tournament.status === 'completed'}
 			<section class="achievements">
-				<h2>Tournament Achievements</h2>
+				<h2>{m.standings_achievements()}</h2>
 				<div class="achievement-grid">
 					{#if standings.length > 0}
 						{@const mostImproved = [...standings].sort((a, b) => {
@@ -227,7 +227,7 @@
 						})[0]}
 						<div class="achievement-card">
 							<div class="achievement-icon">📈</div>
-							<div class="achievement-title">Most Improved</div>
+							<div class="achievement-title">{m.achievement_most_improved()}</div>
 							<div class="achievement-winner">{mostImproved.playerName}</div>
 						</div>
 					{/if}
@@ -242,7 +242,7 @@
 						})[0]}
 						<div class="achievement-card">
 							<div class="achievement-icon">🎯</div>
-							<div class="achievement-title">Consistent Performer</div>
+							<div class="achievement-title">{m.achievement_consistent()}</div>
 							<div class="achievement-winner">{mostConsistent.playerName}</div>
 						</div>
 					{/if}
@@ -255,7 +255,7 @@
 						})[0]}
 						<div class="achievement-card">
 							<div class="achievement-icon">👑</div>
-							<div class="achievement-title">Court Champion</div>
+							<div class="achievement-title">{m.achievement_court_champion()}</div>
 							<div class="achievement-winner">{courtChampion.playerName}</div>
 						</div>
 					{/if}
@@ -265,13 +265,13 @@
 
 		{#if data.retiredPlayers && data.retiredPlayers.length > 0}
 			<section class="retired-section">
-				<h2>Retired Players</h2>
+				<h2>{m.standings_retired_players()}</h2>
 				<table class="standings-table">
 					<thead>
 						<tr>
-							<th>Player</th>
-							<th>Retired After Round</th>
-							<th>Reason</th>
+							<th>{m.standings_player()}</th>
+							<th>{m.standings_retired_round()}</th>
+							<th>{m.standings_reason()}</th>
 						</tr>
 					</thead>
 					<tbody>
