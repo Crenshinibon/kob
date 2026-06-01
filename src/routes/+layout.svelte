@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CookieNotice from '$lib/components/CookieNotice.svelte';
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import type { Snippet } from 'svelte';
 
 	let {
@@ -25,6 +26,7 @@
 
 	{#if data?.user}
 		<nav class="top-nav">
+			<LanguageSwitcher />
 			<span class="user-email">{data.user.email}</span>
 			<button onclick={handleSignOut} class="btn-signout">Sign Out</button>
 		</nav>
