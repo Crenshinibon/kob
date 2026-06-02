@@ -22,10 +22,10 @@
 				window.location.href = '/';
 			} else {
 				const data = await response.json();
-				error = data.message || 'Login failed';
+				error = data.message || m.login_failed();
 			}
 		} catch {
-			error = 'Network error. Please try again.';
+			error = m.login_network_error();
 		} finally {
 			loading = false;
 		}
@@ -52,7 +52,7 @@
 			</div>
 
 			<button type="submit" class="btn-primary" disabled={loading}>
-				{loading ? 'Logging in...' : m.login()}
+				{loading ? m.login_logging_in() : m.login()}
 			</button>
 		</form>
 

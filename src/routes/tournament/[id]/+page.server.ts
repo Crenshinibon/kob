@@ -1,4 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
+import * as m from '$lib/paraglide/messages';
 import { db } from '$lib/server/db';
 import { tournament } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
@@ -14,7 +15,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.from(tournament)
 		.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
 
-	if (!tourney) throw error(404, 'Tournament not found');
+	if (!tourney) throw error(404, m.tournament_not_found());
 
 	return {
 		tournamentId,

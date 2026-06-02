@@ -48,7 +48,7 @@ export const closeRoundForm = form(
 			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
 
 		if (!tourney) error(404, m.tournament_not_found());
-		if (tourney.status !== 'active') error(400, 'Tournament not active');
+		if (tourney.status !== 'active') error(400, m.tournament_not_active());
 
 		const currentRound = tourney.currentRound || 1;
 
@@ -323,14 +323,14 @@ export const deleteTournamentForm = form(
 	async ({ tournamentId }) => {
 		const event = getRequestEvent();
 		const user = event.locals.user;
-		if (!user) error(401, 'Unauthorized');
+		if (!user) error(401, m.unauthorized());
 
 		const [tourney] = await db
 			.select()
 			.from(tournament)
 			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
 
-		if (!tourney) error(404, 'Tournament not found');
+		if (!tourney) error(404, m.tournament_not_found());
 
 		const rotations = await db
 			.select()
@@ -366,14 +366,14 @@ export const updateScoringOverrides = command(
 	async ({ tournamentId, overrides }) => {
 		const event = getRequestEvent();
 		const user = event.locals.user;
-		if (!user) error(401, 'Unauthorized');
+		if (!user) error(401, m.unauthorized());
 
 		const [tourney] = await db
 			.select()
 			.from(tournament)
 			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
 
-		if (!tourney) error(404, 'Tournament not found');
+		if (!tourney) error(404, m.tournament_not_found());
 
 		await db
 			.update(tournament)
@@ -409,10 +409,10 @@ export const retirePlayer = command(
 			.from(player)
 			.where(and(eq(player.id, playerId), eq(player.tournamentId, tournamentId)));
 		if (!targetPlayer) error(404, m.player_not_found());
-		if (targetPlayer.retiredAt) error(400, 'Player already retired');
+		if (targetPlayer.retiredAt) error(400, m.err_player_already_retired());
 
 		const currentRound = tourney.currentRound || 0;
-		if (currentRound === 0) error(400, 'Tournament has not started');
+		if (currentRound === 0) error(400, m.tournament_not_started());
 
 		const currentRotations = await db
 			.select()
@@ -434,7 +434,7 @@ export const retirePlayer = command(
 				r.player6Id === playerId
 		);
 
-		if (!playerRotation) error(400, 'Player is not in the current round');
+		if (!playerRotation) error(400, m.err_player_not_in_round());
 
 		const rotationMatches = await db
 			.select()
@@ -443,7 +443,7 @@ export const retirePlayer = command(
 		const hasScores = rotationMatches.some((m) => m.teamAScore !== null);
 
 		if (hasScores) {
-			error(400, 'Scores have already been entered. Use Report Injury instead.');
+			error(400, m.err_injury_scores_entered());
 		}
 
 		const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
@@ -708,24 +708,24 @@ export const reportInjury = command(
 	async ({ tournamentId, playerId, option, reason }) => {
 		const event = getRequestEvent();
 		const user = event.locals.user;
-		if (!user) error(401, 'Unauthorized');
+		if (!user) error(401, m.unauthorized());
 
 		const [tourney] = await db
 			.select()
 			.from(tournament)
 			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
-		if (!tourney) error(404, 'Tournament not found');
-		if (tourney.status !== 'active') error(400, 'Tournament not active');
+		if (!tourney) error(404, m.tournament_not_found());
+		if (tourney.status !== 'active') error(400, m.tournament_not_active());
 
 		const [targetPlayer] = await db
 			.select()
 			.from(player)
 			.where(and(eq(player.id, playerId), eq(player.tournamentId, tournamentId)));
-		if (!targetPlayer) error(404, 'Player not found');
-		if (targetPlayer.retiredAt) error(400, 'Player already retired');
+		if (!targetPlayer) error(404, m.player_not_found());
+		if (targetPlayer.retiredAt) error(400, m.err_player_already_retired());
 
 		const currentRound = tourney.currentRound || 0;
-		if (currentRound === 0) error(400, 'Tournament has not started');
+		if (currentRound === 0) error(400, m.tournament_not_started());
 
 		const currentRotations = await db
 			.select()
@@ -747,7 +747,7 @@ export const reportInjury = command(
 				r.player6Id === playerId
 		);
 
-		if (!playerRotation) error(400, 'Player is not in the current round');
+		if (!playerRotation) error(400, m.err_player_not_in_round());
 
 		const rotationMatches = await db
 			.select()
@@ -756,7 +756,7 @@ export const reportInjury = command(
 		const hasScores = rotationMatches.some((m) => m.teamAScore !== null);
 
 		if (!hasScores) {
-			error(400, 'No scores entered yet. Use Retire Player instead.');
+			error(400, m.err_retire_scores_entered());
 		}
 
 		if (option === 'cancel') {
@@ -818,31 +818,31 @@ export const undoRetirement = command(
 	async ({ tournamentId, playerId }) => {
 		const event = getRequestEvent();
 		const user = event.locals.user;
-		if (!user) error(401, 'Unauthorized');
+		if (!user) error(401, m.unauthorized());
 
 		const [tourney] = await db
 			.select()
 			.from(tournament)
 			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
-		if (!tourney) error(404, 'Tournament not found');
-		if (tourney.status !== 'active') error(400, 'Tournament not active');
+		if (!tourney) error(404, m.tournament_not_found());
+		if (tourney.status !== 'active') error(400, m.tournament_not_active());
 
 		const [targetPlayer] = await db
 			.select()
 			.from(player)
 			.where(and(eq(player.id, playerId), eq(player.tournamentId, tournamentId)));
-		if (!targetPlayer) error(404, 'Player not found');
+		if (!targetPlayer) error(404, m.player_not_found());
 		if (!targetPlayer.retiredAt) error(400, 'Player is not retired');
 		if (targetPlayer.injuredAt)
-			error(400, 'Player was injured, not retired. Use undo injury instead.');
+			error(400, m.err_wrong_undo_type_injury());
 
 		const currentRound = tourney.currentRound || 0;
-		if (currentRound === 0) error(400, 'Tournament has not started');
+		if (currentRound === 0) error(400, m.tournament_not_started());
 
 		// 5-minute undo window
 		const FIVE_MIN_MS = 5 * 60 * 1000;
 		const elapsed = Date.now() - new Date(targetPlayer.retiredAt).getTime();
-		if (elapsed > FIVE_MIN_MS) error(400, 'Undo window has expired (5 minutes)');
+		if (elapsed > FIVE_MIN_MS) error(400, m.err_undo_window_expired());
 
 		// Check no scores have been entered on ANY court this round
 		const currentRotations = await db
@@ -862,7 +862,7 @@ export const undoRetirement = command(
 				.from(match)
 				.where(inArray(match.courtRotationId, allRotationIds));
 			if (allMatches.some((m) => m.teamAScore !== null)) {
-				error(400, 'Cannot undo retirement: scores have been entered');
+				error(400, m.err_undo_retire_scores_entered());
 			}
 		}
 
@@ -1091,31 +1091,31 @@ export const undoInjury = command(
 	async ({ tournamentId, playerId }) => {
 		const event = getRequestEvent();
 		const user = event.locals.user;
-		if (!user) error(401, 'Unauthorized');
+		if (!user) error(401, m.unauthorized());
 
 		const [tourney] = await db
 			.select()
 			.from(tournament)
 			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
-		if (!tourney) error(404, 'Tournament not found');
-		if (tourney.status !== 'active') error(400, 'Tournament not active');
+		if (!tourney) error(404, m.tournament_not_found());
+		if (tourney.status !== 'active') error(400, m.tournament_not_active());
 
 		const [targetPlayer] = await db
 			.select()
 			.from(player)
 			.where(and(eq(player.id, playerId), eq(player.tournamentId, tournamentId)));
-		if (!targetPlayer) error(404, 'Player not found');
+		if (!targetPlayer) error(404, m.player_not_found());
 		if (!targetPlayer.retiredAt) error(400, 'Player is not retired');
 		if (!targetPlayer.injuredAt)
-			error(400, 'Player was retired, not injured. Use undo retirement instead.');
+			error(400, m.err_wrong_undo_type_retire());
 
 		const currentRound = tourney.currentRound || 0;
-		if (currentRound === 0) error(400, 'Tournament has not started');
+		if (currentRound === 0) error(400, m.tournament_not_started());
 
 		// 5-minute undo window
 		const FIVE_MIN_MS = 5 * 60 * 1000;
 		const elapsed = Date.now() - new Date(targetPlayer.injuredAt).getTime();
-		if (elapsed > FIVE_MIN_MS) error(400, 'Undo window has expired (5 minutes)');
+		if (elapsed > FIVE_MIN_MS) error(400, m.err_undo_window_expired());
 
 		// Find the player's court rotation for this round
 		const currentRotations = await db
@@ -1138,7 +1138,7 @@ export const undoInjury = command(
 				r.player6Id === playerId
 		);
 
-		if (!playerRotation) error(400, 'Player is not in the current round');
+		if (!playerRotation) error(400, m.err_player_not_in_round());
 
 		// Check no scores were entered on the affected court after the injury
 		const rotationMatches = await db
@@ -1160,7 +1160,7 @@ export const undoInjury = command(
 			);
 		}
 		if (hasFreshScores) {
-			error(400, 'Cannot undo injury: scores have been entered on this court');
+			error(400, m.err_undo_injury_scores_entered());
 		}
 
 		// Determine injury type and revert

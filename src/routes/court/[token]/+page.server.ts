@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import * as m from '$lib/paraglide/messages';
 import { db } from '$lib/server/db';
 import { court, courtRotation, match, tournament, player } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
@@ -17,7 +18,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// Get court by token
 	const [courtRecord] = await db.select().from(court).where(eq(court.token, token));
 
-	if (!courtRecord) throw error(404, 'Court not found');
+	if (!courtRecord) throw error(404, m.not_found());
 
 	// Get tournament
 	const [tourney] = await db
@@ -25,7 +26,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.from(tournament)
 		.where(eq(tournament.id, courtRecord.tournamentId));
 
-	if (!tourney) throw error(404, 'Tournament not found');
+	if (!tourney) throw error(404, m.tournament_not_found());
 
 	const currentRound = tourney.currentRound || 0;
 
@@ -88,7 +89,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const playerMap = new Map(players.map((p) => [p.id, p.name]));
 	const playerNames: Record<number, string> = {};
 	playerIds.forEach((id) => {
-		playerNames[id] = playerMap.get(id) || 'Unknown';
+		playerNames[id] = playerMap.get(id) || m.err_unknown_player();
 	});
 
 	// Map DB matches to MatchData and calculate standings using shared logic
@@ -106,7 +107,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const standings = calculateCourtStandings(matchData, playerIds).map((s) => ({
 		...s,
 		id: s.playerId,
-		name: playerNames[s.playerId] || 'Unknown',
+		name: playerNames[s.playerId] || m.err_unknown_player(),
 		avgPoints: s.matchCount > 0 ? s.points : undefined,
 		matchesPlayed: matchData.filter(
 			(m) =>

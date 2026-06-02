@@ -71,7 +71,7 @@
 	}
 
 	function confirmDelete(e: Event) {
-		if (!confirm('Delete this tournament? This cannot be undone.')) {
+		if (!confirm(m.delete_tournament_confirm())) {
 			e.preventDefault();
 		}
 	}
@@ -112,7 +112,7 @@
 </script>
 
 {#await liveQuery}
-	<div class="loading">Loading tournament...</div>
+		<div class="loading">{m.loading_tournament()}</div>
 {:then state}
 	{@const tournament = state?.tournament}
 	{@const courts = state?.courts ?? []}
@@ -156,33 +156,33 @@
 	})()}
 
 	{#if !tournament}
-		<div class="loading">Loading tournament...</div>
+	<div class="loading">{m.loading_tournament()}</div>
 	{:else if state.error}
 		<div class="error">{state.error}</div>
 	{:else}
 		<main>
 			<header>
-				<a href="/">← Dashboard</a>
+				<a href="/">{m.dashboard_btn()}</a>
 				<h1>{tournament.name}</h1>
 				{#if isActive}
 					<p>{m.round_label({ current: currentRound, total: tournament.numRounds })}</p>
 				{:else}
-					<p class="status-completed">Completed</p>
+					<p class="status-completed">{m.completed()}</p>
 				{/if}
 				<a
 					href={resolve('/tournament/[id]/standings', { id: String(tournament.id) })}
-					class="standings-link">📊 View Standings</a
+					class="standings-link">{m.view_standings()}</a
 				>
 				{#if isActive && !isConnected}
 					<button class="btn-reconnect" onclick={() => liveQuery.reconnect()}>
-						🔄 Reconnecting...
+						{m.reconnecting()}
 					</button>
 				{/if}
 			</header>
 
 			{#if isActive && currentRound > 0}
 				<div class="scheduling-info">
-					<h3>Court Scheduling (Round {currentRound})</h3>
+					<h3>{m.court_scheduling({ round: currentRound })}</h3>
 					<p>
 						Batch shifts · {physicalCourtCount} physical court{physicalCourtCount !== 1 ? 's' : ''}
 						· {virtualCourtCount} virtual court{virtualCourtCount !== 1 ? 's' : ''}
@@ -193,7 +193,7 @@
 							: ''}
 					</p>
 					{#if roundDuration}
-						<p class="round-dur">Est. round duration: ~{roundDuration} min per shift</p>
+						<p class="round-dur">{m.est_round_duration({ minutes: roundDuration })}</p>
 					{/if}
 					{#if shifts.length > 1}
 						<div class="shift-list">
@@ -228,10 +228,10 @@
 										class:active={court.shift === 1}
 										class:waiting={court.shift > 1}
 									>
-										{court.shift === 1 ? '▶ Active' : `Shift ${court.shift}/${court.totalShifts}`}
+										{court.shift === 1 ? '▶ Active' : m.shift_count({ current: court.shift, total: court.totalShifts })}
 									</span>
 									{#if court.waitLabel}
-										<span class="wait-time">Est. wait: {court.waitLabel}</span>
+										<span class="wait-time">{m.est_wait({ wait: court.waitLabel })}</span>
 									{/if}
 								{/if}
 							</div>
@@ -246,7 +246,7 @@
 								<span class="player" class:retired={p.retired}>
 									{String.fromCharCode(65 + i)}: {p.name}
 									{#if p.retired}
-										<span class="retired-badge">Retired</span>
+										<span class="retired-badge">{m.retired_badge()}</span>
 									{/if}
 								</span>
 							{/each}
@@ -256,7 +256,7 @@
 							<div class="qr-link">
 								<a
 									href={resolve('/court/[token]', { token: String(court.token) })}
-									target="_blank">Open Court Page →</a
+									target="_blank">{m.open_court_page()}</a
 								>
 							</div>
 						{/if}
@@ -273,7 +273,7 @@
 						</button>
 					</form>
 				{:else if isActive}
-					<button disabled class="btn-primary btn-disabled"> ⏳ Waiting for all scores... </button>
+					<button disabled class="btn-primary btn-disabled">{m.waiting_scores()}</button>
 				{/if}
 
 				{#if tournament.status !== 'completed'}
@@ -288,7 +288,7 @@
 						class="delete-form"
 					>
 						<input {...deleteTournamentForm.fields.tournamentId.as('hidden', tournament.id)} />
-						<button type="submit" class="btn-danger" onclick={confirmDelete}>Delete</button>
+						<button type="submit" class="btn-danger" onclick={confirmDelete}>{m.delete_tournament()}</button>
 					</form>
 				{/if}
 			</section>
@@ -296,9 +296,9 @@
 			{#if isActive && courtSizes.length > 0}
 				<section class="scoring-section">
 					<details>
-						<summary class="scoring-header">Court Scoring Configuration</summary>
+						<summary class="scoring-header">{m.scoring_heading()}</summary>
 						<p class="scoring-note">
-							Override scoring per court type. Changes apply from the next round.
+							{m.scoring_override_hint()}
 						</p>
 						{#if editingScoring}
 							<div class="scoring-grid">
@@ -322,7 +322,7 @@
 									<fieldset class="scoring-fieldset">
 										<legend>{size}p Courts</legend>
 										<label>
-											Points to win
+											{m.create_points_to_win()}
 											<input
 												type="number"
 												min="1"
@@ -339,7 +339,7 @@
 											/>
 										</label>
 										<label>
-											Win by
+											{m.create_win_by()}
 											<input
 												type="number"
 												min="1"
@@ -356,7 +356,7 @@
 											/>
 										</label>
 										<label>
-											Sets to win
+											{m.create_sets_to_win()}
 											<input
 												type="number"
 												min="1"
@@ -374,7 +374,7 @@
 										</label>
 										{#if (ovr.setsToWin ?? effective.setsToWin) >= 2}
 											<label>
-												Deciding set points
+												{m.create_deciding_set_points()}
 												<input
 													type="number"
 													min="1"
@@ -437,7 +437,7 @@
 										});
 										editingScoring = false;
 										localOverrides = {};
-									}}>Save Scoring</button
+									}}>{m.save_scoring()}</button
 								>
 								<button
 									class="btn-secondary"
@@ -470,7 +470,7 @@
 									onclick={() => {
 										editingScoring = true;
 										localOverrides = {};
-									}}>Edit</button
+									}}>{m.edit_btn()}</button
 								>
 							</div>
 						{/if}
@@ -489,9 +489,9 @@
 								remainder of the tournament.
 							</p>
 							<div class="field">
-								<label for="retirePlayerId">Select player to retire</label>
+								<label for="retirePlayerId">{m.retire_select_hint()}</label>
 								<select id="retirePlayerId" bind:value={retirePlayerId} required>
-									<option value="">— Select player —</option>
+									<option value="">{m.retire_select_placeholder()}</option>
 									{#each courts as court (court.courtNumber)}
 										{#each court.players as p (p.id)}
 											{#if !p.retired}
@@ -502,14 +502,14 @@
 								</select>
 							</div>
 							<div class="field">
-								<label for="retireReason">Reason</label>
+								<label for="retireReason">{m.retire_reason_label()}</label>
 								<select id="retireReason" bind:value={retireReason}>
-									<option value="">— Optional —</option>
-									<option value="injury">Injury</option>
-									<option value="schedule">Schedule</option>
-									<option value="personal">Personal</option>
-									<option value="disqualified">Disqualified</option>
-									<option value="other">Other</option>
+									<option value="">{m.retire_reason_placeholder()}</option>
+									<option value="injury">{m.retire_reason_injury()}</option>
+									<option value="schedule">{m.retire_reason_schedule()}</option>
+									<option value="personal">{m.retire_reason_personal()}</option>
+									<option value="disqualified">{m.retire_reason_disqualified()}</option>
+									<option value="other">{m.retire_reason_other()}</option>
 								</select>
 							</div>
 							<button
@@ -530,7 +530,7 @@
 
 							{#if undoableRetirements.length > 0}
 								<div class="undo-list">
-									<span class="undo-label">Recently retired (can undo):</span>
+									<span class="undo-label">{m.retire_undo_hint()}</span>
 									{#each undoableRetirements as rp (rp.id)}
 										{@const remaining = Math.max(
 											0,
@@ -538,15 +538,15 @@
 										)}
 										{@const secondsLeft = Math.ceil(remaining / 1000)}
 										<div class="undo-item">
-											<span class="undo-desc">{rp.name} — {secondsLeft}s left</span>
+											<span class="undo-desc">{m.retire_undo_seconds({ name: rp.name, seconds: secondsLeft })}</span>
 											<button
 												class="btn-undo"
 												onclick={async () => {
-													await undoRetirement({
-														tournamentId: data.tournamentId,
-														playerId: rp.id
-													});
-												}}>Undo</button
+												await undoRetirement({
+													tournamentId: data.tournamentId,
+													playerId: rp.id
+												});
+											}}>{m.retire_undo_btn()}</button
 											>
 										</div>
 									{/each}
@@ -568,33 +568,33 @@
 								injured player can either continue (substitute) or be retired.
 							</p>
 							<div class="field">
-								<label for="injuryPlayerId">Select injured player</label>
+								<label for="injuryPlayerId">{m.injury_select_player()}</label>
 								<select id="injuryPlayerId" bind:value={injuryPlayerId} required>
-									<option value="">— Select player —</option>
+									<option value="">{m.injury_select_placeholder()}</option>
 									{#each eligibleInjuryPlayers as ep (ep.id)}
-										<option value={ep.id}>{ep.name} (Court {ep.courtNumber})</option>
+										<option value={ep.id}>{m.injury_player_label({ name: ep.name, court: ep.courtNumber })}</option>
 									{/each}
 								</select>
 							</div>
 							<div class="field">
-								<span class="label-text">How would you like to handle the remaining matches?</span>
+								<span class="label-text">{m.injury_options_label()}</span>
 								<div
 									class="radio-group"
 									role="radiogroup"
-									aria-label="How would you like to handle the remaining matches?"
+									aria-label={m.injury_options_label()}
 								>
 									<label class="radio-label">
 										<input type="radio" bind:group={injuryOption} value="substitute" required />
-										<span class="radio-title">Use a Substitute</span>
+										<span class="radio-title">{m.injury_substitute()}</span>
 										<span class="radio-desc">
-											Play 2v2 with a temporary substitute. Scores entered normally.
+											{m.injury_substitute_desc()}
 										</span>
 									</label>
 									<label class="radio-label">
 										<input type="radio" bind:group={injuryOption} value="cancel" required />
-										<span class="radio-title">Cancel &amp; Average</span>
+										<span class="radio-title">{m.injury_cancel()}</span>
 										<span class="radio-desc">
-											Cancel remaining matches. Standings use average points.
+											{m.injury_cancel_desc()}
 										</span>
 									</label>
 								</div>
@@ -625,7 +625,7 @@
 								{#if ui.canUndoInjury}
 									<div class="undo-item">
 										<span class="undo-desc"
-											>Injury reported for {ui.name} — {secondsLeft}s left</span
+											>{m.injury_undo_hint({ name: ui.name, seconds: secondsLeft })}</span
 										>
 										<button
 											class="btn-undo"
@@ -634,7 +634,7 @@
 													tournamentId: data.tournamentId,
 													playerId: ui.id
 												});
-											}}>Undo</button
+											}}>{m.injury_undo_btn()}</button
 										>
 									</div>
 								{/if}
@@ -650,8 +650,7 @@
 						<summary class="btn-injury-header">{m.report_injury()}</summary>
 						<div class="injury-form">
 							<p class="info-muted">
-								All courts finished for this round. To retire a player because of injury, proceed to
-								the next round and use the "Retire a Player" functionality.
+								{m.court_all_done()}
 							</p>
 						</div>
 					</details>
@@ -660,7 +659,7 @@
 		</main>
 	{/if}
 {:catch error}
-	<div class="error">Failed to load tournament: {error?.message ?? 'Unknown error'}</div>
+	<div class="error">{m.failed_load_tournament({ error: error?.message ?? 'Unknown error' })}</div>
 {/await}
 
 <style>

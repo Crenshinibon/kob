@@ -1,6 +1,6 @@
 # i18n — Internationalization Spec Index
 
-**Status: NOT YET IMPLEMENTED** — This is a planned feature for a future version.
+**Status: COMPLETED** — Core i18n implementation done. All user-facing text translated to en/de/fr/es. See [730](./archive/730_i18n-implementation.md) for implementation details and remaining minor items.
 
 ## Sub-Specs
 

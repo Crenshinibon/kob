@@ -10,6 +10,7 @@ import {
 	type ScoringOverrides
 } from '$lib/server/tournament-logic';
 import * as v from 'valibot';
+import * as m from '$lib/paraglide/messages';
 
 const baseScoreSchema = v.pipe(
 	v.object({
@@ -19,10 +20,10 @@ const baseScoreSchema = v.pipe(
 	}),
 	v.check((input) => {
 		return input.teamAScore >= 0 && input.teamBScore >= 0;
-	}, 'Scores must be between 0 and 50'),
+	}, m.err_score_range()),
 	v.check((input) => {
 		return input.teamAScore !== input.teamBScore;
-	}, 'Scores cannot be tied')
+	}, m.err_score_tied())
 );
 
 const setScoreSchema = v.pipe(
@@ -34,10 +35,10 @@ const setScoreSchema = v.pipe(
 	}),
 	v.check((input) => {
 		return input.teamAScore >= 0 && input.teamBScore >= 0;
-	}, 'Scores must be between 0 and 50'),
+	}, m.err_score_range()),
 	v.check((input) => {
 		return input.teamAScore !== input.teamBScore;
-	}, 'Scores cannot be tied')
+	}, m.err_score_tied())
 );
 
 async function getMatchContext(matchId: number) {
@@ -53,9 +54,9 @@ async function getMatchContext(matchId: number) {
 
 	const [courtRecord] = await db.select().from(court).where(eq(court.id, rotation.courtId));
 
-	if (!courtRecord || !courtRecord.isActive) return { error: 'Court is not active' as const };
+	if (!courtRecord || !courtRecord.isActive) return { error: m.err_court_not_active() };
 
-	if (matchRecord.isCanceled) return { error: 'Match is canceled' as const };
+	if (matchRecord.isCanceled) return { error: m.err_match_canceled() };
 
 	const [tourney] = await db
 		.select()
@@ -71,8 +72,8 @@ export const saveScore = form(baseScoreSchema, async (data, issue) => {
 	const teamBScore = data.teamBScore;
 
 	const ctx = await getMatchContext(matchId);
-	if (!ctx) return invalid(issue.teamAScore('Invalid match'));
-	if ('error' in ctx) return invalid(issue.teamAScore(ctx.error ?? 'Court error'));
+	if (!ctx) return invalid(issue.teamAScore(m.err_invalid_match()));
+	if ('error' in ctx) return invalid(issue.teamAScore(ctx.error ?? m.err_court_error()));
 
 	const { matchRecord, rotation, tourney } = ctx;
 	const config = {
@@ -99,13 +100,13 @@ export const saveScore = form(baseScoreSchema, async (data, issue) => {
 		if (teamAScore > teamBScore) {
 			return invalid(
 				issue.teamAScore(
-					`Invalid score: winner must reach ${minPoints} with a ${effective.winBy}-point lead (or deuce rules apply)`
+					m.err_score_invalid({ minPoints, winBy: effective.winBy })
 				)
 			);
 		} else {
 			return invalid(
 				issue.teamBScore(
-					`Invalid score: winner must reach ${minPoints} with a ${effective.winBy}-point lead (or deuce rules apply)`
+					m.err_score_invalid({ minPoints, winBy: effective.winBy })
 				)
 			);
 		}
@@ -123,8 +124,8 @@ export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 	const teamBScore = data.teamBScore;
 
 	const ctx = await getMatchContext(matchId);
-	if (!ctx) return invalid(issue.teamAScore('Invalid match'));
-	if ('error' in ctx) return invalid(issue.teamAScore(ctx.error ?? 'Court error'));
+	if (!ctx) return invalid(issue.teamAScore(m.err_invalid_match()));
+	if ('error' in ctx) return invalid(issue.teamAScore(ctx.error ?? m.err_court_error()));
 
 	const { matchRecord, rotation, tourney } = ctx;
 	const config = {
@@ -150,10 +151,10 @@ export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 	if (!isValidFinalScore(winner, loser, minPoints, effective.winBy)) {
 		return invalid(
 			issue.teamAScore(
-				`Invalid score: winner must reach ${minPoints} with a ${effective.winBy}-point lead (or deuce rules apply)`
+				m.err_score_invalid({ minPoints, winBy: effective.winBy })
 			),
 			issue.teamBScore(
-				`Invalid score: winner must reach ${minPoints} with a ${effective.winBy}-point lead (or deuce rules apply)`
+				m.err_score_invalid({ minPoints, winBy: effective.winBy })
 			)
 		);
 	}

@@ -126,7 +126,7 @@
 				const runNum = Math.floor(i / 2) + 1;
 				groups.push({
 					type: 'runs',
-					label: `Run ${runNum}`,
+					label: msg.court_run({ num: runNum }),
 					matches: data.matches.slice(i, i + 2)
 				});
 			}
@@ -140,9 +140,8 @@
 		const courtSize = data.court.courtSize;
 		if (courtSize === 3) {
 			return {
-				title: '3-Player Solo Rotation',
-				description:
-					'Each player takes a turn solo against the other two. 3 matches total, all played sequentially.',
+				title: msg.court_solo_rotation(),
+				description: msg.court_3p_desc({ points: data.court.pointsToWin ?? 21 }),
 				scoring: data.court.scoringLabel ?? 'to 21 points'
 			};
 		}
@@ -215,7 +214,7 @@
 	});
 
 	function getPlayerDisplayName(playerId: number): string {
-		if (injuredPlayerIds.has(playerId)) return 'SUBST';
+		if (injuredPlayerIds.has(playerId)) return msg.court_subst_tag();
 		return data.court.playerNames[playerId] || '—';
 	}
 
@@ -373,7 +372,7 @@
 					{...formObj.fields.teamAScore}
 				/>
 			</div>
-			<div class="vs">vs</div>
+			<div class="vs">{msg.court_vs()}</div>
 			<div class="team">
 				<p>{getTeamDisplay(match, 'b')}</p>
 				<input
@@ -396,7 +395,7 @@
 						(editingMatches = new Set([...editingMatches].filter((id) => id !== matchId)))}
 					disabled={savingMatches.has(matchId)}
 				>
-					Cancel
+					{msg.court_cancel_btn()}
 				</button>
 			{/if}
 			<button
@@ -407,9 +406,9 @@
 			>
 				{#if savingMatches.has(matchId)}
 					<span class="spinner"></span>
-					{editing ? 'Updating...' : 'Saving...'}
+					{editing ? msg.court_updating() : msg.court_saving()}
 				{:else}
-					{editing ? 'Update Score' : 'Save Score'}
+					{editing ? msg.court_update_score() : msg.court_save_score()}
 				{/if}
 			</button>
 		</div>
@@ -420,7 +419,7 @@
 	<header>
 		<h1>{data.court.tournamentName}</h1>
 		<p>
-			Court {data.court.courtNumber}, Round {data.court.roundNumber}
+			{msg.court_title({ number: data.court.courtNumber })}, Round {data.court.roundNumber}
 			{#if data.court.courtSize}
 				<span class="court-size-tag" style="--court-color: var(--accent-info)">
 					{data.court.courtSize}p
@@ -435,7 +434,7 @@
 			<div class="qr-loading">{msg.loading_qr()}</div>
 		{:then qrDataUrl}
 			<div class="qr-code">
-				<img src={qrDataUrl} alt="QR code for this court" />
+				<img src={qrDataUrl} alt={msg.court_alt_qr()} />
 				<p class="qr-hint">{msg.court_share_hint()}</p>
 			</div>
 		{:catch}
@@ -450,14 +449,14 @@
 		</div>
 	{:else}
 		<section class="players-section">
-			<h3>Players on This Court ({data.court.courtSize}p)</h3>
+			<h3>{msg.court_players_heading({ size: data.court.courtSize })}</h3>
 			{#if formatExplanation}
 				<div class="format-explanation">
 					<h4>{formatExplanation!.title}</h4>
 					<p>{formatExplanation!.description}</p>
-					<p class="format-detail">Scoring: {formatExplanation!.scoring}</p>
+					<p class="format-detail">{msg.court_scoring_label({ name: formatExplanation!.scoring })}</p>
 					{#if formatExplanation!.ranking}
-						<p class="format-detail">Ranking: {formatExplanation!.ranking}</p>
+						<p class="format-detail">{msg.court_ranking_label({ name: formatExplanation!.ranking })}</p>
 					{/if}
 					{#if formatExplanation!.runDetails}
 						<div class="run-details">
@@ -474,7 +473,7 @@
 			{#if injuredPlayerIds.size > 0}
 				<div class="injury-notice">
 					<span class="injury-badge">🤕 Injury</span>
-					A substitute is playing for the injured player. Scores are entered normally.
+					{msg.court_substitute_notice()}
 				</div>
 			{/if}
 			<div
@@ -487,9 +486,9 @@
 					{@const pid = Number(id)}
 					<div class="player-card" class:injured={injuredPlayerIds.has(pid)}>
 						<span class="player-letter">{String.fromCharCode(65 + i)}</span>
-						<span class="player-name">{injuredPlayerIds.has(pid) ? 'SUBST' : name}</span>
+						<span class="player-name">{injuredPlayerIds.has(pid) ? msg.court_subst_tag() : name}</span>
 						{#if injuredPlayerIds.has(pid)}
-							<span class="injured-tag">Sub</span>
+							<span class="injured-tag">{msg.court_sub_tag()}</span>
 						{/if}
 					</div>
 				{/each}
@@ -503,10 +502,10 @@
 						{#if group.type === 'sets'}
 							<!-- Best-of-3: group by match number -->
 							<h3 class="run-label">
-								Match {group.matchNumber}
+								{msg.court_match_label({ num: group.matchNumber })}
 								{#if teamLabels.get(group.matchNumber)}
 									<span class="team-label">
-										{teamLabels.get(group.matchNumber)!.teamA} vs
+										{teamLabels.get(group.matchNumber)!.teamA} {msg.court_vs()}
 										{teamLabels.get(group.matchNumber)!.teamB}
 									</span>
 								{/if}
@@ -527,13 +526,13 @@
 										]}
 										<div class="set-card" transition:slide>
 											<h4>
-												Set {setNum}{#if isDecidingSet(setNum, effectiveScoring.setsToWin)}
+												{msg.court_set_label({ number: setNum })}{#if isDecidingSet(setNum, effectiveScoring.setsToWin)}
 													<span class="deciding-hint"
-														>(to {effectiveScoring.decidingSetPoints})</span
+														>{msg.court_deciding_hint({ points: effectiveScoring.decidingSetPoints })}</span
 													>{/if}
 											</h4>
 											{#if setMatch.isCanceled}
-												<div class="canceled-notice">Canceled — scores will be averaged</div>
+												<div class="canceled-notice">{msg.court_canceled()}</div>
 											{:else if completedMatches.has(setMatch.id) && !editingMatches.has(setMatch.id)}
 												<div class="completed">
 													<p>
@@ -544,14 +543,14 @@
 														{getTeamDisplay(setMatch, 'b')}:
 														<strong>{setMatch.teamBScore}</strong>
 													</p>
-													<span class="saved" data-testid="saved-{setMatch.id}">✓ Saved</span>
+													<span class="saved" data-testid="saved-{setMatch.id}">{msg.court_saved()}</span>
 													{#if data.isAuthenticated}
 														<button
 															class="btn-edit"
 															onclick={() =>
 																(editingMatches = new Set([...editingMatches, setMatch.id]))}
 														>
-															Edit
+															{msg.edit_btn()}
 														</button>
 													{/if}
 												</div>
@@ -592,17 +591,17 @@
 										{/if}
 
 										<h3>
-											Match {render.index + 1}
+											{msg.court_match_label({ num: render.index + 1 })}
 											{#if teamLabels.get(match.matchNumber)}
 												<span class="team-label">
-													{teamLabels.get(match.matchNumber)!.teamA} vs
+													{teamLabels.get(match.matchNumber)!.teamA} {msg.court_vs()}
 													{teamLabels.get(match.matchNumber)!.teamB}
 												</span>
 											{/if}
 										</h3>
 
 										{#if match.isCanceled}
-											<div class="canceled-notice">Canceled — scores will be averaged</div>
+											<div class="canceled-notice">{msg.court_canceled()}</div>
 										{:else if completedMatches.has(match.id) && !editingMatches.has(match.id)}
 											<div class="completed" transition:slide>
 												<p>
@@ -613,14 +612,14 @@
 													{getTeamDisplay(match, 'b')}:
 													<strong>{match.teamBScore}</strong>
 												</p>
-												<span class="saved" data-testid="saved-{match.id}">✓ Saved</span>
+												<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span>
 												{#if data.isAuthenticated}
 													<button
 														class="btn-edit"
 														onclick={() =>
 															(editingMatches = new Set([...editingMatches, match.id]))}
 													>
-														Edit
+														{msg.edit_btn()}
 													</button>
 												{/if}
 											</div>
@@ -646,17 +645,17 @@
 					{@const render = renderMatch(match, index)}
 					<div class="match" transition:slide>
 						<h3>
-							Match {render.index + 1}
+							{msg.court_match_label({ num: render.index + 1 })}
 							{#if teamLabels.get(match.matchNumber)}
 								<span class="team-label">
-									{teamLabels.get(match.matchNumber)!.teamA} vs
+									{teamLabels.get(match.matchNumber)!.teamA} {msg.court_vs()}
 									{teamLabels.get(match.matchNumber)!.teamB}
 								</span>
 							{/if}
 						</h3>
 
 						{#if match.isCanceled}
-							<div class="canceled-notice">Canceled — scores will be averaged</div>
+							<div class="canceled-notice">{msg.court_canceled()}</div>
 						{:else}
 							{#if render.currentErrors.length > 0 && !render.isSaving}
 								<div class="error" transition:slide>
@@ -676,14 +675,14 @@
 										{getTeamDisplay(match, 'b')}:
 										<strong>{match.teamBScore}</strong>
 									</p>
-									<span class="saved" data-testid="saved-{match.id}">✓ Saved</span>
+									<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span>
 									{#if data.isAuthenticated}
-										<button
-											class="btn-edit"
-											onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
-										>
-											Edit
-										</button>
+									<button
+										class="btn-edit"
+										onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
+									>
+										{msg.edit_btn()}
+									</button>
 									{/if}
 								</div>
 							{:else}
@@ -708,19 +707,19 @@
 			<h2>{msg.court_standings()}</h2>
 			{#if data.court.courtSize === 3}
 				<p class="standings-note">
-					3-player court: solo rotation format — each player takes a turn solo
+					{msg.court_3p_desc({ points: data.court.pointsToWin ?? 21 })}
 				</p>
 			{/if}
 			<table>
 				<thead>
 					<tr>
-						<th>#</th>
-						<th>Player</th>
+						<th>{msg.court_3p_table_header()}</th>
+						<th>{msg.court_3p_table_player()}</th>
 						{#if data.court.courtSize === 5 || data.court.courtSize === 6}
-							<th>Avg</th>
+							<th>{msg.court_3p_table_avg()}</th>
 						{/if}
-						<th>Points</th>
-						<th>Diff</th>
+						<th>{msg.court_3p_table_points()}</th>
+						<th>{msg.court_3p_table_diff()}</th>
 					</tr>
 				</thead>
 				<tbody>

@@ -79,11 +79,11 @@
 
 	const leftoverLabel = $derived(
 		leftoverCount === 1
-			? '1 leftover => one 5p court'
+			? m.create_leftover_label()
 			: leftoverCount === 2
-				? '2 leftovers => one 6p court'
+				? m.create_leftover_label_2()
 				: leftoverCount === 3
-					? '3 leftovers => one 3p court'
+					? m.create_leftover_label_3()
 					: ''
 	);
 
@@ -185,7 +185,7 @@
 
 <main>
 	<header>
-		<a href="/">← Back</a>
+		<a href="/">{m.create_back()}</a>
 		<h1>{m.create_submit()}</h1>
 	</header>
 
@@ -215,7 +215,7 @@
 					</div>
 					<span class="radio-content">
 						<strong>{m.create_random_seed()}</strong>
-						<small>First round random placement, then ladder system with flexible rounds</small>
+						<small>{m.create_desc_random()}</small>
 					</span>
 				</label>
 				<label class="radio-label">
@@ -224,14 +224,14 @@
 					</div>
 					<span class="radio-content">
 						<strong>{m.create_preseed()}</strong>
-						<small>Seeding based on WVV points, recursive splitting rounds</small>
+						<small>{m.create_desc_preseed()}</small>
 					</span>
 				</label>
 			</div>
 		</div>
 
 		<div class="field">
-			<span class="label">Scoring Mode</span>
+			<span class="label">{m.create_scoring_mode()}</span>
 			<div class="radio-group">
 				<label class="radio-label">
 					<div class="radio-wrapper">
@@ -239,7 +239,7 @@
 					</div>
 					<span class="radio-content">
 						<strong>{m.scoring_single_set()}</strong>
-						<small>Single set, first to 21, win by 2</small>
+						<small>{m.create_desc_single()}</small>
 					</span>
 				</label>
 				<label class="radio-label">
@@ -248,7 +248,7 @@
 					</div>
 					<span class="radio-content">
 						<strong>{m.scoring_best_of_3()}</strong>
-						<small>First to 2 sets (21pt), deciding set to 15, win by 2</small>
+						<small>{m.create_desc_bestof3()}</small>
 					</span>
 				</label>
 				<label class="radio-label">
@@ -257,7 +257,7 @@
 					</div>
 					<span class="radio-content">
 						<strong>{m.create_custom()}</strong>
-						<small>Set your own point targets and set count</small>
+						<small>{m.create_desc_custom()}</small>
 					</span>
 				</label>
 			</div>
@@ -265,15 +265,15 @@
 
 		<div class="advanced-section" class:hidden={scoringMode !== 'custom'}>
 			<div class="field">
-				<span class="label">Match Format</span>
+				<span class="label">{m.create_match_format_label()}</span>
 				<div class="radio-group">
 					<label class="radio-label">
 						<input type="radio" name="n:setsToWin" value="1" bind:group={setsToWin} />
-						<span class="radio-text">Single set</span>
+						<span class="radio-text">{m.create_single_set_label()}</span>
 					</label>
 					<label class="radio-label">
 						<input type="radio" name="n:setsToWin" value="2" bind:group={setsToWin} />
-						<span class="radio-text">Best of 3</span>
+						<span class="radio-text">{m.create_best_of_3_label()}</span>
 					</label>
 				</div>
 			</div>
@@ -308,7 +308,7 @@
 				</div>
 			{:else}
 				<div class="field">
-					<label for="pointsToWin">Regular Set Points</label>
+					<label for="pointsToWin">{m.create_regular_set_points()}</label>
 					<input
 						type="number"
 						id="pointsToWin"
@@ -343,7 +343,7 @@
 				bind:this={textareaEl}
 				onpaste={handlePaste}
 				rows="10"
-				placeholder="Alice 1250&#10;Bob 1100&#10;Carol 950&#10;..."
+				placeholder={m.create_names_placeholder()}
 				required
 			></textarea>
 			<p class="hint">
@@ -353,17 +353,15 @@
 			<details class="import-tip">
 				<summary class="import-tip-summary">WVV CSV import</summary>
 				<p class="import-tip-text">
-					From the WVV management site, download the CSV from "Meldungen".<br />
-					Copy the "spieler 1" and "wvv" columns and paste them here.<br />
-					Tab-separated columns are supported.
+					{m.create_wvv_tip()}
 				</p>
 			</details>
-			<p class="count">{computedPlayerCount} names entered</p>
+			<p class="count">{m.create_names_entered({ count: computedPlayerCount })}</p>
 			{#if computedPlayerCount > 0 && computedPlayerCount < minPlayers}
-				<p class="info warn">Minimum {minPlayers} players required</p>
+				<p class="info warn">{m.create_min_required({ count: minPlayers })}</p>
 			{:else if computedPlayerCount > maxPlayers}
 				<p class="info warn">
-					Maximum {maxPlayers} players allowed (remove {computedPlayerCount - maxPlayers})
+					{m.create_max_exceeded({ count: maxPlayers, excess: computedPlayerCount - maxPlayers })}
 				</p>
 			{:else if computedPlayerCount > 0}
 				{#if leftoverCount > 0}
@@ -378,18 +376,18 @@
 							</div>
 							<div class="leftover-actions">
 								<button type="button" class="btn-small" onclick={removeLastPlayers}>
-									Kick leftover{leftoverCount > 1 ? 's' : ''} (all 4p courts)
+									{m.create_kick_leftover()}
 								</button>
 								{#if formatType === 'preseed'}
 									<button type="button" class="btn-small" onclick={removeLowestPoints}>
-										Kick lowest {leftoverCount} by points
+										{m.create_kick_lowest({ count: leftoverCount })}
 									</button>
 								{/if}
 							</div>
 						{/if}
 					</div>
 				{:else}
-					<p class="info standard-court">All 4-player courts — standard format</p>
+					<p class="info standard-court">{m.create_all_4p()}</p>
 				{/if}
 			{/if}
 		</div>
@@ -414,8 +412,7 @@
 			</div>
 			{#if physicalCourts < Math.ceil(computedPlayerCount / 4)}
 				<p class="info">
-					Virtual courts ({Math.ceil(computedPlayerCount / 4)}) will be scheduled across
-					{physicalCourts} physical courts in batch shifts
+					{m.create_virtual_courts_desc({ virtual: Math.ceil(computedPlayerCount / 4), physical: physicalCourts })}
 				</p>
 			{/if}
 		</div>
@@ -423,7 +420,7 @@
 		<div class="field">
 			<span class="label">Number of Rounds</span>
 			{#if formatType === 'preseed'}
-				<span class="info-text">{effectiveRounds} rounds (auto-calculated)</span>
+				<span class="info-text">{m.create_auto_calculated({ count: effectiveRounds })}</span>
 				<input type="hidden" name="n:numRounds" value={effectiveRounds} />
 			{:else}
 				<div class="rounds-config">
@@ -436,7 +433,7 @@
 						max="10"
 						class="rounds-input"
 					/>
-					<span class="rounds-hint">rounds (flexible — adjust as needed)</span>
+					<span class="rounds-hint">{m.create_rounds_flexible()}</span>
 				</div>
 			{/if}
 		</div>
@@ -445,14 +442,14 @@
 			<div class="field duration-estimate">
 				<span class="label">Estimated Duration</span>
 				<div class="duration-box">
-					<p class="duration-total">
-						~{Math.floor(durationEstimate!.total / 60)}h {durationEstimate!.total % 60}min
-					</p>
+				<p class="duration-total">
+					{m.create_est_duration({ hours: Math.floor(durationEstimate!.total / 60), minutes: durationEstimate!.total % 60 })}
+				</p>
 					<div class="duration-breakdown">
-						<span>Setup: 15 min</span>
+						<span>{m.create_setup()}</span>
 						<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
 						{#each Array(effectiveRounds) as _, r (r)}
-							<span>Round {r + 1}: {durationEstimate!.roundDur} min</span>
+							<span>{m.create_round_duration({ round: r + 1, minutes: durationEstimate!.roundDur })}</span>
 						{/each}
 						<span
 							>Based on: {durationEstimate!.courts} courts, {computedPlayerCount} players, {scoringMode ===

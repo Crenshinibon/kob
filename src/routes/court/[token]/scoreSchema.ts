@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import * as m from '$lib/paraglide/messages';
 import { isDecidingSet, isValidFinalScore } from '$lib/tournament-logic';
 
 export function createScoreSchema(minPoints: number, winBy: number = 2) {
@@ -10,15 +11,15 @@ export function createScoreSchema(minPoints: number, winBy: number = 2) {
 		}),
 		v.check((input) => {
 			return input.teamAScore >= 0 && input.teamBScore >= 0;
-		}, 'Scores must not be negative'),
+		}, m.err_score_range()),
 		v.check((input) => {
 			return input.teamAScore !== input.teamBScore;
-		}, 'Scores cannot be tied'),
+		}, m.err_score_tied()),
 		v.check((input) => {
 			const winner = Math.max(input.teamAScore, input.teamBScore);
 			const loser = Math.min(input.teamAScore, input.teamBScore);
 			return isValidFinalScore(winner, loser, minPoints, winBy);
-		}, `Invalid score: winner must reach ${minPoints} with a ${winBy}-point lead (or deuce rules apply)`)
+		}, m.err_score_invalid({ minPoints, winBy }))
 	);
 }
 
@@ -40,14 +41,14 @@ export function createSetScoreSchema(
 		}),
 		v.check((input) => {
 			return input.teamAScore >= 0 && input.teamBScore >= 0;
-		}, 'Scores must not be negative'),
+		}, m.err_score_range()),
 		v.check((input) => {
 			return input.teamAScore !== input.teamBScore;
-		}, 'Scores cannot be tied'),
+		}, m.err_score_tied()),
 		v.check((input) => {
 			const winner = Math.max(input.teamAScore, input.teamBScore);
 			const loser = Math.min(input.teamAScore, input.teamBScore);
 			return isValidFinalScore(winner, loser, minPoints, winBy);
-		}, `Invalid score: winner must reach ${minPoints} with a ${winBy}-point lead (or deuce rules apply)`)
+		}, m.err_score_invalid({ minPoints, winBy }))
 	);
 }

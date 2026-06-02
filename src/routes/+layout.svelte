@@ -44,7 +44,7 @@
 			rel="noopener noreferrer nofollow"
 			class="bmc-button"
 		>
-			☕ Buy Me A Coffee
+			{m.buy_me_coffee()}
 		</a>
 	</footer>
 </div>

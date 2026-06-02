@@ -3,15 +3,16 @@ import { db } from '$lib/server/db';
 import { tournament, courtRotation, match, player, court } from '$lib/server/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import * as v from 'valibot';
+import * as m from '$lib/paraglide/messages';
 import {
 	calculateCourtSizes,
 	matchCountForCourtSize,
 	getBatchShifts,
 	getShiftForCourt,
 	estimateRoundDurationMinutes,
-	formatDuration,
 	type DurationConfig
 } from '$lib/server/tournament-logic';
+import { formatDuration } from '$lib/i18n/format';
 
 export interface CourtDisplayData {
 	courtNumber: number;
@@ -61,7 +62,7 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 	const [tourney] = await db.select().from(tournament).where(eq(tournament.id, tournamentId));
 
 	if (!tourney) {
-		return { error: 'Tournament not found' } as TournamentDisplayData;
+		return { error: m.tournament_not_found() } as unknown as TournamentDisplayData;
 	}
 
 	const currentRound = tourney.currentRound || 0;

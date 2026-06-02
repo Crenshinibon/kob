@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import * as m from '$lib/paraglide/messages';
 import { error, redirect } from '@sveltejs/kit';
 import { form, getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
@@ -60,7 +61,7 @@ export const createTournamentForm = form(
 	}) => {
 		const event = getRequestEvent();
 		const user = event.locals.user;
-		if (!user) error(401, 'Unauthorized');
+		if (!user) error(401, m.unauthorized());
 
 		let pointsToWin: number;
 		let winBy: number;
@@ -90,11 +91,11 @@ export const createTournamentForm = form(
 			.filter((l: string) => l.length > 0);
 
 		if (lines.length < 8) {
-			error(400, `At least 8 players required. You entered ${lines.length}.`);
+			error(400, m.err_min_players({ count: 8, entered: lines.length }));
 		}
 
 		if (lines.length > 64) {
-			error(400, `Maximum 64 players allowed. You entered ${lines.length}.`);
+			error(400, m.err_max_players({ count: 64, entered: lines.length }));
 		}
 
 		const parsed: ParsedPlayer[] = lines.map((line: string) => parsePlayerLine(line, formatType));
@@ -106,7 +107,7 @@ export const createTournamentForm = form(
 			if (missingPoints.length > 0) {
 				error(
 					400,
-					`Preseed format requires points for all players. Missing points for: ${missingPoints.map((p: ParsedPlayer) => p.name).join(', ')}`
+					m.err_preseed_points({ names: missingPoints.join(', ') })
 				);
 			}
 		}

@@ -27,7 +27,7 @@
 		<div class="logo-section">
 			<img
 				src="/logo-200.jpg"
-				alt="King of the Beach"
+				alt={m.alt_logo()}
 				class="logo"
 				srcset="/logo-100.jpg 100w, /logo-200.jpg 200w, /logo-400.jpg 400w"
 				sizes="(max-width: 600px) 100px, 200px"
