@@ -439,7 +439,7 @@ When mixing 3-player and 4-player courts:
 
 - ✅ Standard 3-touch limit for ALL teams (whether 1 or 2 players)
 - ✅ Standard court dimensions (8m × 16m)
-- ✅ Standard beach volleyball scoring (21 to win, by 2, cap 50)
+- ✅ Standard beach volleyball scoring (21 to win, by 2)
 - ✅ Standard rotation so everyone experiences 2v1 equally
 - ✅ Use rank-based scoring when mixing court sizes (for fair comparison)
 

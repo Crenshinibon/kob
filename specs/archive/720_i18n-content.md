@@ -143,7 +143,6 @@ Each locale file (`en.json`, `de.json`, etc.) contains flat key-value pairs with
 | `rules.best_of_3`         | Best of 3         |       |
 | `rules.points_to_win`     | Points to Win     |       |
 | `rules.win_by`            | Win by            |       |
-| `rules.point_cap`         | Point Cap         |       |
 | `rules.matches_per_round` | Matches per Round |       |
 | `rules.court_size`        | Court Size        |       |
 
