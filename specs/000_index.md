@@ -29,7 +29,7 @@
 
 - **[300_pluggable-formats.md](./300_pluggable-formats.md)**: [PLANNED EXTENSION] Extensible architecture for supporting multiple tournament formats. Not yet implemented.
 
-- **[600_incomplete-rosters-index.md](./600_incomplete-rosters-index.md)**: Index for incomplete roster specs. Replaces original 600_incomplete-rosters.md. Supports 8-64 players, recursive preseed, physical/virtual courts.
+- **[600_incomplete-rosters-index.md](./600_incomplete-rosters-index.md)**: [IN PROGRESS] Index for incomplete roster specs. Supports 8-64 players, recursive preseed, physical/virtual courts.
   - **[610_incomplete-core.md](./610_incomplete-core.md)**: Problem statement, physical vs virtual courts, player count extension (8-64), vertical seeding, leftover configuration.
   - **[620_incomplete-options.md](./620_incomplete-options.md)**: Options A (recursive preseed), B (mixed courts), D (parallel games), E (generalized recursive split).
   - **[630_incomplete-implementation.md](./630_incomplete-implementation.md)**: Implementation phases, unit testing strategy, open questions.
@@ -38,33 +38,29 @@
   - **[660_virtual-court-scheduling.md](./660_virtual-court-scheduling.md)**: Shift scheduling, wait time forecasting, rolling physical court reassignment.
   - **[670_player-retirement.md](./670_player-retirement.md)**: Player bailout handling, redistribution after retirement, final round elimination rule.
 
-- **[700_i18n-index.md](./700_i18n-index.md)**: Internationalization spec index. German, French, Spanish support via Paraglide.
-  - **[710_i18n-core.md](./710_i18n-core.md)**: Architecture, Paraglide library, locale structure, URL strategy, language switcher.
-  - **[720_i18n-content.md](./720_i18n-content.md)**: Translation keys (~150 keys), pluralization, interpolation, format names.
-  - **[730_i18n-implementation.md](./730_i18n-implementation.md)**: 7 implementation phases, file changes, testing strategy.
-
-- **[800_bug-fixes-index.md](./800_bug-fixes-index.md)**: Bug fixes from user testing and code review.
-  - **[860_e2e-live-query-timing.md](./860_e2e-live-query-timing.md)**: E2E tests fail due to live query polling delay (3s). Two tests affected. Fix: increase timeout or reduce polling interval.
-- **[870_score-entry-validation.md](./870_score-entry-validation.md)**: CRITICAL — score validation in `scores.remote.ts` doesn't abort on `invalid()` (saves invalid scores) and allows blowout scores (e.g., 25-11 for a 21-point set). Fix: add `return` before `invalid()` calls + implement deuce-aware validation rule.
-- **[880_creation-page-ux.md](./880_creation-page-ux.md)**: UX polish: win-by explainer, WVV CSV import tip + tab delimiter, court count slider knob alignment, auto-calculated rounds display styling, retirement/injury explainer text.
-- **[890_injury-retirement-improvements.md](./890_injury-retirement-improvements.md)**: Disable "Report Injury" when all round results entered. Add undo capability for both retirement and injury reports.
-
-- **[830_test-improvements.md](./830_test-improvements.md)**: Test improvements: [ALL FIXED] auto cleanup, E2E config, scoring mode tests, non-standard standings tests, 5p/6p redistribution E2E tests.
-
-- **[900_logging-reduction.md](./900_logging-reduction.md)**: Remove single leftover `console.log` in `tournament-data.remote.ts` (only logging statement in entire `src/`). Future-proofing with dev-mode gating suggestion.
-
 - **Archived specs** (completed or superseded, no longer active references):
-  - **[084_preseed-example-20p-injury-retirement.md](./archive/084_preseed-example-20p-injury-retirement.md)**: [SUPERSEDED by 083 + 670] Used old flat-redistribution algorithm. Retirement behavior documented in 670_player-retirement.md.
+  - **[084_preseed-example-20p-injury-retirement.md](./archive/084_preseed-example-20p-injury-retirement.md)**: [SUPERSEDED by 083 + 670] Used old flat-redistribution algorithm.
   - **[110_score-saving-ux.md](./archive/110_score-saving-ux.md)**: Score saving UX fixes [COMPLETE]
   - **[400_testing-gaps.md](./archive/400_testing-gaps.md)**: Testing gaps and pre-launch checklist [COMPLETE]
   - **[500_production-readiness-progress.md](./archive/500_production-readiness-progress.md)**: Production readiness progress log [COMPLETE]
+  - **[700_i18n-index.md](./archive/700_i18n-index.md)**: i18n spec index. en/de/fr/es via Paraglide-js. [COMPLETE]
+  - **[710_i18n-core.md](./archive/710_i18n-core.md)**: Architecture, locale structure, URL strategy, language switcher. [COMPLETE]
+  - **[720_i18n-content.md](./archive/720_i18n-content.md)**: Translation keys, pluralization, interpolation. [COMPLETE]
+  - **[730_i18n-implementation.md](./archive/730_i18n-implementation.md)**: 7 implementation phases, file changes, testing. [COMPLETE]
+  - **[800_bug-fixes-index.md](./archive/800_bug-fixes-index.md)**: Bug fixes index — all subspecs completed. [COMPLETE]
   - **[800_e2e-fixes-and-improvements.md](./archive/800_e2e-fixes-and-improvements.md)**: E2E test fixes and tournament creation simplification [COMPLETE]
   - **[810_match-display-bugs.md](./archive/810_match-display-bugs.md)**: 3p/5p/6p court matchup display bugs [COMPLETE]
   - **[811-closeRound-requested-error.md](./archive/811-closeRound-requested-error.md)**: closeRound errors with requested() outside context [COMPLETE]
   - **[812-standings-ranking-bug.md](./archive/812-standings-ranking-bug.md)**: Standings ranking by court position first, not points [COMPLETE]
   - **[813-qr-live-query-bugs.md](./archive/813-qr-live-query-bugs.md)**: QR codes not loading/updating, live query not working [COMPLETE]
   - **[814-fetch-errors.md](./archive/814-fetch-errors.md)**: Failed to fetch errors in browser console [COMPLETE]
-  - **[820_ux-improvements.md](./archive/820_ux-improvements.md)**: UX improvements: radio buttons, player count validation, format explanations, org override, cleanup scripts, UI glitch, v1 banner [ALL FIXED]
-  - **[840_critical-bugs.md](./archive/840_critical-bugs.md)**: Critical bug fixes: radio buttons, org override, delete, best-of-3, score validation, UI glitch, reactivity, E2E config, auto-cleanup, winBy, dead tables, draft status, broken link, courtSize mismatch, $derived.by, stable court tokens, closed round double-counting, 5p/6p accessibility [ALL FIXED]. Remaining live query timing issue documented in 860_e2e-live-query-timing.md.
-  - **[850_bun-migration.md](./archive/850_bun-migration.md)**: Migrate scripts from npx/tsx/npm to Bun-native tooling [COMPLETE]
-  - **[850_injury-e2e-fix.md](./archive/850_injury-e2e-fix.md)**: Fix injury E2E tests (cancel & substitute) [COMPLETE]
+  - **[820_ux-improvements.md](./archive/820_ux-improvements.md)**: UX improvements [ALL FIXED]
+  - **[830_test-improvements.md](./archive/830_test-improvements.md)**: Test improvements: auto cleanup, E2E config, scoring mode tests [COMPLETE]
+  - **[840_critical-bugs.md](./archive/840_critical-bugs.md)**: Critical bug fixes [ALL FIXED]
+  - **[850_bun-migration.md](./archive/850_bun-migration.md)**: Migrate to Bun-native tooling [COMPLETE]
+  - **[850_injury-e2e-fix.md](./archive/850_injury-e2e-fix.md)**: Fix injury E2E tests [COMPLETE]
+  - **[860_e2e-live-query-timing.md](./archive/860_e2e-live-query-timing.md)**: E2E live query polling timing fixes [COMPLETE]
+  - **[870_score-entry-validation.md](./archive/870_score-entry-validation.md)**: Score validation — blowout scores, deuce-aware enforcement [COMPLETE]
+  - **[880_creation-page-ux.md](./archive/880_creation-page-ux.md)**: Creation page UX — win-by explainer, WVV import, slider, rounds, retirements [COMPLETE]
+  - **[890_injury-retirement-improvements.md](./archive/890_injury-retirement-improvements.md)**: Undo retirement/injury, per-court injury disable, all-courts hint [COMPLETE]
+  - **[900_logging-reduction.md](./archive/900_logging-reduction.md)**: Remove debug console.log, logging cleanup [COMPLETE]
