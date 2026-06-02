@@ -19,9 +19,12 @@
   - **[082_preseed-example-16p.md](./082_preseed-example-16p.md)**: 16 players (4 courts, 3 rounds) — balanced bracket tree: 4→2W+2L→1F+1L(W)+1TL+1BL. Canonical preseed example.
   - **[083_preseed-example-20p.md](./083_preseed-example-20p.md)**: 20 players (5 courts, 4 rounds) — asymmetric bracket: 5→4W+1L→2WW+2LW+1L→1F+1L(WW)+1TL+1BL+1L. 3-level tree.
 
-- **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export]
+- **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export] Sort order updated: mid-tournament by total points, final standings by court position (per spec 070). See [910_final-standings-fix.md](./910_final-standings-fix.md).
 
 - **[100_dark-theme.md](./100_dark-theme.md)**: High-contrast dark theme optimized for outdoor visibility in bright sunlight. Color palettes, component styles, and accessibility guidelines.
+
+- **[910_final-standings-fix.md](./910_final-standings-fix.md)**: [TODO] Critical: final round results not saved (closeRoundForm early exit), final standings sorted by total points instead of final court position, spec 090 contradiction, missing finalStanding for active players, numRounds state/DB mismatch.
+- **[920_landing-ux-fixes.md](./920_landing-ux-fixes.md)**: [TODO] Minor UX: language switcher on landing page, form input lost on language switch, German translations, WVV CSV label, CSV help text, random-seed points help text.
 
 - **[120_gotchas.md](./120_gotchas.md)**: Development lessons, common issues, and workarounds encountered during implementation and testing.
 

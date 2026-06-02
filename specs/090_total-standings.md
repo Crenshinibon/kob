@@ -67,10 +67,18 @@ CREATE TABLE total_standings_snapshot (
 
 **Sort Order**:
 
-1. Total Points (descending)
-2. Point Differential (descending)
-3. Head-to-head (if applicable)
-4. Random (last resort)
+- **Mid-tournament** (active status): Total Points (descending) → Point Differential (descending) → Player ID (deterministic)
+- **Final tournament** (completed status): Final court position (lower court number first, then rank on court). See [070_scoring-and-standings.md](./070_scoring-and-standings.md#final-standings) — winner is determined by final court position, not total points.
+
+```
+Final standings ranking:
+1st:  1st place Court 1 (final round)
+2nd:  2nd place Court 1
+3rd:  3rd place Court 1
+4th:  4th place Court 1
+5th:  1st place Court 2
+...
+```
 
 ### 2. Round-by-Round Breakdown
 
