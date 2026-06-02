@@ -149,6 +149,7 @@ export type CreateTournamentOpts = {
 	tournamentId: TournamentId;
 	formatType: FormatType;
 	playerCount: number;
+	numRounds?: number;
 	physicalCourtCount?: number;
 	scoringMode?: ScoringMode;
 	pointsToWin?: number;
@@ -162,6 +163,7 @@ export function createInitialState(opts: CreateTournamentOpts): TournamentState 
 		tournamentId,
 		formatType,
 		playerCount,
+		numRounds,
 		physicalCourtCount = 4,
 		scoringMode = 'single-21',
 		pointsToWin = 21,
@@ -188,7 +190,7 @@ export function createInitialState(opts: CreateTournamentOpts): TournamentState 
 		players: [],
 		roundsCompleted: 0,
 		currentRound: 0,
-		totalRounds: calculateRoundCount(courtSizes.length, formatType),
+		totalRounds: numRounds ?? calculateRoundCount(courtSizes.length, formatType),
 		isComplete: false,
 		completedRounds: [],
 		currentAssignments: [],

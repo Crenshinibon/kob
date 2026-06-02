@@ -52,19 +52,9 @@ export const closeRoundForm = form(
 
 		const currentRound = tourney.currentRound || 1;
 
-		if (currentRound >= tourney.numRounds) {
-			await db
-				.update(tournament)
-				.set({ status: 'completed' })
-				.where(eq(tournament.id, tournamentId));
-
-			getTournamentDataLive(tournamentId).reconnect();
-
-			redirect(303, `/tournament/${tournamentId}/standings`);
-		}
-
 		const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
-		const players = dbPlayers.map((p) => ({
+		const activeDbPlayers = dbPlayers.filter((p) => !p.retiredAt);
+		const players = activeDbPlayers.map((p) => ({
 			id: p.id,
 			name: p.name,
 			seedPoints: p.seedPoints,
@@ -72,7 +62,7 @@ export const closeRoundForm = form(
 		}));
 
 		const retiredPlayerIds = new Set(dbPlayers.filter((p) => p.retiredAt).map((p) => p.id));
-		const activePlayerCount = dbPlayers.length - retiredPlayerIds.size;
+		const activePlayerCount = activeDbPlayers.length;
 
 		let courtSizes: number[] = parseCourtSizes(tourney);
 		const physicalCourtCount = tourney.physicalCourtCount ?? 4;
@@ -90,7 +80,8 @@ export const closeRoundForm = form(
 		const initState = createInitialState({
 			tournamentId: tourney.id,
 			formatType: tourney.formatType as FormatType,
-			playerCount: tourney.playerCount,
+			playerCount: activePlayerCount,
+			numRounds: tourney.numRounds,
 			physicalCourtCount
 		});
 
@@ -151,16 +142,36 @@ export const closeRoundForm = form(
 		);
 
 		if (closedState.isComplete) {
-			// Compute final standings for any retired players without one
+			const finalRoundResults =
+				closedState.completedRounds[closedState.completedRounds.length - 1];
+			const activeIds = new Set(
+				dbPlayers.filter((p) => !p.retiredAt).map((p) => p.id)
+			);
+
+			let position = 1;
+			const standingsByPlayer = new Map<number, number>();
+			for (const court of finalRoundResults) {
+				for (const cs of court.standings) {
+					if (activeIds.has(cs.playerId)) {
+						standingsByPlayer.set(cs.playerId, position++);
+					}
+				}
+			}
+
+			for (const [playerId, standing] of standingsByPlayer) {
+				await db
+					.update(player)
+					.set({ finalStanding: standing })
+					.where(eq(player.id, playerId));
+			}
+
 			const retiredWithoutStanding = dbPlayers.filter(
 				(p) => p.retiredAt && p.finalStanding === null
 			);
 			for (const rp of retiredWithoutStanding) {
-				// Simple fallback: place at the bottom
-				const fallbackStanding = activePlayerCount;
 				await db
 					.update(player)
-					.set({ finalStanding: fallbackStanding })
+					.set({ finalStanding: activePlayerCount })
 					.where(eq(player.id, rp.id));
 			}
 

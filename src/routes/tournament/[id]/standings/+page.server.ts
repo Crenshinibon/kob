@@ -125,24 +125,18 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		}
 	}
 
-	// Rank players: For round 1, rank by court position first (lower court number = better),
-	// then by rank on court. For later rounds, use cumulative points.
+	// Rank players by current round court position (primary),
+	// then total points/diff/playerId as secondary tiebreakers.
 	const standings = Object.values(playerStats)
 		.filter((s) => s.roundsPlayed > 0)
 		.sort((a, b) => {
-			// For round 1 only, rank by court position first
-			if (tourney.currentRound === 1) {
-				const aRound1 = a.roundHistory.find((h) => h.round === 1);
-				const bRound1 = b.roundHistory.find((h) => h.round === 1);
-				if (aRound1 && bRound1) {
-					// Lower court number is better
-					if (aRound1.court !== bRound1.court) return aRound1.court - bRound1.court;
-					// Lower rank on court is better
-					if (aRound1.rankOnCourt !== bRound1.rankOnCourt)
-						return aRound1.rankOnCourt - bRound1.rankOnCourt;
-				}
+			const aCurrent = a.roundHistory.find((h) => h.round === tourney.currentRound);
+			const bCurrent = b.roundHistory.find((h) => h.round === tourney.currentRound);
+			if (aCurrent && bCurrent) {
+				if (aCurrent.court !== bCurrent.court) return aCurrent.court - bCurrent.court;
+				if (aCurrent.rankOnCourt !== bCurrent.rankOnCourt)
+					return aCurrent.rankOnCourt - bCurrent.rankOnCourt;
 			}
-			// Default: sort by total points, then differential, then playerId
 			if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
 			if (b.totalDiff !== a.totalDiff) return b.totalDiff - a.totalDiff;
 			return a.playerId - b.playerId;

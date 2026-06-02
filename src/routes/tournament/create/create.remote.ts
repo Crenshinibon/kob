@@ -172,6 +172,7 @@ export const createTournamentForm = form(
 			tournamentId: newTournament.id,
 			formatType: formatType as FormatType,
 			playerCount,
+			numRounds,
 			physicalCourtCount
 		});
 
