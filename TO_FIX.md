@@ -2,7 +2,15 @@
 
 ## ToDo
 
-
+- [] the language switcher should be available on the landing page, when the user is not logged in. Currently it's only available after login.
+- [] When switching languages already made input in the create tournament form is lost.
+- [] When switched to German, there is still this English text below the player input: One name per line, optionally with seed points:
+Name 1250
+- [] WVV CSV Import: dort ist es nicht "Meldungen" sondern "Setzliste"
+- [] The hint about tab separated columns is superfluous. Just list the supported methods. Like: Name and Points separated by comma, semicolon, tab or space are supported.
+- [] Also for randomseed we dont need and want the points. So we should make that clear in the description, maybe show different descriptions help text based on the the selected format.
+- [] The tournament was closed prematurely?! There is still the "Close Round & Advance" button, beside being obviously in the final round. Also looking at the "Final Standings" it lists 4 out of 5 rounds? Something is off, I'm not sure how many rounds I selected at first, but I think there might be an off-by-one bug.
+- [] Also the final standing is wrong, if I interprete this right. I chose a randomseed tournament (but it should be the same with a preseed tournament). In the final round the ordering is based on the total points collected and not the final standing on the top court for that last round. The placing and points in the previous rounds don't matter. The winner on the top court is the tournament winner, the second placed in the top court the second, and so on.
 
 ## Done
 
