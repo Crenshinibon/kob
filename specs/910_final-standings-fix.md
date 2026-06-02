@@ -8,7 +8,7 @@ Two critical bugs in the tournament lifecycle:
 2. **Final standings sorted by total points** instead of final court position
 3. Spec 090 contradicts specs 070 and 010 on winner determination
 
-All stem from the same root: `closeRoundForm` has an early-exit that skips saving when `currentRound >= numRounds`, and the standings page doesn't differentiate mid-tournament cumulative view from final tournament results.
+All stem from the same root: `closeRoundForm` has an early-exit that skips saving when `currentRound >= numRounds`, and the standings page sorts by total points instead of court position.
 
 ---
 
@@ -101,7 +101,7 @@ Players are ranked by: final round court number (lower = better) → rank on tha
 
 ### Sort Logic (Correct)
 
-For the **final tournament standings** (status = 'completed'):
+Standings for every round (active or completed) are always sorted by the **current round's court position**:
 
 ```
 rank = (courtNumber - 1) * 4 + rankOnCourt
@@ -112,16 +112,7 @@ Where:
 - `rankOnCourt` = their position on that court (1=best)
 - A 1st place on Court 2 is overall 5th, not 3rd just because they had high total points
 
-For **mid-tournament standings** (status = 'active'), sort by total points is acceptable for the cumulative view — but spec 070's "Final Standings" section makes a clear distinction.
-
-### Two Views Required
-
-The `/tournament/[id]/standings` page serves two purposes:
-
-1. **Mid-tournament** (active): Cumulative standings during play. Sort by total points + diff makes sense as a progress indicator.
-2. **Final standings** (completed): Tournament results. Sort by final court position.
-
-The server-side sort must branch on `tourney.status === 'completed'`.
+For **mid-tournament standings** (status = 'active'), use the same logic.
 
 ---
 
@@ -154,10 +145,7 @@ determined by their Final Court Position, not their total aggregate points.
 
 ### Resolution
 
-Spec 090 describes the **cumulative standings view** (mid-tournament), not the **final standings**. It predated the distinction in spec 070. Update spec 090's sort order section to clarify:
-
-- Mid-tournament (active): Total Points → Point Differential → Player ID
-- Final standings (completed): Final court position (court number → rank on court)
+Spec 090's sort order is wrong. Standings are always sorted by current round court position (lower court number first, then rank on that court). This applies to both mid-tournament (active) and final (completed) views. Total points and point differential are only used as secondary sort within the same court position. Update spec 090 to match.
 
 ---
 
@@ -231,13 +219,12 @@ This means `closeRound()` might think there are 4 rounds, but the UI shows 3 rou
   - If complete: save `finalStanding` for all players, mark tournament completed
   - If not complete: generate next round (existing code)
 
-### Phase 2: Fix Final Standings Sort (Bug 2)
+### Phase 2: Fix Standings Sort (Bug 2)
 
 **File**: `src/routes/tournament/[id]/standings/+page.server.ts`
 
-- Branch sort logic on `tourney.status === 'completed'`
-- Completed: sort by final round court position (court number → rank on court)
-- Active: keep existing total-points sort (cumulative view)
+- Replace total-points sort with current round court position sort: `courtNumber` ascending, then `rankOnCourt` ascending
+- Total points and diff become secondary tiebreakers within same court position only
 
 ### Phase 3: Store finalStanding for All Players (Bug 4)
 
@@ -256,7 +243,7 @@ This means `closeRound()` might think there are 4 rounds, but the UI shows 3 rou
 
 **File**: `specs/090_total-standings.md`
 
-- Update sort order section to distinguish mid-tournament vs final
+- Replace total-points sort order with court position sort order
 
 ---
 
@@ -264,9 +251,9 @@ This means `closeRound()` might think there are 4 rounds, but the UI shows 3 rou
 
 - [ ] Closing the final round saves all match results to the database
 - [ ] Tournament marked as completed only AFTER final round results are saved
-- [ ] Final standings show ranking by final court position, not total points
+- [ ] All standings (mid-tournament and final) show ranking by current round court position
 - [ ] Court 1 1st place = tournament winner, Court 1 2nd place = runner-up, etc.
-- [ ] Mid-tournament cumulative standings still sorted by total points
+- [ ] Total points and diff are tiebreakers within same court position only
 - [ ] `finalStanding` stored in DB for all players at tournament completion
 - [ ] `numRounds` consistent between DB and tournament state
 - [ ] Spec 090 updated to not contradict spec 070
