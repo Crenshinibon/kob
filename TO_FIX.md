@@ -2,17 +2,18 @@
 
 ## ToDo
 
-- [] the language switcher should be available on the landing page, when the user is not logged in. Currently it's only available after login.
-- [] When switching languages already made input in the create tournament form is lost.
-- [] When switched to German, there is still this English text below the player input: One name per line, optionally with seed points:
-Name 1250
-- [] WVV CSV Import: dort ist es nicht "Meldungen" sondern "Setzliste"
-- [] The hint about tab separated columns is superfluous. Just list the supported methods. Like: Name and Points separated by comma, semicolon, tab or space are supported.
-- [] Also for randomseed we dont need and want the points. So we should make that clear in the description, maybe show different descriptions help text based on the the selected format.
-- [] The tournament was closed prematurely?! There is still the "Close Round & Advance" button, beside being obviously in the final round. Also looking at the "Final Standings" it lists 4 out of 5 rounds? Something is off, I'm not sure how many rounds I selected at first, but I think there might be an off-by-one bug.
-- [] Also the final standing is wrong, if I interprete this right. I chose a randomseed tournament (but it should be the same with a preseed tournament). In the final round the ordering is based on the total points collected and not the final standing on the top court for that last round. The placing and points in the previous rounds don't matter. The winner on the top court is the tournament winner, the second placed in the top court the second, and so on.
+(none — all items addressed)
 
 ## Done
+
+- [x] the language switcher should be available on the landing page, when the user is not logged in. Currently it's only available after login. (Fixed: moved LanguageSwitcher outside auth check in +layout.svelte. Spec 920.)
+- [x] When switching languages already made input in the create tournament form is lost. (Fixed: removed `data-sveltekit-reload` from LanguageSwitcher links. Paraglide reroute maps to same route ID, SvelteKit reuses component, `$state` survives natively. Added `$effect` syncing `document.documentElement.lang`. Spec 920.)
+- [x] When switched to German, there is still this English text below the player input: One name per line, optionally with seed points: Name 1250 (Fixed: replaced hardcoded text with Paraglide messages in all 4 locales. Spec 920.)
+- [x] WVV CSV Import: dort ist es nicht "Meldungen" sondern "Setzliste" (Fixed: updated `create_wvv_tip` and `create_wvv_summary` in all 4 locale files. Spec 920.)
+- [x] The hint about tab separated columns is superfluous. Just list the supported methods. Like: Name and Points separated by comma, semicolon, tab or space are supported. (Fixed: simplified CSV help text in all 4 locales. Spec 920.)
+- [x] Also for randomseed we dont need and want the points. So we should make that clear in the description, maybe show different descriptions help text based on the the selected format. (Fixed: format-specific help text — random seed shows "One name per line", preseed shows "One name per line, with seed points:". Spec 920.)
+- [x] The tournament was closed prematurely?! There is still the "Close Round & Advance" button, beside being obviously in the final round. Also looking at the "Final Standings" it lists 4 out of 5 rounds? Something is off, I'm not sure how many rounds I selected at first, but I think there might be an off-by-one bug. (Fixed: removed early exit in closeRoundForm that skipped saving final round. numRounds synced between DB and tournament state. Spec 910.)
+- [x] Also the final standing is wrong, if I interprete this right. I chose a randomseed tournament (but it should be the same with a preseed tournament). In the final round the ordering is based on the total points collected and not the final standing on the top court for that last round. The placing and points in the previous rounds don't matter. The winner on the top court is the tournament winner, the second placed in the top court the second, and so on. (Fixed: standings now sorted by current round court position, not total points. Total points/diff are tiebreakers within same court position only. finalStanding computed for all players at tournament completion. Spec 910.)
 
 - [x] deprecation warnings in project.inlang settings.json
 - [x] "win by" explainer — added tooltip: "Points difference required to win a set" and radio labels "2 points (deuce possible)" / "1 point (first to N wins)"

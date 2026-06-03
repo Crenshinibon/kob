@@ -80,6 +80,8 @@
 
 	.app-container {
 		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
 		background-color: var(--bg-primary);
 		color: var(--text-primary);
 	}
@@ -126,10 +128,12 @@
 	}
 
 	main {
-		min-height: calc(100vh - 100px);
+		flex: 1;
 	}
 
 	.site-footer {
+		position: sticky;
+		bottom: 0;
 		text-align: center;
 		padding: var(--spacing-lg);
 		border-top: 1px solid var(--border-default);
