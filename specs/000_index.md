@@ -26,6 +26,8 @@
 - **[910_final-standings-fix.md](./910_final-standings-fix.md)**: [IMPLEMENTED] Final round results saved, standings ranked by court position (not total points), finalStanding stored for all players, numRounds synced, spec 090 aligned.
 - **[920_landing-ux-fixes.md](./920_landing-ux-fixes.md)**: [IMPLEMENTED] Language switcher on landing page, form state preserved across language switches via client-side routing, German translations, WVV "Setzliste" label, format-specific player help text.
 
+- **[930_bestof3-round-completion.md](./930_bestof3-round-completion.md)**: [TODO] Best-of-3 matches ending 2-0 leave unscores 3rd set rows. Completion check compares match count vs set row count — round never closes. Needs match-level completion logic and E2E test for best-of-3 round transition.
+
 - **[120_gotchas.md](./120_gotchas.md)**: Development lessons, common issues, and workarounds encountered during implementation and testing.
 
 - **[200_kob-32.md](./200_kob-32.md)**: 32-player (8-court) format specification. Points-based snake seeding, tiered redistribution, bracket visualization. Both Random Seed and Preseed for 16 and 32 players.
