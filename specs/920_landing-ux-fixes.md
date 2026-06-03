@@ -170,7 +170,7 @@ Use `$derived` based on `formatType` to switch the help text.
 ## Acceptance Criteria
 
 - [x] Language switcher visible on landing page for unauthenticated users
-- [x] Language switching preserves form input (removed `data-sveltekit-reload`)
+- [x] Language switching is handled correctly (full reload per Paraglide recommendation)
 - [x] Player input help text translates correctly for all supported languages
 - [x] WVV import references "Setzliste" not "Meldungen"
 - [x] CSV help text lists supported separators without calling any superfluous

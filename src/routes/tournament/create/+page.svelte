@@ -343,7 +343,7 @@
 				bind:this={textareaEl}
 				onpaste={handlePaste}
 				rows="10"
-				placeholder={m.create_names_placeholder()}
+				placeholder={formatType === 'preseed' ? m.create_names_placeholder_preseed() : m.create_names_placeholder_random()}
 				required
 			></textarea>
 			<p class="hint">
