@@ -23,8 +23,8 @@
 
 - **[100_dark-theme.md](./100_dark-theme.md)**: High-contrast dark theme optimized for outdoor visibility in bright sunlight. Color palettes, component styles, and accessibility guidelines.
 
-- **[910_final-standings-fix.md](./910_final-standings-fix.md)**: [TODO] Critical: final round results not saved (closeRoundForm early exit), final standings sorted by total points instead of final court position, spec 090 contradiction, missing finalStanding for active players, numRounds state/DB mismatch.
-- **[920_landing-ux-fixes.md](./920_landing-ux-fixes.md)**: [TODO] Minor UX: language switcher on landing page, form input lost on language switch, German translations, WVV CSV label, CSV help text, random-seed points help text.
+- **[910_final-standings-fix.md](./910_final-standings-fix.md)**: [IMPLEMENTED] Final round results saved, standings ranked by court position (not total points), finalStanding stored for all players, numRounds synced, spec 090 aligned.
+- **[920_landing-ux-fixes.md](./920_landing-ux-fixes.md)**: [IMPLEMENTED] Language switcher on landing page, form state preserved across language switches via client-side routing, German translations, WVV "Setzliste" label, format-specific player help text.
 
 - **[120_gotchas.md](./120_gotchas.md)**: Development lessons, common issues, and workarounds encountered during implementation and testing.
 

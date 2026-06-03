@@ -249,14 +249,14 @@ This means `closeRound()` might think there are 4 rounds, but the UI shows 3 rou
 
 ## Acceptance Criteria
 
-- [ ] Closing the final round saves all match results to the database
-- [ ] Tournament marked as completed only AFTER final round results are saved
-- [ ] All standings (mid-tournament and final) show ranking by current round court position
-- [ ] Court 1 1st place = tournament winner, Court 1 2nd place = runner-up, etc.
-- [ ] Total points and diff are tiebreakers within same court position only
-- [ ] `finalStanding` stored in DB for all players at tournament completion
-- [ ] `numRounds` consistent between DB and tournament state
-- [ ] Spec 090 updated to not contradict spec 070
+- [x] Closing the final round saves all match results to the database
+- [x] Tournament marked as completed only AFTER final round results are saved
+- [x] All standings (mid-tournament and final) show ranking by current round court position
+- [x] Court 1 1st place = tournament winner, Court 1 2nd place = runner-up, etc.
+- [x] Total points and diff are tiebreakers within same court position only
+- [x] `finalStanding` stored in DB for all players at tournament completion
+- [x] `numRounds` consistent between DB and tournament state
+- [x] Spec 090 updated to not contradict spec 070
 
 ## Verification
 
