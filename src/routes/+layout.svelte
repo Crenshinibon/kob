@@ -25,13 +25,13 @@
 		</div>
 	{/if}
 
-	{#if data?.user}
-		<nav class="top-nav">
-			<LanguageSwitcher />
+	<nav class="top-nav">
+		<LanguageSwitcher />
+		{#if data?.user}
 			<span class="user-email">{data.user.email}</span>
 			<button onclick={handleSignOut} class="btn-signout">{m.sign_out()}</button>
-		</nav>
-	{/if}
+		{/if}
+	</nav>
 
 	<main>
 		{@render children()}
