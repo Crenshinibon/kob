@@ -138,11 +138,11 @@ No existing E2E test verifies round transitions with best-of-3 scoring. Need a t
 
 ## Acceptance Criteria
 
-- [ ] Round can be closed when best-of-3 matches end 2-0 (no deciding set needed)
-- [ ] Per-court completeness correctly detected for best-of-3 2-0 finishes
-- [ ] Standings correctly include courts where best-of-3 matches ended 2-0
-- [ ] E2E test verifies best-of-3 round transition with 2-0 finishes
-- [ ] Single-set and best-of-3 full-3-set still work correctly
+- [x] Round can be closed when best-of-3 matches end 2-0 (no deciding set needed)
+- [x] Per-court completeness correctly detected for best-of-3 2-0 finishes
+- [x] Standings correctly include courts where best-of-3 matches ended 2-0
+- [x] E2E test verifies best-of-3 round transition with 2-0 finishes
+- [x] Single-set and best-of-3 full-3-set still work correctly
 
 ## Verification
 

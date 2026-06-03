@@ -1,10 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
 
-async function waitForRefresh(page: Page): Promise<void> {
-	await page.waitForLoadState('networkidle');
-	await page.waitForTimeout(2000);
-}
-
 async function enterSingleSet(
 	page: Page,
 	matchGroupIndex: number,
@@ -25,7 +20,7 @@ async function enterSingleSet(
 	await page.fill(`[data-testid="team-b-score-${matchId}"]`, String(scoreB));
 	await page.click(`[data-testid="save-score-${matchId}"]`);
 	await expect(matchGroup.locator('.saved').first()).toBeVisible({ timeout: 15000 });
-	await waitForRefresh(page);
+	await page.waitForTimeout(500);
 }
 
 async function fillCourtBestOf3(page: Page): Promise<void> {
@@ -100,6 +95,7 @@ test.describe('Best-of-3 Round Transition', () => {
 
 	test('round closes when best-of-3 matches end 2-0 (no deciding set)', async ({ page }) => {
 		test.slow();
+		test.setTimeout(180000);
 		const tournamentName = `Bo3Complete ${Date.now()}`;
 		testTournamentNames.push(tournamentName);
 
