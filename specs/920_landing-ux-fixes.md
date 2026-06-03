@@ -47,20 +47,22 @@ Or conditionally show the banner but always show LanguageSwitcher.
 ## Bug 2: Language Switch Loses Form Input
 
 ### Location
-LanguageSwitcher component (Paraglide-js behavior)
+`src/lib/components/LanguageSwitcher.svelte:17`
 
 ### Root Cause
 
-Paraglide-js language switching causes a full page reload (URL path changes to include locale prefix). Any unsaved form input is lost on reload.
+`data-sveltekit-reload` on the `<a>` tag forces a full browser navigation, destroying all client-side `$state`. Paraglide's `reroute` hook (`src/hooks.ts:4`) strips the locale prefix from URLs, so `/de/tournament/create` resolves to the same route as `/tournament/create`. SvelteKit's client-side router reuses the page component, preserving `$state` — but `data-sveltekit-reload` bypasses the router.
 
-### Investigation Needed
+### Fix
 
-Check if Paraglide-js supports:
-- `localStorage`-based persistence before switch
-- `beforeNavigate` hook to stash form data
-- Client-side-only switching without page reload
+Remove `data-sveltekit-reload` from LanguageSwitcher links. SvelteKit handles the navigation client-side:
+- Same route ID after Paraglide reroute → component reused → `$state` survives
+- Load functions re-run with new locale → translations update
+- `<html lang>` attribute stays at initial locale until next full navigation (acceptable tradeoff)
 
-If Paraglide-js can't avoid the reload, mitigate by prefilling recently entered data after the switch.
+### Files Changed
+
+1. `src/lib/components/LanguageSwitcher.svelte` — Remove `data-sveltekit-reload`
 
 ---
 
@@ -174,10 +176,10 @@ Use `$derived` based on `formatType` to switch the help text.
 
 ## Acceptance Criteria
 
-- [ ] Language switcher visible on landing page for unauthenticated users
-- [ ] Language switching preserves form input (or users are warned)
-- [ ] Player input help text translates correctly for all supported languages
-- [ ] WVV import references "Setzliste" not "Meldungen"
-- [ ] CSV help text lists supported separators without calling any superfluous
-- [ ] Random seed format shows help text without point references
-- [ ] Preseed format shows help text with point format and example
+- [x] Language switcher visible on landing page for unauthenticated users
+- [x] Language switching preserves form input (removed `data-sveltekit-reload`)
+- [x] Player input help text translates correctly for all supported languages
+- [x] WVV import references "Setzliste" not "Meldungen"
+- [x] CSV help text lists supported separators without calling any superfluous
+- [x] Random seed format shows help text without point references
+- [x] Preseed format shows help text with point format and example

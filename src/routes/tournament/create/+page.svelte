@@ -23,35 +23,6 @@
 	let numRounds = $state(3);
 	let textareaEl: HTMLTextAreaElement | undefined = $state();
 
-	const FORM_STORAGE_KEY = 'kob-create-form';
-
-	// Restore form data from sessionStorage (survives language switch page reload)
-	$effect(() => {
-		if (typeof window === 'undefined') return;
-
-		const saved = sessionStorage.getItem(FORM_STORAGE_KEY);
-		if (saved && !playerNames && !tournamentName) {
-			try {
-				const data = JSON.parse(saved);
-				if (data.tournamentName) tournamentName = data.tournamentName;
-				if (data.playerNames) playerNames = data.playerNames;
-				if (data.formatType) formatType = data.formatType;
-				if (data.physicalCourts) physicalCourts = data.physicalCourts;
-				if (data.numRounds) numRounds = data.numRounds;
-			} catch {
-				/* ignore malformed data */
-			}
-		}
-	});
-
-	$effect(() => {
-		if (typeof window === 'undefined') return;
-		sessionStorage.setItem(
-			FORM_STORAGE_KEY,
-			JSON.stringify({ tournamentName, playerNames, formatType, physicalCourts, numRounds })
-		);
-	});
-
 	const minPlayers = 8;
 	const maxPlayers = 64;
 
@@ -218,7 +189,7 @@
 		<h1>{m.create_submit()}</h1>
 	</header>
 
-	<form {...createTournamentForm} onsubmit={() => { sessionStorage.removeItem(FORM_STORAGE_KEY); }}>
+	<form {...createTournamentForm}>
 		{#if createError}
 			<div class="error">{createError}</div>
 		{/if}
