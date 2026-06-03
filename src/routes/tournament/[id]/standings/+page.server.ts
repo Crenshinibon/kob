@@ -7,7 +7,9 @@ import { eq, and } from 'drizzle-orm';
 import {
 	calculateCourtStandings,
 	matchCountForCourtSize,
-	type MatchData
+	isMatchComplete,
+	type MatchData,
+	type MatchSetScore
 } from '$lib/server/tournament-logic';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -82,8 +84,19 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			// Check if all matches for this court have scores
 			const courtIdx = rotation.courtNumber - 1;
 			const requiredMatches = matchCountPerCourt[courtIdx] ?? 3;
+			const matchGroups = new Map<number, MatchSetScore[]>();
+			for (const m of matches) {
+				const group = matchGroups.get(m.matchNumber);
+				if (group) {
+					group.push(m);
+				} else {
+					matchGroups.set(m.matchNumber, [m]);
+				}
+			}
 			const allMatchesComplete =
-				matches.length >= requiredMatches && matches.every((m) => m.teamAScore !== null);
+				matches.length > 0 &&
+				matchGroups.size >= requiredMatches &&
+				[...matchGroups.values()].every((group) => isMatchComplete(group));
 			if (!allMatchesComplete) continue;
 
 			// Get all player IDs from this court (including player5/6)

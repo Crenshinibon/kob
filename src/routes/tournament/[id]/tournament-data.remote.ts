@@ -7,10 +7,12 @@ import * as m from '$lib/paraglide/messages';
 import {
 	calculateCourtSizes,
 	matchCountForCourtSize,
+	isMatchComplete,
 	getBatchShifts,
 	getShiftForCourt,
 	estimateRoundDurationMinutes,
-	type DurationConfig
+	type DurationConfig,
+	type MatchSetScore
 } from '$lib/server/tournament-logic';
 import { formatDuration } from '$lib/i18n/format';
 
@@ -115,11 +117,21 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 				(sum, size) => sum + matchCountForCourtSize(size),
 				0
 			);
-			const completedMatchCount = allMatches.filter(
-				(m) => (m.teamAScore !== null && m.teamBScore !== null) || m.isCanceled
+
+			const matchGroups = new Map<string, MatchSetScore[]>();
+			for (const m of allMatches) {
+				const key = `${m.courtRotationId}-${m.matchNumber}`;
+				const group = matchGroups.get(key);
+				if (group) {
+					group.push(m);
+				} else {
+					matchGroups.set(key, [m]);
+				}
+			}
+			const completedMatchCount = [...matchGroups.values()].filter((group) =>
+				isMatchComplete(group)
 			).length;
-			canCloseRound =
-				allMatches.length >= expectedMatchCount && completedMatchCount === expectedMatchCount;
+			canCloseRound = completedMatchCount >= expectedMatchCount;
 			hasScores = allMatches.some((m) => m.teamAScore !== null);
 		}
 		isFinalRound = currentRound >= tourney.numRounds;
@@ -170,9 +182,19 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 
 		const size = rotation.courtSize ?? courtSizes[rotation.courtNumber - 1] ?? 4;
 
+		const courtMatchGroups = new Map<number, MatchSetScore[]>();
+		for (const m of matches) {
+			const group = courtMatchGroups.get(m.matchNumber);
+			if (group) {
+				group.push(m);
+			} else {
+				courtMatchGroups.set(m.matchNumber, [m]);
+			}
+		}
 		const isComplete =
 			matches.length > 0 &&
-			matches.every((m) => (m.teamAScore !== null && m.teamBScore !== null) || m.isCanceled);
+			courtMatchGroups.size >= matchCountForCourtSize(size) &&
+			[...courtMatchGroups.values()].every((group) => isMatchComplete(group));
 
 		courts.push({
 			courtNumber: rotation.courtNumber,

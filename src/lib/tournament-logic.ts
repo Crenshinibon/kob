@@ -1018,6 +1018,31 @@ export function getMaxSets(setsToWin: number): number {
 	return setsToWin >= 2 ? setsToWin * 2 - 1 : 1;
 }
 
+export type MatchSetScore = {
+	teamAScore: number | null;
+	teamBScore: number | null;
+	isCanceled: boolean | null;
+};
+
+export function isMatchComplete(sets: readonly MatchSetScore[]): boolean {
+	if (sets.length === 0) return false;
+	if (sets.some((s) => s.isCanceled)) return true;
+
+	const scored = sets.filter((s) => s.teamAScore !== null && s.teamBScore !== null);
+	if (scored.length === 0) return false;
+
+	if (sets.length === 1) return true;
+
+	let teamAWins = 0;
+	let teamBWins = 0;
+	for (const s of scored) {
+		if (s.teamAScore! > s.teamBScore!) teamAWins++;
+		else if (s.teamBScore! > s.teamAScore!) teamBWins++;
+	}
+	const needed = Math.ceil(sets.length / 2);
+	return teamAWins >= needed || teamBWins >= needed;
+}
+
 /**
  * Validates a final score according to beach volleyball rules:
  * - Winner must reach exactly minPoints unless loser is within striking distance (deuce)
