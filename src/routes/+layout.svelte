@@ -1,9 +1,7 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
 	import CookieNotice from '$lib/components/CookieNotice.svelte';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import * as m from '$lib/paraglide/messages';
-	import { getLocale } from '$lib/paraglide/runtime';
 	import type { Snippet } from 'svelte';
 
 	let {
@@ -18,12 +16,6 @@
 		await fetch('/auth/sign-out', { method: 'POST' });
 		window.location.href = '/';
 	}
-
-	$effect(() => {
-		if (browser) {
-			document.documentElement.lang = getLocale();
-		}
-	});
 </script>
 
 <div class="app-container">

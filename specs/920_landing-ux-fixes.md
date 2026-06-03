@@ -47,22 +47,15 @@ Or conditionally show the banner but always show LanguageSwitcher.
 ## Bug 2: Language Switch Loses Form Input
 
 ### Location
-`src/lib/components/LanguageSwitcher.svelte:17`
+`src/lib/components/LanguageSwitcher.svelte`
 
 ### Root Cause
 
-`data-sveltekit-reload` on the `<a>` tag forces a full browser navigation, destroying all client-side `$state`. Paraglide's `reroute` hook (`src/hooks.ts:4`) strips the locale prefix from URLs, so `/de/tournament/create` resolves to the same route as `/tournament/create`. SvelteKit's client-side router reuses the page component, preserving `$state` — but `data-sveltekit-reload` bypasses the router.
+When switching languages, Paraglide's internal locale state goes out of sync with the URL during client-side navigation. The Paraglide team's recommended approach is a native browser reload via `data-sveltekit-reload`, which correctly fires server hooks, updates `<html lang>` for SEO/accessibility, and reloads translations. Form input loss on language switch is an acceptable tradeoff.
 
-### Fix
+### Resolution
 
-Remove `data-sveltekit-reload` from LanguageSwitcher links. SvelteKit handles the navigation client-side:
-- Same route ID after Paraglide reroute → component reused → `$state` survives
-- Load functions re-run with new locale → translations update
-- `<html lang>` attribute stays at initial locale until next full navigation (acceptable tradeoff)
-
-### Files Changed
-
-1. `src/lib/components/LanguageSwitcher.svelte` — Remove `data-sveltekit-reload`
+Kept `data-sveltekit-reload` — the Paraglide-recommended approach. Form input lost on language switch is acceptable; switching languages is a rare user action.
 
 ---
 

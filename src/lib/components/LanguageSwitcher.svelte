@@ -14,6 +14,7 @@
 	{#each locales as locale}
 		<a
 			href={localizeHref(page.url.pathname, { locale })}
+			data-sveltekit-reload
 			class:active={getLocale() === locale}
 		>
 			{displayNames[locale]}
