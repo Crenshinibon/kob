@@ -28,7 +28,7 @@
 
 - **[930_bestof3-round-completion.md](./930_bestof3-round-completion.md)**: [IMPLEMENTED] Best-of-3 matches ending 2-0 now complete correctly. Match-level completion logic (`isMatchComplete`) replaces row counting. E2E test for best-of-3 round transition added.
 
-- **[940_standings-court-grouping.md](./940_standings-court-grouping.md)**: [TODO] Visual improvements: color gradient per court group (yellow→brownish red), larger court position badges per row, visual separation between court groups.
+- **[940_standings-court-grouping.md](./940_standings-court-grouping.md)**: [IMPLEMENTED] Visual improvements: color gradient per court group (gold→red), left border per court, large bold court position numbers, court badges in group colors. Dark background preserved.
 - **[950_preseed-bracket-ranking.md](./950_preseed-bracket-ranking.md)**: [INVESTIGATED — NO CHANGE] Preseed bracket ranking analysis. Court-position-based ranking already reflects bracket structure for all preseed configurations. No code changes needed.
 - **[960_physical-court-names.md](./960_physical-court-names.md)**: [TODO] Organizer can enter physical court labels ("Court A", "Beach 1") at creation. Court page and tournament overview show assigned physical court name. Stored as JSON array on tournament table.
 - **[970_standings-live-update.md](./970_standings-live-update.md)**: [TODO] Convert standings page to `query.live()` with 3s polling. Standings auto-update when new scores are entered. Same pattern as tournament data page.

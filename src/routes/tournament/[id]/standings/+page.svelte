@@ -8,13 +8,11 @@
 	const standings = $derived(data.standings);
 	const courtSizes = $derived(data.courtSizes);
 
-	// Get top 3 for podium
 	const top3 = $derived(standings.slice(0, 3));
 	const first = $derived(top3[0]);
 	const second = $derived(top3[1]);
 	const third = $derived(top3[2]);
 
-	// Medal emojis
 	const medals = ['🥇', '🥈', '🥉'];
 
 	const formatNumber = (num: number): string => (num > 0 ? `+${num}` : String(num));
@@ -27,15 +25,9 @@
 		return `${size}p`;
 	}
 
-	function getCourtSizeColor(size: number): string {
-		if (size === 3) return 'var(--accent-warning)';
-		if (size === 4) return 'var(--accent-success)';
-		return 'var(--accent-info)';
-	}
-
-	function getCourtBadgeStyle(courtNum: number): string {
-		const size = courtSizes.length >= courtNum ? courtSizes[courtNum - 1] : 4;
-		return getCourtSizeColor(size);
+	function getCourtColor(courtNum: number): string {
+		const colors = ['#FFD700', '#ADFF2F', '#FF8C00', '#FF6B6B'];
+		return colors[Math.min(courtNum - 1, colors.length - 1)] ?? '#FF4444';
 	}
 
 	function getCourtBadgeLabel(courtNum: number): string {
@@ -43,12 +35,38 @@
 		return `C${courtNum} ${getCourtSizeLabel(size)}`;
 	}
 
-	// Calculate variance for consistent performer achievement
+	function getCurrentCourt(player: StandingPlayer): number | undefined {
+		return player.roundHistory.find((h) => h.round === tournament.currentRound)?.court;
+	}
+
+	function getCurrentRank(player: StandingPlayer): number | undefined {
+		return player.roundHistory.find((h) => h.round === tournament.currentRound)?.rankOnCourt;
+	}
+
 	function variance(arr: number[]): number {
 		if (arr.length === 0) return Infinity;
 		const mean = arr.reduce((sum, val) => sum + val, 0) / arr.length;
 		return arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / arr.length;
 	}
+
+	type StandingPlayer = {
+		playerId: number;
+		playerName: string;
+		totalPoints: number;
+		totalDiff: number;
+		roundsPlayed: number;
+		matchesPlayed: number;
+		overallRank: number;
+		roundHistory: Array<{
+			round: number;
+			court: number;
+			rankOnCourt: number;
+			points: number;
+			diff: number;
+		}>;
+		currentRoundPoints: number;
+		currentRoundDiff: number;
+	};
 
 	type PageData = {
 		tournament: {
@@ -59,24 +77,7 @@
 			numRounds: number;
 			formatType?: string;
 		};
-		standings: Array<{
-			playerId: number;
-			playerName: string;
-			totalPoints: number;
-			totalDiff: number;
-			roundsPlayed: number;
-			matchesPlayed: number;
-			overallRank: number;
-			roundHistory: Array<{
-				round: number;
-				court: number;
-				rankOnCourt: number;
-				points: number;
-				diff: number;
-			}>;
-			currentRoundPoints: number;
-			currentRoundDiff: number;
-		}>;
+		standings: StandingPlayer[];
 		courtSizes: number[];
 		retiredPlayers?: Array<{
 			id: number;
@@ -153,6 +154,7 @@
 				<thead>
 					<tr>
 						<th>{m.standings_place()}</th>
+						<th>Pos</th>
 						<th>{m.standings_player()}</th>
 						<th>{m.standings_points()}</th>
 						<th>{m.standings_diff()}</th>
@@ -165,8 +167,19 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each standings as player (player.playerId)}
-						<tr class={player.overallRank <= 3 ? 'top-three' : ''}>
+					{#each standings as player, i (player.playerId)}
+						{@const currentCourt = getCurrentCourt(player)}
+						{@const rankOnCourt = getCurrentRank(player)}
+						{@const courtColor = currentCourt != null ? getCourtColor(currentCourt) : null}
+						{@const prevPlayer = i > 0 ? standings[i - 1] : null}
+						{@const prevCourt = prevPlayer ? getCurrentCourt(prevPlayer) : undefined}
+						{@const isNewGroup = currentCourt !== prevCourt}
+
+						<tr
+							class={player.overallRank <= 3 ? 'top-three' : ''}
+							class:new-group={isNewGroup}
+							style={courtColor ? `border-left: 3px solid ${courtColor}` : ''}
+						>
 							<td class="rank">
 								{#if player.overallRank <= 3}
 									<span class="medal">{medals[player.overallRank - 1]}</span>
@@ -174,7 +187,17 @@
 									{player.overallRank}
 								{/if}
 							</td>
-							<td class="player-name">{player.playerName}</td>
+							<td class="pos">
+								{#if rankOnCourt != null}
+									<span style={courtColor ? `color: ${courtColor}` : ''}>{rankOnCourt}</span>
+								{/if}
+							</td>
+							<td
+								class="player-name"
+								style={courtColor ? `color: ${courtColor}` : ''}
+							>
+								{player.playerName}
+							</td>
 							<td class="points">{player.totalPoints}</td>
 							<td
 								class="diff {player.totalDiff > 0
@@ -187,15 +210,15 @@
 							</td>
 							<td>{player.roundsPlayed}</td>
 							{#if tournament.currentRound > 1}
-								{#each Array.from({ length: tournament.currentRound }, (_, i) => i) as roundIdx (roundIdx)}
+								{#each Array.from({ length: tournament.currentRound }, (_, idx) => idx) as roundIdx (roundIdx)}
 									{@const roundData = player.roundHistory.find((r) => r.round === roundIdx + 1)}
 									<td class="round-data">
 										{#if roundData}
 											<span
 												class="court-badge"
-												style="border-color: {getCourtBadgeStyle(
+												style="border-color: {getCourtColor(
 													roundData.court
-												)}; color: {getCourtBadgeStyle(roundData.court)}"
+												)}; color: {getCourtColor(roundData.court)}"
 											>
 												{getCourtBadgeLabel(roundData.court)}
 											</span>
@@ -451,9 +474,20 @@
 		background-color: var(--bg-hover);
 	}
 
+	.standings-table tr.new-group {
+		border-top: 2px solid;
+	}
+
 	.rank {
 		font-weight: 700;
 		font-size: var(--font-size-lg);
+	}
+
+	.pos {
+		font-weight: 900;
+		font-size: var(--font-size-2xl);
+		text-align: center;
+		color: var(--text-secondary);
 	}
 
 	.points {
@@ -481,17 +515,7 @@
 		font-weight: 600;
 		font-size: var(--font-size-xs);
 		margin-right: 4px;
-	}
-
-	.court-badge {
-		display: inline-block;
-		padding: 2px 6px;
-		border-radius: var(--radius-sm);
-		font-weight: 600;
-		font-size: var(--font-size-xs);
-		margin-right: 4px;
 		border: 2px solid;
-		border-radius: var(--radius-sm);
 	}
 
 	.rank-badge {

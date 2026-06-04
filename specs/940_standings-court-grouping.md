@@ -104,12 +104,12 @@ function getCourtColor(courtNum: number): string {
 
 ## Acceptance Criteria
 
-- [ ] Each court group has a distinct bright font color (gold → red gradient)
-- [ ] Left border in court group color on each row
-- [ ] Court badge replaces green with court group color
-- [ ] Court position within court displayed as large bold numbers (1-4), no emojis
-- [ ] Court position numbers colored with the court group color
-- [ ] Dark background preserved (no background color changes)
-- [ ] All colors maintain high contrast on black background
-- [ ] Works on mobile
-- [ ] Works for both mid-tournament and final standings
+- [x] Each court group has a distinct bright font color (gold → red gradient)
+- [x] Left border in court group color on each row
+- [x] Court badge replaces green with court group color
+- [x] Court position within court displayed as large bold numbers (1-4), no emojis
+- [x] Court position numbers colored with the court group color
+- [x] Dark background preserved (no background color changes)
+- [x] All colors maintain high contrast on black background
+- [x] Works on mobile
+- [x] Works for both mid-tournament and final standings

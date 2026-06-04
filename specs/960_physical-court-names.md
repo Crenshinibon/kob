@@ -2,90 +2,93 @@
 
 ## Overview
 
-When physical courts < virtual courts, players play in shifts. Currently, courts are numbered 1-N but there's no way for the organizer to label which physical court (e.g., "Court A", "Court 3", "Beach 1") corresponds to which virtual court slot.
+Virtual courts are numbered 1-N but there's no way for the organizer to label which physical court (e.g., "Court A", "Beach 1", "Platz 3") corresponds to each virtual court. The mapping can change between rounds.
 
 ## Requirement
 
-Add a text field on the tournament creation page where the organizer enters physical court names. These labels appear on the court page and tournament overview so players know which physical court to use.
+A per-virtual-court free-text label, editable by the organizer from the tournament overview page. Each virtual court gets an inline text input where the org enters the physical court name. The label is stored on the `court` table and can be changed at any time (between rounds, mid-round — whenever). The players' court page displays the label prominently.
 
-Example: 3 virtual courts, 2 physical courts → organizer labels them "Court A" and "Court B". Shift 1 shows "Court A" and "Court B". Shift 2 shows remaining virtual courts mapped to "Court A" and "Court B".
+## Design
 
-## Implementation
-
-### Phase 1: Database
+### Database
 
 **File**: `src/lib/server/db/schema.ts`
 
-Add a `physicalCourtLabels` column to the `tournament` table:
+Add `label` column to the `court` table:
 ```typescript
-physicalCourtLabels: text('physical_court_labels'), // JSON array of strings
+label: text('label'), // free-text physical court name, nullable
 ```
 
-Stored as JSON array: `["Court A", "Court B"]` or `["1", "2", "3", "4"]`.
+One label per virtual court. The `court` table has stable rows (one per virtual court per tournament, created at tournament start). Editing the label updates the existing row — no need for per-round storage; the org changes it when needed.
 
-### Phase 2: Creation UI
-
-**File**: `src/routes/tournament/create/+page.svelte`
-
-Below the physical court count slider, add a text input field:
-- Label: "Physical Court Labels"
-- Placeholder: "Court A, Court B, Court C, Court D"
-- Help text: "Enter names for each physical court, separated by commas. Leave empty for default numbering."
-- One label per physical court
-- Parsed server-side into JSON array
-
-The number of labels must match `physicalCourtCount`. Show validation message if count mismatches:
-- "You have 3 physical courts but entered 2 labels"
-
-### Phase 3: Court Page Display
-
-**File**: `src/routes/court/[token]/+page.server.ts`
-
-When a virtual court is assigned to a shift, determine which physical court it maps to and include the label in page data.
-
-**File**: `src/routes/court/[token]/+page.svelte`
-
-Display the physical court name prominently on the court page:
-```
-Court A — Shift 1 of 2
-Players: Alice, Bob, Carol, Dave
-```
-
-### Phase 4: Tournament Overview
+### Tournament Overview UI
 
 **File**: `src/routes/tournament/[id]/+page.svelte`
 
-Each court card in the overview shows both the virtual court number and the assigned physical court label:
-```
-Court 1 → Court A
-Shift 2 → Court A
-```
-
-For batch scheduling, the physical court label for each shift can be shown based on the mapping.
-
----
-
-## Physical-to-Virtual Court Mapping
-
-When `physicalCourtCount = 2` and `virtualCourtCount = 4`:
+Each court card in the round overview gets an inline text input for the physical label, shown as extra info below the virtual court header:
 
 ```
-Shift 1: Virtual Court 1 → Physical Court 0 (label: "A")
-         Virtual Court 2 → Physical Court 1 (label: "B")
-Shift 2: Virtual Court 3 → Physical Court 0 (label: "A")
-         Virtual Court 4 → Physical Court 1 (label: "B")
+┌─ Court 1 ──────────────────┐
+│ Physical: [___Court A____]  │  ← inline text input
+│ Players: Alice, Bob, ...    │
+│ Open Court Page →           │
+└─────────────────────────────┘
 ```
 
-The mapping is `physicalIndex = virtualCourtNumber % physicalCourtCount`. Labels are looked up from the array by index.
+- Placeholder text: "e.g. Court A"
+- Auto-saves on blur
+- Dimmed/ghost text when empty: "(no label)"
+- Virtual court numbering (Court 1, Court 2, ...) stays as the primary identifier
+
+### Remote Command
+
+**File**: `src/routes/tournament/[id]/tournament-actions.remote.ts`
+
+New `command` or `form`:
+```typescript
+export const setCourtLabel = command(v.object({
+    courtId: v.number(),
+    label: v.string(),
+}), async ({ courtId, label }) => {
+    // validate org owns this court's tournament
+    await db.update(court).set({ label: label || null }).where(eq(court.id, courtId));
+    getTournamentDataLive(tournamentId).reconnect();
+});
+```
+
+### Court Page Display
+
+**File**: `src/routes/court/[token]/+page.server.ts`
+
+Include `label` from the `court` table in the page data (already loaded via `court` join).
+
+**File**: `src/routes/court/[token]/+page.svelte`
+
+Show the physical label as extra info, keeping the virtual court number primary:
+
+```
+Court 1
+Physical: Court A
+Players on This Court (4p)
+```
+
+Or more compact:
+
+```
+Court 1 · Court A
+Shift 1 of 2
+```
+
+If no label set, show only the virtual court number (no extra line). The virtual court number is always the primary identifier.
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] Organizer can enter physical court labels during tournament creation
-- [ ] Labels validate: count must match physical court count
-- [ ] Court page shows assigned physical court label with shift info
-- [ ] Tournament overview shows virtual-to-physical court mapping
-- [ ] Defaults to numeric (1, 2, 3...) if no labels provided
-- [ ] Labels persist across rounds
-- [ ] Labels stored as JSON in tournament table
+- [ ] `label` column added to `court` table (nullable text)
+- [ ] Tournament overview shows inline text input per court for label
+- [ ] Label auto-saves (blur or small save button)
+- [ ] Court page displays label prominently
+- [ ] No label = no extra display (clean fallback)
+- [ ] Label survives round transitions (on `court` table, not rotation)
+- [ ] Only tournament organizer sees/can edit the label input (court page shows it read-only)
