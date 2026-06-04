@@ -251,15 +251,21 @@
 								class="court-label-input"
 								placeholder="e.g. Court A"
 								value={court.label ?? ''}
-								oninput={(e) => {
-									const tid = court.courtId;
-									const timerId = setTimeout(() => {
-										handleLabelSave(tid, e.currentTarget.value);
-									}, 500);
-									const existing = labelTimers.get(tid);
-									if (existing) clearTimeout(existing);
-									labelTimers = new Map([...labelTimers, [tid, timerId]]);
-								}}
+							oninput={(e) => {
+								const tid = court.courtId;
+								const timerId = setTimeout(() => {
+									handleLabelSave(tid, e.currentTarget.value);
+								}, 500);
+								const existing = labelTimers.get(tid);
+								if (existing) clearTimeout(existing);
+								labelTimers = new Map([...labelTimers, [tid, timerId]]);
+							}}
+							onblur={(e) => {
+								const tid = court.courtId;
+								const existing = labelTimers.get(tid);
+								if (existing) clearTimeout(existing);
+								handleLabelSave(tid, e.currentTarget.value);
+							}}
 							/>
 						</label>
 

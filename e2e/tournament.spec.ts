@@ -711,6 +711,60 @@ test.describe('Tournament Integration Tests', () => {
     });
   });
 
+  test.describe('Court Labeling', () => {
+    test('organizer can set and view physical court labels', async ({ page }) => {
+      const tournamentName = `CourtLabel ${Date.now()}`;
+      testTournamentNames.push(tournamentName);
+
+      await page.click('text=+ New Tournament');
+      await page.fill('input[name="name"]', tournamentName);
+      const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+      await page.fill('textarea[name="names"]', players.join('\n'));
+      await page.click('button[type="submit"]');
+
+      await page.waitForURL(/\/tournament\/\d+/);
+      await page.waitForSelector('.court-card', { timeout: 10000 });
+
+      // Set label on first court
+      const labelInput = page.locator('.court-label-input').first();
+      await labelInput.fill('Court A');
+      await labelInput.blur();
+      // Wait for blur-triggered save to complete
+      await page.waitForTimeout(3000);
+
+      // Open court page and verify label shown
+      const courtLink = page.locator('.qr-link a').first();
+      const courtUrl = await courtLink.getAttribute('href');
+      expect(courtUrl).toBeTruthy();
+      await page.goto(courtUrl!);
+      await page.waitForURL(/\/court\//, { timeout: 10000 });
+
+      await expect(page.locator('.court-physical-label')).toContainText('Court A');
+    });
+
+    test('court page shows no label when not set', async ({ page }) => {
+      const tournamentName = `CourtNoLabel ${Date.now()}`;
+      testTournamentNames.push(tournamentName);
+
+      await page.click('text=+ New Tournament');
+      await page.fill('input[name="name"]', tournamentName);
+      const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
+      await page.fill('textarea[name="names"]', players.join('\n'));
+      await page.click('button[type="submit"]');
+
+      await page.waitForURL(/\/tournament\/\d+/);
+      await page.waitForSelector('.qr-link a', { timeout: 10000 });
+
+      const courtLink = page.locator('.qr-link a').first();
+      const courtUrl = await courtLink.getAttribute('href');
+      expect(courtUrl).toBeTruthy();
+      await page.goto(courtUrl!);
+      await page.waitForURL(/\/court\//, { timeout: 10000 });
+
+      await expect(page.locator('.court-physical-label')).not.toBeAttached();
+    });
+  });
+
   test.describe('Tournament Deletion', () => {
     test('deletes tournament from detail page', async ({ page }) => {
       const tournamentName = `Delete Test ${Date.now()}`;
