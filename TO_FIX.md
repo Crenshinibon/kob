@@ -2,7 +2,10 @@
 
 ## ToDo
 
-(none — all items addressed)
+- [] in the standings view. To make it easier to visually "understand" the placing it's necessary to make the court-grouping more obvious. Either we could use different colors per court, a color gradient from top court to bottom court. starting with bright yellow at the top to brownish red at the bottom. Also the placing on each court needs to be bigger more visible as well.
+- [] Also, I wonder if we could change the ranking for pressed tournaments, so that we rank by bracket not necessarily by court. Investigate.
+- [] Yet another good addition for the Org in the tournaments page would be a text field for virtual courts, where the Org can enter the physical court "name" (free text, since some venues might use numbers, other letters). So that the players can see which physical court the need to play on.
+- [] Another question regarding the standings page: does this live update with incoming results and pre calculated standings? This way the players could view their current placement and chances to proceed in the global tournament context not only on their court.
 
 ## Done
 
