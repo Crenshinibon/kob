@@ -42,12 +42,15 @@ test.describe('Tournament Integration Tests', () => {
       await page.waitForURL('/');
     }
 
-    // Dismiss cookie notice if present (can block dashboard clicks)
+    // Dismiss cookie notice if present and persist consent
     const dismissBtn = page.locator('button:has-text("OK")');
-    if (await dismissBtn.isVisible().catch(() => false)) {
+    if (await dismissBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
       await dismissBtn.click();
-      await page.waitForTimeout(300);
+      await dismissBtn.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => {});
     }
+    await page.evaluate(() => {
+      localStorage.setItem('cookie-notice-dismissed', 'true');
+    });
   });
 
   test.afterEach(async ({ page }) => {
