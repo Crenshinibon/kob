@@ -149,12 +149,19 @@ async function fetchStandingsData(tournamentId: number) {
 			finalStanding: p.finalStanding
 		}));
 
+	const injuredIds = new Set(players.filter((p) => p.injuredAt).map((p) => p.id));
+	const retiredIds = new Set(retiredPlayers.filter((p) => !injuredIds.has(p.id)).map((p) => p.id));
+	const activeStandings = standings
+		.filter((s) => !retiredIds.has(s.playerId))
+		.map((s, i) => ({ ...s, overallRank: i + 1 }));
+
 	return {
 		tournament: tourney,
-		standings,
+		standings: activeStandings,
 		players,
 		courtSizes,
-		retiredPlayers
+		retiredPlayers,
+		injuredPlayerIds: [...injuredIds]
 	};
 }
 

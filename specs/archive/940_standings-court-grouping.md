@@ -61,13 +61,13 @@ A subtle horizontal divider line between court groups (using the next court's co
 
 ## Color Stops
 
-| Court | Badge/Font Color | Hex | Visual |
-|-------|-----------------|-----|--------|
-| 1 | Bright gold | `#FFD700` | 🟡 |
-| 2 | Yellow-green | `#ADFF2F` | 🟢 |
-| 3 | Orange | `#FF8C00` | 🟠 |
-| 4 | Coral | `#FF6B6B` | 🔴 |
-| 5+ | Deep red | `#FF4444` | ❤️ |
+| Court | Badge/Font Color | Hex | Tone |
+|-------|-----------------|-----|------|
+| 1 | Bright gold | `#FFD700` | Yellow |
+| 2 | Vivid yellow | `#FFEA00` | Yellow |
+| 3 | Yellow-green | `#ADFF2F` | Green |
+| 4 | Mint green | `#69F0AE` | Green |
+| 5+ | Cyan | `#00E5FF` | Blue |
 
 All colors are bright enough to maintain contrast against `var(--bg-primary)` (dark).
 

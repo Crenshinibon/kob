@@ -7,6 +7,8 @@
 		data: { tournamentId: number; tournament: { id: number; name: string } };
 	}>();
 
+	const liveQuery = $derived(getStandingsDataLive(data.tournamentId));
+
 	const formatNumber = (num: number): string => (num > 0 ? `+${num}` : String(num));
 
 	function getCourtSizeLabel(size: number): string {
@@ -18,8 +20,17 @@
 	}
 
 	function getCourtColor(courtNum: number): string {
-		const colors = ['#FFD700', '#ADFF2F', '#FF8C00', '#FF6B6B'];
-		return colors[Math.min(courtNum - 1, colors.length - 1)] ?? '#FF4444';
+		const colors = ['#FFD700', '#FFEA00', '#ADFF2F', '#69F0AE', '#00E5FF'];
+		return colors[Math.min(courtNum - 1, colors.length - 1)] ?? '#FF8C00';
+	}
+
+	function getCourtFromIndex(index: number, sizes: number[]): number | undefined {
+		let acc = 0;
+		for (let c = 0; c < sizes.length; c++) {
+			acc += sizes[c];
+			if (index < acc) return c + 1;
+		}
+		return undefined;
 	}
 
 	function getCourtBadgeLabel(courtNum: number, courtSizes: number[]): string {
@@ -75,7 +86,7 @@
 		<h1>{data.tournament.name}</h1>
 	</header>
 
-	{#await getStandingsDataLive(data.tournamentId)}
+	{#await liveQuery}
 		<section class="empty">
 			<p>{m.loading()}</p>
 		</section>
@@ -85,13 +96,15 @@
 		{@const standings = (state?.standings ?? []) as StandingPlayer[]}
 		{@const courtSizes = (state?.courtSizes ?? []) as number[]}
 		{@const retiredPlayers = (state?.retiredPlayers ?? []) as Array<{ id: number; name: string; retiredRound: number | null; retirementReason: string | null; finalStanding: number | null }>}
+		{@const injuredPlayerIds = (state?.injuredPlayerIds ?? []) as number[]}
 		{@const allPlayers = (state?.players ?? []) as Array<{ id: number; name: string }>}
 
 		{#if tournament}
 			{@const currentRound = tournament.currentRound ?? 0}
 			{@const displayRounds = tournament.numRounds ?? 0}
+			{@const title = tournament.status === 'completed' ? m.standings_title() : m.standings_title_current()}
 			<p>
-				{m.standings_title()} · {m.round_label({ current: currentRound, total: displayRounds })}
+				{title} · {m.round_label({ current: currentRound, total: displayRounds })}
 				{#if tournament.formatType}
 					· {tournament.formatType === 'preseed' ? m.format_preseed() : m.format_random_seed()}
 				{/if}
@@ -171,13 +184,14 @@
 			<section class="standings-section">
 				<h2>{m.standings_complete_rankings()}</h2>
 				<table class="standings-table">
-					<thead>
-						<tr>
-							<th>{m.standings_place()}</th>
-							<th>Pos</th>
-							<th>{m.standings_player()}</th>
-							<th>{m.standings_points()}</th>
-							<th>{m.standings_diff()}</th>
+				<thead>
+					<tr>
+						<th></th>
+						<th>{m.standings_place()}</th>
+						<th>Pos</th>
+						<th>{m.standings_player()}</th>
+						<th>{m.standings_points()}</th>
+						<th>{m.standings_diff()}</th>
 							<th>{m.standings_rounds()}</th>
 							{#if cr > 1}
 								{#each Array.from({ length: cr }, (_, i) => i) as i (i)}
@@ -186,21 +200,27 @@
 							{/if}
 						</tr>
 					</thead>
-					<tbody>
+				<tbody>
 						{#each standings as player, i (player.playerId)}
-							{@const currentCourt = getCurrentCourt(player, cr)}
+							{@const currentCourt = getCurrentCourt(player, cr) ?? (cr > 0 ? getCourtFromIndex(i, courtSizes) : undefined)}
 							{@const rankOnCourt = getCurrentRank(player, cr)}
 							{@const courtColor = currentCourt != null ? getCourtColor(currentCourt) : null}
-							{@const prevPlayer = i > 0 ? standings[i - 1] : null}
-							{@const prevCourt = prevPlayer ? getCurrentCourt(prevPlayer, cr) : undefined}
+							{@const prevCourt = i > 0 ? (getCurrentCourt(standings[i - 1], cr) ?? (cr > 0 ? getCourtFromIndex(i - 1, courtSizes) : undefined)) : undefined}
 							{@const isNewGroup = currentCourt !== prevCourt}
+							{@const span = isNewGroup ? standings.filter((s, idx) => (getCurrentCourt(s, cr) ?? (cr > 0 ? getCourtFromIndex(idx, courtSizes) : undefined)) === currentCourt).length : 0}
 
-							<tr
-								class={player.overallRank <= 3 ? 'top-three' : ''}
-								class:new-group={isNewGroup}
-								style={courtColor ? `border-left: 3px solid ${courtColor}` : ''}
-							>
-								<td class="rank">
+						<tr
+							class={player.overallRank <= 3 ? 'top-three' : ''}
+							class:new-group={isNewGroup}
+							class:injured={injuredPlayerIds.includes(player.playerId)}
+							style={courtColor ? `border-left: 4px solid ${courtColor}` : ''}
+						>
+							{#if isNewGroup && currentCourt != null}
+								<td class="court-label" rowspan={span} style={courtColor ? `color: ${courtColor}; border-right-color: ${courtColor}` : ''}>
+									{currentCourt}
+								</td>
+							{/if}
+							<td class="rank">
 									{#if player.overallRank <= 3}
 										<span class="medal">{['🥇', '🥈', '🥉'][player.overallRank - 1]}</span>
 									{:else}
@@ -496,6 +516,14 @@
 		background-color: var(--bg-hover);
 	}
 
+	.standings-table tr.injured {
+		opacity: 0.5;
+	}
+
+	.standings-table tr.injured .player-name {
+		text-decoration: line-through;
+	}
+
 	.standings-table tr.new-group {
 		border-top: 2px solid;
 	}
@@ -503,6 +531,15 @@
 	.rank {
 		font-weight: 700;
 		font-size: var(--font-size-lg);
+	}
+
+	.court-label {
+		font-size: var(--font-size-2xl);
+		font-weight: 900;
+		text-align: center;
+		vertical-align: middle;
+		width: 2.5rem;
+		border-right: 3px solid;
 	}
 
 	.pos {

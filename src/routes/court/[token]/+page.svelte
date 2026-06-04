@@ -274,8 +274,9 @@
 		const isSaving = savingMatches.has(match.id);
 		const isEditing = editingMatches.has(match.id);
 		const preflightIssues = scoreForm.fields.allIssues() ?? [];
+		const formErr = formErrors.get(match.id) ?? [];
 		const currentErrors = [
-			...(formErrors.get(match.id) ?? []),
+			...formErr,
 			...preflightIssues.map((i: { message: string }) => i.message)
 		];
 
@@ -300,6 +301,17 @@
 	) {
 		savingMatches = new Set([...savingMatches, matchId]);
 		formErrors.delete(matchId);
+
+		const preflightIssues = formInstance.fields.allIssues() ?? [];
+		if (preflightIssues.length > 0) {
+			formErrors.set(
+				matchId,
+				preflightIssues.map((s) => s.message)
+			);
+			savingMatches = new Set([...savingMatches].filter((id) => id !== matchId));
+			return;
+		}
+
 		try {
 			const result = await formInstance.submit();
 			if (result) {
