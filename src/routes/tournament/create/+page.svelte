@@ -600,8 +600,8 @@
 	}
 
 	.range-labels {
-		display: grid;
-		grid-template-columns: 1fr auto 1fr;
+		display: flex;
+		justify-content: space-between;
 		font-size: var(--font-size-sm);
 		color: var(--text-muted);
 		grid-row: 2;

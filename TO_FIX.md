@@ -2,13 +2,229 @@
 
 ## ToDo
 
-- [] in the standings view. To make it easier to visually "understand" the placing it's necessary to make the court-grouping more obvious. Either we could use different colors per court, a color gradient from top court to bottom court. starting with bright yellow at the top to brownish red at the bottom. Also the placing on each court needs to be bigger more visible as well.
-- [] Also, I wonder if we could change the ranking for pressed tournaments, so that we rank by bracket not necessarily by court. Investigate.
-- [] Yet another good addition for the Org in the tournaments page would be a text field for virtual courts, where the Org can enter the physical court "name" (free text, since some venues might use numbers, other letters). So that the players can see which physical court the need to play on.
-- [] Another question regarding the standings page: does this live update with incoming results and pre calculated standings? This way the players could view their current placement and chances to proceed in the global tournament context not only on their court.
+- [] On "create tournament" page, the top end (16) of the physical courts slider is not at the right most position, but rather right behind the label displaying the current selected number of courts.
+- [] On "standings" page. When there are no entries for the first round, it shows just "Loading...". Same with one court (or even all courts) having completed all games. Even after advancing to the 2nd round. Maybe more situations. The standings page should show all players with no current information about at the same place, after players, that already have points. Also there is an error in the browser console: 
+
+  client.js?v=9c92af44:403 Uncaught (in promise) Svelte error: hydratable_missing_but_required
+  Expected to find a hydratable with key `tkwzue/getStandingsDataLive/WzUzNTRd` during hydration, but did not.
+  https://svelte.dev/e/hydratable_missing_but_required
+
+    in <unknown>
+    in +page.svelte
+    in +layout.svelte
+    in root.svelte
+    in undefined
+
+      at hydratable_missing_but_required (runtime-D3V00VyR.js?v=9c92af44:446:33)
+      at Module.hydratable (index-client-CGdGfIZo.js?v=9c92af44:4057:3)
+      at unfriendly_hydratable (shared.js?v=9c92af44:320:16)
+      at new LiveQuery (instance.svelte.js?v=9c92af44:99:22)
+      at proxy.js?v=9c92af44:32:61
+      at cache.svelte.js?v=9c92af44:62:18
+      at update_reaction (runtime-D3V00VyR.js?v=9c92af44:4880:16)
+      at update_effect (runtime-D3V00VyR.js?v=9c92af44:4980:18)
+      at create_effect (runtime-D3V00VyR.js?v=9c92af44:4304:4)
+      at Module.effect_root (runtime-D3V00VyR.js?v=9c92af44:4380:17)
+  hydratable_missing_but_required @ runtime-D3V00VyR.js?v=9c92af44:446
+  hydratable @ index-client-CGdGfIZo.js?v=9c92af44:4057
+  unfriendly_hydratable @ shared.js?v=9c92af44:320
+  LiveQuery @ instance.svelte.js?v=9c92af44:99
+  (anonymous) @ proxy.js?v=9c92af44:32
+  (anonymous) @ cache.svelte.js?v=9c92af44:62
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  effect_root @ runtime-D3V00VyR.js?v=9c92af44:4380
+  ensure_entry @ cache.svelte.js?v=9c92af44:61
+  LiveQueryProxy @ proxy.js?v=9c92af44:32
+  wrapper @ index.js?v=9c92af44:26
+  (anonymous) @ +page.svelte:10
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  execute_derived @ runtime-D3V00VyR.js?v=9c92af44:3375
+  update_derived @ runtime-D3V00VyR.js?v=9c92af44:3389
+  get @ runtime-D3V00VyR.js?v=9c92af44:5077
+  (anonymous) @ +page.svelte:73
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:605
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  block @ runtime-D3V00VyR.js?v=9c92af44:4496
+  await_block @ index-client-CGdGfIZo.js?v=9c92af44:603
+  (anonymous) @ +page.svelte:73
+  add_svelte_meta @ runtime-D3V00VyR.js?v=9c92af44:979
+  _page @ +page.svelte:73
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:249
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  branch @ runtime-D3V00VyR.js?v=9c92af44:4513
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:246
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  block @ runtime-D3V00VyR.js?v=9c92af44:4496
+  wrapper @ index-client-CGdGfIZo.js?v=9c92af44:240
+  (anonymous) @ root.svelte:52
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:1426
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:563
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  branch @ runtime-D3V00VyR.js?v=9c92af44:4513
+  ensure @ index-client-CGdGfIZo.js?v=9c92af44:563
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:1426
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  block @ runtime-D3V00VyR.js?v=9c92af44:4496
+  component @ index-client-CGdGfIZo.js?v=9c92af44:1413
+  (anonymous) @ root.svelte:50
+  add_svelte_meta @ runtime-D3V00VyR.js?v=9c92af44:979
+  (anonymous) @ root.svelte:50
+  snippet @ index-client-CGdGfIZo.js?v=9c92af44:1359
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:1345
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:563
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  branch @ runtime-D3V00VyR.js?v=9c92af44:4513
+  ensure @ index-client-CGdGfIZo.js?v=9c92af44:563
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:1345
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  block @ runtime-D3V00VyR.js?v=9c92af44:4496
+  snippet @ index-client-CGdGfIZo.js?v=9c92af44:1342
+  (anonymous) @ +layout.svelte:36
+  add_svelte_meta @ runtime-D3V00VyR.js?v=9c92af44:979
+  _layout @ +layout.svelte:36
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:249
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  branch @ runtime-D3V00VyR.js?v=9c92af44:4513
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:246
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  block @ runtime-D3V00VyR.js?v=9c92af44:4496
+  wrapper @ index-client-CGdGfIZo.js?v=9c92af44:240
+  (anonymous) @ root.svelte:50
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:1426
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:563
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  branch @ runtime-D3V00VyR.js?v=9c92af44:4513
+  ensure @ index-client-CGdGfIZo.js?v=9c92af44:563
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:1426
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  block @ runtime-D3V00VyR.js?v=9c92af44:4496
+  component @ index-client-CGdGfIZo.js?v=9c92af44:1413
+  (anonymous) @ root.svelte:48
+  add_svelte_meta @ runtime-D3V00VyR.js?v=9c92af44:979
+  (anonymous) @ root.svelte:48
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:563
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  branch @ runtime-D3V00VyR.js?v=9c92af44:4513
+  ensure @ index-client-CGdGfIZo.js?v=9c92af44:563
+  update_branch @ index-client-CGdGfIZo.js?v=9c92af44:695
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:701
+  (anonymous) @ root.svelte:47
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:699
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  block @ runtime-D3V00VyR.js?v=9c92af44:4496
+  if_block @ index-client-CGdGfIZo.js?v=9c92af44:697
+  (anonymous) @ root.svelte:58
+  add_svelte_meta @ runtime-D3V00VyR.js?v=9c92af44:979
+  (anonymous) @ root.svelte:58
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:249
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  branch @ runtime-D3V00VyR.js?v=9c92af44:4513
+  (anonymous) @ index-client-CGdGfIZo.js?v=9c92af44:246
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  block @ runtime-D3V00VyR.js?v=9c92af44:4496
+  wrapper @ index-client-CGdGfIZo.js?v=9c92af44:240
+  (anonymous) @ legacy-client-0YmydX9j.js?v=9c92af44:565
+  Boundary.#children @ runtime-D3V00VyR.js?v=9c92af44:2676
+  (anonymous) @ runtime-D3V00VyR.js?v=9c92af44:2696
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  branch @ runtime-D3V00VyR.js?v=9c92af44:4513
+#hydrate_resolved_content @ runtime-D3V00VyR.js?v=9c92af44:2696
+  (anonymous) @ runtime-D3V00VyR.js?v=9c92af44:2689
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  block @ runtime-D3V00VyR.js?v=9c92af44:4496
+  Boundary @ runtime-D3V00VyR.js?v=9c92af44:2680
+  boundary @ runtime-D3V00VyR.js?v=9c92af44:2611
+  (anonymous) @ legacy-client-0YmydX9j.js?v=9c92af44:557
+  update_reaction @ runtime-D3V00VyR.js?v=9c92af44:4880
+  update_effect @ runtime-D3V00VyR.js?v=9c92af44:4980
+  create_effect @ runtime-D3V00VyR.js?v=9c92af44:4304
+  component_root @ runtime-D3V00VyR.js?v=9c92af44:4392
+  _mount @ legacy-client-0YmydX9j.js?v=9c92af44:555
+  hydrate @ legacy-client-0YmydX9j.js?v=9c92af44:524
+  Svelte4Component @ legacy-client-0YmydX9j.js?v=9c92af44:836
+  (anonymous) @ legacy-client-0YmydX9j.js?v=9c92af44:787
+  initialize @ client.js?v=9c92af44:687
+  _hydrate @ client.js?v=9c92af44:3039
+  await in _hydrate
+  start @ client.js?v=9c92af44:391
+  await in start
+  (anonymous) @ standings:464
+  Promise.then
+  (anonymous) @ standings:463
+
+- [] When we have a 5p court (6p might also be affected) and I select the "Court Scoring Configuration" the court defaults to Points to Win == 21, despite the info text in the bottom showing "1 set to 15"
+- [] Court standings for 5p court (6p might also be affected) the points and diff are not rounded, when using average points. We should at most show 2 decimals. The same is true for standings page. We need to round there as well.
+- [] "SAVE SCORE" sometimes doesn't seem to react on first click, when there is an input error. The first score for a court page always seems to behave this way.
+- [] Retiring a player from a 5p court in round 2 of a tournament, showed no courts after the retirement form returned. Reloading the page didn't fix it either. But the standings do work now?! The server is logging this:
+
+[500] POST /tournament/5354
+TypeError: Cannot read properties of undefined (reading 'playerIds')
+    at distributeGroup (src/lib/tournament-logic.ts:432:15)
+    at redistributePreseedRecursive (src/lib/tournament-logic.ts:386:13)
+    at processPreseedTransition (src/lib/tournament-logic.ts:462:10)
+    at /home/dirk/Dev/kob/src/routes/tournament/[id]/tournament-actions.remote.ts:640:23
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async handle_remote_call_internal (node_modules/@sveltejs/kit/src/runtime/server/remote.js?v=8c637a4f:139:17)
+    at async resolve (node_modules/@sveltejs/kit/src/runtime/server/respond.js?v=8c637a4f:600:12)
+    at async fn (file:/home/dirk/Dev/kob/node_modules/@sveltejs/kit/src/exports/hooks/sequence.js:102:13)
+    at async paraglideMiddleware (src/lib/paraglide/server.js:150:22)
+
+[500] GET /tournament/5354
+TypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
+    at ReadableStreamDefaultController.close (node:internal/webstreams/readablestream:1068:13)
+    at Object.pull (/home/dirk/Dev/kob/node_modules/@sveltejs/kit/src/runtime/server/remote.js?v=8c637a4f:204:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+[500] GET /tournament/5354
+TypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
+    at ReadableStreamDefaultController.close (node:internal/webstreams/readablestream:1068:13)
+    at Object.pull (/home/dirk/Dev/kob/node_modules/@sveltejs/kit/src/runtime/server/remote.js?v=8c637a4f:204:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+
 
 ## Done
 
+- [x] in the standings view. To make it easier to visually "understand" the placing it's necessary to make the court-grouping more obvious. Either we could use different colors per court, a color gradient from top court to bottom court. starting with bright yellow at the top to brownish red at the bottom. Also the placing on each court needs to be bigger more visible as well.
+- [x] Also, I wonder if we could change the ranking for pressed tournaments, so that we rank by bracket not necessarily by court. Investigate.
+- [x] Yet another good addition for the Org in the tournaments page would be a text field for virtual courts, where the Org can enter the physical court "name" (free text, since some venues might use numbers, other letters). So that the players can see which physical court the need to play on.
+- [x] Another question regarding the standings page: does this live update with incoming results and pre calculated standings? This way the players could view their current placement and chances to proceed in the global tournament context not only on their court.
 - [x] the language switcher should be available on the landing page, when the user is not logged in. Currently it's only available after login. (Fixed: moved LanguageSwitcher outside auth check in +layout.svelte. Spec 920.)
 - [x] When switching languages already made input in the create tournament form is lost. (Fixed: removed `data-sveltekit-reload` from LanguageSwitcher links. Paraglide reroute maps to same route ID, SvelteKit reuses component, `$state` survives natively. Added `$effect` syncing `document.documentElement.lang`. Spec 920.)
 - [x] When switched to German, there is still this English text below the player input: One name per line, optionally with seed points: Name 1250 (Fixed: replaced hardcoded text with Paraglide messages in all 4 locales. Spec 920.)

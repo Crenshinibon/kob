@@ -29,6 +29,10 @@
 
 - **[300_pluggable-formats.md](./300_pluggable-formats.md)**: [PLANNED EXTENSION] Extensible architecture for supporting multiple tournament formats. Not yet implemented.
 
+- **[980_standings-hydration-fix.md](./980_standings-hydration-fix.md)**: [TODO] Standings page hydration error — `query.live()` incompatible with SSR `$derived`. Move to client-only `$effect`. Also show all players even before any scores entered.
+- **[990_retirement-5p-crash.md](./990_retirement-5p-crash.md)**: [TODO] Retiring player from 5p preseed court crashes server. `distributeGroup` hits undefined `playerIds`.
+- **[1000_minor-ui-fixes.md](./1000_minor-ui-fixes.md)**: [TODO] 4 bugs: slider alignment, 5p/6p scoring default, average points rounding, save button first click.
+
 - **[600_incomplete-rosters-index.md](./600_incomplete-rosters-index.md)**: [IN PROGRESS] Index for incomplete roster specs. Supports 8-64 players, recursive preseed, physical/virtual courts.
   - **[610_incomplete-core.md](./610_incomplete-core.md)**: Problem statement, physical vs virtual courts, player count extension (8-64), vertical seeding, leftover configuration.
   - **[620_incomplete-options.md](./620_incomplete-options.md)**: Options A (recursive preseed), B (mixed courts), D (parallel games), E (generalized recursive split).
