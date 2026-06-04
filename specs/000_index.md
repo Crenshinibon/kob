@@ -19,19 +19,9 @@
   - **[082_preseed-example-16p.md](./082_preseed-example-16p.md)**: 16 players (4 courts, 3 rounds) — balanced bracket tree: 4→2W+2L→1F+1L(W)+1TL+1BL. Canonical preseed example.
   - **[083_preseed-example-20p.md](./083_preseed-example-20p.md)**: 20 players (5 courts, 4 rounds) — asymmetric bracket: 5→4W+1L→2WW+2LW+1L→1F+1L(WW)+1TL+1BL+1L. 3-level tree.
 
-- **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export] Sorted by court position (not total points), per spec 070. See [910_final-standings-fix.md](./910_final-standings-fix.md).
+- **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export] Sorted by court position (not total points), per spec 070.
 
 - **[100_dark-theme.md](./100_dark-theme.md)**: High-contrast dark theme optimized for outdoor visibility in bright sunlight. Color palettes, component styles, and accessibility guidelines.
-
-- **[910_final-standings-fix.md](./910_final-standings-fix.md)**: [IMPLEMENTED] Final round results saved, standings ranked by court position (not total points), finalStanding stored for all players, numRounds synced, spec 090 aligned.
-- **[920_landing-ux-fixes.md](./920_landing-ux-fixes.md)**: [IMPLEMENTED] Language switcher on landing page, form state preserved across language switches via client-side routing, German translations, WVV "Setzliste" label, format-specific player help text.
-
-- **[930_bestof3-round-completion.md](./930_bestof3-round-completion.md)**: [IMPLEMENTED] Best-of-3 matches ending 2-0 now complete correctly. Match-level completion logic (`isMatchComplete`) replaces row counting. E2E test for best-of-3 round transition added.
-
-- **[940_standings-court-grouping.md](./940_standings-court-grouping.md)**: [IMPLEMENTED] Visual improvements: color gradient per court group (gold→red), left border per court, large bold court position numbers, court badges in group colors. Dark background preserved.
-- **[950_preseed-bracket-ranking.md](./950_preseed-bracket-ranking.md)**: [INVESTIGATED — NO CHANGE] Preseed bracket ranking analysis. Court-position-based ranking already reflects bracket structure for all preseed configurations. No code changes needed.
-- **[960_physical-court-names.md](./960_physical-court-names.md)**: [TODO] Organizer can enter physical court labels ("Court A", "Beach 1") at creation. Court page and tournament overview show assigned physical court name. Stored as JSON array on tournament table.
-- **[970_standings-live-update.md](./970_standings-live-update.md)**: [IMPLEMENTED] Converted standings page to `query.live()` with 3s polling. Standings auto-update when new scores are entered. Same pattern as tournament data page.
 
 - **[120_gotchas.md](./120_gotchas.md)**: Development lessons, common issues, and workarounds encountered during implementation and testing.
 
@@ -73,3 +63,10 @@
   - **[880_creation-page-ux.md](./archive/880_creation-page-ux.md)**: Creation page UX — win-by explainer, WVV import, slider, rounds, retirements [COMPLETE]
   - **[890_injury-retirement-improvements.md](./archive/890_injury-retirement-improvements.md)**: Undo retirement/injury, per-court injury disable, all-courts hint [COMPLETE]
   - **[900_logging-reduction.md](./archive/900_logging-reduction.md)**: Remove debug console.log, logging cleanup [COMPLETE]
+  - **[910_final-standings-fix.md](./archive/910_final-standings-fix.md)**: Final round results saved, standings by court position, finalStanding for all players, numRounds synced [COMPLETE]
+  - **[920_landing-ux-fixes.md](./archive/920_landing-ux-fixes.md)**: Language switcher on landing page, German translations, WVV label, format-specific help text [COMPLETE]
+  - **[930_bestof3-round-completion.md](./archive/930_bestof3-round-completion.md)**: isMatchComplete logic, best-of-3 2-0 finishes complete correctly, E2E test [COMPLETE]
+  - **[940_standings-court-grouping.md](./archive/940_standings-court-grouping.md)**: Court color gradient, left borders, large position numbers, courts grouped visually [COMPLETE]
+  - **[950_preseed-bracket-ranking.md](./archive/950_preseed-bracket-ranking.md)**: Preseed bracket ranking analysis — court position already correct [INVESTIGATED — NO CHANGE]
+  - **[960_physical-court-names.md](./archive/960_physical-court-names.md)**: Court label input on tournament page, displayed on court page [COMPLETE]
+  - **[970_standings-live-update.md](./archive/970_standings-live-update.md)**: query.live() polling for standings page, auto-updates [COMPLETE]
