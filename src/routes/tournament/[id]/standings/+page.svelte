@@ -7,8 +7,6 @@
 		data: { tournamentId: number; tournament: { id: number; name: string } };
 	}>();
 
-	const liveQuery = $derived(getStandingsDataLive(data.tournamentId));
-
 	const formatNumber = (num: number): string => (num > 0 ? `+${num}` : String(num));
 
 	function getCourtSizeLabel(size: number): string {
@@ -77,7 +75,7 @@
 		<h1>{data.tournament.name}</h1>
 	</header>
 
-	{#await liveQuery}
+	{#await getStandingsDataLive(data.tournamentId)}
 		<section class="empty">
 			<p>{m.loading()}</p>
 		</section>
@@ -87,6 +85,7 @@
 		{@const standings = (state?.standings ?? []) as StandingPlayer[]}
 		{@const courtSizes = (state?.courtSizes ?? []) as number[]}
 		{@const retiredPlayers = (state?.retiredPlayers ?? []) as Array<{ id: number; name: string; retiredRound: number | null; retirementReason: string | null; finalStanding: number | null }>}
+		{@const allPlayers = (state?.players ?? []) as Array<{ id: number; name: string }>}
 
 		{#if tournament}
 			{@const currentRound = tournament.currentRound ?? 0}
@@ -100,10 +99,34 @@
 		{/if}
 
 		{#if standings.length === 0}
-			<section class="empty">
-				<p>{m.standings_empty()}</p>
-				<p>{m.standings_empty_hint()}</p>
-			</section>
+			{@const allPlayers = state?.players ?? []}
+			{#if allPlayers.length > 0}
+				<section class="standings-section">
+					<h2>{m.standings_complete_rankings()}</h2>
+					<p class="info-text">{m.standings_empty_hint()}</p>
+					<table class="standings-table">
+						<thead>
+							<tr>
+								<th>{m.standings_place()}</th>
+								<th>{m.standings_player()}</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each allPlayers as player (player.id)}
+								<tr>
+									<td class="rank">—</td>
+									<td class="player-name">{player.name}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</section>
+			{:else}
+				<section class="empty">
+					<p>{m.standings_empty()}</p>
+					<p>{m.standings_empty_hint()}</p>
+				</section>
+			{/if}
 		{:else}
 			{#if tournament && (tournament.status === 'completed' || cr >= 2)}
 				{@const top3 = standings.slice(0, 3)}
@@ -347,6 +370,13 @@
 		border: var(--border-thickness) solid var(--border-default);
 		border-radius: var(--radius-md);
 		color: var(--text-muted);
+	}
+
+	.info-text {
+		text-align: center;
+		color: var(--text-muted);
+		font-size: var(--font-size-sm);
+		margin-bottom: var(--spacing-md);
 	}
 
 	/* Podium Section */

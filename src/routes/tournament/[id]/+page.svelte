@@ -12,7 +12,7 @@
 		setCourtLabel
 	} from './tournament-actions.remote';
 	import { resolve } from '$app/paths';
-	import { getEffectiveScoring, getScoringLabel } from '$lib/tournament-logic';
+	import { getEffectiveScoring, getMinPointsForSet, getScoringLabel } from '$lib/tournament-logic';
 	import CourtQRCode from '$lib/components/CourtQRCode.svelte';
 
 	let { data } = $props<{
@@ -359,7 +359,17 @@
 												type="number"
 												min="1"
 												max="50"
-												value={ovr.pointsToWin ?? effective.pointsToWin}
+												value={ovr.pointsToWin ?? getMinPointsForSet(
+												1,
+												size,
+												{
+													pointsToWin: tournament.pointsToWin ?? 21,
+													winBy: tournament.winBy ?? 2,
+													setsToWin: tournament.setsToWin ?? 1,
+													decidingSetPoints: tournament.decidingSetPoints ?? 15
+												},
+												tournament.scoringOverrides
+											)}
 												oninput={(e) => {
 													const v = parseInt(e.currentTarget.value);
 													if (!isNaN(v))

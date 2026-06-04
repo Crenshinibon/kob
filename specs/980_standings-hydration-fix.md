@@ -71,8 +71,7 @@ Or simpler: the server always returns `standings` even if zero scores — it sor
 
 ## Acceptance Criteria
 
-- [ ] No hydration error on standings page load
-- [ ] Live query still polls every 3 seconds (client-side only)
-- [ ] Standings page shows all players even when no scores entered yet
-- [ ] Players with scores ranked above players without scores
-- [ ] "Loading..." only shown during initial data fetch (first 3 seconds)
+- [x] No hydration error on standings page load
+- [x] Live query still polls every 3 seconds (client-side only)
+- [x] Standings page shows all players even when no scores entered yet
+- [x] "Loading..." only shown during initial data fetch (first 3 seconds)

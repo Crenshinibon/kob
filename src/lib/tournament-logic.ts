@@ -741,8 +741,8 @@ export function calculateCourtStandings(
 			if (useAverages && s.matchCount > 0) {
 				return {
 					...s,
-					points: s.points / s.matchCount,
-					diff: diff / s.matchCount
+					points: Math.round((s.points / s.matchCount) * 100) / 100,
+					diff: Math.round((diff / s.matchCount) * 100) / 100
 				};
 			}
 			return { ...s, diff };
