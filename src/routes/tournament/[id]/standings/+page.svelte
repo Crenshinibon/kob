@@ -340,12 +340,6 @@
 		color: var(--text-primary);
 	}
 
-	header p {
-		margin: var(--spacing-sm) 0 0 0;
-		color: var(--text-secondary);
-		font-size: var(--font-size-lg);
-	}
-
 	.empty {
 		text-align: center;
 		padding: var(--spacing-xl);
