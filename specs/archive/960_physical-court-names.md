@@ -85,10 +85,10 @@ If no label set, show only the virtual court number (no extra line). The virtual
 
 ## Acceptance Criteria
 
-- [ ] `label` column added to `court` table (nullable text)
-- [ ] Tournament overview shows inline text input per court for label
-- [ ] Label auto-saves (blur or small save button)
-- [ ] Court page displays label prominently
-- [ ] No label = no extra display (clean fallback)
-- [ ] Label survives round transitions (on `court` table, not rotation)
-- [ ] Only tournament organizer sees/can edit the label input (court page shows it read-only)
+- [x] `label` column added to `court` table (nullable text)
+- [x] Tournament overview shows inline text input per court for label
+- [x] Label auto-saves (blur or small save button)
+- [x] Court page displays label prominently
+- [x] No label = no extra display (clean fallback)
+- [x] Label survives round transitions (on `court` table, not rotation)
+- [x] Only tournament organizer sees/can edit the label input (court page shows it read-only)
