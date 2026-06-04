@@ -28,6 +28,11 @@
 
 - **[930_bestof3-round-completion.md](./930_bestof3-round-completion.md)**: [IMPLEMENTED] Best-of-3 matches ending 2-0 now complete correctly. Match-level completion logic (`isMatchComplete`) replaces row counting. E2E test for best-of-3 round transition added.
 
+- **[940_standings-court-grouping.md](./940_standings-court-grouping.md)**: [TODO] Visual improvements: color gradient per court group (yellow→brownish red), larger court position badges per row, visual separation between court groups.
+- **[950_preseed-bracket-ranking.md](./950_preseed-bracket-ranking.md)**: [INVESTIGATED — NO CHANGE] Preseed bracket ranking analysis. Court-position-based ranking already reflects bracket structure for all preseed configurations. No code changes needed.
+- **[960_physical-court-names.md](./960_physical-court-names.md)**: [TODO] Organizer can enter physical court labels ("Court A", "Beach 1") at creation. Court page and tournament overview show assigned physical court name. Stored as JSON array on tournament table.
+- **[970_standings-live-update.md](./970_standings-live-update.md)**: [TODO] Convert standings page to `query.live()` with 3s polling. Standings auto-update when new scores are entered. Same pattern as tournament data page.
+
 - **[120_gotchas.md](./120_gotchas.md)**: Development lessons, common issues, and workarounds encountered during implementation and testing.
 
 - **[200_kob-32.md](./200_kob-32.md)**: 32-player (8-court) format specification. Points-based snake seeding, tiered redistribution, bracket visualization. Both Random Seed and Preseed for 16 and 32 players.
@@ -38,13 +43,12 @@
   - **[610_incomplete-core.md](./610_incomplete-core.md)**: Problem statement, physical vs virtual courts, player count extension (8-64), vertical seeding, leftover configuration.
   - **[620_incomplete-options.md](./620_incomplete-options.md)**: Options A (recursive preseed), B (mixed courts), D (parallel games), E (generalized recursive split).
   - **[630_incomplete-implementation.md](./630_incomplete-implementation.md)**: Implementation phases, unit testing strategy, open questions.
-  - **[640_incomplete-devplan.md](./640_incomplete-devplan.md)**: Development plan summary: 7 phases, effort estimates, risks.
-  - **[650_game-rules-and-duration.md](./650_game-rules-and-duration.md)**: Scoring modes, special court rules, duration estimation with live forecast.
   - **[660_virtual-court-scheduling.md](./660_virtual-court-scheduling.md)**: Shift scheduling, wait time forecasting, rolling physical court reassignment.
   - **[670_player-retirement.md](./670_player-retirement.md)**: Player bailout handling, redistribution after retirement, final round elimination rule.
 
 - **Archived specs** (completed or superseded, no longer active references):
   - **[084_preseed-example-20p-injury-retirement.md](./archive/084_preseed-example-20p-injury-retirement.md)**: [SUPERSEDED by 083 + 670] Used old flat-redistribution algorithm.
+  - **[640_incomplete-devplan.md](./archive/640_incomplete-devplan.md)**: Development plan for incomplete rosters & extended player counts. All 11 phases complete. [ARCHIVED — historical reference]
   - **[110_score-saving-ux.md](./archive/110_score-saving-ux.md)**: Score saving UX fixes [COMPLETE]
   - **[400_testing-gaps.md](./archive/400_testing-gaps.md)**: Testing gaps and pre-launch checklist [COMPLETE]
   - **[500_production-readiness-progress.md](./archive/500_production-readiness-progress.md)**: Production readiness progress log [COMPLETE]
