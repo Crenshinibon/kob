@@ -620,6 +620,8 @@ export const retirePlayer = command(
 				})
 			);
 
+			const retiredIds = new Set([playerId, ...priorRetirees.map((p) => p.id)]);
+
 			const results = resolved.map((cr) => {
 				const pIds = [
 					cr.rotation.player1Id,
@@ -628,7 +630,7 @@ export const retirePlayer = command(
 					...(cr.rotation.player4Id ? [cr.rotation.player4Id] : []),
 					...(cr.rotation.player5Id ? [cr.rotation.player5Id] : []),
 					...(cr.rotation.player6Id ? [cr.rotation.player6Id] : [])
-				].filter((id): id is number => id !== null);
+				].filter((id): id is number => id !== null && !retiredIds.has(id));
 				return {
 					courtNumber: cr.rotation.courtNumber,
 					standings: calculateCourtStandings(cr.matchData, pIds)

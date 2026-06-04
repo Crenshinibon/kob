@@ -407,7 +407,6 @@ function distributeGroup(players: PlayerWithOrigin[], courtSizes: number[]): num
 		let best = -1;
 		let minLoad = Infinity;
 
-		// Prefer a court that doesn't already have a player from this origin
 		for (let i = 0; i < courtCount; i++) {
 			if (slots[i].playerIds.length >= courtSizes[i]) continue;
 			if (slots[i].origins.has(p.originCourt)) continue;
@@ -417,11 +416,20 @@ function distributeGroup(players: PlayerWithOrigin[], courtSizes: number[]): num
 			}
 		}
 
-		// Fall back: all remaining courts have this origin, pick least loaded
 		if (best === -1) {
 			minLoad = Infinity;
 			for (let i = 0; i < courtCount; i++) {
 				if (slots[i].playerIds.length >= courtSizes[i]) continue;
+				if (slots[i].playerIds.length < minLoad) {
+					minLoad = slots[i].playerIds.length;
+					best = i;
+				}
+			}
+		}
+
+		if (best === -1) {
+			minLoad = Infinity;
+			for (let i = 0; i < courtCount; i++) {
 				if (slots[i].playerIds.length < minLoad) {
 					minLoad = slots[i].playerIds.length;
 					best = i;

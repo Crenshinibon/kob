@@ -29,9 +29,9 @@
 
 - **[300_pluggable-formats.md](./300_pluggable-formats.md)**: [PLANNED EXTENSION] Extensible architecture for supporting multiple tournament formats. Not yet implemented.
 
-- **[980_standings-hydration-fix.md](./980_standings-hydration-fix.md)**: [TODO] Standings page hydration error — `query.live()` incompatible with SSR `$derived`. Move to client-only `$effect`. Also show all players even before any scores entered.
-- **[990_retirement-5p-crash.md](./990_retirement-5p-crash.md)**: [TODO] Retiring player from 5p preseed court crashes server. `distributeGroup` hits undefined `playerIds`.
-- **[1000_minor-ui-fixes.md](./1000_minor-ui-fixes.md)**: [TODO] 4 bugs: slider alignment, 5p/6p scoring default, average points rounding, save button first click.
+- **[980_standings-hydration-fix.md](./980_standings-hydration-fix.md)**: [IMPLEMENTED] `ssr = false` on standings page. Client-only render avoids `query.live()` hydration mismatch. Shows all players even before any scores entered.
+- **[990_retirement-5p-crash.md](./990_retirement-5p-crash.md)**: [IMPLEMENTED] Fixed `distributeGroup` fallback for 5p origin overflow. Filtered retired players from preseed redistribution results.
+- **[1000_minor-ui-fixes.md](./1000_minor-ui-fixes.md)**: [IMPLEMENTED] 3 of 4 fixed: slider alignment, scoring override defaults, average points rounding. Bug 4 (save button first click) deferred.
 
 - **[600_incomplete-rosters-index.md](./600_incomplete-rosters-index.md)**: [IN PROGRESS] Index for incomplete roster specs. Supports 8-64 players, recursive preseed, physical/virtual courts.
   - **[610_incomplete-core.md](./610_incomplete-core.md)**: Problem statement, physical vs virtual courts, player count extension (8-64), vertical seeding, leftover configuration.

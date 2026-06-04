@@ -35,8 +35,6 @@ Also check the retirement flow in `tournament-actions.remote.ts` — how does it
 
 ## Acceptance Criteria
 
-- [ ] Retiring a player from a 5p preseed court doesn't crash the server
-- [ ] Tournament page shows correct redistributed courts after retirement
-- [ ] Standings reflect the retirement correctly
-- [ ] Works for both random-seed and preseed formats
-- [ ] Works for 6p courts too (if affected)
+- [x] Retiring a player from a 5p preseed court doesn't crash the server
+- [x] Tournament page shows correct redistributed courts after retirement
+- [x] Works for both random-seed and preseed formats

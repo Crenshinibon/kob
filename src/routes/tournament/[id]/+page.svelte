@@ -132,7 +132,6 @@
 	{@const shifts = state?.shifts ?? []}
 	{@const roundDuration = state?.roundDuration ?? 0}
 	{@const isActive = tournament?.status === 'active'}
-	{@const gridClass = courts.length > 4 ? 'courts courts-8' : 'courts'}
 	{@const virtualCourtCount = courtSizes.length}
 	{@const allCourtsComplete = state?.allCourtsComplete ?? false}
 	{@const retiredPlayers = state?.retiredPlayers ?? []}
@@ -214,7 +213,7 @@
 				</div>
 			{/if}
 
-			<section class={gridClass}>
+			<section class="courts">
 				{#each courts as court (court.courtNumber)}
 					<div class="court-card">
 						<div class="court-header">
@@ -710,7 +709,7 @@
 		text-align: center;
 		padding: var(--spacing-xl);
 		font-size: var(--font-size-lg);
-		max-width: 800px;
+		max-width: 1200px;
 		margin: 0 auto;
 	}
 
@@ -719,26 +718,14 @@
 	}
 
 	main {
-		max-width: 800px;
+		max-width: 1200px;
 		margin: 0 auto;
 	}
 
 	.courts {
 		display: grid;
-		grid-template-columns: repeat(2, 1fr);
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 		gap: var(--spacing-md);
-	}
-
-	.courts-8 {
-		grid-template-columns: repeat(4, 1fr);
-	}
-
-	.courts-8 .court-card {
-		padding: var(--spacing-sm);
-	}
-
-	.courts-8 .players {
-		font-size: var(--font-size-xs);
 	}
 
 	.court-card {
