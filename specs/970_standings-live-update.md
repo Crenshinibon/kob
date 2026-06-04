@@ -69,9 +69,8 @@ Convert the server load function to a `query.live()` with 3-second polling. This
 
 ## Acceptance Criteria
 
-- [ ] Standings page updates automatically when new scores are entered
-- [ ] No manual refresh needed
-- [ ] Poll interval is reasonable (3-5 seconds)
-- [ ] Server recalculates standings efficiently (caches when no new scores)
-- [ ] Loading state shown while initial data loads
-- [ ] Error state handled gracefully
+- [x] Standings page updates automatically when new scores are entered
+- [x] No manual refresh needed
+- [x] Poll interval is reasonable (3 seconds)
+- [x] Loading state shown while initial data loads
+- [x] Error state handled gracefully

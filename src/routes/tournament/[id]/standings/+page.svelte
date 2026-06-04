@@ -1,19 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import * as m from '$lib/paraglide/messages';
+	import { getStandingsDataLive } from './standings-data.remote';
 
-	let { data }: { data: PageData } = $props();
+	let { data } = $props<{
+		data: { tournamentId: number; tournament: { id: number; name: string } };
+	}>();
 
-	const tournament = $derived(data.tournament);
-	const standings = $derived(data.standings);
-	const courtSizes = $derived(data.courtSizes);
-
-	const top3 = $derived(standings.slice(0, 3));
-	const first = $derived(top3[0]);
-	const second = $derived(top3[1]);
-	const third = $derived(top3[2]);
-
-	const medals = ['🥇', '🥈', '🥉'];
+	const liveQuery = $derived(getStandingsDataLive(data.tournamentId));
 
 	const formatNumber = (num: number): string => (num > 0 ? `+${num}` : String(num));
 
@@ -30,17 +24,23 @@
 		return colors[Math.min(courtNum - 1, colors.length - 1)] ?? '#FF4444';
 	}
 
-	function getCourtBadgeLabel(courtNum: number): string {
+	function getCourtBadgeLabel(courtNum: number, courtSizes: number[]): string {
 		const size = courtSizes.length >= courtNum ? courtSizes[courtNum - 1] : 4;
 		return `C${courtNum} ${getCourtSizeLabel(size)}`;
 	}
 
-	function getCurrentCourt(player: StandingPlayer): number | undefined {
-		return player.roundHistory.find((h) => h.round === tournament.currentRound)?.court;
+	function getCurrentCourt(
+		player: StandingPlayer,
+		currentRound: number
+	): number | undefined {
+		return player.roundHistory.find((h) => h.round === currentRound)?.court;
 	}
 
-	function getCurrentRank(player: StandingPlayer): number | undefined {
-		return player.roundHistory.find((h) => h.round === tournament.currentRound)?.rankOnCourt;
+	function getCurrentRank(
+		player: StandingPlayer,
+		currentRound: number
+	): number | undefined {
+		return player.roundHistory.find((h) => h.round === currentRound)?.rankOnCourt;
 	}
 
 	function variance(arr: number[]): number {
@@ -67,249 +67,247 @@
 		currentRoundPoints: number;
 		currentRoundDiff: number;
 	};
-
-	type PageData = {
-		tournament: {
-			id: number;
-			name: string;
-			status: string;
-			currentRound: number;
-			numRounds: number;
-			formatType?: string;
-		};
-		standings: StandingPlayer[];
-		courtSizes: number[];
-		retiredPlayers?: Array<{
-			id: number;
-			name: string;
-			retiredRound: number | null;
-			retirementReason: string | null;
-			finalStanding: number | null;
-		}>;
-	};
 </script>
 
 <main>
 	<header>
-		<a href={resolve('/tournament/[id]', { id: String(tournament.id) })}
+		<a href={resolve('/tournament/[id]', { id: String(data.tournamentId) })}
 			>{m.standings_back()}</a
 		>
-		<h1>{tournament.name}</h1>
-		{#if tournament.formatType}
-			<p>
-				{m.standings_title()} · {m.round_label({ current: tournament.currentRound, total: tournament.numRounds })}
-				· {tournament.formatType === 'preseed' ? m.format_preseed() : m.format_random_seed()}
-			</p>
-		{:else}
-			<p>{m.standings_title()} · {m.round_label({ current: tournament.currentRound, total: tournament.numRounds })}</p>
-		{/if}
+		<h1>{data.tournament.name}</h1>
 	</header>
 
-	{#if standings.length === 0}
+	{#await liveQuery}
 		<section class="empty">
-			<p>{m.standings_empty()}</p>
-			<p>{m.standings_empty_hint()}</p>
+			<p>{m.loading()}</p>
 		</section>
-	{:else}
-		<!-- Podium Section -->
-		{#if tournament.status === 'completed' || tournament.currentRound >= 2}
-			<section class="podium-section">
-				<h2>{m.standings_winners()}</h2>
-				<div class="podium">
-					{#if second}
-						<div class="podium-place second">
-							<div class="medal">🥈</div>
-							<div class="player-name">{second.playerName}</div>
-							<div class="stats">{second.totalPoints} pts</div>
-							<div class="diff">{formatNumber(second.totalDiff)}</div>
-						</div>
-					{/if}
+	{:then state}
+		{@const tournament = state?.tournament}
+		{@const cr = tournament?.currentRound ?? 0}
+		{@const standings = (state?.standings ?? []) as StandingPlayer[]}
+		{@const courtSizes = (state?.courtSizes ?? []) as number[]}
+		{@const retiredPlayers = (state?.retiredPlayers ?? []) as Array<{ id: number; name: string; retiredRound: number | null; retirementReason: string | null; finalStanding: number | null }>}
 
-					{#if first}
-						<div class="podium-place first">
-							<div class="medal">🥇</div>
-							<div class="crown">👑</div>
-							<div class="player-name">{first.playerName}</div>
-							<div class="stats">{first.totalPoints} pts</div>
-							<div class="diff">{formatNumber(first.totalDiff)}</div>
-						</div>
-					{/if}
-
-					{#if third}
-						<div class="podium-place third">
-							<div class="medal">🥉</div>
-							<div class="player-name">{third.playerName}</div>
-							<div class="stats">{third.totalPoints} pts</div>
-							<div class="diff">{formatNumber(third.totalDiff)}</div>
-						</div>
-					{/if}
-				</div>
-			</section>
+		{#if tournament}
+			{@const currentRound = tournament.currentRound ?? 0}
+			{@const displayRounds = tournament.numRounds ?? 0}
+			<p>
+				{m.standings_title()} · {m.round_label({ current: currentRound, total: displayRounds })}
+				{#if tournament.formatType}
+					· {tournament.formatType === 'preseed' ? m.format_preseed() : m.format_random_seed()}
+				{/if}
+			</p>
 		{/if}
 
-		<!-- Total Standings Table -->
-		<section class="standings-section">
-			<h2>{m.standings_complete_rankings()}</h2>
-			<table class="standings-table">
-				<thead>
-					<tr>
-						<th>{m.standings_place()}</th>
-						<th>Pos</th>
-						<th>{m.standings_player()}</th>
-						<th>{m.standings_points()}</th>
-						<th>{m.standings_diff()}</th>
-						<th>{m.standings_rounds()}</th>
-						{#if tournament.currentRound > 1}
-							{#each Array.from({ length: tournament.currentRound }, (_, i) => i) as i (i)}
-								<th>R{i + 1}</th>
-							{/each}
+		{#if standings.length === 0}
+			<section class="empty">
+				<p>{m.standings_empty()}</p>
+				<p>{m.standings_empty_hint()}</p>
+			</section>
+		{:else}
+			{#if tournament && (tournament.status === 'completed' || cr >= 2)}
+				{@const top3 = standings.slice(0, 3)}
+				{@const first = top3[0]}
+				{@const second = top3[1]}
+				{@const third = top3[2]}
+				<section class="podium-section">
+					<h2>{m.standings_winners()}</h2>
+					<div class="podium">
+						{#if second}
+							<div class="podium-place second">
+								<div class="medal">🥈</div>
+								<div class="player-name">{second.playerName}</div>
+								<div class="stats">{second.totalPoints} pts</div>
+								<div class="diff">{formatNumber(second.totalDiff)}</div>
+							</div>
 						{/if}
-					</tr>
-				</thead>
-				<tbody>
-					{#each standings as player, i (player.playerId)}
-						{@const currentCourt = getCurrentCourt(player)}
-						{@const rankOnCourt = getCurrentRank(player)}
-						{@const courtColor = currentCourt != null ? getCourtColor(currentCourt) : null}
-						{@const prevPlayer = i > 0 ? standings[i - 1] : null}
-						{@const prevCourt = prevPlayer ? getCurrentCourt(prevPlayer) : undefined}
-						{@const isNewGroup = currentCourt !== prevCourt}
 
-						<tr
-							class={player.overallRank <= 3 ? 'top-three' : ''}
-							class:new-group={isNewGroup}
-							style={courtColor ? `border-left: 3px solid ${courtColor}` : ''}
-						>
-							<td class="rank">
-								{#if player.overallRank <= 3}
-									<span class="medal">{medals[player.overallRank - 1]}</span>
-								{:else}
-									{player.overallRank}
-								{/if}
-							</td>
-							<td class="pos">
-								{#if rankOnCourt != null}
-									<span style={courtColor ? `color: ${courtColor}` : ''}>{rankOnCourt}</span>
-								{/if}
-							</td>
-							<td
-								class="player-name"
-								style={courtColor ? `color: ${courtColor}` : ''}
-							>
-								{player.playerName}
-							</td>
-							<td class="points">{player.totalPoints}</td>
-							<td
-								class="diff {player.totalDiff > 0
-									? 'positive'
-									: player.totalDiff < 0
-										? 'negative'
-										: ''}"
-							>
-								{formatNumber(player.totalDiff)}
-							</td>
-							<td>{player.roundsPlayed}</td>
-							{#if tournament.currentRound > 1}
-								{#each Array.from({ length: tournament.currentRound }, (_, idx) => idx) as roundIdx (roundIdx)}
-									{@const roundData = player.roundHistory.find((r) => r.round === roundIdx + 1)}
-									<td class="round-data">
-										{#if roundData}
-											<span
-												class="court-badge"
-												style="border-color: {getCourtColor(
-													roundData.court
-												)}; color: {getCourtColor(roundData.court)}"
-											>
-												{getCourtBadgeLabel(roundData.court)}
-											</span>
-											<span class="rank-badge">#{roundData.rankOnCourt}</span>
-										{:else}
-											-
-										{/if}
-									</td>
-								{/each}
-							{/if}
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</section>
+						{#if first}
+							<div class="podium-place first">
+								<div class="medal">🥇</div>
+								<div class="crown">👑</div>
+								<div class="player-name">{first.playerName}</div>
+								<div class="stats">{first.totalPoints} pts</div>
+								<div class="diff">{formatNumber(first.totalDiff)}</div>
+							</div>
+						{/if}
 
-		<!-- Achievement Categories -->
-		{#if tournament.status === 'completed'}
-			<section class="achievements">
-				<h2>{m.standings_achievements()}</h2>
-				<div class="achievement-grid">
-					{#if standings.length > 0}
-						{@const mostImproved = [...standings].sort((a, b) => {
-							const aFirst = a.roundHistory[0]?.points || 0;
-							const aLast = a.roundHistory[a.roundHistory.length - 1]?.points || 0;
-							const bFirst = b.roundHistory[0]?.points || 0;
-							const bLast = b.roundHistory[b.roundHistory.length - 1]?.points || 0;
-							return bLast - bFirst - (aLast - aFirst);
-						})[0]}
-						<div class="achievement-card">
-							<div class="achievement-icon">📈</div>
-							<div class="achievement-title">{m.achievement_most_improved()}</div>
-							<div class="achievement-winner">{mostImproved.playerName}</div>
-						</div>
-					{/if}
+						{#if third}
+							<div class="podium-place third">
+								<div class="medal">🥉</div>
+								<div class="player-name">{third.playerName}</div>
+								<div class="stats">{third.totalPoints} pts</div>
+								<div class="diff">{formatNumber(third.totalDiff)}</div>
+							</div>
+						{/if}
+					</div>
+				</section>
+			{/if}
 
-					{#if standings.length > 0}
-						{@const mostConsistent = [...standings].sort((a, b) => {
-							const aRanks = a.roundHistory.map((r) => r.rankOnCourt);
-							const bRanks = b.roundHistory.map((r) => r.rankOnCourt);
-							const aVariance = variance(aRanks);
-							const bVariance = variance(bRanks);
-							return aVariance - bVariance;
-						})[0]}
-						<div class="achievement-card">
-							<div class="achievement-icon">🎯</div>
-							<div class="achievement-title">{m.achievement_consistent()}</div>
-							<div class="achievement-winner">{mostConsistent.playerName}</div>
-						</div>
-					{/if}
-
-					{#if standings.length > 0}
-						{@const courtChampion = [...standings].sort((a, b) => {
-							const aTopCourt = a.roundHistory.filter((r) => r.court === 1).length;
-							const bTopCourt = b.roundHistory.filter((r) => r.court === 1).length;
-							return bTopCourt - aTopCourt;
-						})[0]}
-						<div class="achievement-card">
-							<div class="achievement-icon">👑</div>
-							<div class="achievement-title">{m.achievement_court_champion()}</div>
-							<div class="achievement-winner">{courtChampion.playerName}</div>
-						</div>
-					{/if}
-				</div>
-			</section>
-		{/if}
-
-		{#if data.retiredPlayers && data.retiredPlayers.length > 0}
-			<section class="retired-section">
-				<h2>{m.standings_retired_players()}</h2>
+			<!-- Total Standings Table -->
+			<section class="standings-section">
+				<h2>{m.standings_complete_rankings()}</h2>
 				<table class="standings-table">
 					<thead>
 						<tr>
+							<th>{m.standings_place()}</th>
+							<th>Pos</th>
 							<th>{m.standings_player()}</th>
-							<th>{m.standings_retired_round()}</th>
-							<th>{m.standings_reason()}</th>
+							<th>{m.standings_points()}</th>
+							<th>{m.standings_diff()}</th>
+							<th>{m.standings_rounds()}</th>
+							{#if cr > 1}
+								{#each Array.from({ length: cr }, (_, i) => i) as i (i)}
+									<th>R{i + 1}</th>
+								{/each}
+							{/if}
 						</tr>
 					</thead>
 					<tbody>
-						{#each data.retiredPlayers as rp (rp.id)}
-							<tr>
-								<td>{rp.name}</td>
-								<td>Round {rp.retiredRound}</td>
-								<td>{rp.retirementReason || '—'}</td>
+						{#each standings as player, i (player.playerId)}
+							{@const currentCourt = getCurrentCourt(player, cr)}
+							{@const rankOnCourt = getCurrentRank(player, cr)}
+							{@const courtColor = currentCourt != null ? getCourtColor(currentCourt) : null}
+							{@const prevPlayer = i > 0 ? standings[i - 1] : null}
+							{@const prevCourt = prevPlayer ? getCurrentCourt(prevPlayer, cr) : undefined}
+							{@const isNewGroup = currentCourt !== prevCourt}
+
+							<tr
+								class={player.overallRank <= 3 ? 'top-three' : ''}
+								class:new-group={isNewGroup}
+								style={courtColor ? `border-left: 3px solid ${courtColor}` : ''}
+							>
+								<td class="rank">
+									{#if player.overallRank <= 3}
+										<span class="medal">{['🥇', '🥈', '🥉'][player.overallRank - 1]}</span>
+									{:else}
+										{player.overallRank}
+									{/if}
+								</td>
+								<td class="pos">
+									{#if rankOnCourt != null}
+										<span style={courtColor ? `color: ${courtColor}` : ''}>{rankOnCourt}</span>
+									{/if}
+								</td>
+								<td
+									class="player-name"
+									style={courtColor ? `color: ${courtColor}` : ''}
+								>
+									{player.playerName}
+								</td>
+								<td class="points">{player.totalPoints}</td>
+								<td
+									class="diff {player.totalDiff > 0
+										? 'positive'
+										: player.totalDiff < 0
+											? 'negative'
+											: ''}"
+								>
+									{formatNumber(player.totalDiff)}
+								</td>
+								<td>{player.roundsPlayed}</td>
+								{#if cr > 1}
+									{#each Array.from({ length: cr }, (_, idx) => idx) as roundIdx (roundIdx)}
+										{@const roundData = player.roundHistory.find((h: StandingPlayer['roundHistory'][0]) => h.round === roundIdx + 1)}
+										<td class="round-data">
+											{#if roundData}
+												<span
+													class="court-badge"
+													style="border-color: {getCourtColor(
+														roundData.court
+													)}; color: {getCourtColor(roundData.court)}"
+												>
+													{getCourtBadgeLabel(roundData.court, courtSizes)}
+												</span>
+												<span class="rank-badge">#{roundData.rankOnCourt}</span>
+											{:else}
+												-
+											{/if}
+										</td>
+									{/each}
+								{/if}
 							</tr>
 						{/each}
 					</tbody>
 				</table>
 			</section>
+
+			<!-- Achievement Categories -->
+			{#if tournament && tournament.status === 'completed'}
+				<section class="achievements">
+					<h2>{m.standings_achievements()}</h2>
+					<div class="achievement-grid">
+						{#if standings.length > 0}
+							{@const mostImproved = [...standings].sort((a, b) => {
+								const aFirst = a.roundHistory[0]?.points || 0;
+								const aLast = a.roundHistory[a.roundHistory.length - 1]?.points || 0;
+								const bFirst = b.roundHistory[0]?.points || 0;
+								const bLast = b.roundHistory[b.roundHistory.length - 1]?.points || 0;
+								return bLast - bFirst - (aLast - aFirst);
+							})[0]}
+							<div class="achievement-card">
+								<div class="achievement-icon">📈</div>
+								<div class="achievement-title">{m.achievement_most_improved()}</div>
+								<div class="achievement-winner">{mostImproved.playerName}</div>
+							</div>
+						{/if}
+
+						{#if standings.length > 0}
+							{@const mostConsistent = [...standings].sort((a, b) => {
+								const aRanks = a.roundHistory.map((h: StandingPlayer['roundHistory'][0]) => h.rankOnCourt);
+								const bRanks = b.roundHistory.map((h: StandingPlayer['roundHistory'][0]) => h.rankOnCourt);
+								const aVariance = variance(aRanks);
+								const bVariance = variance(bRanks);
+								return aVariance - bVariance;
+							})[0]}
+							<div class="achievement-card">
+								<div class="achievement-icon">🎯</div>
+								<div class="achievement-title">{m.achievement_consistent()}</div>
+								<div class="achievement-winner">{mostConsistent.playerName}</div>
+							</div>
+						{/if}
+
+						{#if standings.length > 0}
+							{@const courtChampion = [...standings].sort((a, b) => {
+								const aTopCourt = a.roundHistory.filter((h: StandingPlayer['roundHistory'][0]) => h.court === 1).length;
+								const bTopCourt = b.roundHistory.filter((h: StandingPlayer['roundHistory'][0]) => h.court === 1).length;
+								return bTopCourt - aTopCourt;
+							})[0]}
+							<div class="achievement-card">
+								<div class="achievement-icon">👑</div>
+								<div class="achievement-title">{m.achievement_court_champion()}</div>
+								<div class="achievement-winner">{courtChampion.playerName}</div>
+							</div>
+						{/if}
+					</div>
+				</section>
+			{/if}
+
+			{#if retiredPlayers.length > 0}
+				<section class="retired-section">
+					<h2>{m.standings_retired_players()}</h2>
+					<table class="standings-table">
+						<thead>
+							<tr>
+								<th>{m.standings_player()}</th>
+								<th>{m.standings_retired_round()}</th>
+								<th>{m.standings_reason()}</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each retiredPlayers as rp (rp.id)}
+								<tr>
+									<td>{rp.name}</td>
+									<td>Round {rp.retiredRound}</td>
+									<td>{rp.retirementReason || '—'}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</section>
+			{/if}
 		{/if}
-	{/if}
+	{/await}
 </main>
 
 <style>

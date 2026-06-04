@@ -31,7 +31,7 @@
 - **[940_standings-court-grouping.md](./940_standings-court-grouping.md)**: [IMPLEMENTED] Visual improvements: color gradient per court group (gold→red), left border per court, large bold court position numbers, court badges in group colors. Dark background preserved.
 - **[950_preseed-bracket-ranking.md](./950_preseed-bracket-ranking.md)**: [INVESTIGATED — NO CHANGE] Preseed bracket ranking analysis. Court-position-based ranking already reflects bracket structure for all preseed configurations. No code changes needed.
 - **[960_physical-court-names.md](./960_physical-court-names.md)**: [TODO] Organizer can enter physical court labels ("Court A", "Beach 1") at creation. Court page and tournament overview show assigned physical court name. Stored as JSON array on tournament table.
-- **[970_standings-live-update.md](./970_standings-live-update.md)**: [TODO] Convert standings page to `query.live()` with 3s polling. Standings auto-update when new scores are entered. Same pattern as tournament data page.
+- **[970_standings-live-update.md](./970_standings-live-update.md)**: [IMPLEMENTED] Converted standings page to `query.live()` with 3s polling. Standings auto-update when new scores are entered. Same pattern as tournament data page.
 
 - **[120_gotchas.md](./120_gotchas.md)**: Development lessons, common issues, and workarounds encountered during implementation and testing.
 

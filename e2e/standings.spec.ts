@@ -507,10 +507,9 @@ test.describe('Standings Calculation', () => {
 			const standingsUrl = `/tournament/${tournamentId}/standings`;
 			await page.goto(standingsUrl);
 			await page.waitForURL(/\/standings/, { timeout: 10000 });
-			await page.waitForLoadState('networkidle');
 
-			// Verify standings are populated
-			await page.waitForSelector('.standings-table tbody tr', { timeout: 15000 });
+			// Verify standings are populated (live query may take a moment)
+			await page.waitForSelector('.standings-table tbody tr', { timeout: 20000 });
 			const rows = await page.locator('.standings-table tbody tr').all();
 			expect(rows.length).toBe(16);
 
