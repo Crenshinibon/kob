@@ -24,15 +24,6 @@
 		return colors[Math.min(courtNum - 1, colors.length - 1)] ?? '#FF8C00';
 	}
 
-	function getCourtFromIndex(index: number, sizes: number[]): number | undefined {
-		let acc = 0;
-		for (let c = 0; c < sizes.length; c++) {
-			acc += sizes[c];
-			if (index < acc) return c + 1;
-		}
-		return undefined;
-	}
-
 	function getCourtBadgeLabel(courtNum: number, courtSizes: number[]): string {
 		const size = courtSizes.length >= courtNum ? courtSizes[courtNum - 1] : 4;
 		return `C${courtNum} ${getCourtSizeLabel(size)}`;
@@ -43,6 +34,17 @@
 		currentRound: number
 	): number | undefined {
 		return player.roundHistory.find((h) => h.round === currentRound)?.court;
+	}
+
+	function getEffectiveCourt(
+		player: StandingPlayer,
+		currentRound: number,
+		assign: Record<number, { court: number }>
+	): number | undefined {
+		return (
+			getCurrentCourt(player, currentRound) ??
+			assign[player.playerId]?.court
+		);
 	}
 
 	function getCurrentRank(
@@ -98,6 +100,7 @@
 		{@const retiredPlayers = (state?.retiredPlayers ?? []) as Array<{ id: number; name: string; retiredRound: number | null; retirementReason: string | null; finalStanding: number | null }>}
 		{@const injuredPlayerIds = (state?.injuredPlayerIds ?? []) as number[]}
 		{@const allPlayers = (state?.players ?? []) as Array<{ id: number; name: string }>}
+		{@const assignment = (state?.courtAssignment ?? {}) as Record<number, { court: number }>}
 
 		{#if tournament}
 			{@const currentRound = tournament.currentRound ?? 0}
@@ -202,12 +205,13 @@
 					</thead>
 				<tbody>
 						{#each standings as player, i (player.playerId)}
-							{@const currentCourt = getCurrentCourt(player, cr) ?? (cr > 0 ? getCourtFromIndex(i, courtSizes) : undefined)}
+							{@const currentCourt = getEffectiveCourt(player, cr, assignment)}
 							{@const rankOnCourt = getCurrentRank(player, cr)}
 							{@const courtColor = currentCourt != null ? getCourtColor(currentCourt) : null}
-							{@const prevCourt = i > 0 ? (getCurrentCourt(standings[i - 1], cr) ?? (cr > 0 ? getCourtFromIndex(i - 1, courtSizes) : undefined)) : undefined}
+							{@const prevCourt = i > 0 ? getEffectiveCourt(standings[i - 1], cr, assignment) : undefined}
 							{@const isNewGroup = currentCourt !== prevCourt}
-							{@const span = isNewGroup ? standings.filter((s, idx) => (getCurrentCourt(s, cr) ?? (cr > 0 ? getCourtFromIndex(idx, courtSizes) : undefined)) === currentCourt).length : 0}
+							{@const span = isNewGroup ? standings.slice(i).findIndex((s, idx) => idx > 0 && getEffectiveCourt(s, cr, assignment) !== currentCourt) : 0}
+							{@const spanRows = span === -1 ? standings.length - i : span}
 
 						<tr
 							class={player.overallRank <= 3 ? 'top-three' : ''}
@@ -216,7 +220,7 @@
 							style={courtColor ? `border-left: 4px solid ${courtColor}` : ''}
 						>
 							{#if isNewGroup && currentCourt != null}
-								<td class="court-label" rowspan={span} style={courtColor ? `color: ${courtColor}; border-right-color: ${courtColor}` : ''}>
+								<td class="court-label" rowspan={spanRows} style={courtColor ? `color: ${courtColor}; border-right-color: ${courtColor}` : ''}>
 									{currentCourt}
 								</td>
 							{/if}

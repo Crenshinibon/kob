@@ -30,6 +30,22 @@ async function fetchStandingsData(tournamentId: number) {
 		.from(courtRotation)
 		.where(eq(courtRotation.tournamentId, tournamentId));
 
+	const currentRound = tourney.currentRound || 1;
+	const currentRotations = rotations.filter((r) => r.roundNumber === currentRound);
+	const courtAssignment: Record<number, { court: number; rank: number | null }> = {};
+	for (const cr of currentRotations) {
+		const pIds = [
+			cr.player1Id, cr.player2Id,
+			...(cr.player3Id ? [cr.player3Id] : []),
+			...(cr.player4Id ? [cr.player4Id] : []),
+			...(cr.player5Id ? [cr.player5Id] : []),
+			...(cr.player6Id ? [cr.player6Id] : [])
+		];
+		pIds.forEach((pid, idx) => {
+			courtAssignment[pid] = { court: cr.courtNumber, rank: null };
+		});
+	}
+
 	const playerStats: Record<
 		number,
 		{
@@ -126,13 +142,13 @@ async function fetchStandingsData(tournamentId: number) {
 	const standings = Object.values(playerStats)
 		.filter((s) => s.roundsPlayed > 0)
 		.sort((a, b) => {
-			const aCurrent = a.roundHistory.find((h) => h.round === tourney.currentRound);
-			const bCurrent = b.roundHistory.find((h) => h.round === tourney.currentRound);
-			if (aCurrent && bCurrent) {
-				if (aCurrent.court !== bCurrent.court) return aCurrent.court - bCurrent.court;
-				if (aCurrent.rankOnCourt !== bCurrent.rankOnCourt)
-					return aCurrent.rankOnCourt - bCurrent.rankOnCourt;
-			}
+			const aHist = a.roundHistory.find((h) => h.round === tourney.currentRound);
+			const bHist = b.roundHistory.find((h) => h.round === tourney.currentRound);
+			const aCourt = aHist?.court ?? courtAssignment[a.playerId]?.court;
+			const bCourt = bHist?.court ?? courtAssignment[b.playerId]?.court;
+			if (aCourt != null && bCourt != null && aCourt !== bCourt) return aCourt - bCourt;
+			if (aHist && bHist && aHist.rankOnCourt !== bHist.rankOnCourt)
+				return aHist.rankOnCourt - bHist.rankOnCourt;
 			if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
 			if (b.totalDiff !== a.totalDiff) return b.totalDiff - a.totalDiff;
 			return a.playerId - b.playerId;
@@ -161,7 +177,8 @@ async function fetchStandingsData(tournamentId: number) {
 		players,
 		courtSizes,
 		retiredPlayers,
-		injuredPlayerIds: [...injuredIds]
+		injuredPlayerIds: [...injuredIds],
+		courtAssignment
 	};
 }
 

@@ -471,9 +471,13 @@
 		<button
 			type="submit"
 			class="btn-primary"
-			disabled={computedPlayerCount < minPlayers || computedPlayerCount > maxPlayers}
+			disabled={computedPlayerCount < minPlayers || computedPlayerCount > maxPlayers || !!createTournamentForm.pending}
 		>
-			{m.create_submit()}
+			{#if createTournamentForm.pending}
+				<span class="spinner"></span> {m.loading()}
+			{:else}
+				{m.create_submit()}
+			{/if}
 		</button>
 	</form>
 </main>
@@ -975,5 +979,21 @@
 	.rounds-hint {
 		font-size: var(--font-size-sm);
 		color: var(--text-muted);
+	}
+
+	.spinner {
+		display: inline-block;
+		width: 14px;
+		height: 14px;
+		border: 2px solid var(--bg-primary);
+		border-top-color: transparent;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+		vertical-align: middle;
+		margin-right: var(--spacing-xs);
+	}
+
+	@keyframes spin {
+		to { transform: rotate(360deg); }
 	}
 </style>
