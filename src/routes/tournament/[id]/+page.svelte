@@ -8,7 +8,8 @@
 		retirePlayer,
 		reportInjury,
 		undoRetirement,
-		undoInjury
+		undoInjury,
+		setCourtLabel
 	} from './tournament-actions.remote';
 	import { resolve } from '$app/paths';
 	import { getEffectiveScoring, getScoringLabel } from '$lib/tournament-logic';
@@ -70,11 +71,17 @@
 		return 'var(--accent-info)';
 	}
 
-	function confirmDelete(e: Event) {
-		if (!confirm(m.delete_tournament_confirm())) {
-			e.preventDefault();
-		}
-	}
+			function confirmDelete(e: Event) {
+				if (!confirm(m.delete_tournament_confirm())) {
+					e.preventDefault();
+				}
+			}
+
+			function handleLabelSave(courtId: number, value: string) {
+				setCourtLabel({ courtId, label: value });
+			}
+
+			let labelTimers = $state<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
 	function isUndoableRetirement(rp: { retiredAt: Date | null; injuredAt: Date | null }): boolean {
 		return (
@@ -236,6 +243,25 @@
 								{/if}
 							</div>
 						</div>
+
+						<label class="court-label-row">
+							<span class="court-label-prefix">Physical:</span>
+							<input
+								type="text"
+								class="court-label-input"
+								placeholder="e.g. Court A"
+								value={court.label ?? ''}
+								oninput={(e) => {
+									const tid = court.courtId;
+									const timerId = setTimeout(() => {
+										handleLabelSave(tid, e.currentTarget.value);
+									}, 500);
+									const existing = labelTimers.get(tid);
+									if (existing) clearTimeout(existing);
+									labelTimers = new Map([...labelTimers, [tid, timerId]]);
+								}}
+							/>
+						</label>
 
 						{#if court.token}
 							<CourtQRCode token={court.token} courtNumber={court.courtNumber} />
@@ -767,6 +793,39 @@
 	.wait-time {
 		font-size: var(--font-size-xs);
 		color: var(--text-muted);
+	}
+
+	.court-label-row {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.court-label-prefix {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+		flex-shrink: 0;
+	}
+
+	.court-label-input {
+		flex: 1;
+		background: transparent;
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		padding: 2px var(--spacing-sm);
+	}
+
+	.court-label-input::placeholder {
+		color: var(--text-muted);
+		font-style: italic;
+	}
+
+	.court-label-input:focus {
+		border-color: var(--accent-primary);
+		outline: none;
 	}
 
 	.players {

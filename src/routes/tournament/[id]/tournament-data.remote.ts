@@ -21,12 +21,14 @@ export interface CourtDisplayData {
 	courtSize: number;
 	matches: (typeof match.$inferSelect)[];
 	token: string | null;
+	label: string | null;
 	players: { id: number; name: string; retired?: boolean }[];
 	shift?: number;
 	totalShifts?: number;
 	waitMinutes?: number;
 	waitLabel?: string;
 	isComplete: boolean;
+	courtId: number;
 }
 
 export interface TournamentDisplayData {
@@ -154,7 +156,7 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		const matches = await db.select().from(match).where(eq(match.courtRotationId, rotation.id));
 
 		const access = await db
-			.select({ token: court.token })
+			.select({ token: court.token, label: court.label, id: court.id })
 			.from(court)
 			.where(eq(court.id, rotation.courtId))
 			.limit(1);
@@ -201,6 +203,8 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 			courtSize: size,
 			matches,
 			token: access[0]?.token ?? null,
+			label: access[0]?.label ?? null,
+			courtId: access[0]?.id ?? rotation.courtId,
 			players: rotationPlayers,
 			isComplete
 		});

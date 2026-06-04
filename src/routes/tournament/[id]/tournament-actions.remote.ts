@@ -327,6 +327,36 @@ export const closeRoundForm = form(
 	}
 );
 
+export const setCourtLabel = command(
+	v.object({
+		courtId: v.pipe(v.number(), v.minValue(1)),
+		label: v.string()
+	}),
+	async ({ courtId, label }) => {
+		const event = getRequestEvent();
+		const user = event.locals.user;
+		if (!user) error(401, m.login_prompt());
+
+		const [courtRecord] = await db.select().from(court).where(eq(court.id, courtId));
+		if (!courtRecord) error(404, m.not_found());
+
+		const [tourney] = await db
+			.select()
+			.from(tournament)
+			.where(and(eq(tournament.id, courtRecord.tournamentId), eq(tournament.orgId, user.id)));
+		if (!tourney) error(404, m.tournament_not_found());
+
+		await db
+			.update(court)
+			.set({ label: label.trim() || null })
+			.where(eq(court.id, courtId));
+
+		getTournamentDataLive(tourney.id).reconnect();
+
+		return { success: true };
+	}
+);
+
 export const deleteTournamentForm = form(
 	v.object({
 		tournamentId: v.pipe(v.number(), v.minValue(1))

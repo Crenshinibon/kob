@@ -48,6 +48,7 @@
 		setsToWin: number;
 		pointsToWin: number;
 		decidingSetPoints: number;
+		label: string | null;
 		scoringOverrides: Record<
 			string,
 			{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
@@ -425,6 +426,9 @@
 					{data.court.courtSize}p
 				</span>
 			{/if}
+			{#if data.court.label}
+				<span class="court-physical-label">{data.court.label}</span>
+			{/if}
 		</p>
 	</header>
 
@@ -778,6 +782,13 @@
 		border-radius: var(--radius-sm);
 		color: var(--court-color);
 		margin-left: var(--spacing-xs);
+	}
+
+	.court-physical-label {
+		font-size: var(--font-size-xs);
+		color: var(--accent-info);
+		margin-left: var(--spacing-xs);
+		font-weight: 600;
 	}
 
 	.qr-section {

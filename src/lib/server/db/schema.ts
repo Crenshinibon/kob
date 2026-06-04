@@ -51,7 +51,8 @@ export const court = pgTable('court', {
 	tournamentId: integer('tournament_id').notNull(),
 	courtNumber: integer('court_number').notNull(),
 	token: text('token').notNull().unique(),
-	isActive: boolean('is_active').default(true)
+	isActive: boolean('is_active').default(true),
+	label: text('label')
 });
 
 export const courtRotation = pgTable('court_rotation', {

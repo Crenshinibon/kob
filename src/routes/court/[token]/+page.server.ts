@@ -44,19 +44,20 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	if (!rotation) {
 		return {
-			court: {
-				tournamentName: tourney.name,
-				courtNumber: courtRecord.courtNumber,
-				roundNumber: currentRound,
-				courtSize: 4,
-				playerNames: {},
-				minPoints: 21,
-				scoringLabel: '',
-				setsToWin: 1,
-				pointsToWin: 21,
-				decidingSetPoints: 15,
-				scoringOverrides: null
-			},
+		court: {
+			tournamentName: tourney.name,
+			courtNumber: courtRecord.courtNumber,
+			roundNumber: currentRound,
+			courtSize: 4,
+			playerNames: {},
+			minPoints: 21,
+			scoringLabel: '',
+			setsToWin: 1,
+			pointsToWin: 21,
+			decidingSetPoints: 15,
+			scoringOverrides: null,
+			label: courtRecord.label ?? null
+		},
 			matches: [],
 			standings: [],
 			isActive: false,
@@ -148,7 +149,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			setsToWin,
 			pointsToWin,
 			decidingSetPoints,
-			scoringOverrides: overrides
+			scoringOverrides: overrides,
+			label: courtRecord.label ?? null
 		},
 		matches,
 		standings,
