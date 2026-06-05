@@ -9,7 +9,7 @@
 	"no_tournaments": "Noch keine Turniere.",
 	"create_first": "Erstelle dein erstes Turnier",
 	"sign_out": "Abmelden",
-	"v1_banner": "Beta: Turnierdaten können gelöscht werden. Beendete Turniere werden nach 14 Tagen automatisch gelöscht.",
+	"v1_banner": "Beendete Turniere werden nach 14 Tagen automatisch gelöscht. Inaktive Turniere werden nach 31 Tagen automatisch gelöscht.",
 	"loading": "Laden...",
 	"loading_qr": "QR-Code wird geladen...",
 	"failed_load_qr": "QR-Code konnte nicht geladen werden",

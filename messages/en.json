@@ -9,7 +9,7 @@
 	"no_tournaments": "No tournaments yet.",
 	"create_first": "Create your first tournament",
 	"sign_out": "Sign Out",
-	"v1_banner": "Beta: Tournament data may be wiped. Closed tournaments are auto-deleted after 14 days.",
+	"v1_banner": "Closed tournaments are auto-deleted after 14 days. Inactive tournaments are auto-deleted after 31 days.",
 	"loading": "Loading...",
 	"loading_qr": "Loading QR...",
 	"failed_load_qr": "Failed to load QR",
