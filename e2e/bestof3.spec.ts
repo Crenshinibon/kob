@@ -130,7 +130,7 @@ test.describe('Best-of-3 Round Transition', () => {
 		// Go back to tournament and close round
 		await page.goto(tournamentUrl);
 		await page.waitForURL(/\/tournament\/\d+/);
-		await page.waitForTimeout(5000); // Let live query poll
+		await page.waitForTimeout(5000); // Let polling refresh
 
 		// Wait for either close button or check if waiting button is showing
 		const closeBtn = page.locator('button:has-text("Close Round")').first();
