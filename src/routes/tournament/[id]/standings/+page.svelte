@@ -85,11 +85,8 @@
 		<h1>{data.tournament.name}</h1>
 	</header>
 
-	{#await standingsQuery}
-		<section class="empty">
-			<p>{m.loading()}</p>
-		</section>
-	{:then state}
+	{#if standingsQuery.current}
+		{@const state = standingsQuery.current}
 		{@const tournament = state?.tournament}
 		{@const cr = tournament?.currentRound ?? 0}
 		{@const standings = (state?.standings ?? []) as StandingPlayer[]}
@@ -378,7 +375,15 @@
 				</section>
 			{/if}
 		{/if}
-	{/await}
+	{:else if standingsQuery.error}
+		<section class="empty">
+			<p>Failed to load standings</p>
+		</section>
+	{:else}
+		<section class="empty">
+			<p>{m.loading()}</p>
+		</section>
+	{/if}
 </main>
 
 <style>

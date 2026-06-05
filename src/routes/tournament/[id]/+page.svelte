@@ -121,9 +121,8 @@
 	}
 </script>
 
-{#await tournamentQuery}
-	<div class="loading">{m.loading_tournament()}</div>
-{:then state}
+{#if tournamentQuery.current}
+	{@const state = tournamentQuery.current}
 	{@const tournament = state?.tournament}
 	{@const courts = state?.courts ?? []}
 	{@const currentRound = state?.currentRound ?? 0}
@@ -701,9 +700,11 @@
 			{/if}
 		</main>
 	{/if}
-{:catch error}
-	<div class="error">{m.failed_load_tournament({ error: error?.message ?? 'Unknown error' })}</div>
-{/await}
+{:else if tournamentQuery.error}
+	<div class="error">{m.failed_load_tournament({ error: tournamentQuery.error?.message ?? 'Unknown error' })}</div>
+{:else}
+	<div class="loading">{m.loading_tournament()}</div>
+{/if}
 
 <style>
 	.loading,
