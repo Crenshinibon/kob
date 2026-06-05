@@ -1,6 +1,6 @@
 {
-  "id": "bc0be753-a217-49dd-bc02-d6fae5530d56",
-  "prevId": "46a0906e-0b17-4b83-a108-d9744aaedcdd",
+  "id": "21d1c962-15df-407a-81d4-5a06473ba3db",
+  "prevId": "033ce075-6718-4c60-b344-42a8e043794a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -101,6 +101,18 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "player_5_id": {
+          "name": "player_5_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "player_6_id": {
+          "name": "player_6_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -271,12 +283,32 @@
           "notNull": true,
           "default": "'random-seed'"
         },
+        "scheduling_mode": {
+          "name": "scheduling_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'batch'"
+        },
+        "physical_court_count": {
+          "name": "physical_court_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 4
+        },
         "player_count": {
           "name": "player_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 16
+        },
+        "court_sizes": {
+          "name": "court_sizes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

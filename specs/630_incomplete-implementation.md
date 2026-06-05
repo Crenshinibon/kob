@@ -8,10 +8,12 @@
 
 **Deliverables**:
 
-1. **Recursive preseed redistribution** (`redistributePreseedRecursive`)
-   - Takes `CourtResult[]`, `currentRound`, `totalRounds`
-   - Implements recursive splitting: largest power-of-2 winner group + remainder loser group
-   - Returns `CourtAssignment[]`
+1. **Preseed redistribution** (`redistributePreseedRecursive`)
+   - Takes `CourtResult[]` and optional `courtSizes`
+   - Groups all players by finish tier (1sts, 2nds, 3rds, 4ths)
+   - Sorts each tier by performance (points desc, diff desc, playerId asc)
+   - Flattens tiers and splits into winner/loser brackets via `splitSize`
+   - Distributes each bracket's players across its courts with origin mixing (prevents 1st+2nd from same previous court on the same new court)
    - Pure function, no DB, no HTTP
 
 2. **Generalized vertical seeding** (`redistributeLadder` extension)
@@ -43,48 +45,46 @@
 **Goal**: Extend schema to support flexible player counts and new court types.
 
 **Changes to `tournament` table**:
+
 ```typescript
 // Existing columns to modify:
-playerCount: integer('player_count').notNull()  // Remove default, accept 8-64
+playerCount: integer('player_count').notNull(); // Remove default, accept 8-64
 
 // New columns:
-physicalCourtCount: integer('physical_court_count')  // Nullable, defaults to virtualCourtCount
-schedulingMode: text('scheduling_mode').default('batch')  // 'batch' | 'rolling'
+physicalCourtCount: integer('physical_court_count'); // Nullable, defaults to virtualCourtCount
+schedulingMode: text('scheduling_mode').default('batch'); // 'batch' | 'rolling'
 ```
 
 **Changes to `courtRotation` table**:
+
 ```typescript
 // New column:
-courtSize: integer('court_size').default(4)  // 3, 4, 5, or 6
-isWaiting: boolean('is_waiting').default(false)  // For virtual courts on break
+courtSize: integer('court_size').default(4); // 3, 4, 5, or 6
+isWaiting: boolean('is_waiting').default(false); // For virtual courts on break
 ```
 
-**New tables** (see Phase 4 for full schemas):
-- `match3Player` — for 3-player courts (2v1 format)
-- `match5Player` — for 5-player courts (parallel games)
-- `match6Player` — for 6-player courts (parallel games)
-
-Existing `match` table is unchanged (4-player courts only).
-
-**Migration**: Drizzle migration to add new columns and tables.
+**No separate match tables** — decided against special 3p/5p/6p tables. The single `match` table was extended with nullable `player5Id`/`player6Id` columns (for 5p/6p parallel games), `set_number` for best-of-3, and `injuredPlayerIds`/`isCanceled` for injury handling. A single query path serves all court sizes, keeping the standings page and score entry simple. See [`040_database-schema.md`](./040_database-schema.md) for the current schema.
 
 ### Phase 3: Player Input Updates
 
 **Goal**: Remove the 16/32 player restriction.
 
 **Changes to `src/routes/tournament/create/+page.server.ts`**:
+
 - Remove `if (playerCount !== 16 && playerCount !== 32)` check
 - Accept any integer 8-64
 - Calculate court count: `Math.ceil(playerCount / 4)`
 - For preseed: auto-calculate round count
 
 **Changes to `src/routes/tournament/[id]/players/+page.server.ts`**:
+
 - Remove `if (allPlayers.length !== maxPlayers)` exact match check
 - Allow starting with any player count 8-64
 - Calculate court configuration from player count
 - Generate appropriate match assignments (3p, 4p, 5p, 6p courts)
 
 **Changes to tournament creation UI**:
+
 - Physical courts: input (number of actual courts at venue)
 - Player input: paste names (random seed) or names + points (preseed)
 - System calculates court configuration from player count
@@ -95,6 +95,7 @@ Existing `match` table is unchanged (4-player courts only).
 **Goal**: Support generating matches for 3p, 4p, 5p, and 6p courts.
 
 **3-player court matches**:
+
 ```
 Match 1: A+B vs C
 Match 2: A+C vs B
@@ -104,12 +105,14 @@ Match 3: B+C vs A
 **5-player court matches** (2 runs × 2 parallel games = 4 games):
 
 Run 1: A+B fixed on side X, C fixed on side Y, D/E rotate every point.
+
 ```
 Game 1: A+B vs C+D (scored when D on court)
 Game 2: A+B vs C+E (scored when E on court)
 ```
 
 Run 2: D+E fixed on side X, B fixed on side Y, A/C rotate every point.
+
 ```
 Game 3: D+E vs B+A (scored when A on court)
 Game 4: D+E vs B+C (scored when C on court)
@@ -119,139 +122,64 @@ Roles randomized each round. One player plays 4 games, others play 3. Ranking by
 
 **6-player court matches** (2 runs × 2 parallel games = 4 games):
 
-Run 1: A+B fixed on side X, C+D and E+F rotate every point.
-```
-Game 1: A+B vs C+D (scored when C+D on court)
-Game 2: A+B vs E+F (scored when E+F on court)
-```
+Run 1: A+B fixed on side X, C+E and D+F rotate every point.
 
-Run 2: C+D fixed on side X, A+B and E+F rotate every point.
 ```
-Game 3: C+D vs A+B (scored when A+B on court)
-Game 4: C+D vs E+F (scored when E+F on court)
+Game 1: A+B vs C+E (scored when C+E on court)
+Game 2: A+B vs D+F (scored when D+F on court)
 ```
 
-Roles randomized each round. Some players play 3, others play 2. Ranking by average points per round.
+Run 2: C+D fixed on side X, A+E and B+F rotate every point.
 
-**Schema**: Instead of reusing the existing `match` table (designed for 2v2), create separate tables per court type. This avoids if-cascades in all layers (DB queries, server logic, UI components).
+```
+Game 3: C+D vs A+E (scored when A+E on court)
+Game 4: C+D vs B+F (scored when B+F on court)
+```
 
-**Existing table** (unchanged):
+Roles randomized each round. 4 players play 3 games, 2 players play 2 games (diff ≤ 1). **No partnership repeats across runs** — if two players were partners in Run 1, they are not partners in Run 2. Ranking by average points per round.
+
+**Schema**: A single `match` table handles all court sizes. Key columns:
+
 ```typescript
-// match — for 4-player courts (2v2)
+// match — single table for all court types (3p, 4p, 5p, 6p)
 {
   id: serial('id').primaryKey(),
   courtRotationId: integer('court_rotation_id').notNull(),
   matchNumber: integer('match_number').notNull(),
+  setNumber: integer('set_number').notNull().default(1),  // for best-of-3
   teamAPlayer1Id: integer('team_a_player_1_id').notNull(),
-  teamAPlayer2Id: integer('team_a_player_2_id').notNull(),
+  teamAPlayer2Id: integer('team_a_player_2_id'),
   teamBPlayer1Id: integer('team_b_player_1_id').notNull(),
-  teamBPlayer2Id: integer('team_b_player_2_id').notNull(),
+  teamBPlayer2Id: integer('team_b_player_2_id'),
   teamAScore: integer('team_a_score'),
-  teamBScore: integer('team_b_score')
+  teamBScore: integer('team_b_score'),
+  isCanceled: boolean('is_canceled').notNull().default(false),
+  injuredPlayerIds: jsonb('injured_player_ids').$type<number[]>()
 }
 ```
 
-**New table for 3-player courts**:
-```typescript
-// match3Player — 2v1 format, 3 matches per round
-{
-  id: serial('id').primaryKey(),
-  courtRotationId: integer('court_rotation_id').notNull(),
-  matchNumber: integer('match_number').notNull(),  // 1, 2, 3
-  teamOfTwoPlayer1Id: integer('team_of_two_player_1_id').notNull(),
-  teamOfTwoPlayer2Id: integer('team_of_two_player_2_id').notNull(),
-  soloPlayerId: integer('solo_player_id').notNull(),
-  teamOfTwoScore: integer('team_of_two_score'),
-  soloPlayerScore: integer('solo_player_score')
-}
-```
+- `teamAPlayer2Id`/`teamBPlayer2Id` are nullable for 3p courts (solo player vs pair)
+- 5p/6p parallel games use the same columns — one team is fixed, the other rotates per game number
+- `setNumber` supports best-of-3 format (sets 1, 2, 3)
+- `injuredPlayerIds` tracks substitute-played matches for injury handling
 
-**New table for 5-player courts**:
-```typescript
-// match5Player — parallel games, 4 games per round (2 runs × 2 games)
-{
-  id: serial('id').primaryKey(),
-  courtRotationId: integer('court_rotation_id').notNull(),
-  gameNumber: integer('game_number').notNull(),  // 1, 2, 3, 4
-  runNumber: integer('run_number').notNull(),    // 1 or 2
-  sideXPlayer1Id: integer('side_x_player_1_id').notNull(),  // fixed team
-  sideXPlayer2Id: integer('side_x_player_2_id').notNull(),
-  sideYFixedPlayerId: integer('side_y_fixed_player_id').notNull(),
-  sideYRotatingPlayerId: integer('side_y_rotating_player_id').notNull(),
-  sideXScore: integer('side_x_score'),
-  sideYScore: integer('side_y_score')
-}
-```
+**Benefits of single-table approach**:
 
-**New table for 6-player courts**:
-```typescript
-// match6Player — parallel games, 4 games per round (2 runs × 2 games)
-{
-  id: serial('id').primaryKey(),
-  courtRotationId: integer('court_rotation_id').notNull(),
-  gameNumber: integer('game_number').notNull(),  // 1, 2, 3, 4
-  runNumber: integer('run_number').notNull(),    // 1 or 2
-  fixedTeamPlayer1Id: integer('fixed_team_player_1_id').notNull(),
-  fixedTeamPlayer2Id: integer('fixed_team_player_2_id').notNull(),
-  rotatingTeamPlayer1Id: integer('rotating_team_player_1_id').notNull(),
-  rotatingTeamPlayer2Id: integer('rotating_team_player_2_id').notNull(),
-  fixedTeamScore: integer('fixed_team_score'),
-  rotatingTeamScore: integer('rotating_team_score')
-}
-```
-
-**Benefits**:
-- Each table has exactly the fields needed — no nullable columns
-- Each court type has its own UI component — no conditional rendering
-- Each court type has its own score validation logic
-- Each court type has its own standings calculation
-- Clean separation, easy to extend if new court types are needed
-
-**Trade-off**: More tables and more code, but each piece is simpler and self-contained.
-
-### Alternative Approach: Generic Match Table
-
-Instead of separate tables per court size, a single `match` table with a `court_size` discriminator column could be used:
-
-```typescript
-// Generic match table alternative
-{
-  id: serial('id').primaryKey(),
-  courtRotationId: integer('court_rotation_id').notNull(),
-  matchNumber: integer('match_number').notNull(),
-  courtSize: integer('court_size').notNull(),  // 3, 4, 5, or 6
-  // Generic player slots (not all used for every court size):
-  teamAPlayer1Id: integer('team_a_player_1_id').notNull(),
-  teamAPlayer2Id: integer('team_a_player_2_id'),  // nullable for 3p
-  teamBPlayer1Id: integer('team_b_player_1_id').notNull(),
-  teamBPlayer2Id: integer('team_b_player_2_id'),  // nullable for 3p
-  // Extra slots for 5p/6p (parallel games):
-  runNumber: integer('run_number'),  // 1 or 2, for 5p/6p courts
-  gameNumber: integer('game_number'),
-  teamAScore: integer('team_a_score'),
-  teamBScore: integer('team_b_score')
-}
-```
-
-**Pros**:
-- Single query path for all match data (simpler standings page)
+- Single query path for all match data — simpler standings page and score entry
 - No schema proliferation — fewer tables to migrate and maintain
 - Easier to add new court types in the future
+- Consistent UI rendering — one component set adapts to court size
+- `calculateCourtStandings()` handles all court sizes with a single algorithm
 
-**Cons**:
-- Nullable columns for teamAPlayer2Id/teamBPlayer2Id break strict typing
-- Mixed semantics in one table (round-robin matches vs parallel games)
-- Harder to enforce correctness at the DB level (e.g., 5p game must have runNumber)
-- Application code needs `if (courtSize === 3) ... else if (courtSize === 5) ...` branches anyway
-
-**Recommendation**: Separate tables were chosen for cleaner separation and stricter typing. Revisit if the number of court types grows beyond 4.
+**Trade-off**: Nullable `teamAPlayer2Id`/`teamBPlayer2Id` columns break strict 2v2 typing, but this is handled cleanly in application code (3p: pair vs solo, 5p/6p: fixed vs rotating team).
 
 ### Phase 5: Close Round with Variable Court Sizes
 
 **Goal**: Update `closeRound` action to handle non-4-player courts.
 
 **Changes to `src/routes/tournament/[id]/+page.server.ts`**:
-- `calculateCourtStandings()`: Existing for 4p. Create `calculateCourtStandings3p()`, `calculateCourtStandings5p()`, `calculateCourtStandings6p()`
+
+- `calculateCourtStandings()`: Single function handles all court sizes (3p/4p/5p/6p) with tiebreakers (points → diff → playerId). Uses averages for 5p/6p and when any match is canceled.
 - `redistributePlayers()`: Use the new recursive preseed or generalized ladder
 - Match generation: use the appropriate match generator based on court size
 - Handle virtual court rotation (which physical courts are active)
@@ -262,6 +190,7 @@ Instead of separate tables per court size, a single `match` table with a `court_
 **Goal**: Display variable court sizes, virtual court mapping, and max achievable places.
 
 **Tournament view** (`/tournament/[id]`):
+
 - Show court cards with variable player counts
 - Indicate court size (3p, 4p, 5p, 6p)
 - For virtual courts: show physical court mapping per shift
@@ -269,16 +198,16 @@ Instead of separate tables per court size, a single `match` table with a `court_
 - Show max achievable final place for each player from current position
 
 **Court page** (`/court/[token]`):
-- Adapt layout for 3p, 5p, 6p courts
-- **3p court**: Show 3 match cards (A+B vs C, A+C vs B, B+C vs A). Solo player highlighted.
-- **4p court**: Show 3 match cards (standard A+B vs C+D, etc.)
-- **5p court**: Show 4 game cards grouped into 2 runs. Display current rotation state (who is active, who is waiting to swap). Show "Run 1" and "Run 2" sections with game-by-game scores.
-- **6p court**: Show 4 game cards grouped into 2 runs. Display rotating pairs. Show "Run 1" and "Run 2" sections.
-- Show correct number of match/game cards per court type
-- Adjust standings display (using cross-court-size normalization)
-- Waiting players on 5p/6p courts see which run they're in and when they enter
+
+- Single template adapts to all court sizes (3p, 4p, 5p, 6p)
+- Shows correct number of match cards (3 for 3p/4p, 4 for 5p/6p)
+- Displays players in a horizontal card layout with letter labels (A-F)
+- Format note per court type (3p: 2v1 rotation, 5p/6p: parallel games to 15)
+- For 5p/6p: matches grouped by run with "Run 1" / "Run 2" labels
+- Best-of-3 mode shows per-set entry (Set 1/2/3) with deciding set rules
 
 **Standings page** (`/tournament/[id]/standings`):
+
 - Handle variable court sizes in final placement (3p → 1st/2nd/4th mapping)
 - Show max achievable place per player
 - Final round: loser courts first, top court last (dramatic finale)
@@ -295,123 +224,123 @@ Pure functions in `src/lib/server/tournament-logic.ts` should handle all redistr
 
 ### Table: Recursive Preseed Splitting
 
-| Test Name | Courts | Round | Expected Winner Courts | Expected Loser Courts |
-|-----------|--------|-------|----------------------|----------------------|
-| `preseed-3courts-r1` | 3 | 1→2 | 2 courts (1st-2nd places) | 1 court (3rd-4th places) |
-| `preseed-5courts-r1` | 5 | 1→2 | 4 courts (top performers) | 1 court (remainder) |
-| `preseed-6courts-r1` | 6 | 1→2 | 4 courts | 2 courts |
-| `preseed-7courts-r1` | 7 | 1→2 | 4 courts | 3 courts |
-| `preseed-9courts-r1` | 9 | 1→2 | 8 courts | 1 court |
-| `preseed-10courts-r1` | 10 | 1→2 | 8 courts | 2 courts |
-| `preseed-12courts-r1` | 12 | 1→2 | 8 courts | 4 courts |
-| `preseed-16courts-r1` | 16 | 1→2 | 8 courts | 8 courts |
+| Test Name             | Courts | Round | Expected Winner Courts    | Expected Loser Courts    |
+| --------------------- | ------ | ----- | ------------------------- | ------------------------ |
+| `preseed-3courts-r1`  | 3      | 1→2   | 2 courts (1st-2nd places) | 1 court (3rd-4th places) |
+| `preseed-5courts-r1`  | 5      | 1→2   | 4 courts (top performers) | 1 court (remainder)      |
+| `preseed-6courts-r1`  | 6      | 1→2   | 4 courts                  | 2 courts                 |
+| `preseed-7courts-r1`  | 7      | 1→2   | 4 courts                  | 3 courts                 |
+| `preseed-9courts-r1`  | 9      | 1→2   | 8 courts                  | 1 court                  |
+| `preseed-10courts-r1` | 10     | 1→2   | 8 courts                  | 2 courts                 |
+| `preseed-12courts-r1` | 12     | 1→2   | 8 courts                  | 4 courts                 |
+| `preseed-16courts-r1` | 16     | 1→2   | 8 courts                  | 8 courts                 |
 
 ### Table: Recursive Preseed — Full Tournament Flow
 
-| Test Name | Start Courts | Expected Rounds | Final Placement |
-|-----------|-------------|-----------------|-----------------|
-| `preseed-3-full` | 3 | 3 | C1: 1-4, C2: 5-8, C3: 9-12 |
-| `preseed-5-full` | 5 | 4 | C1: 1-4, ..., C5: 17-20 |
-| `preseed-6-full` | 6 | 4 | C1: 1-4, ..., C6: 21-24 |
-| `preseed-7-full` | 7 | 4 | C1: 1-4, ..., C7: 25-28 |
-| `preseed-9-full` | 9 | 5 | C1: 1-4, ..., C9: 33-36 |
-| `preseed-10-full` | 10 | 5 | C1: 1-4, ..., C10: 37-40 |
+| Test Name         | Start Courts | Expected Rounds | Final Placement            |
+| ----------------- | ------------ | --------------- | -------------------------- |
+| `preseed-3-full`  | 3            | 3               | C1: 1-4, C2: 5-8, C3: 9-12 |
+| `preseed-5-full`  | 5            | 4               | C1: 1-4, ..., C5: 17-20    |
+| `preseed-6-full`  | 6            | 4               | C1: 1-4, ..., C6: 21-24    |
+| `preseed-7-full`  | 7            | 4               | C1: 1-4, ..., C7: 25-28    |
+| `preseed-9-full`  | 9            | 5               | C1: 1-4, ..., C9: 33-36    |
+| `preseed-10-full` | 10           | 5               | C1: 1-4, ..., C10: 37-40   |
 
 ### Table: Vertical Seeding (Random Seed, Round 1 to 2)
 
 For each court count N, given N courts with known standings, verify the cascade produces the correct court assignments.
 
-| Test Name | Courts | Expected C1 | Expected C2 | ... |
-|-----------|--------|-------------|-------------|-----|
-| `vertical-2courts` | 2 | P1,P2,P5,P6 | P3,P4,P7,P8 | — |
-| `vertical-3courts` | 3 | P1,P2,P3,P5 | P4,P6,P7,P9 | P8,P10,P11,P12 |
-| `vertical-5courts` | 5 | First 4 firsts | 1st+3 best 2nds | ... |
-| `vertical-6courts` | 6 | First 4 firsts | 2 firsts+2 best 2nds | ... |
-| `vertical-7courts` | 7 | First 4 firsts | 3 firsts+1 best 2nd | ... |
-| `vertical-9courts` | 9 | First 4 firsts | ... | ... |
-| `vertical-12courts` | 12 | First 4 firsts | ... | ... |
-| `vertical-16courts` | 16 | First 4 firsts | ... | ... |
+| Test Name           | Courts | Expected C1    | Expected C2          | ...            |
+| ------------------- | ------ | -------------- | -------------------- | -------------- |
+| `vertical-2courts`  | 2      | P1,P2,P5,P6    | P3,P4,P7,P8          | —              |
+| `vertical-3courts`  | 3      | P1,P2,P3,P5    | P4,P6,P7,P9          | P8,P10,P11,P12 |
+| `vertical-5courts`  | 5      | First 4 firsts | 1st+3 best 2nds      | ...            |
+| `vertical-6courts`  | 6      | First 4 firsts | 2 firsts+2 best 2nds | ...            |
+| `vertical-7courts`  | 7      | First 4 firsts | 3 firsts+1 best 2nd  | ...            |
+| `vertical-9courts`  | 9      | First 4 firsts | ...                  | ...            |
+| `vertical-12courts` | 12     | First 4 firsts | ...                  | ...            |
+| `vertical-16courts` | 16     | First 4 firsts | ...                  | ...            |
 
 ### Table: Ladder Redistribution (Random Seed, Round 2+)
 
-| Test Name | Courts | Focus | Assertion |
-|-----------|--------|-------|-----------|
-| `ladder-2courts-top` | 2 | C1 | Keeps top 2 + gets top 2 from C2 |
-| `ladder-2courts-bottom` | 2 | C2 | Keeps bottom 2 + gets bottom 2 from C1 |
-| `ladder-3courts-top` | 3 | C1 | Keeps top 2 + gets top 2 from C2 |
-| `ladder-3courts-middle` | 3 | C2 | Gets bottom 2 from C1 + top 2 from C3 |
-| `ladder-3courts-bottom` | 3 | C3 | Keeps bottom 2 + gets bottom 2 from C2 |
-| `ladder-5courts-middle` | 5 | C3 | Gets bottom 2 from C2 + top 2 from C4 |
-| `ladder-7courts-bottom` | 7 | C7 | Keeps bottom 2 + gets bottom 2 from C6 |
-| `ladder-9courts-middle` | 9 | C5 | Gets bottom 2 from C4 + top 2 from C6 |
-| `ladder-16courts-top` | 16 | C1 | Keeps top 2 + gets top 2 from C2 |
+| Test Name               | Courts | Focus | Assertion                              |
+| ----------------------- | ------ | ----- | -------------------------------------- |
+| `ladder-2courts-top`    | 2      | C1    | Keeps top 2 + gets top 2 from C2       |
+| `ladder-2courts-bottom` | 2      | C2    | Keeps bottom 2 + gets bottom 2 from C1 |
+| `ladder-3courts-top`    | 3      | C1    | Keeps top 2 + gets top 2 from C2       |
+| `ladder-3courts-middle` | 3      | C2    | Gets bottom 2 from C1 + top 2 from C3  |
+| `ladder-3courts-bottom` | 3      | C3    | Keeps bottom 2 + gets bottom 2 from C2 |
+| `ladder-5courts-middle` | 5      | C3    | Gets bottom 2 from C2 + top 2 from C4  |
+| `ladder-7courts-bottom` | 7      | C7    | Keeps bottom 2 + gets bottom 2 from C6 |
+| `ladder-9courts-middle` | 9      | C5    | Gets bottom 2 from C4 + top 2 from C6  |
+| `ladder-16courts-top`   | 16     | C1    | Keeps top 2 + gets top 2 from C2       |
 
 ### Table: Round Count Calculator
 
-| Test Name | Courts | Format | Expected Rounds |
-|-----------|--------|--------|-----------------|
-| `rounds-2-preseed` | 2 | preseed | 2 |
-| `rounds-3-preseed` | 3 | preseed | 3 |
-| `rounds-4-preseed` | 4 | preseed | 3 |
-| `rounds-5-preseed` | 5 | preseed | 4 |
-| `rounds-6-preseed` | 6 | preseed | 4 |
-| `rounds-7-preseed` | 7 | preseed | 4 |
-| `rounds-8-preseed` | 8 | preseed | 4 |
-| `rounds-9-preseed` | 9 | preseed | 5 |
-| `rounds-16-preseed` | 16 | preseed | 5 |
+| Test Name           | Courts | Format  | Expected Rounds |
+| ------------------- | ------ | ------- | --------------- |
+| `rounds-2-preseed`  | 2      | preseed | 2               |
+| `rounds-3-preseed`  | 3      | preseed | 3               |
+| `rounds-4-preseed`  | 4      | preseed | 3               |
+| `rounds-5-preseed`  | 5      | preseed | 4               |
+| `rounds-6-preseed`  | 6      | preseed | 4               |
+| `rounds-7-preseed`  | 7      | preseed | 4               |
+| `rounds-8-preseed`  | 8      | preseed | 4               |
+| `rounds-9-preseed`  | 9      | preseed | 5               |
+| `rounds-16-preseed` | 16     | preseed | 5               |
 
 ### Table: Scheduling Mode Configuration
 
-| Test Name | Virtual Courts | Physical Courts | Mode | Expected Shifts | Expected Wait (approx) |
-|-----------|---------------|-----------------|------|----------------|----------------------|
-| `batch-8v4` | 8 | 4 | batch | 2 shifts [5-8],[1-4] | ~55 min for Shift 1 |
-| `batch-12v4` | 12 | 4 | batch | 3 shifts [9-12],[5-8],[1-4] | ~100 min for Shift 1 |
-| `rolling-8v4` | 8 | 4 | rolling | No shifts, continuous | Variable per position |
-| `batch-vs-rolling-equivalence` | 8 | 4 | both | Same total round duration | Different per-player distribution |
+| Test Name                      | Virtual Courts | Physical Courts | Mode    | Expected Shifts             | Expected Wait (approx)            |
+| ------------------------------ | -------------- | --------------- | ------- | --------------------------- | --------------------------------- |
+| `batch-8v4`                    | 8              | 4               | batch   | 2 shifts [5-8],[1-4]        | ~55 min for Shift 1               |
+| `batch-12v4`                   | 12             | 4               | batch   | 3 shifts [9-12],[5-8],[1-4] | ~100 min for Shift 1              |
+| `rolling-8v4`                  | 8              | 4               | rolling | No shifts, continuous       | Variable per position             |
+| `batch-vs-rolling-equivalence` | 8              | 4               | both    | Same total round duration   | Different per-player distribution |
 
 ### Table: Variable Court Standings Normalization
 
-| Test Name | Court Size | Games/Player | Input Scenario | Expected Avg | Expected Rank |
-|-----------|-----------|-------------|----------------|--------------|---------------|
-| `norm-3p-equal` | 3p | 3 | All 21 pts each | 21.0 | Tie by playerId |
-| `norm-5p-uneven` | 5p | 3 & 4 | 3-game: 63 total, 4-game: 48 total | 21.0 vs 12.0 | 3-game player ranks higher |
-| `norm-6p-uneven` | 6p | 3 & 2 | 3-game: 63 total, 2-game: 30 total | 21.0 vs 15.0 | 3-game player ranks higher |
-| `norm-tiebreak-diff` | 5p | 3 & 4 | Same avg | Higher total pts wins | Total pts is tiebreaker |
-| `norm-tiebreak-id` | 5p | 3 & 4 | Same avg, same total | Lower playerId wins | playerId is final tiebreaker |
+| Test Name            | Court Size | Games/Player | Input Scenario                     | Expected Avg          | Expected Rank                |
+| -------------------- | ---------- | ------------ | ---------------------------------- | --------------------- | ---------------------------- |
+| `norm-3p-equal`      | 3p         | 3            | All 21 pts each                    | 21.0                  | Tie by playerId              |
+| `norm-5p-uneven`     | 5p         | 3 & 4        | 3-game: 63 total, 4-game: 48 total | 21.0 vs 12.0          | 3-game player ranks higher   |
+| `norm-6p-uneven`     | 6p         | 3 & 2        | 3-game: 63 total, 2-game: 30 total | 21.0 vs 15.0          | 3-game player ranks higher   |
+| `norm-tiebreak-diff` | 5p         | 3 & 4        | Same avg                           | Higher total pts wins | Total pts is tiebreaker      |
+| `norm-tiebreak-id`   | 5p         | 3 & 4        | Same avg, same total               | Lower playerId wins   | playerId is final tiebreaker |
 
 ### Table: Standings Calculation + Tiebreaking
 
-| Test Name | Players | Court Size | Matches | Scenario | Expected |
-|-----------|---------|------------|---------|----------|----------|
-| `standings-basic` | 4 | 4p | 3 | Clear winner | Highest total points first |
-| `standings-tie-points` | 4 | 4p | 3 | Same points, different diff | Higher diff wins |
-| `standings-tie-points-diff` | 4 | 4p | 3 | Same points and diff | Lower playerId wins |
-| `standings-all-tied` | 4 | 4p | 3 | All same | Sorted by playerId |
-| `standings-missing-scores` | 4 | 4p | 2 | 2 of 3 matches | Unscored = 0 for all |
-| `standings-3player` | 3 | 3p | 3 | 2v1 format | Avg pts/round formula |
-| `standings-3player-tied` | 3 | 3p | 3 | All same avg | Lower playerId wins |
-| `standings-5player-equal` | 5 | 5p | 4 | Equal avg across all | Total pts tiebreaker |
-| `standings-5player-uneven` | 5 | 5p | 4 | Mixed 3/4 game counts | Normalized avg ranks higher |
-| `standings-6player-mixed` | 6 | 6p | 4 | Mixed 2/3 game counts | Normalized avg ranks higher |
-| `standings-cross-size` | Mixed | 4p+3p | — | Cross-court-size comparison | Avg pts/round normalizes first |
+| Test Name                   | Players | Court Size | Matches | Scenario                    | Expected                       |
+| --------------------------- | ------- | ---------- | ------- | --------------------------- | ------------------------------ |
+| `standings-basic`           | 4       | 4p         | 3       | Clear winner                | Highest total points first     |
+| `standings-tie-points`      | 4       | 4p         | 3       | Same points, different diff | Higher diff wins               |
+| `standings-tie-points-diff` | 4       | 4p         | 3       | Same points and diff        | Lower playerId wins            |
+| `standings-all-tied`        | 4       | 4p         | 3       | All same                    | Sorted by playerId             |
+| `standings-missing-scores`  | 4       | 4p         | 2       | 2 of 3 matches              | Unscored = 0 for all           |
+| `standings-3player`         | 3       | 3p         | 3       | 2v1 format                  | Avg pts/round formula          |
+| `standings-3player-tied`    | 3       | 3p         | 3       | All same avg                | Lower playerId wins            |
+| `standings-5player-equal`   | 5       | 5p         | 4       | Equal avg across all        | Total pts tiebreaker           |
+| `standings-5player-uneven`  | 5       | 5p         | 4       | Mixed 3/4 game counts       | Normalized avg ranks higher    |
+| `standings-6player-mixed`   | 6       | 6p         | 4       | Mixed 2/3 game counts       | Normalized avg ranks higher    |
+| `standings-cross-size`      | Mixed   | 4p+3p      | —       | Cross-court-size comparison | Avg pts/round normalizes first |
 
 ### Table: Court Configuration Calculator
 
-| Test Name | Players | Expected 4p Courts | Expected Bottom Court |
-|-----------|---------|-------------------|----------------------|
-| `config-8p` | 8 | 2 | none |
-| `config-9p` | 9 | 2 | 5p (1 leftover) |
-| `config-10p` | 10 | 2 | 6p (2 leftovers) |
-| `config-11p` | 11 | 2 | 3p (3 leftovers) |
-| `config-12p` | 12 | 3 | none |
-| `config-13p` | 13 | 3 | 5p (1 leftover) |
-| `config-15p` | 15 | 3 | 3p (3 leftovers) |
-| `config-16p` | 16 | 4 | none |
-| `config-24p` | 24 | 6 | none |
-| `config-25p` | 25 | 6 | 5p (1 leftover) |
-| `config-27p` | 27 | 6 | 3p (3 leftovers) |
-| `config-32p` | 32 | 8 | none |
-| `config-64p` | 64 | 16 | none |
+| Test Name    | Players | Expected 4p Courts | Expected Bottom Court |
+| ------------ | ------- | ------------------ | --------------------- |
+| `config-8p`  | 8       | 2                  | none                  |
+| `config-9p`  | 9       | 2                  | 5p (1 leftover)       |
+| `config-10p` | 10      | 2                  | 6p (2 leftovers)      |
+| `config-11p` | 11      | 2                  | 3p (3 leftovers)      |
+| `config-12p` | 12      | 3                  | none                  |
+| `config-13p` | 13      | 3                  | 5p (1 leftover)       |
+| `config-15p` | 15      | 3                  | 3p (3 leftovers)      |
+| `config-16p` | 16      | 4                  | none                  |
+| `config-24p` | 24      | 6                  | none                  |
+| `config-25p` | 25      | 6                  | 5p (1 leftover)       |
+| `config-27p` | 27      | 6                  | 3p (3 leftovers)      |
+| `config-32p` | 32      | 8                  | none                  |
+| `config-64p` | 64      | 16                 | none                  |
 
 ---
 

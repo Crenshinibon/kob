@@ -24,6 +24,7 @@ A tournament with N virtual courts and M physical courts (where N > M) runs in "
 ### Example
 
 **4 physical courts, 32 players entered (8 virtual courts):**
+
 - Shift 1: Virtual courts 5-8 are active (lower courts first). Courts 1-4 have players waiting.
 - Shift 2: Courts 1-4 become active (top courts). Courts 5-8 players now wait.
 - The waiting players still get court assignments — they just play in a later shift.
@@ -46,22 +47,22 @@ A tournament with N virtual courts and M physical courts (where N > M) runs in "
 ### Clean Multiples of 4
 
 | Players | Courts | Category |
-|---------|--------|----------|
-| 8       | 2      | Clean |
-| 12      | 3      | Clean |
+| ------- | ------ | -------- |
+| 8       | 2      | Clean    |
+| 12      | 3      | Clean    |
 | 16      | 4      | Standard |
-| 20      | 5      | Clean |
-| 24      | 6      | Clean |
-| 28      | 7      | Clean |
+| 20      | 5      | Clean    |
+| 24      | 6      | Clean    |
+| 28      | 7      | Clean    |
 | 32      | 8      | Standard |
-| 36      | 9      | Clean |
-| 40      | 10     | Clean |
-| 44      | 11     | Clean |
-| 48      | 12     | Clean |
-| 52      | 13     | Clean |
-| 56      | 14     | Clean |
-| 60      | 15     | Clean |
-| 64      | 16     | Clean |
+| 36      | 9      | Clean    |
+| 40      | 10     | Clean    |
+| 44      | 11     | Clean    |
+| 48      | 12     | Clean    |
+| 52      | 13     | Clean    |
+| 56      | 14     | Clean    |
+| 60      | 15     | Clean    |
+| 64      | 16     | Clean    |
 
 ### With Leftovers (1-3 players)
 
@@ -69,12 +70,12 @@ For any player count that is not a multiple of 4, we have 1-3 leftover players. 
 
 The lowest court is always the "odd one" — one non-standard court at the bottom:
 
-| Leftovers | Bottom Court | Format |
-|-----------|-------------|--------|
-| 0 | None (all standard) | All 4-player courts |
-| 1 | 5-player court | Parallel games (see `620`) |
-| 2 | 6-player court | Parallel games (see `620`) |
-| 3 | 3-player court | 2v1 format (3 matches, 21 points) |
+| Leftovers | Bottom Court        | Format                            |
+| --------- | ------------------- | --------------------------------- |
+| 0         | None (all standard) | All 4-player courts               |
+| 1         | 5-player court      | Parallel games (see `620`)        |
+| 2         | 6-player court      | Parallel games (see `620`)        |
+| 3         | 3-player court      | 2v1 format (3 matches, 21 points) |
 
 The organizer does NOT choose the court configuration — it's determined by the player count. The organizer chooses **what to do with the leftovers**: include them (default) or exclude them.
 
@@ -87,15 +88,18 @@ After Round 1 with N courts, we have exactly N first places, N second places, N 
 ### Examples
 
 **2 courts (8 players)** — clean:
+
 - C1: 2 first places + 2 second places = 4
 - C2: 2 third places + 2 fourth places = 4
 
 **3 courts (12 players)** — clean:
+
 - C1: 3 first places + 1 best second place = 4
 - C2: 2 remaining second places + 2 best third places = 4
 - C3: 1 remaining third place + 3 fourth places = 4
 
 **5 courts (20 players)** — clean:
+
 - C1: 4 first places = 4
 - C2: 1 remaining first place + 3 best second places = 4
 - C3: 2 remaining second places + 2 best third places = 4
@@ -103,6 +107,7 @@ After Round 1 with N courts, we have exactly N first places, N second places, N 
 - C5: 4 remaining fourth places = 4
 
 **6 courts (24 players)** — clean:
+
 - C1: 4 first places = 4
 - C2: 2 remaining first places + 2 best second places = 4
 - C3: 4 remaining second places = 4
@@ -111,6 +116,7 @@ After Round 1 with N courts, we have exactly N first places, N second places, N 
 - C6: 4 remaining fourth places = 4
 
 **7 courts (28 players)** — clean:
+
 - C1: 4 first places = 4
 - C2: 3 remaining first places + 1 best second place = 4
 - C3: 4 best second places = 4
@@ -122,6 +128,7 @@ After Round 1 with N courts, we have exactly N first places, N second places, N 
 **Key insight**: Vertical seeding works cleanly for ANY court count. The pattern is a natural cascade where overflow from one rank flows into the next court, sorted by performance (points/diff).
 
 **8 courts (32 players)** — clean:
+
 - C1: 4 first places = 4
 - C2: 4 remaining first places = 4
 - C3: 4 best second places = 4
@@ -132,6 +139,7 @@ After Round 1 with N courts, we have exactly N first places, N second places, N 
 - C8: 4 remaining fourth places = 4
 
 **9 courts (36 players)** — clean:
+
 - C1: 4 first places = 4
 - C2: 4 remaining first places = 4
 - C3: 1 remaining first place + 3 best second places = 4
@@ -143,6 +151,7 @@ After Round 1 with N courts, we have exactly N first places, N second places, N 
 - C9: 4 remaining fourth places = 4
 
 **10 courts (40 players)** — clean:
+
 - C1: 4 first places = 4
 - C2: 4 remaining first places = 4
 - C3: 2 remaining first places + 2 best second places = 4
@@ -155,6 +164,7 @@ After Round 1 with N courts, we have exactly N first places, N second places, N 
 - C10: 4 remaining fourth places = 4
 
 **12 courts (48 players)** — clean:
+
 - C1: 4 first places = 4
 - C2: 4 remaining first places = 4
 - C3: 4 remaining first places = 4
@@ -169,6 +179,7 @@ After Round 1 with N courts, we have exactly N first places, N second places, N 
 - C12: 4 remaining fourth places = 4
 
 **16 courts (64 players)** — clean:
+
 - C1-C4: 16 first places (4 each)
 - C5-C8: 16 second places (4 each)
 - C9-C12: 16 third places (4 each)
@@ -179,6 +190,7 @@ After Round 1 with N courts, we have exactly N first places, N second places, N 
 When there's a non-standard bottom court (3p/5p/6p), the vertical seeding fills standard courts first, then places remaining players on the bottom court.
 
 **Example: 25 players (6×4p + 1×5p)**
+
 - 6 first places → C1: 4 firsts, C2: 2 firsts + 2 seconds
 - 6 second places → C2: (2 used), C3: 4 seconds
 - 6 third places → C4: 4 thirds, C5: 2 thirds + 2 fourths
@@ -186,6 +198,7 @@ When there's a non-standard bottom court (3p/5p/6p), the vertical seeding fills 
 - Remaining: 1 player → C7 (5-player court, gets worst 4 from other courts as partners)
 
 **Example: 11 players (2×4p + 1×3p)**
+
 - 2 first places → C1: 2 firsts + 2 best seconds
 - 2 second places → C1: (2 used), C2: 2 remaining seconds + 2 best thirds
 - 2 third places → C2: (2 used), C3: 1 remaining third (3-player court)
@@ -199,8 +212,8 @@ The leftover count is `playerCount % 4`. The system determines the court configu
 
 ```
 27 players → 6 courts of 4 + 3 leftover → 6×4p + 1×3p = 7 courts
-26 players → 6 courts of 4 + 2 leftover → 6×4p + 1×6p = 7 courts
-25 players → 6 courts of 4 + 1 leftover → 6×4p + 1×5p = 7 courts
+26 players → 6 courts of 4 + 2 leftover → 5×4p + 1×6p = 6 courts
+25 players → 6 courts of 4 + 1 leftover → 5×4p + 1×5p = 6 courts
 24 players → 6 courts of 4 + 0 leftover → 6×4p = 6 courts (clean)
 ```
 
@@ -229,17 +242,18 @@ The organizer enters player names (and seed points for preseed). The system coun
 ```
 
 The player count field is removed from tournament creation. The system calculates:
+
 - `playerCount` = number of names entered
 - `leftoverCount` = `playerCount % 4`
 - `courtCount` = `Math.floor(playerCount / 4)` + (1 if leftover > 0 and included)
 
 ### Leftover Scenarios
 
-| Leftover | Include (Default) | Exclude |
-|----------|-------------------|---------|
-| **1 player** | One 5-player court (parallel games, 4 matches at 15pt) | Exclude 1 player → clean courts. Organizer picks who. |
+| Leftover      | Include (Default)                                      | Exclude                                                |
+| ------------- | ------------------------------------------------------ | ------------------------------------------------------ |
+| **1 player**  | One 5-player court (parallel games, 4 matches at 15pt) | Exclude 1 player → clean courts. Organizer picks who.  |
 | **2 players** | One 6-player court (parallel games, 4 matches at 15pt) | Exclude 2 players → clean courts. Organizer picks who. |
-| **3 players** | One 3-player court (2v1 format, 3 matches at 21pt) | Exclude 3 players → clean courts. Organizer picks who. |
+| **3 players** | One 3-player court (2v1 format, 3 matches at 21pt)     | Exclude 3 players → clean courts. Organizer picks who. |
 
 ### Exclusion Rules
 

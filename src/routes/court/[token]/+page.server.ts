@@ -1,47 +1,85 @@
 import { error } from '@sveltejs/kit';
+import * as m from '$lib/paraglide/messages';
 import { db } from '$lib/server/db';
-import { courtAccess, courtRotation, match, tournament, player } from '$lib/server/db/schema';
+import { court, courtRotation, match, tournament, player } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 import type { PageServerLoad } from './$types';
+import type { MatchData } from '$lib/server/tournament-logic';
+import {
+	calculateCourtStandings,
+	getMinPointsForSet,
+	getScoringLabel
+} from '$lib/server/tournament-logic';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const token = params.token;
 
-	// Get court access
-	const [access] = await db.select().from(courtAccess).where(eq(courtAccess.token, token));
+	// Get court by token
+	const [courtRecord] = await db.select().from(court).where(eq(court.token, token));
 
-	if (!access) throw error(404, 'Court not found');
-
-	// Get rotation
-	const [rotation] = await db
-		.select()
-		.from(courtRotation)
-		.where(eq(courtRotation.id, access.courtRotationId));
-
-	if (!rotation) throw error(404, 'Court rotation not found');
+	if (!courtRecord) throw error(404, m.not_found());
 
 	// Get tournament
 	const [tourney] = await db
 		.select()
 		.from(tournament)
-		.where(eq(tournament.id, rotation.tournamentId));
+		.where(eq(tournament.id, courtRecord.tournamentId));
 
-	if (!tourney) throw error(404, 'Tournament not found');
+	if (!tourney) throw error(404, m.tournament_not_found());
+
+	const currentRound = tourney.currentRound || 0;
+
+	// Find rotation for current round on this court
+	let rotation: typeof courtRotation.$inferSelect | undefined;
+	if (currentRound > 0) {
+		const [found] = await db
+			.select()
+			.from(courtRotation)
+			.where(
+				and(eq(courtRotation.courtId, courtRecord.id), eq(courtRotation.roundNumber, currentRound))
+			);
+		rotation = found;
+	}
+
+	if (!rotation) {
+		return {
+		court: {
+			tournamentName: tourney.name,
+			courtNumber: courtRecord.courtNumber,
+			roundNumber: currentRound,
+			courtSize: 4,
+			playerNames: {},
+			minPoints: 21,
+			scoringLabel: '',
+			setsToWin: 1,
+			pointsToWin: 21,
+			decidingSetPoints: 15,
+			scoringOverrides: null,
+			label: courtRecord.label ?? null
+		},
+			matches: [],
+			standings: [],
+			isActive: false,
+			isAuthenticated: !!locals.user
+		};
+	}
 
 	// Get matches
 	const matches = await db
 		.select()
 		.from(match)
 		.where(eq(match.courtRotationId, rotation.id))
-		.orderBy(match.matchNumber);
+		.orderBy(match.matchNumber, match.setNumber);
 
-	// Get player names
-	const playerIds = [
+	// Get player names for all player slots (including player5/6 for non-standard courts)
+	const playerIds: number[] = [
 		rotation.player1Id,
 		rotation.player2Id,
-		rotation.player3Id,
-		rotation.player4Id
+		...(rotation.player3Id ? [rotation.player3Id] : []),
+		...(rotation.player4Id ? [rotation.player4Id] : []),
+		...(rotation.player5Id ? [rotation.player5Id] : []),
+		...(rotation.player6Id ? [rotation.player6Id] : [])
 	];
 
 	const players = await db
@@ -52,127 +90,71 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const playerMap = new Map(players.map((p) => [p.id, p.name]));
 	const playerNames: Record<number, string> = {};
 	playerIds.forEach((id) => {
-		playerNames[id] = playerMap.get(id) || 'Unknown';
+		playerNames[id] = playerMap.get(id) || m.err_unknown_player();
 	});
 
-	// Calculate standings
-	const standings = calculateStandings(matches, playerNames);
+	// Map DB matches to MatchData and calculate standings using shared logic
+	const matchData: MatchData[] = matches.map((m) => ({
+		teamAPlayer1Id: m.teamAPlayer1Id,
+		teamAPlayer2Id: m.teamAPlayer2Id,
+		teamBPlayer1Id: m.teamBPlayer1Id,
+		teamBPlayer2Id: m.teamBPlayer2Id,
+		teamAScore: m.teamAScore,
+		teamBScore: m.teamBScore,
+		isCanceled: m.isCanceled ?? false,
+		injuredPlayerIds: m.injuredPlayerIds ?? undefined
+	}));
+
+	const standings = calculateCourtStandings(matchData, playerIds).map((s) => ({
+		...s,
+		id: s.playerId,
+		name: playerNames[s.playerId] || m.err_unknown_player(),
+		avgPoints: s.matchCount > 0 ? s.points : undefined,
+		matchesPlayed: matchData.filter(
+			(m) =>
+				!m.isCanceled &&
+				m.teamAScore !== null &&
+				(m.teamAPlayer1Id === s.playerId ||
+					m.teamAPlayer2Id === s.playerId ||
+					m.teamBPlayer1Id === s.playerId ||
+					m.teamBPlayer2Id === s.playerId)
+		).length
+	}));
+
+	const courtSize = rotation.courtSize ?? playerIds.length;
+
+	const pointsToWin = tourney.pointsToWin ?? 21;
+	const winBy = tourney.winBy ?? 2;
+	const decidingSetPoints = tourney.decidingSetPoints ?? 15;
+	const setsToWin = tourney.setsToWin ?? 1;
+
+	const config = { pointsToWin, winBy, setsToWin, decidingSetPoints };
+	const overrides = tourney.scoringOverrides as Record<
+		string,
+		{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
+	> | null;
+	const minPoints = getMinPointsForSet(1, courtSize, config, overrides);
+	const scoringLabel = getScoringLabel(config, courtSize, overrides);
 
 	return {
 		court: {
 			tournamentName: tourney.name,
 			courtNumber: rotation.courtNumber,
 			roundNumber: rotation.roundNumber,
-			playerNames
+			courtSize,
+			playerNames,
+			minPoints,
+			scoringLabel,
+			winBy,
+			setsToWin,
+			pointsToWin,
+			decidingSetPoints,
+			scoringOverrides: overrides,
+			label: courtRecord.label ?? null
 		},
 		matches,
 		standings,
-		isActive: access.isActive && tourney.status === 'active',
+		isActive: courtRecord.isActive && tourney.status === 'active',
 		isAuthenticated: !!locals.user
 	};
 };
-
-import type { Actions } from './$types';
-
-export const actions: Actions = {
-	saveScore: async ({ request, params }) => {
-		const token = params.token;
-		const formData = await request.formData();
-		const matchId = parseInt(formData.get('matchId')?.toString() || '0');
-		const teamAScore = parseInt(formData.get('teamAScore')?.toString() || '0');
-		const teamBScore = parseInt(formData.get('teamBScore')?.toString() || '0');
-
-		// Validate scores
-		if (teamAScore < 1 || teamAScore > 50 || teamBScore < 1 || teamBScore > 50) {
-			return { error: 'Scores must be between 1 and 50' };
-		}
-
-		if (teamAScore === teamBScore) {
-			return { error: 'Scores cannot be tied' };
-		}
-
-		const maxScore = Math.max(teamAScore, teamBScore);
-		const minScore = Math.min(teamAScore, teamBScore);
-
-		if (maxScore < 21) {
-			return { error: 'Winner must have at least 21 points' };
-		}
-
-		if (maxScore - minScore < 2) {
-			return { error: 'Winner must win by at least 2 points' };
-		}
-
-		// Verify match belongs to this court
-		const [access] = await db.select().from(courtAccess).where(eq(courtAccess.token, token));
-
-		if (!access || !access.isActive) {
-			return { error: 'Court is not active' };
-		}
-
-		const [matchRecord] = await db.select().from(match).where(eq(match.id, matchId));
-
-		if (!matchRecord || matchRecord.courtRotationId !== access.courtRotationId) {
-			return { error: 'Invalid match' };
-		}
-
-		// Save score
-		await db.update(match).set({ teamAScore, teamBScore }).where(eq(match.id, matchId));
-
-		return { success: 'Score saved!' };
-	}
-};
-
-function calculateStandings(matches: any[], playerNames: Record<number, string>) {
-	const stats: Record<number, { id: number; points: number; for: number; against: number }> = {};
-
-	// Get all player IDs from matches
-	const allPlayerIds = new Set<number>();
-	matches.forEach((m) => {
-		allPlayerIds.add(m.teamAPlayer1Id);
-		allPlayerIds.add(m.teamAPlayer2Id);
-		allPlayerIds.add(m.teamBPlayer1Id);
-		allPlayerIds.add(m.teamBPlayer2Id);
-	});
-
-	// Initialize stats
-	allPlayerIds.forEach((id) => {
-		stats[id] = { id, points: 0, for: 0, against: 0 };
-	});
-
-	// Calculate stats from completed matches
-	matches.forEach((m) => {
-		if (m.teamAScore === null) return;
-
-		// Team A players
-		stats[m.teamAPlayer1Id].points += m.teamAScore;
-		stats[m.teamAPlayer1Id].for += m.teamAScore;
-		stats[m.teamAPlayer1Id].against += m.teamBScore;
-
-		stats[m.teamAPlayer2Id].points += m.teamAScore;
-		stats[m.teamAPlayer2Id].for += m.teamAScore;
-		stats[m.teamAPlayer2Id].against += m.teamBScore;
-
-		// Team B players
-		stats[m.teamBPlayer1Id].points += m.teamBScore;
-		stats[m.teamBPlayer1Id].for += m.teamBScore;
-		stats[m.teamBPlayer1Id].against += m.teamAScore;
-
-		stats[m.teamBPlayer2Id].points += m.teamBScore;
-		stats[m.teamBPlayer2Id].for += m.teamBScore;
-		stats[m.teamBPlayer2Id].against += m.teamAScore;
-	});
-
-	// Convert to array and sort
-	return Object.values(stats)
-		.map((s) => ({
-			...s,
-			name: playerNames[s.id] || 'Unknown',
-			diff: s.for - s.against
-		}))
-		.sort((a, b) => {
-			if (b.points !== a.points) return b.points - a.points;
-			if (b.diff !== a.diff) return b.diff - a.diff;
-			return a.id - b.id;
-		})
-		.map((s, i) => ({ ...s, rank: i + 1 }));
-}

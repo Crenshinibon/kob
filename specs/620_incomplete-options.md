@@ -29,6 +29,7 @@ Preseed works for ANY court count through recursive splitting. The algorithm:
 #### Examples
 
 **3 courts (12 players)**:
+
 ```
 Round 1: 3 courts play
 Round 2: Split → 2 winner courts + 1 loser court
@@ -40,6 +41,7 @@ Total: 3 rounds
 ```
 
 **5 courts (20 players)**:
+
 ```
 Round 1: 5 courts play
 Round 2: Split → 4 winner courts + 1 loser court
@@ -54,6 +56,7 @@ Total: 4 rounds
 ```
 
 **6 courts (24 players)**:
+
 ```
 Round 1: 6 courts play
 Round 2: Split → 4 winner courts + 2 loser courts
@@ -69,6 +72,7 @@ Total: 4 rounds
 ```
 
 **7 courts (28 players)**:
+
 ```
 Round 1: 7 courts play
 Round 2: Split → 4 winner courts + 3 loser courts
@@ -85,6 +89,7 @@ Total: 4 rounds
 ```
 
 **9 courts (36 players)**:
+
 ```
 Round 1: 9 courts play
 Round 2: Split → 8 winner courts + 1 loser court
@@ -97,6 +102,7 @@ Total: 5 rounds
 ```
 
 **10 courts (40 players)**:
+
 ```
 Round 1: 10 courts play
 Round 2: Split → 8 winner courts + 2 loser courts
@@ -113,35 +119,37 @@ rounds(N) = floor(log2(N-1)) + 2  for N >= 2
 ```
 
 | Courts | Rounds |
-|--------|--------|
-| 2 | 2 |
-| 3 | 3 |
-| 4 | 3 |
-| 5-7 | 4 |
-| 8 | 4 |
-| 9-15 | 5 |
-| 16 | 5 |
+| ------ | ------ |
+| 2      | 2      |
+| 3      | 3      |
+| 4      | 3      |
+| 5-7    | 4      |
+| 8      | 4      |
+| 9-15   | 5      |
+| 16     | 5      |
 
 The winner group's depth determines the total rounds. The loser group plays along but doesn't add rounds.
 
 #### Preseed Split Algorithm
 
+The recursive split determines bracket structure (how many winner/loser courts each round). Player assignment within each bracket uses **origin-mixing distribution of the sorted-by-finish-tier player pool** (1st and 2nd place from the same original court must NOT land on the same new court) — the function is NOT recursive itself.
+
 ```
-function splitCourts(courts):
-    N = courts.length
-    if N == 1: return (no more splits needed)
-    
-    winnerCount = largestPowerOf2(N)  // e.g., 7→4, 5→4, 3→2, 6→4
-    loserCount = N - winnerCount
-    
-    // Sort all players by court finish (1st places first, then 2nd, etc.)
-    // Winner group gets the top performers
-    // Loser group gets the rest
-    
-    // Recursively split each group
-    splitCourts(winnerGroup)
-    splitCourts(loserGroup)
+function redistributePreseed(N_courts, courtStandings):
+    // 1. Group all players by finish tier (1sts, 2nds, 3rds, 4ths)
+    // 2. Sort each tier by performance (points desc, diff desc, playerId asc)
+    // 3. Flatten by tier: [all 1sts..., all 2nds..., all 3rds..., all 4ths...]
+
+    winnerCount = splitSize(N_courts)   // power-of-2: N/2; otherwise: largest power-of-2
+    loserCount = N_courts - winnerCount
+
+    // 4. Top N winner performers go to winner bracket
+    // 5. Remainder go to loser bracket
+    // 6. Distribute each bracket's players across its courts using origin mixing
+    //    (1st+2nd from the same previous court must NOT land on the same new court)
 ```
+
+**Key change from earlier drafts**: Players are NOT recursively re-split within a single redistribution step. Each `closeRound` calls this function once to produce the next round's assignments. The recursive bracket structure emerges across rounds (the winners split again next round, then again, until all courts are in their final bracket).
 
 ### Timing Impact
 
@@ -157,18 +165,19 @@ function splitCourts(courts):
 
 When `playerCount % 4` is not 0, the lowest court gets the leftover players. This is always ONE court at the bottom — no mixed court configurations across multiple courts.
 
-| Leftovers | Bottom Court | Format |
-|-----------|-------------|--------|
-| 0 | None (all standard) | All 4-player courts |
-| 1 | 5-player court | Parallel games (rotating every point) |
-| 2 | 6-player court | Parallel games (rotating every point) |
-| 3 | 3-player court | 2v1 format (3 matches) |
+| Leftovers | Bottom Court        | Format                                |
+| --------- | ------------------- | ------------------------------------- |
+| 0         | None (all standard) | All 4-player courts                   |
+| 1         | 5-player court      | Parallel games (rotating every point) |
+| 2         | 6-player court      | Parallel games (rotating every point) |
+| 3         | 3-player court      | 2v1 format (3 matches)                |
 
 ### Redistribution with Non-Standard Bottom Court
 
 After each round, redistribute using the standard logic (vertical seeding or ladder). The bottom court always gets the remaining players:
 
 **Example: 11 players (2x4p + 1x3p)**
+
 - After Round 1: 11 players across 3 courts
 - Redistribute: Sort all by rank, then points/diff
   - C1: Top 4 players (1st places + best 2nd)
@@ -177,6 +186,7 @@ After each round, redistribute using the standard logic (vertical seeding or lad
 - The non-standard court is always C3 (the bottom)
 
 **Example: 25 players (6x4p + 1x5p)**
+
 - After Round 1: 25 players across 7 courts
 - Redistribute: vertical seeding cascade
   - C1-C6: Top 24 players (4 each)
@@ -213,12 +223,14 @@ For 1-2 leftover players: one full court with two parallel game tracks running s
 The round consists of **2 runs × 2 parallel games = 4 games** total.
 
 **Run 1**: One team is fixed on side X, one player fixed on side Y, two players rotate.
+
 - Side X: A+B (fixed team)
 - Side Y: C (fixed), D and E alternate every point
 - Game 1: A+B vs C+D (scored when D is on court)
 - Game 2: A+B vs C+E (scored when E is on court)
 
 **Run 2**: Different team fixed on side X, different player fixed on side Y, different players rotate.
+
 - Side X: D+E (fixed team)
 - Side Y: B (fixed), A and C alternate every point
 - Game 3: D+E vs B+A (scored when A is on court)
@@ -240,12 +252,14 @@ One player plays 4 games, everyone else plays 3. Across tournament rounds, the "
 Same structure: 2 runs × 2 parallel games = 4 games.
 
 **Run 1**:
+
 - Side X: A+B (fixed team)
 - Side Y: C+D and E+F rotate every point (no fixed player)
 - Game 1: A+B vs C+D (scored when C+D is on court)
 - Game 2: A+B vs E+F (scored when E+F is on court)
 
 **Run 2**:
+
 - Side X: C+D (fixed team) — different players
 - Side Y: A+B and E+F rotate every point (no fixed player)
 - Game 3: C+D vs A+B (scored when A+B is on court)
@@ -268,16 +282,19 @@ A-D play 3 games each, E-F play 2 each. Within each rotating pair (C+D, E+F, A+B
 Before each round, the system randomly assigns roles using a seeded PRNG (based on tournament ID + round number for reproducibility):
 
 **5 players:**
+
 - Which player is fixed on side Y in both runs (plays 4 games)
 - Which pair is fixed on side X in Run 1
 - Which pair is fixed on side X in Run 2
 
 **6 players:**
+
 - Which pair is fixed on side X in Run 1 (plays 3 games)
 - Which pair is fixed on side X in Run 2 (plays 3 games)
 - The remaining pair rotates in both runs (plays 2 games)
 
 **Algorithm**: Shuffle the player list using the seeded PRNG, then assign roles in order. This ensures:
+
 - Reproducibility (same tournament + same round = same assignment)
 - Fairness across rounds (different seed each round)
 - No player is stuck with fewer games over the tournament
@@ -323,6 +340,7 @@ Option E is now generalized. Instead of only cutting to top 16, the recursive sp
 ### How It Works (Generalized)
 
 For any N courts after Round 1:
+
 1. Determine winner group size: largest power-of-2 <= N
 2. Top performers go to winner group
 3. Remainder goes to loser group
@@ -331,12 +349,14 @@ For any N courts after Round 1:
 ### Examples
 
 **12 players (3 courts)**:
+
 - Round 1: 3 courts
 - Round 2: Split → 2 winner + 1 loser
 - Round 3: Split winners → 1+1. Final.
 - C1: Places 1-4, C2: Places 5-8, C3: Places 9-12
 
 **20 players (5 courts)**:
+
 - Round 1: 5 courts
 - Round 2: Split → 4 winner + 1 loser
 - Round 3: Split winners → 2+2
@@ -344,6 +364,7 @@ For any N courts after Round 1:
 - C1-C4: Places 1-16, C5: Places 17-20
 
 **24 players (6 courts)**:
+
 - Round 1: 6 courts
 - Round 2: Split → 4 winner + 2 loser
 - Round 3: Split winners → 2+2. Split losers → 1+1.
@@ -351,6 +372,7 @@ For any N courts after Round 1:
 - C1-C4: Places 1-16, C5-C6: Places 17-24
 
 **28 players (7 courts)**:
+
 - Round 1: 7 courts
 - Round 2: Split → 4 winner + 3 loser
 - Round 3: Split winners → 2+2. Split losers → 2+1.
@@ -358,6 +380,7 @@ For any N courts after Round 1:
 - C1-C4: Places 1-16, C5-C6: Places 17-24, C7: Places 25-28
 
 **36 players (9 courts)**:
+
 - Round 1: 9 courts
 - Round 2: Split → 8 winner + 1 loser
 - Round 3: Split winners → 4+4
@@ -367,10 +390,10 @@ For any N courts after Round 1:
 
 ### Comparison with Old "Single Cut" Approach
 
-| Approach | 20p Rounds | 24p Rounds | 28p Rounds | 36p Rounds |
-|----------|-----------|-----------|-----------|-----------|
-| Old: Cut to 16 | 4 | 4 | 4 | N/A |
-| New: Recursive | 4 | 4 | 4 | 5 |
+| Approach       | 20p Rounds | 24p Rounds | 28p Rounds | 36p Rounds |
+| -------------- | ---------- | ---------- | ---------- | ---------- |
+| Old: Cut to 16 | 4          | 4          | 4          | N/A        |
+| New: Recursive | 4          | 4          | 4          | 5          |
 
 The recursive approach produces the same result for 20/24/28 players but generalizes to any court count.
 
@@ -378,10 +401,10 @@ The recursive approach produces the same result for 20/24/28 players but general
 
 ## Timing Comparison Summary
 
-| Approach | Round Time | Setup Complexity | Player Satisfaction |
-|----------|-----------|------------------|---------------------|
-| Standard 4p courts | ~45-60 min | Low | High |
-| Non-standard bottom court (3p/5p/6p) | ~45-60 min | Low | Medium-High |
+| Approach                             | Round Time | Setup Complexity | Player Satisfaction |
+| ------------------------------------ | ---------- | ---------------- | ------------------- |
+| Standard 4p courts                   | ~45-60 min | Low              | High                |
+| Non-standard bottom court (3p/5p/6p) | ~45-60 min | Low              | Medium-High         |
 
 ---
 
@@ -389,27 +412,28 @@ The recursive approach produces the same result for 20/24/28 players but general
 
 ### Preseed Format (Now Works for ALL Court Counts)
 
-| Players | Courts | Rounds | Method |
-|---------|--------|--------|--------|
-| 8       | 2      | 2      | Recursive: 2→1+1 |
-| 12      | 3      | 3      | Recursive: 3→2+1, 2→1+1 |
-| 16      | 4      | 3      | Recursive: 4→2+2, 2→1+1 |
-| 20      | 5      | 4      | Recursive: 5→4+1, 4→2+2, 2→1+1 |
-| 24      | 6      | 4      | Recursive: 6→4+2, 4→2+2, 2→1+1 |
-| 28      | 7      | 4      | Recursive: 7→4+3, 4→2+2, 3→2+1 |
-| 32      | 8      | 4      | Recursive: 8→4+4, 4→2+2, 2→1+1 |
-| 36      | 9      | 5      | Recursive: 9→8+1, 8→4+4, 4→2+2, 2→1+1 |
-| 40      | 10     | 5      | Recursive: 10→8+2, ... |
-| 44      | 11     | 5      | Recursive: 11→8+3, ... |
-| 48      | 12     | 5      | Recursive: 12→8+4, ... |
-| 52      | 13     | 5      | Recursive: 13→8+5, ... |
-| 56      | 14     | 5      | Recursive: 14→8+6, ... |
-| 60      | 15     | 5      | Recursive: 15→8+7, ... |
+| Players | Courts | Rounds | Method                                 |
+| ------- | ------ | ------ | -------------------------------------- |
+| 8       | 2      | 2      | Recursive: 2→1+1                       |
+| 12      | 3      | 3      | Recursive: 3→2+1, 2→1+1                |
+| 16      | 4      | 3      | Recursive: 4→2+2, 2→1+1                |
+| 20      | 5      | 4      | Recursive: 5→4+1, 4→2+2, 2→1+1         |
+| 24      | 6      | 4      | Recursive: 6→4+2, 4→2+2, 2→1+1         |
+| 28      | 7      | 4      | Recursive: 7→4+3, 4→2+2, 3→2+1         |
+| 32      | 8      | 4      | Recursive: 8→4+4, 4→2+2, 2→1+1         |
+| 36      | 9      | 5      | Recursive: 9→8+1, 8→4+4, 4→2+2, 2→1+1  |
+| 40      | 10     | 5      | Recursive: 10→8+2, ...                 |
+| 44      | 11     | 5      | Recursive: 11→8+3, ...                 |
+| 48      | 12     | 5      | Recursive: 12→8+4, ...                 |
+| 52      | 13     | 5      | Recursive: 13→8+5, ...                 |
+| 56      | 14     | 5      | Recursive: 14→8+6, ...                 |
+| 60      | 15     | 5      | Recursive: 15→8+7, ...                 |
 | 64      | 16     | 5      | Recursive: 16→8+8, 8→4+4, 4→2+2, 2→1+1 |
 
 ### Random Seed Format
 
 Random seed is flexible because vertical seeding and the ladder system work for any court count. For any player count 8-64:
+
 - Clean multiples of 4: standard courts, ladder redistribution
 - With leftovers: bottom court is non-standard (3p/5p/6p)
 

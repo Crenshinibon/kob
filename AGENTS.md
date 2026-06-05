@@ -6,37 +6,37 @@ This is a **King of the Beach (KoB) Tracker** - a mobile-first SvelteKit web app
 
 ```bash
 # Development
-npm run dev              # Start dev server
-npm run build           # Production build
-npm run preview         # Preview production build
+bun run dev              # Start dev server
+bun run build           # Production build
+bun run preview         # Preview production build
 
 # Type checking
-npm run check           # Run svelte-check once
-npm run check:watch     # Run svelte-check in watch mode
+bun run check           # Run svelte-check once
+bun run check:watch     # Run svelte-check in watch mode
 
 # Testing
-npm run test            # Run unit tests + E2E tests
-npm run test:unit       # Run Vitest unit tests only
-npm run test:e2e        # Run Playwright E2E tests only
-npx playwright test e2e/demo.test.ts              # Run single test file
-npx playwright test --grep "home page"            # Run tests matching pattern
-npx playwright test --headed                      # Run with visible browser
+bun run test            # Run unit tests + E2E tests
+bun run test:unit       # Run Vitest unit tests only
+bun run test:e2e        # Run Playwright E2E tests only
+bunx playwright test e2e/demo.test.ts              # Run single test file
+bunx playwright test --grep "home page"            # Run tests matching pattern
+bunx playwright test --headed                      # Run with visible browser
 
 # Linting & Formatting
-npm run lint            # Check prettier + eslint
-npm run format          # Auto-fix prettier formatting
-npx eslint .            # Run eslint only
-npx eslint src/lib/server/db/index.ts             # Lint single file
-npx prettier --check src/routes                   # Check specific directory
+bun run lint            # Check prettier + eslint
+bun run format          # Auto-fix prettier formatting
+bunx eslint .           # Run eslint only
+bunx eslint src/lib/server/db/index.ts             # Lint single file
+bunx prettier --check src/routes                   # Check specific directory
 
 # Database (Drizzle + Neon PostgreSQL)
-npm run db:generate     # Generate migration files
-npm run db:push         # Push schema changes to database
-npm run db:migrate      # Run pending migrations
-npm run db:studio       # Open Drizzle Studio GUI
+bun run db:generate     # Generate migration files
+bun run db:push         # Push schema changes to database
+bun run db:migrate      # Run pending migrations
+bun run db:studio       # Open Drizzle Studio GUI
 
 # Auth
-npm run auth:schema     # Regenerate Better Auth schema
+bun run auth:schema     # Regenerate Better Auth schema
 ```
 
 ## Tech Stack
@@ -47,6 +47,21 @@ npm run auth:schema     # Regenerate Better Auth schema
 - **Auth**: Better Auth with email/password
 - **Testing**: Vitest (unit) + Playwright (E2E)
 - **Build**: Vite
+- **Runtime**: Bun (package manager + TypeScript runner)
+
+## Tooling Policy
+
+**Use Bun's built-in capabilities wherever possible. Do not introduce additional tooling dependencies when Bun already provides the functionality.**
+
+- Run TypeScript scripts: `bun script.ts` (NOT `npx tsx script.ts`)
+- Run CLI tools: `bunx tool` (NOT `npx tool`)
+- Run package scripts: `bun run script` (NOT `npm run script`)
+- Environment variables: Bun auto-loads `.env` files (NOT `dotenv` package)
+- Install packages: `bun add/remove` (NOT `npm install`)
+
+Exceptions: Vitest (SvelteKit integration), Playwright (E2E standard), drizzle-kit (DB tooling).
+
+See [specs/850_bun-migration.md](./specs/850_bun-migration.md) for migration details.
 
 ## Code Style Guidelines
 

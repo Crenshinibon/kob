@@ -1,5 +1,7 @@
 <script lang="ts">
 	import CookieNotice from '$lib/components/CookieNotice.svelte';
+	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import * as m from '$lib/paraglide/messages';
 	import type { Snippet } from 'svelte';
 
 	let {
@@ -18,11 +20,18 @@
 
 <div class="app-container">
 	{#if data?.user}
-		<nav class="top-nav">
-			<span class="user-email">{data.user.email}</span>
-			<button onclick={handleSignOut} class="btn-signout">Sign Out</button>
-		</nav>
+		<div class="v1-banner">
+			{m.v1_banner()}
+		</div>
 	{/if}
+
+	<nav class="top-nav">
+		<LanguageSwitcher />
+		{#if data?.user}
+			<span class="user-email">{data.user.email}</span>
+			<button onclick={handleSignOut} class="btn-signout">{m.sign_out()}</button>
+		{/if}
+	</nav>
 
 	<main>
 		{@render children()}
@@ -35,7 +44,7 @@
 			rel="noopener noreferrer nofollow"
 			class="bmc-button"
 		>
-			☕ Buy Me A Coffee
+			{m.buy_me_coffee()}
 		</a>
 	</footer>
 </div>
@@ -63,8 +72,19 @@
 
 	.app-container {
 		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
 		background-color: var(--bg-primary);
 		color: var(--text-primary);
+	}
+
+	.v1-banner {
+		text-align: center;
+		padding: var(--spacing-xs) var(--spacing-md);
+		background-color: var(--accent-warning);
+		color: var(--bg-primary);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
 	}
 
 	.top-nav {
@@ -100,10 +120,12 @@
 	}
 
 	main {
-		min-height: calc(100vh - 100px);
+		flex: 1;
 	}
 
 	.site-footer {
+		position: sticky;
+		bottom: 0;
 		text-align: center;
 		padding: var(--spacing-lg);
 		border-top: 1px solid var(--border-default);

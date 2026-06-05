@@ -1,4 +1,6 @@
 <script lang="ts">
+	import * as m from '$lib/paraglide/messages';
+
 	let email = $state('');
 	let password = $state('');
 	let confirmPassword = $state('');
@@ -7,7 +9,7 @@
 
 	function validatePassword(pass: string): string | null {
 		if (pass.length < 10) {
-			return 'Password must be at least 10 characters';
+			return m.signup_password_length();
 		}
 		return null;
 	}
@@ -25,7 +27,7 @@
 
 		// Check passwords match
 		if (password !== confirmPassword) {
-			error = 'Passwords do not match';
+			error = m.signup_passwords_no_match();
 			return;
 		}
 
@@ -42,10 +44,10 @@
 				window.location.href = '/';
 			} else {
 				const data = await response.json();
-				error = data.message || 'Signup failed';
+				error = data.message || m.signup_failed();
 			}
-		} catch (e) {
-			error = 'Network error. Please try again.';
+		} catch {
+			error = m.signup_network_error();
 		} finally {
 			loading = false;
 		}
@@ -54,7 +56,7 @@
 
 <main>
 	<div class="auth-container">
-		<h1>Sign Up</h1>
+		<h1>{m.sign_up()}</h1>
 
 		{#if error}
 			<div class="error">{error}</div>
@@ -62,27 +64,27 @@
 
 		<form onsubmit={handleSubmit}>
 			<div class="field">
-				<label for="email">Email</label>
+				<label for="email">{m.email()}</label>
 				<input type="email" id="email" bind:value={email} required />
 			</div>
 
 			<div class="field">
-				<label for="password">Password (min 10 characters)</label>
+				<label for="password">{m.signup_password_label()}</label>
 				<input type="password" id="password" bind:value={password} required minlength="10" />
 			</div>
 
 			<div class="field">
-				<label for="confirmPassword">Confirm Password</label>
+				<label for="confirmPassword">{m.signup_confirm_password()}</label>
 				<input type="password" id="confirmPassword" bind:value={confirmPassword} required />
 			</div>
 
 			<button type="submit" class="btn-primary" disabled={loading}>
-				{loading ? 'Creating account...' : 'Sign Up'}
+				{loading ? m.signup_creating() : m.sign_up()}
 			</button>
 		</form>
 
 		<p class="switch">
-			Already have an account? <a href="/login">Log in</a>
+			{m.has_account()} <a href="/login">{m.login()}</a>
 		</p>
 	</div>
 </main>

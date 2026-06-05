@@ -439,7 +439,7 @@ When mixing 3-player and 4-player courts:
 
 - ✅ Standard 3-touch limit for ALL teams (whether 1 or 2 players)
 - ✅ Standard court dimensions (8m × 16m)
-- ✅ Standard beach volleyball scoring (21 to win, by 2, cap 50)
+- ✅ Standard beach volleyball scoring (21 to win, by 2)
 - ✅ Standard rotation so everyone experiences 2v1 equally
 - ✅ Use rank-based scoring when mixing court sizes (for fair comparison)
 
@@ -684,6 +684,14 @@ When creating tournament with non-multiple-of-4 players:
 - Custom format builder
 - Saved format templates
 - Format validation engine
+
+## Implementation Status
+
+### Not Yet Implemented ❌
+
+This spec describes the future architecture for supporting multiple tournament formats. The current implementation only supports the "Standard King of the Beach" format (4-player courts with partner rotation). 3p/5p/6p support exists but is implemented as extended court types within the standard format, not as a pluggable system.
+
+The format registry, interface-based match generators, and redistribution strategies described here have not been implemented. The codebase currently uses a state machine pattern in `tournament-logic.ts` with specialized functions for each court size.
 
 ## Acceptance Criteria
 

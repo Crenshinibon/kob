@@ -8,7 +8,7 @@ The core concept is to manage individual rankings within a 2v2 format. Players r
 
 ## 2. Assumptions & Constraints
 
-- **Player Count:** Supports **16 players** (4 courts) or **32 players** (8 courts).
+- **Player Count:** Supports **8-64 players** (2-16 courts). Non-multiples of 4 use a bottom court of 3/5/6 players.
 - **Players per Court:** Fixed at 4 players per court.
 - **Platform:** Mobile-web optimized (users will access via smartphones on the beach).
 - **Formats:**
@@ -44,15 +44,10 @@ Only the Org can create a tournament. The creation form requires:
 - **Format:**
   - **Random Seed:** First round random placement, then ladder system. Configurable number of rounds (1-5).
   - **Preseed:** Seeding based on player points. Fixed rounds: 3 for 16 players, 4 for 32 players.
-- **Player Count:** 16 or 32 players.
-
-### 4.2 Player Management
-
-- **Input:** The Org inputs player names via a text field (one name per line) or pasteboard.
-- **Smart Paste:** When pasting text containing commas or semicolons, it automatically splits them into separate lines.
-- **Preseed Format:** Players must be entered with seed points (name followed by points, whitespace-separated).
-- **Validation:** The system validates the exact required player count (16 or 32) with unique names.
+- **Player Count:** 8-64 players.
+- **Validation:** The system validates the player count (8-64) with unique names.
   - _Error Handling:_ If the wrong count is provided, the system prevents starting the tournament and prompts the user to fix the count.
+  - _Leftover Handling:_ Non-multiples of 4 result in a bottom court of 3p/5p/6p. The system shows a court configuration preview and offers the option to kick leftover players.
 
 ## 5. Feature: Running the Tournament
 
@@ -63,22 +58,41 @@ Only the Org can create a tournament. The creation form requires:
 
 ### 5.2 Round Logic (The "Court Engine")
 
-Each court always contains 4 players (A, B, C, D). The system automatically generates 3 matches to ensure every player partners with every other player exactly once:
+Courts may contain 3, 4, 5, or 6 players depending on player count. The system generates matches automatically for each court type:
 
-1.  **Match 1:** A & B vs. C & D
-2.  **Match 2:** A & C vs. B & D
-3.  **Match 3:** A & D vs. B & C
+**4-player courts**: 3 matches ensuring every player partners with every other player exactly once:
+
+1. **Match 1:** A & B vs. C & D
+2. **Match 2:** A & C vs. B & D
+3. **Match 3:** A & D vs. B & C
+
+**3-player courts**: 3 matches in 2v1 format (each player takes a solo turn):
+
+1. **Match 1:** A & B vs. C
+2. **Match 2:** A & C vs. B
+3. **Match 3:** B & C vs. A
+
+**5-player courts**: 4 parallel games in 2 runs (rotating player swaps every point).
+
+**6-player courts**: 4 parallel games in 2 runs (rotating pair swaps every point).
 
 ### 5.3 Scoring & Standings
 
-- Players enter the final score of each match (e.g., 21-19).
+- Players enter scores via court URL (mobile-optimized interface)
+- **Scoring modes**: Single set (default), Best of 3, or Custom
+- **Score validation**: Minimum points per set, win-by margin, no point caps
+- **Per-court-type overrides**: Org can configure different scoring for 3p/5p/6p courts
 - **Points Calculation:** Players are awarded points equal to their score in the match.
   - _Example:_ If A/B win 21-19, Player A gets +21, Player B gets +21.
 - **Ranking Criteria (Per Court):**
   Players are ranked 1st through 4th on their court based on the following hierarchy:
-  1.  **Total Points Won:** (Highest sum of points across all 3 matches).
+  1.  **Total Points Won:** (Highest sum of points across all matches).
   2.  **Point Differential:** (Points Won - Points Lost).
   3.  **Player ID:** (Deterministic tiebreaker for consistent results).
+
+  For 5p/6p courts, use **average points per game** as the primary ranking (players play different numbers of games), then total points, then differential, then playerId.
+
+  For courts with canceled matches (injury), use **average points per completed match**.
 
 ### 5.4 Closing a Round
 
@@ -94,29 +108,24 @@ Each court always contains 4 players (A, B, C, D). The system automatically gene
 
 _Goal: Sort players by strength to establish the initial hierarchy._
 
-- **16 players:** All 1st place players → Court 1, all 2nd → Court 2, etc.
-- **32 players:** All finish positions are sorted by points within each rank, then split between two courts (top 4 / bottom 4).
+Vertical seeding cascade: fill courts top-to-bottom with each rank group. For any court count, fill each court to 4 players. When a court has fewer than 4 of the current rank, take the remainder from the next rank (best by points/diff).
+
+- **16 players (4 courts):** All 1st place players → Court 1, all 2nd → Court 2, etc.
+- **32 players (8 courts):** Same logic, sorted by points within each rank.
 
 #### Round 2+ (The "Ladder")
 
-_Goal: Strong players move up, weaker players move down._
-
-- **16 players (4 courts):** 2 up, 2 down between adjacent courts.
-- **32 players (8 courts):** Same ladder logic extended across 8 courts.
+2 up, 2 down between adjacent courts. Works for any court count >= 2.
 
 ### 6.2 Preseed Format
 
-#### Initial Seeding (Round 1)
+#### Initial Seeding
 
-Players distributed in snake pattern based on seed points:
-- **16 players:** Seeds 1,5,9,13 on Court 1; Seeds 2,6,10,14 on Court 2; etc.
-- **32 players:** Seeds 1,9,17,25 on Court 1; Seeds 2,10,18,26 on Court 2; etc.
+Players distributed in snake pattern based on seed points. Works for any court count (8-64 players).
 
 #### Redistribution
 
-- **Round 1 → Round 2:** Winner/loser split. All 1st-2nd places → Courts 1-4, all 3rd-4th → Courts 5-8.
-- **Round 2 → Round 3:** Tier consolidation. Top 2 from adjacent courts move up, bottom 2 stay.
-- **Round 3 → Round 4 (32p only):** Final placement. Courts determine final rankings.
+Bracket split: after each round, split courts into winner and loser brackets using `splitSize` (for power-of-2: N/2 winners; otherwise: largest power-of-2 winners). All players are grouped by finish tier (1sts, then 2nds, etc.), sorted by performance within each tier, and the top performers fill the winner bracket. Within each bracket, players are snake-distributed across courts for mixing.
 
 ## 7. Tournament Conclusion
 

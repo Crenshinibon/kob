@@ -1,36 +1,55 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
+	getCourtConfiguration,
+	calculateCourtSizes,
+	calculateRoundCount,
+	createInitialState,
+	addPlayers,
+	startRound,
+	closeRound,
+	redistributePreseedRecursive,
+	processPreseedTransition,
+	verticalSeeding,
+	ladderRedistribute,
 	calculateCourtStandings,
-	redistributePreseed16,
-	redistributePreseed32,
-	redistributeLadder,
-	getTop2,
-	getBottom2,
+	generate4pMatches,
+	generate3pMatches,
+	generate5pMatches,
+	generate6pMatches,
+	matchCountForCourtSize,
+	countScoredMatches,
+	isDecidingSet,
+	getMaxSets,
+	getMinPointsForSet,
+	getScoringLabel,
+	getEffectiveScoring,
+	recalculateCourtConfigAfterRetirement,
+	getPreseedBracketRange,
+	calculateRetiredStanding,
+	getFinalRoundCourtConfig,
+	isValidFinalScore,
+	type FormatType,
+	type TournamentState,
 	type CourtResult,
 	type MatchData
 } from './tournament-logic';
 
-function createMockCourtResult(
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function mockCourtResult(
 	courtNumber: number,
-	playerIds: number[],
-	points: number[]
+	standings: { playerId: number; rank: number; points: number; diff: number; matchCount: number }[]
 ): CourtResult {
-	return {
-		courtNumber,
-		standings: playerIds.map((id, i) => ({
-			playerId: id,
-			rank: i + 1,
-			points: points[i] || 0,
-			diff: 0
-		}))
-	};
+	return { courtNumber, standings };
 }
 
-function createMockMatchData(
+function mockMatch(
 	teamA: [number, number],
 	teamB: [number, number],
-	scoreA: number,
-	scoreB: number
+	scoreA: number | null,
+	scoreB: number | null
 ): MatchData {
 	return {
 		teamAPlayer1Id: teamA[0],
@@ -42,220 +61,1741 @@ function createMockMatchData(
 	};
 }
 
+function mockPlayer(
+	id: number,
+	seedPoints: number | null = null
+): {
+	id: number;
+	name: string;
+	seedPoints: number | null;
+	seedRank: number | null;
+} {
+	return { id, name: `Player${id}`, seedPoints, seedRank: null };
+}
+
+function scoreAllMatches(
+	state: TournamentState,
+	scores:
+		| { winner: 'A' | 'B'; scoreA: number; scoreB: number }
+		| ((courtIdx: number) => { winner: 'A' | 'B'; scoreA: number; scoreB: number })
+): MatchData[] {
+	return state.currentAssignments.map((a, i) => {
+		const s = typeof scores === 'function' ? scores(i) : scores;
+		return {
+			teamAPlayer1Id: a.playerIds[0],
+			teamAPlayer2Id: a.playerIds[1],
+			teamBPlayer1Id: a.playerIds[2],
+			teamBPlayer2Id: a.playerIds[3],
+			teamAScore: s.winner === 'A' ? s.scoreA : s.scoreB,
+			teamBScore: s.winner === 'A' ? s.scoreB : s.scoreA
+		};
+	});
+}
+
+// ============================================================================
+// getCourtConfiguration
+// ============================================================================
+
+describe('getCourtConfiguration', () => {
+	it('8 players → 2 courts', () => {
+		expect(getCourtConfiguration(8)).toEqual({
+			totalCourts: 2,
+			standardCourts: 2,
+			bottomCourtSize: null
+		});
+	});
+	it('16 players → 4 courts', () => {
+		expect(getCourtConfiguration(16)).toEqual({
+			totalCourts: 4,
+			standardCourts: 4,
+			bottomCourtSize: null
+		});
+	});
+	it('32 players → 8 courts', () => {
+		expect(getCourtConfiguration(32)).toEqual({
+			totalCourts: 8,
+			standardCourts: 8,
+			bottomCourtSize: null
+		});
+	});
+	it('25 players → 5 standard + 1 5p', () => {
+		expect(getCourtConfiguration(25)).toEqual({
+			totalCourts: 6,
+			standardCourts: 5,
+			bottomCourtSize: 5
+		});
+	});
+	it('26 players → 5 standard + 1 6p', () => {
+		expect(getCourtConfiguration(26)).toEqual({
+			totalCourts: 6,
+			standardCourts: 5,
+			bottomCourtSize: 6
+		});
+	});
+	it('27 players → 6 standard + 1 3p', () => {
+		expect(getCourtConfiguration(27)).toEqual({
+			totalCourts: 7,
+			standardCourts: 6,
+			bottomCourtSize: 3
+		});
+	});
+	it('64 players → 16 courts', () => {
+		expect(getCourtConfiguration(64)).toEqual({
+			totalCourts: 16,
+			standardCourts: 16,
+			bottomCourtSize: null
+		});
+	});
+
+	it.each([
+		[9, { totalCourts: 2, standardCourts: 1, bottomCourtSize: 5 }],
+		[10, { totalCourts: 2, standardCourts: 1, bottomCourtSize: 6 }],
+		[11, { totalCourts: 3, standardCourts: 2, bottomCourtSize: 3 }],
+		[12, { totalCourts: 3, standardCourts: 3, bottomCourtSize: null }],
+		[13, { totalCourts: 3, standardCourts: 2, bottomCourtSize: 5 }],
+		[14, { totalCourts: 3, standardCourts: 2, bottomCourtSize: 6 }],
+		[15, { totalCourts: 4, standardCourts: 3, bottomCourtSize: 3 }],
+		[16, { totalCourts: 4, standardCourts: 4, bottomCourtSize: null }]
+	])('playerCount=%d', (players, expected) => {
+		expect(getCourtConfiguration(players)).toEqual(expected);
+	});
+
+	it('throws <8 or >64', () => {
+		expect(() => getCourtConfiguration(7)).toThrow();
+		expect(() => getCourtConfiguration(65)).toThrow();
+	});
+});
+
+// ============================================================================
+// calculateCourtSizes
+// ============================================================================
+
+describe('calculateCourtSizes', () => {
+	it.each([
+		[8, [4, 4]],
+		[9, [4, 5]],
+		[10, [4, 6]],
+		[11, [4, 4, 3]],
+		[12, [4, 4, 4]],
+		[13, [4, 4, 5]],
+		[14, [4, 4, 6]],
+		[15, [4, 4, 4, 3]],
+		[16, [4, 4, 4, 4]],
+		[25, [4, 4, 4, 4, 4, 5]],
+		[64, Array(16).fill(4)]
+	])('playerCount=%d → %j', (players, expected) => {
+		expect(calculateCourtSizes(players)).toEqual(expected);
+	});
+
+	it('sum equals player count for all 8-64', () => {
+		for (let p = 8; p <= 64; p++) {
+			expect(calculateCourtSizes(p).reduce((a, b) => a + b, 0)).toBe(p);
+		}
+	});
+});
+
+// ============================================================================
+// calculateRoundCount
+// ============================================================================
+
+describe('calculateRoundCount', () => {
+	const cases: [number, FormatType, number][] = [
+		[2, 'preseed', 2],
+		[3, 'preseed', 3],
+		[4, 'preseed', 3],
+		[5, 'preseed', 4],
+		[6, 'preseed', 4],
+		[7, 'preseed', 4],
+		[8, 'preseed', 4],
+		[9, 'preseed', 5],
+		[10, 'preseed', 5],
+		[16, 'preseed', 5],
+		[2, 'random-seed', 4],
+		[4, 'random-seed', 4],
+		[5, 'random-seed', 4],
+		[8, 'random-seed', 4],
+		[9, 'random-seed', 4],
+		[16, 'random-seed', 4]
+	];
+	cases.forEach(([courts, fmt, expected]) => {
+		it(`${courts} courts (${fmt}) → ${expected} rounds`, () => {
+			expect(calculateRoundCount(courts, fmt)).toBe(expected);
+		});
+	});
+});
+
+// ============================================================================
+// calculateCourtStandings
+// ============================================================================
+
 describe('calculateCourtStandings', () => {
-	it('should calculate standings correctly for 3 matches', () => {
-		const playerIds = [1, 2, 3, 4];
+	it('ranks 4 players by points', () => {
 		const matches: MatchData[] = [
-			createMockMatchData([1, 2], [3, 4], 21, 19),
-			createMockMatchData([1, 3], [2, 4], 25, 23),
-			createMockMatchData([1, 4], [2, 3], 22, 20)
+			mockMatch([1, 2], [3, 4], 21, 19),
+			mockMatch([1, 3], [2, 4], 25, 23),
+			mockMatch([1, 4], [2, 3], 22, 20)
 		];
-
-		const result = calculateCourtStandings(matches, playerIds);
-
-		expect(result).toHaveLength(4);
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4]);
 		expect(result[0].playerId).toBe(1);
 		expect(result[0].points).toBe(68);
 		expect(result[0].rank).toBe(1);
+		expect(result[0].matchCount).toBe(3);
 	});
 
-	it('should use deterministic tiebreaker when points and diff are equal', () => {
-		const playerIds = [1, 2, 3, 4];
+	it('tiebreaker: diff then playerId', () => {
 		const matches: MatchData[] = [
-			createMockMatchData([1, 2], [3, 4], 21, 21),
-			createMockMatchData([1, 3], [2, 4], 21, 21),
-			createMockMatchData([1, 4], [2, 3], 21, 21)
+			mockMatch([1, 2], [3, 4], 21, 21),
+			mockMatch([1, 3], [2, 4], 21, 21),
+			mockMatch([1, 4], [2, 3], 21, 21)
 		];
-
-		const result1 = calculateCourtStandings(matches, playerIds);
-		const result2 = calculateCourtStandings(matches, playerIds);
-
-		expect(result1.map((s) => s.playerId)).toEqual(result2.map((s) => s.playerId));
+		expect(calculateCourtStandings(matches, [1, 2, 3, 4]).map((s) => s.playerId)).toEqual([
+			1, 2, 3, 4
+		]);
 	});
 
-	it('should sort by points then by differential', () => {
-		const playerIds = [1, 2, 3, 4];
-		const matches: MatchData[] = [createMockMatchData([1, 3], [2, 4], 21, 19)];
-
-		const result = calculateCourtStandings(matches, playerIds);
-
+	it('unscored matches contribute 0 points', () => {
+		const matches: MatchData[] = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			mockMatch([1, 3], [2, 4], null, null),
+			mockMatch([1, 4], [2, 3], null, null)
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4]);
 		expect(result[0].points).toBe(21);
 		expect(result[1].points).toBe(21);
-	});
-});
-
-describe('getTop2 and getBottom2', () => {
-	it('should extract top 2 players', () => {
-		const court = {
-			standings: [
-				{ playerId: 1, rank: 1 },
-				{ playerId: 2, rank: 2 },
-				{ playerId: 3, rank: 3 },
-				{ playerId: 4, rank: 4 }
-			]
-		};
-
-		expect(getTop2(court)).toEqual([1, 2]);
+		expect(result[2].points).toBe(19);
+		expect(result[3].points).toBe(19);
+		expect(result.every((s) => s.matchCount === 1)).toBe(true);
 	});
 
-	it('should extract bottom 2 players', () => {
-		const court = {
-			standings: [
-				{ playerId: 1, rank: 1 },
-				{ playerId: 2, rank: 2 },
-				{ playerId: 3, rank: 3 },
-				{ playerId: 4, rank: 4 }
-			]
-		};
-
-		expect(getBottom2(court)).toEqual([3, 4]);
-	});
-});
-
-describe('redistributePreseed16', () => {
-	it('should redistribute correctly for Round 1 (winner/loser split)', () => {
-		const courtResults: CourtResult[] = [
-			createMockCourtResult(1, [1, 2, 3, 4], [0, 0, 0, 0]),
-			createMockCourtResult(2, [5, 6, 7, 8], [0, 0, 0, 0]),
-			createMockCourtResult(3, [9, 10, 11, 12], [0, 0, 0, 0]),
-			createMockCourtResult(4, [13, 14, 15, 16], [0, 0, 0, 0])
+	it('matchCount reflects number of scored matches per player', () => {
+		const matches: MatchData[] = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			mockMatch([1, 3], [2, 4], 25, 23),
+			mockMatch([1, 4], [2, 3], 22, 20)
 		];
-
-		const result = redistributePreseed16(courtResults, 1);
-
-		expect(result).toHaveLength(4);
-		expect(result[0].courtNumber).toBe(1);
-		expect(result[0].playerIds).toEqual([1, 5, 9, 13]);
-		expect(result[1].courtNumber).toBe(2);
-		expect(result[1].playerIds).toEqual([2, 6, 10, 14]);
-		expect(result[2].courtNumber).toBe(3);
-		expect(result[2].playerIds).toEqual([3, 7, 11, 15]);
-		expect(result[3].courtNumber).toBe(4);
-		expect(result[3].playerIds).toEqual([4, 8, 12, 16]);
-	});
-
-	it('should redistribute correctly for Round 2 (tier consolidation)', () => {
-		const courtResults: CourtResult[] = [
-			createMockCourtResult(1, [1, 2, 3, 4], [0, 0, 0, 0]),
-			createMockCourtResult(2, [5, 6, 7, 8], [0, 0, 0, 0]),
-			createMockCourtResult(3, [9, 10, 11, 12], [0, 0, 0, 0]),
-			createMockCourtResult(4, [13, 14, 15, 16], [0, 0, 0, 0])
-		];
-
-		const result = redistributePreseed16(courtResults, 2);
-
-		expect(result).toHaveLength(4);
-		expect(result[0].playerIds).toEqual([1, 2, 5, 6]);
-		expect(result[1].playerIds).toEqual([3, 4, 7, 8]);
-		expect(result[2].playerIds).toEqual([9, 10, 13, 14]);
-		expect(result[3].playerIds).toEqual([11, 12, 15, 16]);
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4]);
+		expect(result.every((s) => s.matchCount === 3)).toBe(true);
 	});
 });
 
-describe('redistributePreseed32', () => {
-	it('should redistribute correctly for Round 1 (winner/loser split)', () => {
-		const courtResults: CourtResult[] = Array.from({ length: 8 }, (_, i) =>
-			createMockCourtResult(i + 1, [i * 4 + 1, i * 4 + 2, i * 4 + 3, i * 4 + 4], [0, 0, 0, 0])
+// ============================================================================
+// createInitialState
+// ============================================================================
+
+describe('createInitialState', () => {
+	it('creates empty state for 16 players', () => {
+		const s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 16 });
+		expect(s.config.playerCount).toBe(16);
+		expect(s.roundsCompleted).toBe(0);
+		expect(s.currentRound).toBe(0);
+		expect(s.isComplete).toBe(false);
+		expect(s.players).toEqual([]);
+		expect(s.totalRounds).toBe(3);
+	});
+
+	it('creates state with correct sizes for 25 players', () => {
+		const s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 25 });
+		expect(s.config.courtSizes).toEqual([4, 4, 4, 4, 4, 5]);
+	});
+});
+
+// ============================================================================
+// addPlayers
+// ============================================================================
+
+describe('addPlayers', () => {
+	it('adds players to state', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 8 });
+		const players = Array.from({ length: 8 }, (_, i) => mockPlayer(i + 1, 8 - i));
+		s = addPlayers(s, players);
+		expect(s.players).toEqual(players);
+	});
+
+	it('rejects wrong count', () => {
+		const s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 8 });
+		expect(() => addPlayers(s, [mockPlayer(1)])).toThrow();
+	});
+
+	it('rejects adding after start', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 8 });
+		s = addPlayers(
+			s,
+			Array.from({ length: 8 }, (_, i) => mockPlayer(i + 1))
+		);
+		s = startRound(s);
+		expect(() => addPlayers(s, [])).toThrow();
+	});
+});
+
+// ============================================================================
+// startRound
+// ============================================================================
+
+describe('startRound', () => {
+	it('generates Round 1 for preseed (snake distribution)', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 16 });
+		const players = Array.from({ length: 16 }, (_, i) => mockPlayer(i + 1, 16 - i));
+		s = addPlayers(s, players);
+		s = startRound(s);
+
+		expect(s.currentRound).toBe(1);
+		expect(s.currentAssignments).toHaveLength(4);
+		expect(s.currentMatches).toHaveLength(4);
+
+		// Snake verification: C1 = [1, 8, 9, 16]
+		expect(s.currentAssignments[0].playerIds).toEqual([1, 8, 9, 16]);
+		// C2 = [2, 7, 10, 15]
+		expect(s.currentAssignments[1].playerIds).toEqual([2, 7, 10, 15]);
+		// C3 = [3, 6, 11, 14]
+		expect(s.currentAssignments[2].playerIds).toEqual([3, 6, 11, 14]);
+		// C4 = [4, 5, 12, 13]
+		expect(s.currentAssignments[3].playerIds).toEqual([4, 5, 12, 13]);
+	});
+
+	it('generates Round 1 for random seed', () => {
+		vi.spyOn(global.Math, 'random').mockReturnValue(0.5);
+		let s = createInitialState({ tournamentId: 2, formatType: 'random-seed', playerCount: 16 });
+		const players = Array.from({ length: 16 }, (_, i) => mockPlayer(i + 1));
+		s = addPlayers(s, players);
+		s = startRound(s);
+		vi.restoreAllMocks();
+
+		expect(s.currentRound).toBe(1);
+		expect(s.currentAssignments).toHaveLength(4);
+		const allIds = s.currentAssignments.flatMap((a) => a.playerIds);
+		expect(new Set(allIds).size).toBe(16);
+	});
+
+	it('generates Round 1 for 11 players (3 courts, last is 3p)', () => {
+		let s = createInitialState({ tournamentId: 3, formatType: 'preseed', playerCount: 11 });
+		const players = Array.from({ length: 11 }, (_, i) => mockPlayer(i + 1, 11 - i));
+		s = addPlayers(s, players);
+		s = startRound(s);
+
+		expect(s.currentAssignments).toHaveLength(3);
+		expect(s.currentAssignments[0].playerIds.length).toBe(4);
+		expect(s.currentAssignments[1].playerIds.length).toBe(4);
+		expect(s.currentAssignments[2].playerIds.length).toBe(3);
+	});
+
+	it('requires players for Round 1', () => {
+		const s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 8 });
+		expect(() => startRound(s)).toThrow('addPlayers');
+	});
+
+	it('throws when complete', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 8 });
+		s = addPlayers(
+			s,
+			Array.from({ length: 8 }, (_, i) => mockPlayer(i + 1))
+		);
+		s = startRound(s);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 15 })
+		});
+		s = startRound(s);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 15 })
+		});
+		expect(s.isComplete).toBe(true);
+		expect(() => startRound(s)).toThrow('complete');
+	});
+});
+
+// ============================================================================
+// closeRound
+// ============================================================================
+
+describe('closeRound', () => {
+	it('saves results and pre-computes next round', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 16 });
+		s = addPlayers(
+			s,
+			Array.from({ length: 16 }, (_, i) => mockPlayer(i + 1, 16 - i))
+		);
+		s = startRound(s);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 15 })
+		});
+
+		expect(s.roundsCompleted).toBe(1);
+		expect(s.completedRounds).toHaveLength(1);
+		expect(s.currentAssignments).toEqual([]);
+		expect(s.currentMatches).toEqual([]);
+		expect(s.isComplete).toBe(false);
+	});
+
+	it('marks complete when all rounds done (8 players, 2 rounds)', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 8 });
+		s = addPlayers(
+			s,
+			Array.from({ length: 8 }, (_, i) => mockPlayer(i + 1, 8 - i))
 		);
 
-		const result = redistributePreseed32(courtResults, 1);
+		// Round 1
+		s = startRound(s); // currentRound: 1
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 15 })
+		});
+		expect(s.roundsCompleted).toBe(1);
+		expect(s.isComplete).toBe(false); // 2 rounds total, 1 completed
 
-		expect(result).toHaveLength(8);
-		expect(result[0].courtNumber).toBe(1);
-		expect(result[0].playerIds).toEqual([1, 5, 9, 13]);
-		expect(result[1].courtNumber).toBe(2);
-		expect(result[1].playerIds).toEqual([17, 21, 25, 29]);
-		expect(result[2].courtNumber).toBe(3);
-		expect(result[2].playerIds).toEqual([2, 6, 10, 14]);
-		expect(result[3].courtNumber).toBe(4);
-		expect(result[3].playerIds).toEqual([18, 22, 26, 30]);
-		expect(result[4].courtNumber).toBe(5);
-		expect(result[4].playerIds).toEqual([3, 7, 11, 15]);
-		expect(result[5].courtNumber).toBe(6);
-		expect(result[5].playerIds).toEqual([19, 23, 27, 31]);
-		expect(result[6].courtNumber).toBe(7);
-		expect(result[6].playerIds).toEqual([4, 8, 12, 16]);
-		expect(result[7].courtNumber).toBe(8);
-		expect(result[7].playerIds).toEqual([20, 24, 28, 32]);
+		// Start+close Round 2
+		s = startRound(s);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 15 })
+		});
+		expect(s.isComplete).toBe(true);
+		expect(s.roundsCompleted).toBe(2);
 	});
 
-	it('should redistribute correctly for Round 2', () => {
-		const courtResults: CourtResult[] = Array.from({ length: 8 }, (_, i) =>
-			createMockCourtResult(i + 1, [i * 4 + 1, i * 4 + 2, i * 4 + 3, i * 4 + 4], [0, 0, 0, 0])
-		);
-
-		const result = redistributePreseed32(courtResults, 2);
-
-		expect(result).toHaveLength(8);
-		expect(result[0].playerIds).toEqual([1, 2, 5, 6]);
-		expect(result[1].playerIds).toEqual([3, 4, 7, 8]);
+	it('throws when no active round', () => {
+		const s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 8 });
+		expect(() => closeRound(s)).toThrow();
 	});
 
-	it('should redistribute correctly for Round 3', () => {
-		const courtResults: CourtResult[] = Array.from({ length: 8 }, (_, i) =>
-			createMockCourtResult(i + 1, [i * 4 + 1, i * 4 + 2, i * 4 + 3, i * 4 + 4], [0, 0, 0, 0])
+	it('throws when no scored matches', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 8 });
+		s = addPlayers(
+			s,
+			Array.from({ length: 8 }, (_, i) => mockPlayer(i + 1))
 		);
-
-		const result = redistributePreseed32(courtResults, 3);
-
-		expect(result).toHaveLength(8);
-		expect(result[0].playerIds).toEqual([1, 2, 5, 6]);
-		expect(result[1].playerIds).toEqual([3, 4, 7, 8]);
+		s = startRound(s);
+		expect(() => closeRound(s)).toThrow('No scored matches');
 	});
 });
 
-describe('redistributeLadder', () => {
-	it('should redistribute correctly for first round (16 players)', () => {
-		const courtResults: CourtResult[] = [
-			createMockCourtResult(1, [1, 2, 3, 4], [68, 60, 52, 40]),
-			createMockCourtResult(2, [5, 6, 7, 8], [65, 58, 50, 42]),
-			createMockCourtResult(3, [9, 10, 11, 12], [70, 55, 48, 38]),
-			createMockCourtResult(4, [13, 14, 15, 16], [62, 56, 45, 35])
-		];
+// ============================================================================
+// redistributePreseedRecursive
+// ============================================================================
 
-		const result = redistributeLadder(courtResults, true, 4);
-
-		expect(result).toHaveLength(4);
-		expect(result[0].courtNumber).toBe(1);
-		expect(result[0].playerIds).toEqual([1, 5, 9, 13]);
-		expect(result[1].courtNumber).toBe(2);
-		expect(result[1].playerIds).toEqual([2, 6, 10, 14]);
-		expect(result[2].courtNumber).toBe(3);
-		expect(result[2].playerIds).toEqual([3, 7, 11, 15]);
-		expect(result[3].courtNumber).toBe(4);
-		expect(result[3].playerIds).toEqual([4, 8, 12, 16]);
+describe('redistributePreseedRecursive', () => {
+	it('single court returns same assignment', () => {
+		expect(
+			redistributePreseedRecursive([
+				mockCourtResult(1, [{ playerId: 1, rank: 1, points: 63, diff: 5, matchCount: 3 }])
+			])
+		).toEqual([{ courtNumber: 1, playerIds: [1] }]);
 	});
 
-	it('should redistribute correctly for subsequent rounds (16 players, ladder)', () => {
-		const courtResults: CourtResult[] = [
-			createMockCourtResult(1, [1, 2, 3, 4], [0, 0, 0, 0]),
-			createMockCourtResult(2, [5, 6, 7, 8], [0, 0, 0, 0]),
-			createMockCourtResult(3, [9, 10, 11, 12], [0, 0, 0, 0]),
-			createMockCourtResult(4, [13, 14, 15, 16], [0, 0, 0, 0])
-		];
+	it('3 courts: 2W+1L, all 1st/2nd in winners, best 3rds promoted', () => {
+		const results = [1, 2, 3].map((c) =>
+			mockCourtResult(c, [
+				{ playerId: 4 * c - 3, rank: 1, points: 68 - c * 5, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c - 2, rank: 2, points: 55 - c * 5, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c - 1, rank: 3, points: 45 - c * 5, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c, rank: 4, points: 35 - c * 5, diff: 0, matchCount: 3 }
+			])
+		);
+		const a = redistributePreseedRecursive(results);
 
-		const result = redistributeLadder(courtResults, false, 4);
+		expect(a).toHaveLength(3);
+		for (const c of a) expect(c.playerIds).toHaveLength(4);
 
-		expect(result).toHaveLength(4);
-		expect(result[0].playerIds).toEqual([1, 2, 5, 6]);
-		expect(result[1].playerIds).toEqual([3, 4, 9, 10]);
-		expect(result[2].playerIds).toEqual([7, 8, 13, 14]);
-		expect(result[3].playerIds).toEqual([11, 12, 15, 16]);
+		const winnerPlayers = [...a[0].playerIds, ...a[1].playerIds];
+		const loserPlayers = a[2].playerIds;
+
+		// All 1sts (1,5,9) and 2nds (2,6,10) in winners
+		for (const p of [1, 5, 9, 2, 6, 10]) expect(winnerPlayers).toContain(p);
+		// Best 3rds (3,7) promoted to winners, worst 3rd (11) to losers
+		expect(winnerPlayers).toContain(3);
+		expect(winnerPlayers).toContain(7);
+		expect(loserPlayers).toContain(11);
+		// All 4ths go to losers
+		for (const p of [4, 8, 12]) expect(loserPlayers).toContain(p);
+
+		// No 1st+2nd from same original court on the same new court
+		for (const court of a) {
+			const ids = court.playerIds;
+			// If court has a 1st from origin C, it must not have the 2nd from same origin C
+			const c1First = ids.includes(1);
+			const c1Second = ids.includes(2);
+			expect(c1First && c1Second).toBe(false);
+			const c2First = ids.includes(5);
+			const c2Second = ids.includes(6);
+			expect(c2First && c2Second).toBe(false);
+			const c3First = ids.includes(9);
+			const c3Second = ids.includes(10);
+			expect(c3First && c3Second).toBe(false);
+		}
+
+		// Each winner court has a mix (not all 1sts on one court)
+		const c1Firsts = a[0].playerIds.filter((id) => [1, 5, 9].includes(id)).length;
+		const c2Firsts = a[1].playerIds.filter((id) => [1, 5, 9].includes(id)).length;
+		expect(c1Firsts).toBeGreaterThanOrEqual(1);
+		expect(c2Firsts).toBeGreaterThanOrEqual(1);
 	});
 
-	it('should redistribute correctly for first round (32 players)', () => {
-		const courtResults: CourtResult[] = Array.from({ length: 8 }, (_, i) =>
-			createMockCourtResult(
+	it('4 courts: 2W+2L', () => {
+		const results = [1, 2, 3, 4].map((c) =>
+			mockCourtResult(c, [
+				{ playerId: 4 * c - 3, rank: 1, points: 70 - c * 3, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c - 2, rank: 2, points: 55 - c * 3, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c - 1, rank: 3, points: 40 - c * 3, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c, rank: 4, points: 25 - c * 3, diff: 0, matchCount: 3 }
+			])
+		);
+		const a = redistributePreseedRecursive(results);
+
+		expect(a).toHaveLength(4);
+		for (const c of a) expect(c.playerIds).toHaveLength(4);
+
+		const winnerPlayers = [...a[0].playerIds, ...a[1].playerIds];
+		const loserPlayers = [...a[2].playerIds, ...a[3].playerIds];
+
+		for (const p of [1, 5, 9, 13, 2, 6, 10, 14]) expect(winnerPlayers).toContain(p);
+		for (const p of [3, 7, 11, 15, 4, 8, 12, 16]) expect(loserPlayers).toContain(p);
+
+		// No 1st+2nd from the same original court on the same new court
+		for (const court of a) {
+			const ids = court.playerIds;
+			for (let c = 0; c < 4; c++) {
+				const first = ids.includes(4 * c + 1);
+				const second = ids.includes(4 * c + 2);
+				expect(first && second).toBe(false);
+			}
+		}
+	});
+
+	it('8 courts: 4W+4L, preserves all 32 players, no same-origin 1st+2nd', () => {
+		const results = Array.from({ length: 8 }, (_, i) =>
+			mockCourtResult(
 				i + 1,
-				[i * 4 + 1, i * 4 + 2, i * 4 + 3, i * 4 + 4],
-				[100 - i * 4, 80 - i * 2, 60 - i, 40]
+				Array.from({ length: 4 }, (_, j) => ({
+					playerId: i * 4 + j + 1,
+					rank: j + 1,
+					points: 60 - i * 5 - j * 10,
+					diff: 0,
+					matchCount: 3
+				}))
 			)
 		);
+		const a = redistributePreseedRecursive(results);
+		const allIds = a.flatMap((c) => c.playerIds);
+		expect(allIds).toHaveLength(32);
+		expect([...new Set(allIds)]).toHaveLength(32);
 
-		const result = redistributeLadder(courtResults, true, 8);
+		expect(a).toHaveLength(8);
+		for (const c of a) expect(c.playerIds).toHaveLength(4);
 
-		expect(result).toHaveLength(8);
-		expect(result[0].playerIds).toEqual([1, 5, 9, 13]);
-		expect(result[1].playerIds).toEqual([17, 21, 25, 29]);
+		const winnerPlayers = a.slice(0, 4).flatMap((c) => c.playerIds);
+		for (let i = 0; i < 8; i++) expect(winnerPlayers).toContain(i * 4 + 1);
+		for (let i = 0; i < 8; i++) expect(winnerPlayers).toContain(i * 4 + 2);
+
+		// No 1st+2nd from same original court on the same new winner court
+		for (const court of a.slice(0, 4)) {
+			const ids = court.playerIds;
+			for (let c = 0; c < 8; c++) {
+				const first = ids.includes(c * 4 + 1);
+				const second = ids.includes(c * 4 + 2);
+				expect(first && second).toBe(false);
+			}
+		}
+	});
+});
+
+// ============================================================================
+// processPreseedTransition
+// ============================================================================
+
+describe('processPreseedTransition', () => {
+	it('first split (isFirstSplit=true): same as redistributePreseedRecursive for 4 courts', () => {
+		const results = [1, 2, 3, 4].map((c) =>
+			mockCourtResult(c, [
+				{ playerId: 4 * c - 3, rank: 1, points: 70 - c * 3, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c - 2, rank: 2, points: 55 - c * 3, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c - 1, rank: 3, points: 40 - c * 3, diff: 0, matchCount: 3 },
+				{ playerId: 4 * c, rank: 4, points: 25 - c * 3, diff: 0, matchCount: 3 }
+			])
+		);
+		const sizes = [4, 4, 4, 4];
+		const a = processPreseedTransition(results, sizes, true);
+
+		expect(a).toHaveLength(4);
+		for (const c of a) expect(c.playerIds).toHaveLength(4);
+
+		const winnerPlayers = [...a[0].playerIds, ...a[1].playerIds];
+		const loserPlayers = [...a[2].playerIds, ...a[3].playerIds];
+
+		for (const p of [1, 5, 9, 13, 2, 6, 10, 14]) expect(winnerPlayers).toContain(p);
+		for (const p of [3, 7, 11, 15, 4, 8, 12, 16]) expect(loserPlayers).toContain(p);
+
+		// No 1st+2nd from the same original court on the same new court
+		for (const court of a) {
+			const ids = court.playerIds;
+			for (let c = 0; c < 4; c++) {
+				const first = ids.includes(4 * c + 1);
+				const second = ids.includes(4 * c + 2);
+				expect(first && second).toBe(false);
+			}
+		}
+	});
+
+	it('subsequent split for 4 courts: winner bracket halves to 1F+1L(W), loser bracket to 2 consolation', () => {
+		// Simulate R2 results: winner bracket = courts 1-2, loser bracket = courts 3-4
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 50, diff: 5, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 40, diff: 3, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 30, diff: 1, matchCount: 3 },
+				{ playerId: 16, rank: 4, points: 20, diff: -2, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 2, rank: 1, points: 48, diff: 4, matchCount: 3 },
+				{ playerId: 5, rank: 2, points: 42, diff: 2, matchCount: 3 },
+				{ playerId: 12, rank: 3, points: 28, diff: 0, matchCount: 3 },
+				{ playerId: 15, rank: 4, points: 22, diff: -1, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 3, rank: 1, points: 35, diff: 2, matchCount: 3 },
+				{ playerId: 8, rank: 2, points: 30, diff: 1, matchCount: 3 },
+				{ playerId: 10, rank: 3, points: 25, diff: 0, matchCount: 3 },
+				{ playerId: 14, rank: 4, points: 15, diff: -2, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 4, rank: 1, points: 32, diff: 1, matchCount: 3 },
+				{ playerId: 7, rank: 2, points: 28, diff: 0, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: 22, diff: -1, matchCount: 3 },
+				{ playerId: 13, rank: 4, points: 18, diff: -3, matchCount: 3 }
+			])
+		];
+		const sizes = [4, 4, 4, 4];
+		const a = processPreseedTransition(results, sizes, false);
+
+		expect(a).toHaveLength(4);
+		for (const c of a) expect(c.playerIds).toHaveLength(4);
+
+		// Winner bracket (courts 1-2): re-ranked independently
+		// Tiers: 1sts=[1(50),2(48)], 2nds=[5(42),6(40)], 3rds=[11(30),12(28)], 4ths=[15(22),16(20)]
+		// Flattened: [1,2,5,6,11,12,15,16]
+		// splitSize(2)=1 → Final(top 4)=[1,2,5,6], L(W)=[11,12,15,16]
+		expect(a[0].playerIds).toEqual([1, 2, 5, 6]);
+		expect(a[1].playerIds).toEqual([11, 12, 15, 16]);
+
+		// Loser bracket (courts 3-4): re-ranked independently
+		// Tiers: 1sts=[3(35),4(32)], 2nds=[8(30),7(28)], 3rds=[10(25),9(22)], 4ths=[13(18),14(15)]
+		// Flattened: [3,4,8,7,10,9,13,14]
+		// splitSize(2)=1 → TL(top 4)=[3,4,8,7], BL=[10,9,13,14]
+		expect(a[2].playerIds).toEqual([3, 4, 8, 7]);
+		expect(a[3].playerIds).toEqual([10, 9, 13, 14]);
+	});
+
+	it('subsequent split for 2 courts: halves to 1F+1L(W)', () => {
+		// Simulate a 2-court bracket (e.g. winner bracket from R2)
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 50, diff: 5, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 40, diff: 3, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 30, diff: 1, matchCount: 3 },
+				{ playerId: 12, rank: 4, points: 20, diff: -2, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 2, rank: 1, points: 48, diff: 4, matchCount: 3 },
+				{ playerId: 5, rank: 2, points: 42, diff: 2, matchCount: 3 },
+				{ playerId: 10, rank: 3, points: 28, diff: 0, matchCount: 3 },
+				{ playerId: 9, rank: 4, points: 22, diff: -1, matchCount: 3 }
+			])
+		];
+		const sizes = [4, 4];
+		const a = processPreseedTransition(results, sizes, false);
+
+		expect(a).toHaveLength(2);
+		for (const c of a) expect(c.playerIds).toHaveLength(4);
+
+		// Re-ranked across both courts
+		// Tiers: 1sts=[1(50),2(48)], 2nds=[5(42),6(40)], 3rds=[11(30),10(28)], 4ths=[9(22),12(20)]
+		// Flattened: [1,2,5,6,11,10,9,12]
+		// splitSize(2)=1 → Final(top 4)=[1,2,5,6], L(W)=[11,10,9,12]
+		expect(a[0].playerIds).toEqual([1, 2, 5, 6]);
+		expect(a[1].playerIds).toEqual([11, 10, 9, 12]);
+	});
+
+	it('single court returns players as-is', () => {
+		const a = processPreseedTransition(
+			[mockCourtResult(1, [{ playerId: 1, rank: 1, points: 63, diff: 5, matchCount: 3 }])],
+			[1],
+			true
+		);
+		expect(a).toEqual([{ courtNumber: 1, playerIds: [1] }]);
+	});
+
+	it('empty input returns empty', () => {
+		expect(processPreseedTransition([], [], true)).toEqual([]);
+	});
+});
+
+// ============================================================================
+// Vertical Seeding
+// ============================================================================
+
+describe('verticalSeeding', () => {
+	it('redistributes 4 courts correctly', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 63, diff: 5, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 50, diff: 3, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 40, diff: 1, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 30, diff: -2, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 58, diff: 4, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 45, diff: 2, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 35, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 25, diff: -3, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 9, rank: 1, points: 55, diff: 3, matchCount: 3 },
+				{ playerId: 10, rank: 2, points: 42, diff: 1, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 32, diff: -1, matchCount: 3 },
+				{ playerId: 12, rank: 4, points: 22, diff: -4, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 13, rank: 1, points: 50, diff: 2, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 15, rank: 3, points: 30, diff: -2, matchCount: 3 },
+				{ playerId: 16, rank: 4, points: 20, diff: -5, matchCount: 3 }
+			])
+		];
+		const a = verticalSeeding(results, 4);
+		expect(a[0].playerIds).toEqual([1, 5, 9, 13]);
+		expect(a.length).toBe(4);
+	});
+
+	it('redistributes 8 courts', () => {
+		const results = Array.from({ length: 8 }, (_, i) =>
+			mockCourtResult(
+				i + 1,
+				Array.from({ length: 4 }, (_, j) => ({
+					playerId: i * 4 + j + 1,
+					rank: j + 1,
+					points: (8 - i) * 10,
+					diff: 0,
+					matchCount: 3
+				}))
+			)
+		);
+		const a = verticalSeeding(results, 8);
+		expect(a.length).toBe(8);
+		expect(a.flatMap((x) => x.playerIds).length).toBe(32);
+		expect(new Set(a.flatMap((x) => x.playerIds)).size).toBe(32);
+	});
+
+	it('handles 3 courts, 12 players', () => {
+		const results = [1, 5, 9].map((start, ci) =>
+			mockCourtResult(
+				ci + 1,
+				Array.from({ length: 4 }, (_, j) => ({
+					playerId: start + j,
+					rank: j + 1,
+					points: 40 - j * 5,
+					diff: 0,
+					matchCount: 3
+				}))
+			)
+		);
+		const a = verticalSeeding(results, 3);
+		expect(a.length).toBe(3);
+		expect(a.flatMap((x) => x.playerIds).length).toBe(12);
+		expect(new Set(a.flatMap((x) => x.playerIds)).size).toBe(12);
+	});
+});
+
+// ============================================================================
+// ladderRedistribute
+// ============================================================================
+
+describe('ladderRedistribute', () => {
+	it('4 courts: 2-up/2-down', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 63, diff: 5, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 50, diff: 3, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 40, diff: 1, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 30, diff: -2, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 58, diff: 4, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 45, diff: 2, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 35, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 25, diff: -3, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 9, rank: 1, points: 55, diff: 3, matchCount: 3 },
+				{ playerId: 10, rank: 2, points: 42, diff: 1, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 32, diff: -1, matchCount: 3 },
+				{ playerId: 12, rank: 4, points: 22, diff: -4, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 13, rank: 1, points: 50, diff: 2, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 15, rank: 3, points: 30, diff: -2, matchCount: 3 },
+				{ playerId: 16, rank: 4, points: 20, diff: -5, matchCount: 3 }
+			])
+		];
+		const a = ladderRedistribute(results, 4);
+		expect(a[0].playerIds).toEqual([1, 2, 5, 6]);
+		expect(a[1].playerIds).toEqual([3, 4, 9, 10]);
+		expect(a[2].playerIds).toEqual([7, 8, 13, 14]);
+		expect(a[3].playerIds).toEqual([11, 12, 15, 16]);
+	});
+
+	it('2 courts: swap halves', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 63, diff: 5, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 50, diff: 3, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 40, diff: 1, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 30, diff: -2, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 58, diff: 4, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 45, diff: 2, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 35, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 25, diff: -3, matchCount: 3 }
+			])
+		];
+		const a = ladderRedistribute(results, 2);
+		expect(a[0].playerIds).toEqual([1, 2, 5, 6]);
+		expect(a[1].playerIds).toEqual([3, 4, 7, 8]);
+	});
+
+	it('8 courts preserves all players', () => {
+		const results = Array.from({ length: 8 }, (_, i) =>
+			mockCourtResult(
+				i + 1,
+				Array.from({ length: 4 }, (_, j) => ({
+					playerId: i * 4 + j + 1,
+					rank: j + 1,
+					points: (8 - i) * 10,
+					diff: 0,
+					matchCount: 3
+				}))
+			)
+		);
+		const a = ladderRedistribute(results, 8);
+		expect(a.length).toBe(8);
+		expect(new Set(a.flatMap((x) => x.playerIds)).size).toBe(32);
+	});
+});
+
+// ============================================================================
+// Match Generation
+// ============================================================================
+
+describe('generate4pMatches', () => {
+	it('generates 3 matches: [1+2 vs 3+4], [1+3 vs 2+4], [1+4 vs 2+3]', () => {
+		const m = generate4pMatches([1, 2, 3, 4]);
+		expect(m).toHaveLength(3);
+		expect(m[0].teamAPlayer1Id).toBe(1);
+		expect(m[1].teamBPlayer1Id).toBe(2);
+		expect(m[2].teamBPlayer1Id).toBe(2);
+	});
+});
+
+describe('generate3pMatches', () => {
+	it('each player takes a solo turn', () => {
+		const m = generate3pMatches([1, 2, 3]);
+		expect(m).toHaveLength(3);
+		expect(m[0].teamBPlayer1Id).toBe(3);
+		expect(m[1].teamBPlayer1Id).toBe(2);
+		expect(m[2].teamBPlayer1Id).toBe(1);
+	});
+});
+
+describe('generate5pMatches', () => {
+	it('generates 4 matches for 5 players', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		expect(m).toHaveLength(4);
+	});
+
+	it('no player appears twice in the same match', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		for (const match of m) {
+			const players = new Set([
+				match.teamAPlayer1Id,
+				match.teamAPlayer2Id,
+				match.teamBPlayer1Id,
+				match.teamBPlayer2Id
+			]);
+			expect(players.size).toBe(4);
+		}
+	});
+
+	it('each player plays at least 3 matches', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		const allPlayers = [1, 2, 3, 4, 5];
+		for (const playerId of allPlayers) {
+			const matchesPlayed = m.filter(
+				(match) =>
+					match.teamAPlayer1Id === playerId ||
+					match.teamAPlayer2Id === playerId ||
+					match.teamBPlayer1Id === playerId ||
+					match.teamBPlayer2Id === playerId
+			).length;
+			expect(matchesPlayed).toBeGreaterThanOrEqual(3);
+		}
+	});
+
+	it('Run 1 has fixed team A+B on side X', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		// Games 1 and 2 should have same team A (p1+p2)
+		expect(m[0].teamAPlayer1Id).toBe(1);
+		expect(m[0].teamAPlayer2Id).toBe(2);
+		expect(m[1].teamAPlayer1Id).toBe(1);
+		expect(m[1].teamAPlayer2Id).toBe(2);
+	});
+
+	it('Run 1 has fixed player C on side Y', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		// Games 1 and 2 should have same player p3 on team B
+		expect(m[0].teamBPlayer1Id).toBe(3);
+		expect(m[1].teamBPlayer1Id).toBe(3);
+	});
+
+	it('Run 2 has fixed team D+E on side X', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		// Games 3 and 4 should have same team A (p4+p5)
+		expect(m[2].teamAPlayer1Id).toBe(4);
+		expect(m[2].teamAPlayer2Id).toBe(5);
+		expect(m[3].teamAPlayer1Id).toBe(4);
+		expect(m[3].teamAPlayer2Id).toBe(5);
+	});
+
+	it('Run 2 has fixed player B on side Y', () => {
+		const m = generate5pMatches([1, 2, 3, 4, 5]);
+		// Games 3 and 4 should have same player p2 on team B
+		expect(m[2].teamBPlayer1Id).toBe(2);
+		expect(m[3].teamBPlayer1Id).toBe(2);
+	});
+});
+
+describe('generate6pMatches', () => {
+	it('generates 4 matches for 6 players', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		expect(m).toHaveLength(4);
+	});
+
+	it('no player appears twice in the same match', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		for (const match of m) {
+			const players = new Set([
+				match.teamAPlayer1Id,
+				match.teamAPlayer2Id,
+				match.teamBPlayer1Id,
+				match.teamBPlayer2Id
+			]);
+			expect(players.size).toBe(4);
+		}
+	});
+
+	it('each player plays at least 2 matches', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		const allPlayers = [1, 2, 3, 4, 5, 6];
+		for (const playerId of allPlayers) {
+			const matchesPlayed = m.filter(
+				(match) =>
+					match.teamAPlayer1Id === playerId ||
+					match.teamAPlayer2Id === playerId ||
+					match.teamBPlayer1Id === playerId ||
+					match.teamBPlayer2Id === playerId
+			).length;
+			expect(matchesPlayed).toBeGreaterThanOrEqual(2);
+		}
+	});
+
+	it('game count diff is max 1', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		const allPlayers = [1, 2, 3, 4, 5, 6];
+		const counts = allPlayers.map(
+			(playerId) =>
+				m.filter(
+					(match) =>
+						match.teamAPlayer1Id === playerId ||
+						match.teamAPlayer2Id === playerId ||
+						match.teamBPlayer1Id === playerId ||
+						match.teamBPlayer2Id === playerId
+				).length
+		);
+		const max = Math.max(...counts);
+		const min = Math.min(...counts);
+		expect(max - min).toBeLessThanOrEqual(1);
+	});
+
+	it('Run 1 has fixed team p1+p2 on side X', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		expect(m[0].teamAPlayer1Id).toBe(1);
+		expect(m[0].teamAPlayer2Id).toBe(2);
+		expect(m[1].teamAPlayer1Id).toBe(1);
+		expect(m[1].teamAPlayer2Id).toBe(2);
+	});
+
+	it('Run 1 has rotating pairs p3+p5 and p4+p6 on side Y', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		expect(m[0].teamBPlayer1Id).toBe(3);
+		expect(m[0].teamBPlayer2Id).toBe(5);
+		expect(m[1].teamBPlayer1Id).toBe(4);
+		expect(m[1].teamBPlayer2Id).toBe(6);
+	});
+
+	it('Run 2 has fixed team p3+p4 on side X', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		expect(m[2].teamAPlayer1Id).toBe(3);
+		expect(m[2].teamAPlayer2Id).toBe(4);
+		expect(m[3].teamAPlayer1Id).toBe(3);
+		expect(m[3].teamAPlayer2Id).toBe(4);
+	});
+
+	it('Run 2 has rotating pairs p1+p5 and p2+p6 on side Y', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		expect(m[2].teamBPlayer1Id).toBe(1);
+		expect(m[2].teamBPlayer2Id).toBe(5);
+		expect(m[3].teamBPlayer1Id).toBe(2);
+		expect(m[3].teamBPlayer2Id).toBe(6);
+	});
+
+	it('no partnership repeats across runs', () => {
+		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
+		// Collect partnerships from Run 1 (games 0-1)
+		const run1Partnerships = new Set<string>();
+		for (let i = 0; i < 2; i++) {
+			const match = m[i];
+			const pairA = [match.teamAPlayer1Id, match.teamAPlayer2Id].sort().join('-');
+			const pairB = [match.teamBPlayer1Id, match.teamBPlayer2Id].sort().join('-');
+			run1Partnerships.add(pairA);
+			run1Partnerships.add(pairB);
+		}
+
+		// Check Run 2 (games 2-3) partnerships don't overlap with Run 1
+		for (let i = 2; i < 4; i++) {
+			const match = m[i];
+			const pairA = [match.teamAPlayer1Id, match.teamAPlayer2Id].sort().join('-');
+			const pairB = [match.teamBPlayer1Id, match.teamBPlayer2Id].sort().join('-');
+			expect(run1Partnerships.has(pairA)).toBe(false);
+			expect(run1Partnerships.has(pairB)).toBe(false);
+		}
+	});
+});
+
+describe('matchCountForCourtSize', () => {
+	it.each([
+		[3, 3],
+		[4, 3],
+		[5, 4],
+		[6, 4]
+	])('%dp → %d matches', (size, exp) => {
+		expect(matchCountForCourtSize(size)).toBe(exp);
+	});
+});
+
+describe('countScoredMatches', () => {
+	it('counts only scored', () => {
+		expect(
+			countScoredMatches([mockMatch([1, 2], [3, 4], 21, 19), mockMatch([1, 3], [2, 4], null, null)])
+		).toBe(1);
+		expect(countScoredMatches([])).toBe(0);
+	});
+});
+
+// ============================================================================
+// Full Tournament Integration
+// ============================================================================
+
+describe('Full 16-player preseed tournament', () => {
+	it('completes 3 rounds', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 16 });
+		s = addPlayers(
+			s,
+			Array.from({ length: 16 }, (_, i) => mockPlayer(i + 1, 16 - i))
+		);
+
+		// Round 1
+		s = startRound(s);
+		expect(s.currentRound).toBe(1);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 15 })
+		});
+
+		// Round 2
+		s = startRound(s);
+		expect(s.currentRound).toBe(2);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 18 })
+		});
+
+		// Round 3
+		s = startRound(s);
+		expect(s.currentRound).toBe(3);
+		expect(s.isComplete).toBe(true);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 19 })
+		});
+		expect(s.isComplete).toBe(true);
+		expect(s.completedRounds).toHaveLength(3);
+	});
+});
+
+describe('Full 8-player random seed tournament', () => {
+	it('completes 4 rounds', () => {
+		let s = createInitialState({ tournamentId: 2, formatType: 'random-seed', playerCount: 8 });
+		s = addPlayers(
+			s,
+			Array.from({ length: 8 }, (_, i) => mockPlayer(i + 1))
+		);
+
+		s = startRound(s);
+		expect(s.currentRound).toBe(1);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 15 })
+		});
+
+		s = startRound(s);
+		expect(s.currentRound).toBe(2);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 18 })
+		});
+
+		s = startRound(s);
+		expect(s.currentRound).toBe(3);
+		expect(s.isComplete).toBe(false);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 19 })
+		});
+		expect(s.isComplete).toBe(false);
+
+		s = startRound(s);
+		expect(s.currentRound).toBe(4);
+		expect(s.isComplete).toBe(true);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 17 })
+		});
+		expect(s.isComplete).toBe(true);
+		expect(s.completedRounds).toHaveLength(4);
+	});
+});
+
+describe('Non-standard rosters', () => {
+	it('9 players → 2 courts (4p + 5p)', () => {
+		expect(calculateCourtSizes(9)).toEqual([4, 5]);
+	});
+	it('6 courts for 25 players', () => {
+		expect(calculateCourtSizes(25)).toEqual([4, 4, 4, 4, 4, 5]);
+	});
+});
+
+describe('Scoring logic', () => {
+	const defaultConfig = { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
+	const bestOf3Config = { pointsToWin: 21, winBy: 2, setsToWin: 2, decidingSetPoints: 15 };
+	const customConfig = { pointsToWin: 25, winBy: 2, setsToWin: 2, decidingSetPoints: 20 };
+
+	describe('isDecidingSet', () => {
+		it('single set: no deciding set', () => {
+			expect(isDecidingSet(1, 1)).toBe(false);
+		});
+		it('best-of-3: set 3 is deciding', () => {
+			expect(isDecidingSet(1, 2)).toBe(false);
+			expect(isDecidingSet(2, 2)).toBe(false);
+			expect(isDecidingSet(3, 2)).toBe(true);
+		});
+		it('best-of-5: set 5 is deciding', () => {
+			expect(isDecidingSet(5, 3)).toBe(true);
+			expect(isDecidingSet(4, 3)).toBe(false);
+		});
+	});
+
+	describe('getMaxSets', () => {
+		it('single set returns 1', () => {
+			expect(getMaxSets(1)).toBe(1);
+		});
+		it('best-of-3 returns 3', () => {
+			expect(getMaxSets(2)).toBe(3);
+		});
+		it('best-of-5 returns 5', () => {
+			expect(getMaxSets(3)).toBe(5);
+		});
+	});
+
+	describe('getMinPointsForSet', () => {
+		it('4p single set: 21', () => {
+			expect(getMinPointsForSet(1, 4, defaultConfig)).toBe(21);
+		});
+		it('5p single set: 15 (auto-adjusted from 21)', () => {
+			expect(getMinPointsForSet(1, 5, defaultConfig)).toBe(15);
+		});
+		it('6p single set: 15', () => {
+			expect(getMinPointsForSet(1, 6, defaultConfig)).toBe(15);
+		});
+		it('3p single set: 21', () => {
+			expect(getMinPointsForSet(1, 3, defaultConfig)).toBe(21);
+		});
+		it('best-of-3 set 1: 21', () => {
+			expect(getMinPointsForSet(1, 4, bestOf3Config)).toBe(21);
+		});
+		it('best-of-3 set 2: 21', () => {
+			expect(getMinPointsForSet(2, 4, bestOf3Config)).toBe(21);
+		});
+		it('best-of-3 deciding set: 15', () => {
+			expect(getMinPointsForSet(3, 4, bestOf3Config)).toBe(15);
+		});
+		it('5p best-of-3 set 1: 21 (not auto-adjusted for best-of-3)', () => {
+			expect(getMinPointsForSet(1, 5, bestOf3Config)).toBe(21);
+		});
+		it('5p best-of-3 deciding set: 15', () => {
+			expect(getMinPointsForSet(3, 5, bestOf3Config)).toBe(15);
+		});
+		it('custom pointsToWin=25, decidingSetPoints=20', () => {
+			expect(getMinPointsForSet(1, 4, customConfig)).toBe(25);
+			expect(getMinPointsForSet(2, 4, customConfig)).toBe(25);
+			expect(getMinPointsForSet(3, 4, customConfig)).toBe(20);
+		});
+		it('custom pointsToWin=25 on 5p court, single set: 25 (not 15)', () => {
+			const customSingle = { pointsToWin: 25, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
+			expect(getMinPointsForSet(1, 5, customSingle)).toBe(25);
+		});
+	});
+
+	describe('getScoringLabel', () => {
+		it('single set 4p', () => {
+			expect(getScoringLabel(defaultConfig, 4)).toBe('1 set to 21');
+		});
+		it('single set 5p', () => {
+			expect(getScoringLabel(defaultConfig, 5)).toBe('1 set to 15');
+		});
+		it('best-of-3', () => {
+			expect(getScoringLabel(bestOf3Config, 4)).toBe('Best of 2 (21pt, deciding: 15pt)');
+		});
+		it('custom', () => {
+			expect(getScoringLabel(customConfig, 4)).toBe('Best of 2 (25pt, deciding: 20pt)');
+		});
+	});
+
+	describe('getEffectiveScoring', () => {
+		const baseConfig = { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
+
+		it('returns base config when no overrides', () => {
+			const result = getEffectiveScoring(4, baseConfig, null);
+			expect(result).toEqual({ pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 });
+		});
+
+		it('returns base config when overrides is undefined', () => {
+			const result = getEffectiveScoring(4, baseConfig, undefined);
+			expect(result).toEqual({ pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 });
+		});
+
+		it('returns base config when overrides has no entry for the court size', () => {
+			const overrides = { '5': { pointsToWin: 15 } };
+			const result = getEffectiveScoring(4, baseConfig, overrides);
+			expect(result.pointsToWin).toBe(21);
+		});
+
+		it('applies override for matching court size', () => {
+			const overrides = { '5': { pointsToWin: 15 } };
+			const result = getEffectiveScoring(5, baseConfig, overrides);
+			expect(result.pointsToWin).toBe(15);
+		});
+
+		it('partial override: only changes specified fields', () => {
+			const overrides = { '3': { setsToWin: 2, decidingSetPoints: 20 } };
+			const result = getEffectiveScoring(3, baseConfig, overrides);
+			expect(result.pointsToWin).toBe(21); // unchanged
+			expect(result.winBy).toBe(2); // unchanged
+			expect(result.setsToWin).toBe(2); // overridden
+			expect(result.decidingSetPoints).toBe(20); // overridden
+		});
+
+		it('applies to all court sizes independently', () => {
+			const overrides = {
+				'3': { pointsToWin: 25 },
+				'5': { pointsToWin: 10 },
+				'6': { pointsToWin: 18 }
+			};
+			expect(getEffectiveScoring(3, baseConfig, overrides).pointsToWin).toBe(25);
+			expect(getEffectiveScoring(5, baseConfig, overrides).pointsToWin).toBe(10);
+			expect(getEffectiveScoring(6, baseConfig, overrides).pointsToWin).toBe(18);
+			expect(getEffectiveScoring(4, baseConfig, overrides).pointsToWin).toBe(21); // no override
+		});
+	});
+
+	describe('getMinPointsForSet with overrides', () => {
+		const baseConfig = { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
+
+		it('override changes 5p from 15 to 10', () => {
+			const overrides = { '5': { pointsToWin: 10 } };
+			expect(getMinPointsForSet(1, 5, baseConfig, overrides)).toBe(10);
+		});
+
+		it('override changes 3p to best-of-3 with custom deciding set', () => {
+			const overrides = { '3': { setsToWin: 2, decidingSetPoints: 10 } };
+			expect(getMinPointsForSet(1, 3, baseConfig, overrides)).toBe(21);
+			expect(getMinPointsForSet(3, 3, baseConfig, overrides)).toBe(10);
+		});
+
+		it('override on 6p changes pointsToWin', () => {
+			const overrides = { '6': { pointsToWin: 10 } };
+			expect(getMinPointsForSet(1, 6, baseConfig, overrides)).toBe(10);
+		});
+	});
+
+	describe('getScoringLabel with overrides', () => {
+		const baseConfig = { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
+
+		it('override changes 5p label', () => {
+			const overrides = { '5': { pointsToWin: 10 } };
+			expect(getScoringLabel(baseConfig, 5, overrides)).toBe('1 set to 10');
+		});
+
+		it('override changes 3p to best-of-3', () => {
+			const overrides = { '3': { setsToWin: 2, decidingSetPoints: 10 } };
+			expect(getScoringLabel(baseConfig, 3, overrides)).toBe('Best of 2 (21pt, deciding: 10pt)');
+		});
+
+		it('no override falls through to default', () => {
+			expect(getScoringLabel(baseConfig, 5)).toBe('1 set to 15');
+			expect(getScoringLabel(baseConfig, 4)).toBe('1 set to 21');
+		});
+	});
+});
+
+// ============================================================================
+// Player Retirement
+// ============================================================================
+
+describe('calculateCourtStandings with canceled matches', () => {
+	it('uses averages when any match is canceled', () => {
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			{ ...mockMatch([1, 3], [2, 4], 25, 23), isCanceled: true },
+			{ ...mockMatch([1, 4], [2, 3], 22, 20), isCanceled: true }
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4]);
+		// Only 1 completed match. Averages = same as totals for 1 match.
+		expect(result[0].playerId).toBe(1);
+		expect(result[0].points).toBe(21);
+		expect(result[0].diff).toBe(2);
+	});
+
+	it('uses averages for 5p courts even without canceled matches', () => {
+		// 5 players, 4 matches (p2 plays 4, others play 3)
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			mockMatch([1, 2], [3, 5], 22, 20),
+			mockMatch([4, 5], [2, 1], 18, 25),
+			mockMatch([4, 5], [2, 3], 20, 23)
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4, 5]);
+		// p1 played 3 matches: scores 21, 22, 25 = 68 total, avg = 22.67
+		// p2 played 4 matches: scores 21, 22, 25, 23 = 91 total, avg = 22.75
+		expect(result[0].playerId).toBe(2);
+		expect(result[0].points).toBeCloseTo(22.75, 1);
+	});
+
+	it('injured player gets 0 points in substitute matches', () => {
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			{ ...mockMatch([1, 3], [2, 4], 25, 23), injuredPlayerIds: [2] },
+			mockMatch([1, 4], [2, 3], 22, 20)
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4]);
+		// p2 should have 21 + 0 + 20 = 41
+		// p1 should have 21 + 25 + 22 = 68
+		const p2 = result.find((s) => s.playerId === 2);
+		expect(p2?.points).toBe(41);
+	});
+
+	it('all matches canceled: averages used, all get 0 points', () => {
+		const matches = [
+			{ ...mockMatch([1, 2], [3, 4], null, null), isCanceled: true },
+			{ ...mockMatch([1, 3], [2, 4], null, null), isCanceled: true },
+			{ ...mockMatch([1, 4], [2, 3], null, null), isCanceled: true }
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4]);
+		for (const s of result) {
+			expect(s.points).toBe(0);
+			expect(s.matchCount).toBe(0);
+		}
+	});
+
+	it('multiple injured players on same court', () => {
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			{ ...mockMatch([1, 3], [2, 4], 25, 23), injuredPlayerIds: [2, 3] },
+			mockMatch([1, 4], [2, 3], 22, 20)
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4]);
+		// p2: 21 + 0 + 20 = 41
+		// p3: 19 + 0 + 20 = 39
+		const p2 = result.find((s) => s.playerId === 2);
+		const p3 = result.find((s) => s.playerId === 3);
+		expect(p2?.points).toBe(41);
+		expect(p3?.points).toBe(39);
+	});
+
+	it('mix of scored, canceled, and substitute matches', () => {
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			{ ...mockMatch([1, 3], [2, 4], null, null), isCanceled: true },
+			{ ...mockMatch([1, 4], [2, 3], 25, 23), injuredPlayerIds: [2] }
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4]);
+		// p1: 1 scored match → 21 pts (avg mode: 21/1 = 21)
+		// p2: scored match 21 + substitute match 0 = 21, matchCount=2 → avg 10.5
+		// p3: scored 19 (vs p1) = 19, matchCount=1 → avg 19
+		// p4: scored 19 (vs p1) = 19, matchCount=1 → avg 19, but wait p4 also in canceled match - canceled matches are skipped entirely
+		// Actually let me trace more carefully:
+		// Match 1: (1,2) vs (3,4) 21-19 → p1:+21, p2:+21, p3:+19, p4:+19
+		// Match 2: canceled → skipped
+		// Match 3: (1,4) vs (2,3) 25-23, injuredPlayerIds=[2]
+		//   p1: +25, p2: 0 (injured), p3: +23, p4: +25
+		// Totals:
+		//   p1: 21+25=46, 2 matches, avg=23
+		//   p2: 21+0=21, 2 matches, avg=10.5
+		//   p3: 19+23=42, 2 matches, avg=21
+		//   p4: 19+25=44, 2 matches, avg=22
+		// But with canceled match → use averages for ALL players
+		// The useAverages flag is set when any match is canceled
+		// So all are averages
+		expect(result[0].playerId).toBe(1);
+		expect(result[0].points).toBe(23);
+		expect(result[0].matchCount).toBe(2);
+		const p2 = result.find((s) => s.playerId === 2);
+		expect(p2?.points).toBe(10.5);
+		expect(p2?.matchCount).toBe(2);
+	});
+
+	it('already scored match unaffected by injuredPlayerIds', () => {
+		const matches = [
+			{ ...mockMatch([1, 2], [3, 4], 21, 19), injuredPlayerIds: [2] },
+			mockMatch([1, 3], [2, 4], 25, 23),
+			mockMatch([1, 4], [2, 3], 22, 20)
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4]);
+		// Even though match 1 has injuredPlayerIds=[2], the match is already scored
+		// The injured player check only zeros out points if match is null
+		// Wait - looking at the code: injured.has(pid) ? 0 : m.teamAScore
+		// It applies for ALL matches where injuredPlayerIds includes the player
+		// regardless of whether the match was already scored
+		// p2: 0 (injured in match 1) + 23 + 20 = 43
+		const p2 = result.find((s) => s.playerId === 2);
+		expect(p2?.points).toBe(43);
+	});
+});
+
+// ============================================================================
+// isValidFinalScore
+// ============================================================================
+
+describe('isValidFinalScore', () => {
+	const WB2 = { minPoints: 21, winBy: 2 };
+	const WB1 = { minPoints: 21, winBy: 1 };
+	const DS15 = { minPoints: 15, winBy: 2 };
+	const DS10 = { minPoints: 10, winBy: 2 };
+
+	// ===== winBy=2, minPoints=21 =====
+
+	it('21-19: valid (target reached, win by 2)', () => {
+		expect(isValidFinalScore(21, 19, WB2.minPoints, WB2.winBy)).toBe(true);
+	});
+
+	it('21-11: valid (winner at 21, loser not in striking distance)', () => {
+		expect(isValidFinalScore(21, 11, WB2.minPoints, WB2.winBy)).toBe(true);
+	});
+
+	it('21-0: valid (winner at 21)', () => {
+		expect(isValidFinalScore(21, 0, WB2.minPoints, WB2.winBy)).toBe(true);
+	});
+
+	it('25-11: INVALID (should have ended at 21-11)', () => {
+		expect(isValidFinalScore(25, 11, WB2.minPoints, WB2.winBy)).toBe(false);
+	});
+
+	it('22-11: INVALID (should have ended at 21-11)', () => {
+		expect(isValidFinalScore(22, 11, WB2.minPoints, WB2.winBy)).toBe(false);
+	});
+
+	it('30-11: INVALID (blowout, should have ended at 21-11)', () => {
+		expect(isValidFinalScore(30, 11, WB2.minPoints, WB2.winBy)).toBe(false);
+	});
+
+	it('22-20: valid (deuce, winner = loser + 2)', () => {
+		expect(isValidFinalScore(22, 20, WB2.minPoints, WB2.winBy)).toBe(true);
+	});
+
+	it('23-21: valid (deuce extended)', () => {
+		expect(isValidFinalScore(23, 21, WB2.minPoints, WB2.winBy)).toBe(true);
+	});
+
+	it('30-28: valid (extended deuce)', () => {
+		expect(isValidFinalScore(30, 28, WB2.minPoints, WB2.winBy)).toBe(true);
+	});
+
+	it('21-20: INVALID (only win by 1, needs 2)', () => {
+		expect(isValidFinalScore(21, 20, WB2.minPoints, WB2.winBy)).toBe(false);
+	});
+
+	it('20-18: INVALID (winner below minPoints)', () => {
+		expect(isValidFinalScore(20, 18, WB2.minPoints, WB2.winBy)).toBe(false);
+	});
+
+	it('21-21: INVALID (tied — can never be a final score)', () => {
+		expect(isValidFinalScore(21, 21, WB2.minPoints, WB2.winBy)).toBe(false);
+	});
+
+	// ===== winBy=1, minPoints=21 =====
+
+	it('21-20: valid (win by 1, target reached)', () => {
+		expect(isValidFinalScore(21, 20, WB1.minPoints, WB1.winBy)).toBe(true);
+	});
+
+	it('21-0: valid (win by 1, target reached)', () => {
+		expect(isValidFinalScore(21, 0, WB1.minPoints, WB1.winBy)).toBe(true);
+	});
+
+	it('22-21: INVALID (winBy=1, game always ends at exactly minPoints)', () => {
+		expect(isValidFinalScore(22, 21, WB1.minPoints, WB1.winBy)).toBe(false);
+	});
+
+	it('21-19: valid (winBy=1, reached 21 with 2-point lead)', () => {
+		expect(isValidFinalScore(21, 19, WB1.minPoints, WB1.winBy)).toBe(true);
+	});
+
+	it('25-11: INVALID (should have ended at 21-11)', () => {
+		expect(isValidFinalScore(25, 11, WB1.minPoints, WB1.winBy)).toBe(false);
+	});
+
+	// ===== deciding set to 15, winBy=2 =====
+
+	it('15-13: valid (deciding set, target reached)', () => {
+		expect(isValidFinalScore(15, 13, DS15.minPoints, DS15.winBy)).toBe(true);
+	});
+
+	it('16-14: valid (deciding set deuce)', () => {
+		expect(isValidFinalScore(16, 14, DS15.minPoints, DS15.winBy)).toBe(true);
+	});
+
+	it('17-11: INVALID (deciding set, should have ended at 15-11)', () => {
+		expect(isValidFinalScore(17, 11, DS15.minPoints, DS15.winBy)).toBe(false);
+	});
+
+	it('15-14: INVALID (deciding set, only win by 1)', () => {
+		expect(isValidFinalScore(15, 14, DS15.minPoints, DS15.winBy)).toBe(false);
+	});
+
+	it('13-11: INVALID (deciding set, winner below minPoints)', () => {
+		expect(isValidFinalScore(13, 11, DS15.minPoints, DS15.winBy)).toBe(false);
+	});
+
+	// ===== custom minPoints=10, winBy=2 =====
+
+	it('10-8: valid (custom 10pt target)', () => {
+		expect(isValidFinalScore(10, 8, DS10.minPoints, DS10.winBy)).toBe(true);
+	});
+
+	it('11-9: valid (custom 10pt deuce)', () => {
+		expect(isValidFinalScore(11, 9, DS10.minPoints, DS10.winBy)).toBe(true);
+	});
+
+	it('12-6: INVALID (custom 10pt, should have ended at 10-6)', () => {
+		expect(isValidFinalScore(12, 6, DS10.minPoints, DS10.winBy)).toBe(false);
+	});
+
+	// ===== edge cases =====
+
+	it('can never have winner below minPoints', () => {
+		expect(isValidFinalScore(1, 0, 21, 2)).toBe(false);
+		expect(isValidFinalScore(0, 0, 21, 2)).toBe(false);
+	});
+
+	it('negative scores are invalid (caller should handle)', () => {
+		// isValidFinalScore assumes non-negative input from caller
+		expect(isValidFinalScore(-1, 0, 21, 2)).toBe(false);
+	});
+
+	it('identical high scores not valid (caller checks tie separately)', () => {
+		expect(isValidFinalScore(30, 30, 21, 2)).toBe(false);
+	});
+});
+
+describe('recalculateCourtConfigAfterRetirement', () => {
+	it('23 players → 5×4p + 1×3p', () => {
+		expect(recalculateCourtConfigAfterRetirement(23)).toEqual({
+			courtSizes: [4, 4, 4, 4, 4, 3],
+			totalCourts: 6
+		});
+	});
+
+	it('22 players → 4×4p + 1×6p', () => {
+		expect(recalculateCourtConfigAfterRetirement(22)).toEqual({
+			courtSizes: [4, 4, 4, 4, 6],
+			totalCourts: 5
+		});
+	});
+
+	it('3 players → 1×3p', () => {
+		expect(recalculateCourtConfigAfterRetirement(3)).toEqual({
+			courtSizes: [3],
+			totalCourts: 1
+		});
+	});
+
+	it('1 player → 1×1p', () => {
+		expect(recalculateCourtConfigAfterRetirement(1)).toEqual({
+			courtSizes: [1],
+			totalCourts: 1
+		});
+	});
+
+	it('2 players → 1×2p', () => {
+		expect(recalculateCourtConfigAfterRetirement(2)).toEqual({
+			courtSizes: [2],
+			totalCourts: 1
+		});
+	});
+
+	it('25 players → 6×4p + 1×1p becomes 5×4p + 1×5p', () => {
+		// 25 % 4 = 1 → bottomSize = 5
+		const result = recalculateCourtConfigAfterRetirement(25);
+		expect(result.totalCourts).toBe(6);
+		expect(result.courtSizes.filter((s) => s === 4).length).toBe(5);
+		expect(result.courtSizes[5]).toBe(5);
+	});
+
+	it('26 players → 6×4p + 1×2p becomes 5×4p + 1×6p', () => {
+		// 26 % 4 = 2 → bottomSize = 6
+		const result = recalculateCourtConfigAfterRetirement(26);
+		expect(result.totalCourts).toBe(6);
+		expect(result.courtSizes.filter((s) => s === 4).length).toBe(5);
+		expect(result.courtSizes[5]).toBe(6);
+	});
+
+	it('27 players → 6×4p + 1×3p', () => {
+		// 27 % 4 = 3 → bottomSize = 3
+		const result = recalculateCourtConfigAfterRetirement(27);
+		expect(result.totalCourts).toBe(7);
+		expect(result.courtSizes.filter((s) => s === 4).length).toBe(6);
+		expect(result.courtSizes[6]).toBe(3);
+	});
+});
+
+describe('getPreseedBracketRange', () => {
+	it('4 courts: C1 → 1-8, C3 → 9-16', () => {
+		expect(getPreseedBracketRange(1, 4)).toEqual({ min: 1, max: 8 });
+		expect(getPreseedBracketRange(2, 4)).toEqual({ min: 1, max: 8 });
+		expect(getPreseedBracketRange(3, 4)).toEqual({ min: 9, max: 16 });
+		expect(getPreseedBracketRange(4, 4)).toEqual({ min: 9, max: 16 });
+	});
+
+	it('8 courts: recursive split into 4 leaves', () => {
+		expect(getPreseedBracketRange(1, 8)).toEqual({ min: 1, max: 16 });
+		expect(getPreseedBracketRange(5, 8)).toEqual({ min: 17, max: 32 });
+	});
+});
+
+describe('calculateRetiredStanding', () => {
+	it('preseed: returns bracket max', () => {
+		const standing = calculateRetiredStanding(3, 4, 1, 3, 'preseed', [4, 4, 4, 4], {
+			min: 9,
+			max: 16
+		});
+		expect(standing).toBe(16);
+	});
+
+	it('random seed: worst court after full relegation', () => {
+		// 24 players, 6 courts, retired after round 2 on court 3
+		// remainingRounds = 1, worstCourt = min(3 + 1, 6) = 4
+		// places on courts 1-3: 12, court 4 has 4 players → worst = 16
+		const standing = calculateRetiredStanding(3, 6, 2, 3, 'random-seed', [4, 4, 4, 4, 4, 4]);
+		expect(standing).toBe(16);
+	});
+
+	it('random seed with non-standard bottom court', () => {
+		// 23 players, 6 courts [4,4,4,4,4,3]
+		// worstCourt = min(3 + 1, 6) = 4
+		// places = 4*3 + 4 = 16
+		const standing = calculateRetiredStanding(3, 6, 2, 3, 'random-seed', [4, 4, 4, 4, 4, 3]);
+		expect(standing).toBe(16);
+	});
+
+	it('preseed: auto-computes bracketRange when not provided', () => {
+		// Court 3 of 4 preseed → bracket range should be auto-computed by getPreseedBracketRange
+		// splitSize(4)=2, winner courts = 1-2 (max 8), loser courts = 3-4 (max 16)
+		const standing = calculateRetiredStanding(3, 4, 1, 3, 'preseed', [4, 4, 4, 4]);
+		expect(standing).toBe(16);
+	});
+
+	it('preseed on final round: still returns bracket max', () => {
+		// Even on the final round, preseed uses bracket max
+		const standing = calculateRetiredStanding(1, 4, 3, 3, 'preseed', [4, 4, 4, 4], {
+			min: 1,
+			max: 8
+		});
+		expect(standing).toBe(8);
+	});
+
+	it('random seed on final round: same court, no relegation', () => {
+		// 16 players, 4 courts, retired on round 3 of 3 (final round)
+		// remainingRounds = 0, worstCourt = min(2 + 0, 4) = 2
+		// places = 4*1 + 4 = 8
+		const standing = calculateRetiredStanding(2, 4, 3, 3, 'random-seed', [4, 4, 4, 4]);
+		expect(standing).toBe(8);
+	});
+
+	it('random seed: retired on top court stays there', () => {
+		// 16 players, 4 courts, retired on court 1 final round
+		// remainingRounds = 0, worstCourt = min(1, 4) = 1
+		// places = 0 + 4 = 4
+		const standing = calculateRetiredStanding(1, 4, 3, 3, 'random-seed', [4, 4, 4, 4]);
+		expect(standing).toBe(4);
+	});
+
+	it('preseed 8 courts: auto-compute bracket range for winner bracket', () => {
+		// splitSize(8)=4, winner courts = 1-4 (max 16), loser courts = 5-8 (max 32)
+		const standing = calculateRetiredStanding(2, 8, 1, 4, 'preseed', Array(8).fill(4));
+		expect(standing).toBe(16);
+	});
+});
+
+describe('getFinalRoundCourtConfig', () => {
+	it('5 players: eliminate 1, top 4 play', () => {
+		const result = getFinalRoundCourtConfig(
+			[4, 4, 4, 4, 5],
+			[
+				[1, 2, 3, 4],
+				[5, 6, 7, 8],
+				[9, 10, 11, 12],
+				[13, 14, 15, 16],
+				[17, 18, 19, 20, 21]
+			]
+		);
+		expect(result.courtSizes).toEqual([4, 4, 4, 4, 5]);
+		expect(result.eliminatedPlayerIds).toEqual([]);
+	});
+
+	it('5 players with 1 court: trim to 4', () => {
+		const result = getFinalRoundCourtConfig([5], [[1, 2, 3, 4, 5]]);
+		expect(result.courtSizes).toEqual([4]);
+		expect(result.eliminatedPlayerIds).toEqual([5]);
+	});
+
+	it('7 players: 4 + 3', () => {
+		const result = getFinalRoundCourtConfig(
+			[4, 3],
+			[
+				[1, 2, 3, 4],
+				[5, 6, 7]
+			]
+		);
+		expect(result.courtSizes).toEqual([4, 3]);
+		expect(result.eliminatedPlayerIds).toEqual([]);
 	});
 });

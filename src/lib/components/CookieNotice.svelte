@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import * as m from '$lib/paraglide/messages';
 
 	let dismissed = $state(false);
 	let mounted = $state(false);
@@ -20,9 +21,13 @@
 	<div class="cookie-notice" role="region" aria-label="Cookie information">
 		<div class="cookie-content">
 			<p>
-				This site uses essential cookies for authentication and security.
-				<button type="button" onclick={() => goto('/privacy')} class="cookie-link-btn">
-					Learn more
+				{m.cookie_notice()}
+				<button
+					type="button"
+					onclick={() => goto('/privacy')}
+					class="cookie-link-btn"
+				>
+					{m.cookie_learn_more()}
 				</button>
 			</p>
 			<button onclick={handleDismiss} class="cookie-btn" aria-label="Dismiss cookie notice">

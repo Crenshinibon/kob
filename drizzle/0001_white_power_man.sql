@@ -1,0 +1,1 @@
+ALTER TABLE "tournament" ADD COLUMN "physical_court_count" integer DEFAULT 4 NOT NULL;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import * as m from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 
 	function handleBack() {
@@ -7,64 +8,55 @@
 </script>
 
 <svelte:head>
-	<title>Privacy & Cookies - KoB Tracker</title>
+	<title>{m.privacy_title()} - KoB Tracker</title>
 </svelte:head>
 
 <div class="privacy-page">
-	<button type="button" onclick={handleBack} class="back-btn">&larr; Back</button>
+	<button type="button" onclick={handleBack} class="back-btn">&larr; {m.back()}</button>
 
-	<h1>Privacy & Cookies</h1>
+	<h1>{m.privacy_title()}</h1>
 
 	<section>
-		<h2>Essential Cookies</h2>
-		<p>
-			This website uses essential cookies that are necessary for authentication and security. These
-			cookies are required for the website to function properly and cannot be disabled.
-		</p>
+		<h2>{m.privacy_cookies_heading()}</h2>
+		<p>{m.privacy_cookies_desc()}</p>
 
-		<h3>What cookies do we use?</h3>
+		<h3>{m.privacy_cookies_table_heading()}</h3>
 		<table class="cookie-table">
 			<thead>
 				<tr>
-					<th>Cookie Name</th>
-					<th>Purpose</th>
-					<th>Duration</th>
+				<th>{m.privacy_cookies_table_name()}</th>
+				<th>{m.privacy_cookies_table_purpose()}</th>
+				<th>{m.privacy_cookies_table_duration()}</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
-					<td>Session cookies</td>
-					<td>Keep you signed in during your visit</td>
-					<td>Session (deleted when browser closes)</td>
+					<td>{m.privacy_cookies_session()}</td>
+					<td>{m.privacy_cookies_session_desc()}</td>
+					<td>{m.privacy_cookies_session_dur()}</td>
 				</tr>
 				<tr>
-					<td>CSRF token</td>
-					<td>Protects against cross-site request forgery attacks</td>
-					<td>Session</td>
+					<td>{m.privacy_cookies_csrf()}</td>
+					<td>{m.privacy_cookies_csrf_desc()}</td>
+					<td>{m.privacy_cookies_csrf_dur()}</td>
 				</tr>
 			</tbody>
 		</table>
 	</section>
 
 	<section>
-		<h2>Your Rights</h2>
-		<p>
-			Under GDPR, you have the right to access, correct, or delete your personal data. Contact us if
-			you have any questions about how we handle your data.
-		</p>
+		<h2>{m.privacy_rights_heading()}</h2>
+		<p>{m.privacy_rights_desc()}</p>
 	</section>
 
 	<section>
-		<h2>Data Storage</h2>
-		<p>
-			Your account information (email address) is stored securely in our database. We do not share
-			your data with third parties.
-		</p>
+		<h2>{m.privacy_storage_heading()}</h2>
+		<p>{m.privacy_storage_desc()}</p>
 	</section>
 
 	<section>
-		<h2>Questions?</h2>
-		<p>If you have questions about this policy, please contact the tournament organizer.</p>
+		<h2>{m.privacy_questions_heading()}</h2>
+		<p>{m.privacy_questions_desc()}</p>
 	</section>
 </div>
 

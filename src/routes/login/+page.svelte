@@ -1,4 +1,6 @@
 <script lang="ts">
+	import * as m from '$lib/paraglide/messages';
+
 	let email = $state('');
 	let password = $state('');
 	let error = $state('');
@@ -20,10 +22,10 @@
 				window.location.href = '/';
 			} else {
 				const data = await response.json();
-				error = data.message || 'Login failed';
+				error = data.message || m.login_failed();
 			}
-		} catch (e) {
-			error = 'Network error. Please try again.';
+		} catch {
+			error = m.login_network_error();
 		} finally {
 			loading = false;
 		}
@@ -32,7 +34,7 @@
 
 <main>
 	<div class="auth-container">
-		<h1>Log In</h1>
+		<h1>{m.login()}</h1>
 
 		{#if error}
 			<div class="error">{error}</div>
@@ -40,22 +42,22 @@
 
 		<form onsubmit={handleSubmit}>
 			<div class="field">
-				<label for="email">Email</label>
+				<label for="email">{m.email()}</label>
 				<input type="email" id="email" bind:value={email} required />
 			</div>
 
 			<div class="field">
-				<label for="password">Password</label>
+				<label for="password">{m.password()}</label>
 				<input type="password" id="password" bind:value={password} required />
 			</div>
 
 			<button type="submit" class="btn-primary" disabled={loading}>
-				{loading ? 'Logging in...' : 'Log In'}
+				{loading ? m.login_logging_in() : m.login()}
 			</button>
 		</form>
 
 		<p class="switch">
-			Don't have an account? <a href="/signup">Sign up</a>
+			{m.no_account()} <a href="/signup">{m.sign_up()}</a>
 		</p>
 	</div>
 </main>

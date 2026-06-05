@@ -55,8 +55,9 @@ Same flow for login at `/login`.
 
 ## Implementation
 
-- Better Auth handles sessions automatically
+- Better Auth handles sessions automatically via `svelteKitHandler` in `hooks.server.ts`
 - Password minimum: 10 characters
 - No name field required
 - After auth, always redirect to `/`
-- Protected routes check `event.locals.user`
+- Protected routes check `event.locals.user` (optional typed)
+- Auth pages at root level (`/login`, `/signup`) to avoid conflicts with Better Auth API routes (`/auth/*`)

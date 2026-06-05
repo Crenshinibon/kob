@@ -67,10 +67,17 @@ CREATE TABLE total_standings_snapshot (
 
 **Sort Order**:
 
-1. Total Points (descending)
-2. Point Differential (descending)
-3. Head-to-head (if applicable)
-4. Random (last resort)
+Current round court position (lower court number first, then rank on that court). See [070_scoring-and-standings.md](./070_scoring-and-standings.md#final-standings) — winner is determined by court position, not total points. Secondary tiebreakers within same court position: Total Points → Point Differential → Player ID.
+
+```
+Standings ranking:
+1st:  1st place Court 1 (current round)
+2nd:  2nd place Court 1
+3rd:  3rd place Court 1
+4th:  4th place Court 1
+5th:  1st place Court 2
+...
+```
 
 ### 2. Round-by-Round Breakdown
 
@@ -280,11 +287,11 @@ ORDER BY rank;
 
 ## Acceptance Criteria
 
-- [ ] Total standings calculate correctly across all rounds
-- [ ] Rankings update immediately when round is closed
-- [ ] Top 3 winners clearly highlighted
+- [x] Total standings calculate correctly across all rounds
+- [x] Rankings update immediately when round is closed
+- [x] Top 3 winners clearly highlighted
 - [ ] Movement indicators show rank changes between rounds
 - [ ] Winner announcement view is projection-friendly
 - [ ] Export to PDF/CSV works
-- [ ] Mobile display is readable
-- [ ] Handles ties appropriately
+- [x] Mobile display is readable
+- [x] Handles ties appropriately

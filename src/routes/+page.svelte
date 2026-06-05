@@ -1,8 +1,24 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import * as m from '$lib/paraglide/messages';
+
+	interface TournamentSummary {
+		id: number;
+		name: string;
+		status: string;
+		currentRound: number;
+		numRounds: number;
+	}
+
 	let {
 		data
 	}: {
-		data: { user?: { id: string }; active: any[]; draft: any[]; finished: any[]; archived: any[] };
+		data: {
+			user?: { id: string };
+			active: TournamentSummary[];
+			finished: TournamentSummary[];
+			archived: TournamentSummary[];
+		};
 	} = $props();
 </script>
 
@@ -11,7 +27,7 @@
 		<div class="logo-section">
 			<img
 				src="/logo-200.jpg"
-				alt="King of the Beach"
+				alt={m.alt_logo()}
 				class="logo"
 				srcset="/logo-100.jpg 100w, /logo-200.jpg 200w, /logo-400.jpg 400w"
 				sizes="(max-width: 600px) 100px, 200px"
@@ -21,43 +37,32 @@
 			</h1>
 		</div>
 		{#if data?.user}
-			<a href="/tournament/create" class="btn-primary">+ New Tournament</a>
+			<a href="/tournament/create" class="btn-primary">{m.new_tournament()}</a>
 		{:else}
-			<a href="/login" class="btn-primary btn-disabled">+ New Tournament</a>
+			<a href="/login" class="btn-primary">{m.login()}</a>
 		{/if}
 	</header>
 
 	{#if !data?.user}
 		<section class="login-prompt">
-			<p>Please <a href="/login">log in</a> to manage tournaments.</p>
+			<p>{m.login_prompt()}</p>
 		</section>
 	{:else}
 		<!-- Active Tournaments -->
 		{#if data.active.length > 0}
 			<section class="tournaments">
-				<h2>Active Tournaments</h2>
+				<h2>{m.active_tournaments()}</h2>
 				<div class="tournament-list">
 					{#each data.active as tournament (tournament.id)}
-						<a href="/tournament/{tournament.id}" class="tournament-card">
+						<a
+							href={resolve('/tournament/[id]', { id: String(tournament.id) })}
+							class="tournament-card"
+						>
 							<h3>{tournament.name}</h3>
-							<span class="status active">active</span>
-							<p class="round">Round {tournament.currentRound} of {tournament.numRounds}</p>
-						</a>
-					{/each}
-				</div>
-			</section>
-		{/if}
-
-		<!-- Draft Tournaments -->
-		{#if data.draft.length > 0}
-			<section class="tournaments">
-				<h2>Draft Tournaments</h2>
-				<div class="tournament-list">
-					{#each data.draft as tournament (tournament.id)}
-						<a href="/tournament/{tournament.id}/players" class="tournament-card">
-							<h3>{tournament.name}</h3>
-							<span class="status draft">draft</span>
-							<p class="round">{tournament.numRounds} rounds planned</p>
+							<span class="status active">{m.status_active()}</span>
+							<p class="round">
+								{m.round_label({ current: tournament.currentRound, total: tournament.numRounds })}
+							</p>
 						</a>
 					{/each}
 				</div>
@@ -67,12 +72,15 @@
 		<!-- Finished Tournaments -->
 		{#if data.finished.length > 0}
 			<section class="tournaments">
-				<h2>Finished Tournaments</h2>
+				<h2>{m.finished_tournaments()}</h2>
 				<div class="tournament-list">
 					{#each data.finished as tournament (tournament.id)}
-						<a href="/tournament/{tournament.id}" class="tournament-card">
+						<a
+							href={resolve('/tournament/[id]', { id: String(tournament.id) })}
+							class="tournament-card"
+						>
 							<h3>{tournament.name}</h3>
-							<span class="status completed">completed</span>
+							<span class="status completed">{m.status_completed()}</span>
 						</a>
 					{/each}
 				</div>
@@ -82,22 +90,25 @@
 		<!-- Archived Tournaments -->
 		{#if data.archived.length > 0}
 			<section class="tournaments">
-				<h2>Archived Tournaments</h2>
+				<h2>{m.archived_tournaments()}</h2>
 				<div class="tournament-list">
 					{#each data.archived as tournament (tournament.id)}
-						<a href="/tournament/{tournament.id}" class="tournament-card">
+						<a
+							href={resolve('/tournament/[id]', { id: String(tournament.id) })}
+							class="tournament-card"
+						>
 							<h3>{tournament.name}</h3>
-							<span class="status archived">archived</span>
+							<span class="status archived">{m.status_archived()}</span>
 						</a>
 					{/each}
 				</div>
 			</section>
 		{/if}
 
-		{#if data.active.length === 0 && data.draft.length === 0 && data.finished.length === 0 && data.archived.length === 0}
+		{#if data.active.length === 0 && data.finished.length === 0 && data.archived.length === 0}
 			<section class="empty">
-				<p>No tournaments yet.</p>
-				<a href="/tournament/create" class="btn-primary">Create your first tournament</a>
+				<p>{m.no_tournaments()}</p>
+				<a href="/tournament/create" class="btn-primary">{m.create_first()}</a>
 			</section>
 		{/if}
 	{/if}
@@ -105,7 +116,7 @@
 
 <footer class="imprint">
 	<details>
-		<summary>Imprint / Legal Notice</summary>
+		<summary>{m.imprint_title()}</summary>
 		<div class="imprint-content">
 			<p><strong>ACCOMADE - Dirk Porsche</strong></p>
 			<p>Sollbrüggenstr. 14<br />47800 Krefeld<br />Germany</p>
@@ -173,13 +184,6 @@
 	.btn-primary:hover {
 		background-color: var(--accent-primary-hover);
 		box-shadow: var(--glow-primary);
-	}
-
-	.btn-disabled {
-		background-color: var(--bg-secondary);
-		color: var(--text-muted);
-		border-color: var(--border-default);
-		pointer-events: none;
 	}
 
 	.login-prompt,
@@ -258,11 +262,6 @@
 	.status.archived {
 		background-color: var(--status-archived-bg);
 		color: var(--status-archived-text);
-	}
-
-	.status.draft {
-		background-color: var(--status-draft-bg);
-		color: var(--status-draft-text);
 	}
 
 	.round {
