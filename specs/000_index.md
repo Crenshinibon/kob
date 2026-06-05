@@ -33,9 +33,9 @@
 - **[990_retirement-5p-crash.md](./990_retirement-5p-crash.md)**: [IMPLEMENTED] Fixed `distributeGroup` fallback for 5p origin overflow. Filtered retired players from preseed redistribution results.
 - **[1000_minor-ui-fixes.md](./1000_minor-ui-fixes.md)**: [IMPLEMENTED] 3 of 4 fixed: slider alignment, scoring override defaults, average points rounding. Bug 4 (save button first click) deferred.
 
-- **[1010_cleanup-cronjob.md](./1010_cleanup-cronjob.md)**: [TODO] No Vercel cronjob configured. `scripts/cleanup-old-tournaments.ts` exists but never runs automatically. Need API route + `vercel.json` crons config. Stale detection uses `createdAt` only — should use `lastActivityAt`.
+- **[1010_cleanup-cronjob.md](./1010_cleanup-cronjob.md)**: [IMPLEMENTED] Vercel cronjob + API route + `lastActivityAt` column. Auto-deletes completed (14d) and stale (31d) tournaments.
 
-- **[1020_live-query-timeout.md](./1020_live-query-timeout.md)**: [TODO] `query.live()` infinite loops hit Vercel 300s timeout. Replace with client-side polling. Also N+1 query problem in `fetchTournamentData()` and `fetchStandingsData()` — batch DB queries.
+- **[1020_live-query-timeout.md](./1020_live-query-timeout.md)**: [IMPLEMENTED] Replaced `query.live()` with `query()` + client-side polling (5s). Removed infinite server loops causing Vercel 300s timeouts. N+1 query batching deferred.
 
 - **[600_incomplete-rosters-index.md](./600_incomplete-rosters-index.md)**: [IN PROGRESS] Index for incomplete roster specs. Supports 8-64 players, recursive preseed, physical/virtual courts.
   - **[610_incomplete-core.md](./610_incomplete-core.md)**: Problem statement, physical vs virtual courts, player count extension (8-64), vertical seeding, leftover configuration.

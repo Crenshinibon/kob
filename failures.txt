@@ -1,210 +1,138 @@
 $ playwright test "--workers=1" "--reporter=list"
+[2m[WebServer] [22m[33m4:48:58 PM [vite-plugin-svelte] src/routes/tournament/[id]/+page.svelte:37:43 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+[2m[WebServer] [22mhttps://svelte.dev/e/state_referenced_locally[39m
+[2m[WebServer] [22m35:   }>();
+[2m[WebServer] [22m36: 
+[2m[WebServer] [22m37:   const tournamentQuery = getTournamentData(data.tournamentId);
+[2m[WebServer] [22m                                                    ^
+[2m[WebServer] [22m38: 
+[2m[WebServer] [22m39:   $effect(() => {
+[2m[WebServer] [22m[33m4:48:58 PM [vite-plugin-svelte] src/routes/tournament/[id]/standings/+page.svelte:10:41 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+[2m[WebServer] [22mhttps://svelte.dev/e/state_referenced_locally[39m
+[2m[WebServer] [22m 8:   }>();
+[2m[WebServer] [22m 9: 
+[2m[WebServer] [22m10:   const standingsQuery = getStandingsData(data.tournamentId);
+[2m[WebServer] [22m                                                  ^
+[2m[WebServer] [22m11: 
+[2m[WebServer] [22m12:   $effect(() => {
+[2m[WebServer] [22m[33m4:49:03 PM [vite-plugin-svelte] src/routes/tournament/[id]/standings/+page.svelte:10:41 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+[2m[WebServer] [22mhttps://svelte.dev/e/state_referenced_locally[39m
+[2m[WebServer] [22m 8:   }>();
+[2m[WebServer] [22m 9: 
+[2m[WebServer] [22m10:   const standingsQuery = getStandingsData(data.tournamentId);
+[2m[WebServer] [22m                                                  ^
+[2m[WebServer] [22m11: 
+[2m[WebServer] [22m12:   $effect(() => {
+[2m[WebServer] [22m[33m4:49:03 PM [vite-plugin-svelte] src/routes/tournament/[id]/+page.svelte:37:43 This reference only captures the initial value of `data`. Did you mean to reference it inside a closure instead?
+[2m[WebServer] [22mhttps://svelte.dev/e/state_referenced_locally[39m
+[2m[WebServer] [22m35:   }>();
+[2m[WebServer] [22m36: 
+[2m[WebServer] [22m37:   const tournamentQuery = getTournamentData(data.tournamentId);
+[2m[WebServer] [22m                                                    ^
+[2m[WebServer] [22m38: 
+[2m[WebServer] [22m39:   $effect(() => {
 [2m[WebServer] [22m[33m[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
-[2m[WebServer] [22m  - vite-plugin-sveltekit-guard (65%)
-[2m[WebServer] [22m  - vite-plugin-sveltekit-remote (18%)
-[2m[WebServer] [22m  - vite-plugin-sveltekit-compile (6%)
+[2m[WebServer] [22m  - vite-plugin-sveltekit-guard (68%)
+[2m[WebServer] [22m  - vite-plugin-sveltekit-remote (19%)
+[2m[WebServer] [22m  - unplugin-paraglide-js (5%)
+[2m[WebServer] [22mSee https://rolldown.rs/options/checks#plugintimings for more details.
+[2m[WebServer] [22m[39m
+[2m[WebServer] [22m[33m[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+[2m[WebServer] [22m  - vite-plugin-sveltekit-guard (62%)
+[2m[WebServer] [22m  - vite-plugin-sveltekit-remote (16%)
+[2m[WebServer] [22m  - vite-plugin-sveltekit-compile (10%)
+[2m[WebServer] [22m  - vite-plugin-sveltekit-virtual-modules (4%)
 [2m[WebServer] [22mSee https://rolldown.rs/options/checks#plugintimings for more details.
 [2m[WebServer] [22m[39m
 🧹 Cleaning up old test tournaments...
-🗑️ Found 104 tournaments older than 1 hour
-✅ Cleaned up 104 old tournaments
+✅ No old tournaments to clean up
 
 Running 84 tests using 1 worker
 
-[2m[WebServer] [22m[2m2026-06-04T20:23:06.850Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5611[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5611[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5611[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-  ✓   1 e2e/bestof3.spec.ts:96:2 › Best-of-3 Round Transition › round closes when best-of-3 matches end 2-0 (no deciding set) (1.5m)
-  ✓   2 e2e/demo.test.ts:3:1 › home page has expected h1 (121ms)
-  ✓   3 e2e/format.spec.ts:52:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) (578ms)
-  ✓   4 e2e/format.spec.ts:66:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range (546ms)
-  ✓   5 e2e/format.spec.ts:75:3 › Tournament Format Selection › Random Format › rounds input is editable (553ms)
-  ✓   6 e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (3.6s)
-  ✓   7 e2e/format.spec.ts:109:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (3.0s)
+[2m[WebServer] [22m[2m2026-06-05T14:49:09.214Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
+  ✘   1 e2e/bestof3.spec.ts:96:2 › Best-of-3 Round Transition › round closes when best-of-3 matches end 2-0 (no deciding set) (3.0m)
+  ✓   2 e2e/demo.test.ts:3:1 › home page has expected h1 (186ms)
+  ✓   3 e2e/format.spec.ts:52:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) (572ms)
+  ✓   4 e2e/format.spec.ts:66:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range (532ms)
+  ✓   5 e2e/format.spec.ts:75:3 › Tournament Format Selection › Random Format › rounds input is editable (532ms)
+  ✓   6 e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (3.3s)
+  ✓   7 e2e/format.spec.ts:109:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (3.1s)
   ✓   8 e2e/format.spec.ts:133:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (4.4s)
-  ✓   9 e2e/format.spec.ts:156:3 › Tournament Format Selection › Pre-Seed Format › switching player count updates fixed rounds (557ms)
-  ✓  10 e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again (624ms)
-  ✓  11 e2e/format.spec.ts:176:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (3.3s)
-  ✓  12 e2e/format.spec.ts:215:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description (648ms)
-  ✓  13 e2e/format.spec.ts:237:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description (648ms)
-  ✓  14 e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description (681ms)
-  ✓  15 e2e/format.spec.ts:273:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) (665ms)
-  ✓  16 e2e/format.spec.ts:288:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (603ms)
+  ✓   9 e2e/format.spec.ts:156:3 › Tournament Format Selection › Pre-Seed Format › switching player count updates fixed rounds (564ms)
+  ✓  10 e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again (591ms)
+  ✓  11 e2e/format.spec.ts:176:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (3.1s)
+  ✓  12 e2e/format.spec.ts:215:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description (663ms)
+  ✓  13 e2e/format.spec.ts:237:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description (663ms)
+  ✓  14 e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description (655ms)
+  ✓  15 e2e/format.spec.ts:273:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) (629ms)
+  ✓  16 e2e/format.spec.ts:288:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (601ms)
   ✓  17 e2e/format.spec.ts:307:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches (2.7s)
-  ✓  18 e2e/format.spec.ts:343:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games (3.1s)
-  ✓  19 e2e/format.spec.ts:379:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games (3.4s)
-  ✓  20 e2e/format.spec.ts:417:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts (1.7s)
+  ✓  18 e2e/format.spec.ts:343:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games (3.2s)
+  ✓  19 e2e/format.spec.ts:379:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games (3.2s)
+  ✓  20 e2e/format.spec.ts:417:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts (2.3s)
   ✓  21 e2e/format.spec.ts:440:3 › Tournament Format Selection › Player Count Range (8-64) › below 8 players shows minimum warning and button is disabled (568ms)
-  ✓  22 e2e/format.spec.ts:451:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (5.9s)
-  ✓  23 e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning and button is disabled (578ms)
-  ✓  24 e2e/i18n.test.ts:4:2 › i18n › home page in default locale (English) (119ms)
-  ✓  25 e2e/i18n.test.ts:9:2 › i18n › home page loads in German via /de/ (121ms)
-  ✓  26 e2e/i18n.test.ts:14:2 › i18n › home page loads in French via /fr/ (127ms)
-  ✓  27 e2e/i18n.test.ts:19:2 › i18n › home page loads in Spanish via /es/ (131ms)
-  ✓  28 e2e/i18n.test.ts:24:2 › i18n › login page has German text at /de/login (126ms)
-  ✓  29 e2e/i18n.test.ts:29:2 › i18n › login page has French text at /fr/login (126ms)
-  ✓  30 e2e/i18n.test.ts:34:2 › i18n › login page has Spanish text at /es/login (124ms)
-  ✓  31 e2e/i18n.test.ts:39:2 › i18n › signup page in German (127ms)
-  ✓  32 e2e/i18n.test.ts:44:2 › i18n › signup page in French (119ms)
-  ✓  33 e2e/i18n.test.ts:49:2 › i18n › signup page in Spanish (127ms)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5621[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+  ✓  22 e2e/format.spec.ts:451:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (6.1s)
+  ✓  23 e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning and button is disabled (580ms)
+  ✓  24 e2e/i18n.test.ts:4:2 › i18n › home page in default locale (English) (117ms)
+  ✓  25 e2e/i18n.test.ts:9:2 › i18n › home page loads in German via /de/ (124ms)
+  ✓  26 e2e/i18n.test.ts:14:2 › i18n › home page loads in French via /fr/ (129ms)
+  ✓  27 e2e/i18n.test.ts:19:2 › i18n › home page loads in Spanish via /es/ (125ms)
+  ✓  28 e2e/i18n.test.ts:24:2 › i18n › login page has German text at /de/login (133ms)
+  ✓  29 e2e/i18n.test.ts:29:2 › i18n › login page has French text at /fr/login (129ms)
+  ✓  30 e2e/i18n.test.ts:34:2 › i18n › login page has Spanish text at /es/login (137ms)
+  ✓  31 e2e/i18n.test.ts:39:2 › i18n › signup page in German (123ms)
+  ✓  32 e2e/i18n.test.ts:44:2 › i18n › signup page in French (124ms)
+  ✓  33 e2e/i18n.test.ts:49:2 › i18n › signup page in Spanish (123ms)
   ✓  34 e2e/preseed.spec.ts:164:2 › Preseed Tournament › 16-player preseed: verify snake seeding, origin mixing, and standings (1.1m)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5622[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-  ✓  35 e2e/preseed.spec.ts:264:2 › Preseed Tournament › 8-player preseed tournament (32.3s)
-  ✓  36 e2e/promotion.spec.ts:69:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (17.8s)
-  ✓  37 e2e/promotion.spec.ts:183:2 › Promotion and Relegation › close round button is disabled until all matches complete (15.6s)
-  ✓  38 e2e/promotion.spec.ts:277:2 › Promotion and Relegation › final round completion marks tournament as completed (16.0s)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5626[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-  ✓  39 e2e/promotion.spec.ts:357:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution (17.5s)
-  ✓  40 e2e/promotion.spec.ts:440:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution (13.4s)
-  ✓  41 e2e/promotion.spec.ts:514:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court redistributes correctly after round (20.9s)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5628[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-  ✓  42 e2e/promotion.spec.ts:589:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court redistributes correctly after round (20.6s)
-  ✓  43 e2e/standings.spec.ts:53:2 › Standings Calculation › calculates correct points for all players in a match (4.3s)
-  ✓  44 e2e/standings.spec.ts:89:2 › Standings Calculation › sorts players by total points in descending order (4.5s)
-  ✓  45 e2e/standings.spec.ts:126:2 › Standings Calculation › breaks ties using point differential (4.4s)
-  ✓  46 e2e/standings.spec.ts:158:2 › Standings Calculation › awards points correctly across multiple matches per player (5.0s)
-  ✓  47 e2e/standings.spec.ts:206:2 › Standings Calculation › validates score entry rules (min points, win by 2, no cap) (5.0s)
-  ✓  48 e2e/standings.spec.ts:257:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking (3.2s)
-  ✓  49 e2e/standings.spec.ts:288:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking (3.9s)
-  ✓  50 e2e/standings.spec.ts:319:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking (3.8s)
-  ✓  51 e2e/standings.spec.ts:350:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings rank correctly after score entry (5.8s)
-  ✓  52 e2e/standings.spec.ts:404:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings rank correctly after score entry (4.6s)
-  ✓  53 e2e/standings.spec.ts:448:3 › Standings Calculation › Round 1 Standings Ranking › ranks by court position first after round 1 (15.6s)
-  ✓  54 e2e/standings.spec.ts:532:3 › Standings Calculation › Non-Standard Court Score Validation › 5p court accepts 15-point scores (4.6s)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5641[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-  ✓  55 e2e/standings.spec.ts:568:3 › Standings Calculation › Non-Standard Court Score Validation › 3p court accepts 21-point scores (same as 4p) (4.1s)
-  ✓  56 e2e/tournament.spec.ts:88:3 › Tournament Integration Tests › complete 2-round tournament with score entry (30.5s)
-  ✓  57 e2e/tournament.spec.ts:241:3 › Tournament Integration Tests › players can access court via direct URL without login (3.9s)
-  ✓  58 e2e/tournament.spec.ts:295:3 › Tournament Integration Tests › dashboard shows active tournaments (2.2s)
-  ✓  59 e2e/tournament.spec.ts:322:3 › Tournament Integration Tests › smart paste converts comma-separated names to lines (730ms)
-  ✓  60 e2e/tournament.spec.ts:354:5 › Tournament Integration Tests › Scoring Modes › best-of-3 scoring mode is selectable (626ms)
-  ✓  61 e2e/tournament.spec.ts:362:5 › Tournament Integration Tests › Scoring Modes › custom scoring mode reveals advanced options (637ms)
-  ✓  62 e2e/tournament.spec.ts:383:5 › Tournament Integration Tests › Scoring Modes › custom best-of-3 shows deciding set points (667ms)
-  ✓  63 e2e/tournament.spec.ts:394:5 › Tournament Integration Tests › Scoring Modes › duration estimate updates based on scoring mode (598ms)
-  ✓  64 e2e/tournament.spec.ts:406:5 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default (3.3s)
-  ✓  65 e2e/tournament.spec.ts:431:5 › Tournament Integration Tests › Scoring Modes › best-of-3 tournament enforces per-set score entry (7.1s)
-  ✓  66 e2e/tournament.spec.ts:535:5 › Tournament Integration Tests › Scoring Modes › single-set tournament rejects scores below minimum (5.3s)
-  ✓  67 e2e/tournament.spec.ts:576:5 › Tournament Integration Tests › Scoring Modes › 5p court rejects scores below 15-point minimum (5.5s)
-  ✓  68 e2e/tournament.spec.ts:617:3 › Tournament Integration Tests › rejects blowout scores (deuce-aware validation) (7.0s)
-  ✓  69 e2e/tournament.spec.ts:679:5 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › shows virtual court info when physical courts < virtual courts (634ms)
-  ✓  70 e2e/tournament.spec.ts:694:5 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › physical courts slider ranges from 1 to 16 (659ms)
-  ✓  71 e2e/tournament.spec.ts:702:5 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › duration estimate accounts for physical court shifts (622ms)
-  ✓  72 e2e/tournament.spec.ts:718:5 › Tournament Integration Tests › Court Labeling › organizer can set and view physical court labels (5.9s)
-  ✓  73 e2e/tournament.spec.ts:748:5 › Tournament Integration Tests › Court Labeling › court page shows no label when not set (2.8s)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5652[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.close (node:internal/webstreams/readablestream:1068:13)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2024:20)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-  ✓  74 e2e/tournament.spec.ts:772:5 › Tournament Integration Tests › Tournament Deletion › deletes tournament from detail page (4.1s)
-  ✓  75 e2e/tournament.spec.ts:802:5 › Tournament Integration Tests › Tournament Deletion › cancelling delete keeps tournament (3.3s)
-  ✓  76 e2e/tournament.spec.ts:831:5 › Tournament Integration Tests › Player Retirement › retire a player between rounds and continue tournament (43.0s)
-  ✓  77 e2e/tournament.spec.ts:953:5 › Tournament Integration Tests › Player Retirement › report mid-round injury with Cancel & Average option (16.2s)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5656[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.close (node:internal/webstreams/readablestream:1068:13)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2024:20)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5657[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-  ✓  78 e2e/tournament.spec.ts:1066:5 › Tournament Integration Tests › Player Retirement › report mid-round injury with Substitute option (17.0s)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5658[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-  ✓  79 e2e/tournament.spec.ts:1189:5 › Tournament Integration Tests › Player Retirement › undo retirement within 5 min window (29.5s)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5659[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-  ✓  80 e2e/tournament.spec.ts:1280:5 › Tournament Integration Tests › Player Retirement › undo injury report with Cancel option (16.2s)
-  ✓  81 e2e/tournament.spec.ts:1378:5 › Tournament Integration Tests › Player Retirement › undo injury report with Substitute option (16.3s)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5661[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-  ✓  82 e2e/tournament.spec.ts:1472:5 › Tournament Integration Tests › Player Retirement › retire a player causing non-standard bottom court and complete tournament (36.7s)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5661[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-  ✓  83 e2e/tournament.spec.ts:1594:5 › Tournament Integration Tests › Scoring Overrides › override 5p court points-to-win and verify score entry (5.7s)
-[2m[WebServer] [22m
-[2m[WebServer] [22m[1;31m[500] GET /tournament/5662[0m
-[2m[WebServer] [22mTypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
-[2m[WebServer] [22m    at ReadableStreamDefaultController.enqueue (node:internal/webstreams/readablestream:1077:13)
-[2m[WebServer] [22m    at send (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2001:16)
-[2m[WebServer] [22m    at Object.pull (file:///home/dirk/Dev/kob/.svelte-kit/output/server/index.js:2028:9)
-[2m[WebServer] [22m    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-  ✓  84 e2e/tournament.spec.ts:1649:5 › Tournament Integration Tests › Scoring Overrides › override 3p court to best-of-3 and verify set entry (5.2s)
+  ✓  35 e2e/preseed.spec.ts:264:2 › Preseed Tournament › 8-player preseed tournament (34.1s)
+  ✘  36 e2e/promotion.spec.ts:69:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (2.4s)
 
-  84 passed (11.9m)
+
+  1) e2e/bestof3.spec.ts:96:2 › Best-of-3 Round Transition › round closes when best-of-3 matches end 2-0 (no deciding set) 
+
+    [31mTest timeout of 180000ms exceeded.[39m
+
+    Error: page.fill: Test timeout of 180000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('[data-testid="team-b-score-96000"]')[22m
+
+
+      18 |
+      19 | 	await page.fill(`[data-testid="team-a-score-${matchId}"]`, String(scoreA));
+    > 20 | 	await page.fill(`[data-testid="team-b-score-${matchId}"]`, String(scoreB));
+         | 	           ^
+      21 | 	await page.click(`[data-testid="save-score-${matchId}"]`);
+      22 | 	await expect(matchGroup.locator('.saved').first()).toBeVisible({ timeout: 15000 });
+      23 | 	await page.waitForTimeout(500);
+        at enterSingleSet (/home/dirk/Dev/kob/e2e/bestof3.spec.ts:20:13)
+        at fillCourtBestOf3 (/home/dirk/Dev/kob/e2e/bestof3.spec.ts:37:2)
+        at /home/dirk/Dev/kob/e2e/bestof3.spec.ts:127:4
+
+    Error Context: test-results/bestof3-Best-of-3-Round-Tr-625a5-es-end-2-0-no-deciding-set-/error-context.md
+
+  2) e2e/promotion.spec.ts:69:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank 
+
+    Test was interrupted.
+
+    Error: page.waitForSelector: Test ended.
+    Call log:
+    [2m  - waiting for locator('.court-card') to be visible[22m
+
+
+      84 |
+      85 | 		await page.waitForURL(/\/tournament\/\d+/);
+    > 86 | 		await page.waitForSelector('.court-card');
+         | 		           ^
+      87 |
+      88 | 		// Capture tournament ID for later navigation
+      89 | 		const tournamentUrl = page.url();
+        at /home/dirk/Dev/kob/e2e/promotion.spec.ts:86:14
+
+    Error Context: test-results/promotion-Promotion-and-Re-b274e-ding-redistribution-by-rank/error-context.md
+
+  1 failed
+    e2e/bestof3.spec.ts:96:2 › Best-of-3 Round Transition › round closes when best-of-3 matches end 2-0 (no deciding set) 
+  1 interrupted
+    e2e/promotion.spec.ts:69:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank 
+  48 did not run
+  34 passed (5.6m)

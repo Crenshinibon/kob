@@ -266,10 +266,3 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 export const getTournamentData = query(v.number(), async (tournamentId) => {
 	return fetchTournamentData(tournamentId);
 });
-
-export const getTournamentDataLive = query.live(v.number(), async function* (tournamentId) {
-	while (true) {
-		yield await fetchTournamentData(tournamentId);
-		await new Promise((f) => setTimeout(f, 3000));
-	}
-});

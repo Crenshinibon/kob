@@ -25,7 +25,7 @@ import {
 	type FormatType,
 	type MatchData
 } from '$lib/server/tournament-logic';
-import { getTournamentDataLive } from './tournament-data.remote';
+import { getTournamentData } from './tournament-data.remote';
 
 function parseCourtSizes(tourney: typeof tournament.$inferSelect): number[] {
 	return tourney.courtSizes
@@ -182,7 +182,7 @@ export const closeRoundForm = form(
 				})
 				.where(eq(tournament.id, tournamentId));
 
-			getTournamentDataLive(tournamentId).reconnect();
+			getTournamentData(tournamentId).refresh();
 
 			redirect(303, `/tournament/${tournamentId}/standings`);
 		}
@@ -329,7 +329,7 @@ export const closeRoundForm = form(
 			.set({ lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentDataLive(tournamentId).reconnect();
+		getTournamentData(tournamentId).refresh();
 
 		return { success: true };
 	}
@@ -359,7 +359,7 @@ export const setCourtLabel = command(
 			.set({ label: label.trim() || null })
 			.where(eq(court.id, courtId));
 
-		getTournamentDataLive(tourney.id).reconnect();
+		getTournamentData(tourney.id).refresh();
 
 		return { success: true };
 	}
@@ -429,7 +429,7 @@ export const updateScoringOverrides = command(
 			.set({ scoringOverrides: overrides, lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentDataLive(tournamentId).reconnect();
+		getTournamentData(tournamentId).refresh();
 
 		return { success: true };
 	}
@@ -749,7 +749,7 @@ export const retirePlayer = command(
 			.set({ lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentDataLive(tournamentId).reconnect();
+		getTournamentData(tournamentId).refresh();
 
 		return { success: true };
 	}
@@ -866,7 +866,7 @@ export const reportInjury = command(
 			.set({ lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentDataLive(tournamentId).reconnect();
+		getTournamentData(tournamentId).refresh();
 
 		return { success: true };
 	}
@@ -1143,7 +1143,7 @@ export const undoRetirement = command(
 			.set({ lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentDataLive(tournamentId).reconnect();
+		getTournamentData(tournamentId).refresh();
 
 		return { success: true };
 	}
@@ -1280,7 +1280,7 @@ export const undoInjury = command(
 			})
 			.where(eq(player.id, playerId));
 
-		getTournamentDataLive(tournamentId).reconnect();
+		getTournamentData(tournamentId).refresh();
 
 		return { success: true };
 	}

@@ -1,7 +1,7 @@
 import { query } from '$app/server';
 import { db } from '$lib/server/db';
 import { tournament, courtRotation, match, player } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import * as m from '$lib/paraglide/messages';
 import {
@@ -39,7 +39,7 @@ async function fetchStandingsData(tournamentId: number) {
 			...(cr.player5Id ? [cr.player5Id] : []),
 			...(cr.player6Id ? [cr.player6Id] : [])
 		];
-		pIds.forEach((pid, idx) => {
+		pIds.forEach((pid) => {
 			courtAssignment[pid] = { court: cr.courtNumber, rank: null };
 		});
 	}
@@ -182,11 +182,4 @@ async function fetchStandingsData(tournamentId: number) {
 
 export const getStandingsData = query(v.number(), async (tournamentId) => {
 	return fetchStandingsData(tournamentId);
-});
-
-export const getStandingsDataLive = query.live(v.number(), async function* (tournamentId) {
-	while (true) {
-		yield await fetchStandingsData(tournamentId);
-		await new Promise((f) => setTimeout(f, 3000));
-	}
 });

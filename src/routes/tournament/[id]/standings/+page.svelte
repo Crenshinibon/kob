@@ -1,13 +1,20 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import * as m from '$lib/paraglide/messages';
-	import { getStandingsDataLive } from './standings-data.remote';
+	import { getStandingsData } from './standings-data.remote';
 
 	let { data } = $props<{
 		data: { tournamentId: number; tournament: { id: number; name: string } };
 	}>();
 
-	const liveQuery = $derived(getStandingsDataLive(data.tournamentId));
+	const standingsQuery = $derived(getStandingsData(data.tournamentId));
+
+	$effect(() => {
+		const interval = setInterval(() => {
+			standingsQuery.refresh().catch(() => {});
+		}, 5000);
+		return () => clearInterval(interval);
+	});
 
 	const formatNumber = (num: number): string => (num > 0 ? `+${num}` : String(num));
 
@@ -78,7 +85,7 @@
 		<h1>{data.tournament.name}</h1>
 	</header>
 
-	{#await liveQuery}
+	{#await standingsQuery}
 		<section class="empty">
 			<p>{m.loading()}</p>
 		</section>

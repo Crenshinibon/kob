@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getTournamentDataLive, type CourtDisplayData } from './tournament-data.remote';
+	import { getTournamentData, type CourtDisplayData } from './tournament-data.remote';
 	import * as m from '$lib/paraglide/messages';
 	import {
 		closeRoundForm,
@@ -34,8 +34,15 @@
 		};
 	}>();
 
-	const liveQuery = $derived(getTournamentDataLive(data.tournamentId));
-	const isConnected = $derived(liveQuery.connected);
+	const tournamentQuery = $derived(getTournamentData(data.tournamentId));
+
+	$effect(() => {
+		const interval = setInterval(() => {
+			tournamentQuery.refresh().catch(() => {});
+		}, 5000);
+		return () => clearInterval(interval);
+	});
+
 	let editingScoring = $state(false);
 	let localOverrides = $state<
 		Record<
@@ -114,7 +121,7 @@
 	}
 </script>
 
-{#await liveQuery}
+{#await tournamentQuery}
 	<div class="loading">{m.loading_tournament()}</div>
 {:then state}
 	{@const tournament = state?.tournament}
@@ -175,11 +182,6 @@
 					href={resolve('/tournament/[id]/standings', { id: String(tournament.id) })}
 					class="standings-link">{m.view_standings()}</a
 				>
-				{#if isActive && !isConnected}
-					<button class="btn-reconnect" onclick={() => liveQuery.reconnect()}>
-						{m.reconnecting()}
-					</button>
-				{/if}
 			</header>
 
 			{#if isActive && currentRound > 0}
