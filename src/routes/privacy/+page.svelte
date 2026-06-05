@@ -24,9 +24,9 @@
 		<table class="cookie-table">
 			<thead>
 				<tr>
-				<th>{m.privacy_cookies_table_name()}</th>
-				<th>{m.privacy_cookies_table_purpose()}</th>
-				<th>{m.privacy_cookies_table_duration()}</th>
+					<th>{m.privacy_cookies_table_name()}</th>
+					<th>{m.privacy_cookies_table_purpose()}</th>
+					<th>{m.privacy_cookies_table_duration()}</th>
 				</tr>
 			</thead>
 			<tbody>

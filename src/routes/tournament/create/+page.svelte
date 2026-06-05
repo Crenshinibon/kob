@@ -343,7 +343,9 @@
 				bind:this={textareaEl}
 				onpaste={handlePaste}
 				rows="10"
-				placeholder={formatType === 'preseed' ? m.create_names_placeholder_preseed() : m.create_names_placeholder_random()}
+				placeholder={formatType === 'preseed'
+					? m.create_names_placeholder_preseed()
+					: m.create_names_placeholder_random()}
 				required
 			></textarea>
 			<p class="hint">
@@ -416,7 +418,10 @@
 			</div>
 			{#if physicalCourts < Math.ceil(computedPlayerCount / 4)}
 				<p class="info">
-					{m.create_virtual_courts_desc({ virtual: Math.ceil(computedPlayerCount / 4), physical: physicalCourts })}
+					{m.create_virtual_courts_desc({
+						virtual: Math.ceil(computedPlayerCount / 4),
+						physical: physicalCourts
+					})}
 				</p>
 			{/if}
 		</div>
@@ -446,14 +451,22 @@
 			<div class="field duration-estimate">
 				<span class="label">Estimated Duration</span>
 				<div class="duration-box">
-				<p class="duration-total">
-					{m.create_est_duration({ hours: Math.floor(durationEstimate!.total / 60), minutes: durationEstimate!.total % 60 })}
-				</p>
+					<p class="duration-total">
+						{m.create_est_duration({
+							hours: Math.floor(durationEstimate!.total / 60),
+							minutes: durationEstimate!.total % 60
+						})}
+					</p>
 					<div class="duration-breakdown">
 						<span>{m.create_setup()}</span>
 						<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
 						{#each Array(effectiveRounds) as _, r (r)}
-							<span>{m.create_round_duration({ round: r + 1, minutes: durationEstimate!.roundDur })}</span>
+							<span
+								>{m.create_round_duration({
+									round: r + 1,
+									minutes: durationEstimate!.roundDur
+								})}</span
+							>
 						{/each}
 						<span
 							>Based on: {durationEstimate!.courts} courts, {computedPlayerCount} players, {scoringMode ===
@@ -471,7 +484,9 @@
 		<button
 			type="submit"
 			class="btn-primary"
-			disabled={computedPlayerCount < minPlayers || computedPlayerCount > maxPlayers || !!createTournamentForm.pending}
+			disabled={computedPlayerCount < minPlayers ||
+				computedPlayerCount > maxPlayers ||
+				!!createTournamentForm.pending}
 		>
 			{#if createTournamentForm.pending}
 				<span class="spinner"></span> {m.loading()}
@@ -994,6 +1009,8 @@
 	}
 
 	@keyframes spin {
-		to { transform: rotate(360deg); }
+		to {
+			transform: rotate(360deg);
+		}
 	}
 </style>

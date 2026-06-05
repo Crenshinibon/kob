@@ -29,6 +29,7 @@ export const tournament = pgTable('tournament', {
 	avgRallyDurationSeconds: integer('avg_rally_duration_seconds').notNull().default(35),
 	timeBetweenRalliesSeconds: integer('time_between_rallies_seconds').notNull().default(8),
 	timeBetweenMatchesMinutes: integer('time_between_matches_minutes').notNull().default(3),
+	lastActivityAt: timestamp('last_activity_at').defaultNow(),
 	createdAt: timestamp('created_at').defaultNow()
 });
 

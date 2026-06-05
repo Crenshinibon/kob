@@ -14,6 +14,7 @@ The `query.live()` in `$derived()` produces a `LiveQuery` object that Svelte 5 c
 ## Root Cause
 
 In `+page.svelte`:
+
 ```svelte
 const liveQuery = $derived(getStandingsDataLive(data.tournamentId));
 ```
@@ -25,6 +26,7 @@ const liveQuery = $derived(getStandingsDataLive(data.tournamentId));
 ### Fix A: Move Live Query to Client-Only
 
 Wrap in `browser` check so the live query only runs on the client:
+
 ```svelte
 import { browser } from '$app/environment';
 
@@ -55,7 +57,7 @@ This happens when `standings.length === 0` (the "empty" section currently shows 
 
 **File**: `src/routes/tournament/[id]/standings/+page.svelte`
 
-- Remove `$derived(getStandingsDataLive(...))` 
+- Remove `$derived(getStandingsDataLive(...))`
 - Use `$state` + `$effect` with `browser` guard
 - Template already handles `{#await liveQuery}` correctly (shows loading when `liveQuery` is undefined)
 

@@ -48,6 +48,7 @@ Overall | Player   | Points | Diff | Pos
 ```
 
 The court position number should be visually dominant:
+
 - Large font size (1.5–2× body text)
 - Bold weight
 - Colored with the court group color
@@ -61,13 +62,13 @@ A subtle horizontal divider line between court groups (using the next court's co
 
 ## Color Stops
 
-| Court | Badge/Font Color | Hex | Tone |
-|-------|-----------------|-----|------|
-| 1 | Bright gold | `#FFD700` | Yellow |
-| 2 | Vivid yellow | `#FFEA00` | Yellow |
-| 3 | Yellow-green | `#ADFF2F` | Green |
-| 4 | Mint green | `#69F0AE` | Green |
-| 5+ | Cyan | `#00E5FF` | Blue |
+| Court | Badge/Font Color | Hex       | Tone   |
+| ----- | ---------------- | --------- | ------ |
+| 1     | Bright gold      | `#FFD700` | Yellow |
+| 2     | Vivid yellow     | `#FFEA00` | Yellow |
+| 3     | Yellow-green     | `#ADFF2F` | Green  |
+| 4     | Mint green       | `#69F0AE` | Green  |
+| 5+    | Cyan             | `#00E5FF` | Blue   |
 
 All colors are bright enough to maintain contrast against `var(--bg-primary)` (dark).
 
@@ -80,10 +81,11 @@ All colors are bright enough to maintain contrast against `var(--bg-primary)` (d
 **File**: `src/routes/tournament/[id]/standings/+page.svelte`
 
 Add a helper that returns the court group color:
+
 ```typescript
 function getCourtColor(courtNum: number): string {
-    const colors = ['#FFD700', '#ADFF2F', '#FF8C00', '#FF6B6B'];
-    return colors[Math.min(courtNum - 1, colors.length - 1)] || '#FF4444';
+	const colors = ['#FFD700', '#ADFF2F', '#FF8C00', '#FF6B6B'];
+	return colors[Math.min(courtNum - 1, colors.length - 1)] || '#FF4444';
 }
 ```
 

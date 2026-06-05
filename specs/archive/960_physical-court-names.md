@@ -15,6 +15,7 @@ A per-virtual-court free-text label, editable by the organizer from the tourname
 **File**: `src/lib/server/db/schema.ts`
 
 Add `label` column to the `court` table:
+
 ```typescript
 label: text('label'), // free-text physical court name, nullable
 ```
@@ -45,15 +46,22 @@ Each court card in the round overview gets an inline text input for the physical
 **File**: `src/routes/tournament/[id]/tournament-actions.remote.ts`
 
 New `command` or `form`:
+
 ```typescript
-export const setCourtLabel = command(v.object({
-    courtId: v.number(),
-    label: v.string(),
-}), async ({ courtId, label }) => {
-    // validate org owns this court's tournament
-    await db.update(court).set({ label: label || null }).where(eq(court.id, courtId));
-    getTournamentDataLive(tournamentId).reconnect();
-});
+export const setCourtLabel = command(
+	v.object({
+		courtId: v.number(),
+		label: v.string()
+	}),
+	async ({ courtId, label }) => {
+		// validate org owns this court's tournament
+		await db
+			.update(court)
+			.set({ label: label || null })
+			.where(eq(court.id, courtId));
+		getTournamentDataLive(tournamentId).reconnect();
+	}
+);
 ```
 
 ### Court Page Display

@@ -1,6 +1,8 @@
-import { db } from './db';
-import { tournament, player, courtRotation, match, court } from '../src/lib/server/db/schema';
-import { eq, inArray, and, lt } from 'drizzle-orm';
+import { json } from '@sveltejs/kit';
+import { db } from '$lib/server/db';
+import { tournament, player, courtRotation, match, court } from '$lib/server/db/schema';
+import { eq, and, lt, inArray } from 'drizzle-orm';
+import type { RequestHandler } from './$types';
 
 const CLOSED_TOURNAMENT_MAX_AGE_DAYS = 14;
 const INACTIVE_TOURNAMENT_MAX_AGE_DAYS = 31;
@@ -27,23 +29,23 @@ async function deleteTournaments(ids: number[]) {
 	await db.delete(tournament).where(inArray(tournament.id, ids));
 }
 
-async function cleanupOldTournaments() {
-	console.log('Running tournament cleanup...');
+export const GET: RequestHandler = async ({ request }) => {
+	const authHeader = request.headers.get('authorization');
+	if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+		return json({ error: 'Unauthorized' }, { status: 401 });
+	}
+
 	let totalDeleted = 0;
 
 	const closedCutoff = new Date();
 	closedCutoff.setDate(closedCutoff.getDate() - CLOSED_TOURNAMENT_MAX_AGE_DAYS);
 
 	const closedTournaments = await db
-		.select({ id: tournament.id, name: tournament.name })
+		.select({ id: tournament.id })
 		.from(tournament)
 		.where(and(eq(tournament.status, 'completed'), lt(tournament.lastActivityAt, closedCutoff)));
 
 	if (closedTournaments.length > 0) {
-		console.log(
-			`Deleting ${closedTournaments.length} completed tournaments older than ${CLOSED_TOURNAMENT_MAX_AGE_DAYS} days:`,
-			closedTournaments.map((t) => t.name)
-		);
 		await deleteTournaments(closedTournaments.map((t) => t.id));
 		totalDeleted += closedTournaments.length;
 	}
@@ -52,7 +54,7 @@ async function cleanupOldTournaments() {
 	inactiveCutoff.setDate(inactiveCutoff.getDate() - INACTIVE_TOURNAMENT_MAX_AGE_DAYS);
 
 	const inactiveTournaments = await db
-		.select({ id: tournament.id, name: tournament.name })
+		.select({ id: tournament.id })
 		.from(tournament)
 		.where(lt(tournament.lastActivityAt, inactiveCutoff));
 
@@ -60,22 +62,9 @@ async function cleanupOldTournaments() {
 	const staleTournaments = inactiveTournaments.filter((t) => !alreadyDeleted.has(t.id));
 
 	if (staleTournaments.length > 0) {
-		console.log(
-			`Deleting ${staleTournaments.length} inactive tournaments older than ${INACTIVE_TOURNAMENT_MAX_AGE_DAYS} days:`,
-			staleTournaments.map((t) => t.name)
-		);
 		await deleteTournaments(staleTournaments.map((t) => t.id));
 		totalDeleted += staleTournaments.length;
 	}
 
-	if (totalDeleted === 0) {
-		console.log('No old tournaments to clean up');
-	} else {
-		console.log(`Cleanup complete: deleted ${totalDeleted} tournaments`);
-	}
-}
-
-cleanupOldTournaments().catch((err) => {
-	console.error('Cleanup failed:', err);
-	process.exit(1);
-});
+	return json({ deleted: totalDeleted });
+};

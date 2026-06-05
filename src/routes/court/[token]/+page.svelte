@@ -470,9 +470,13 @@
 				<div class="format-explanation">
 					<h4>{formatExplanation!.title}</h4>
 					<p>{formatExplanation!.description}</p>
-					<p class="format-detail">{msg.court_scoring_label({ name: formatExplanation!.scoring })}</p>
+					<p class="format-detail">
+						{msg.court_scoring_label({ name: formatExplanation!.scoring })}
+					</p>
 					{#if formatExplanation!.ranking}
-						<p class="format-detail">{msg.court_ranking_label({ name: formatExplanation!.ranking })}</p>
+						<p class="format-detail">
+							{msg.court_ranking_label({ name: formatExplanation!.ranking })}
+						</p>
 					{/if}
 					{#if formatExplanation!.runDetails}
 						<div class="run-details">
@@ -502,7 +506,9 @@
 					{@const pid = Number(id)}
 					<div class="player-card" class:injured={injuredPlayerIds.has(pid)}>
 						<span class="player-letter">{String.fromCharCode(65 + i)}</span>
-						<span class="player-name">{injuredPlayerIds.has(pid) ? msg.court_subst_tag() : name}</span>
+						<span class="player-name"
+							>{injuredPlayerIds.has(pid) ? msg.court_subst_tag() : name}</span
+						>
 						{#if injuredPlayerIds.has(pid)}
 							<span class="injured-tag">{msg.court_sub_tag()}</span>
 						{/if}
@@ -521,7 +527,8 @@
 								{msg.court_match_label({ num: group.matchNumber })}
 								{#if teamLabels.get(group.matchNumber)}
 									<span class="team-label">
-										{teamLabels.get(group.matchNumber)!.teamA} {msg.court_vs()}
+										{teamLabels.get(group.matchNumber)!.teamA}
+										{msg.court_vs()}
 										{teamLabels.get(group.matchNumber)!.teamB}
 									</span>
 								{/if}
@@ -542,9 +549,13 @@
 										]}
 										<div class="set-card" transition:slide>
 											<h4>
-												{msg.court_set_label({ number: setNum })}{#if isDecidingSet(setNum, effectiveScoring.setsToWin)}
+												{msg.court_set_label({
+													number: setNum
+												})}{#if isDecidingSet(setNum, effectiveScoring.setsToWin)}
 													<span class="deciding-hint"
-														>{msg.court_deciding_hint({ points: effectiveScoring.decidingSetPoints })}</span
+														>{msg.court_deciding_hint({
+															points: effectiveScoring.decidingSetPoints
+														})}</span
 													>{/if}
 											</h4>
 											{#if setMatch.isCanceled}
@@ -559,7 +570,9 @@
 														{getTeamDisplay(setMatch, 'b')}:
 														<strong>{setMatch.teamBScore}</strong>
 													</p>
-													<span class="saved" data-testid="saved-{setMatch.id}">{msg.court_saved()}</span>
+													<span class="saved" data-testid="saved-{setMatch.id}"
+														>{msg.court_saved()}</span
+													>
 													{#if data.isAuthenticated}
 														<button
 															class="btn-edit"
@@ -610,7 +623,8 @@
 											{msg.court_match_label({ num: render.index + 1 })}
 											{#if teamLabels.get(match.matchNumber)}
 												<span class="team-label">
-													{teamLabels.get(match.matchNumber)!.teamA} {msg.court_vs()}
+													{teamLabels.get(match.matchNumber)!.teamA}
+													{msg.court_vs()}
 													{teamLabels.get(match.matchNumber)!.teamB}
 												</span>
 											{/if}
@@ -628,7 +642,8 @@
 													{getTeamDisplay(match, 'b')}:
 													<strong>{match.teamBScore}</strong>
 												</p>
-												<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span>
+												<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span
+												>
 												{#if data.isAuthenticated}
 													<button
 														class="btn-edit"
@@ -664,7 +679,8 @@
 							{msg.court_match_label({ num: render.index + 1 })}
 							{#if teamLabels.get(match.matchNumber)}
 								<span class="team-label">
-									{teamLabels.get(match.matchNumber)!.teamA} {msg.court_vs()}
+									{teamLabels.get(match.matchNumber)!.teamA}
+									{msg.court_vs()}
 									{teamLabels.get(match.matchNumber)!.teamB}
 								</span>
 							{/if}
@@ -693,12 +709,12 @@
 									</p>
 									<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span>
 									{#if data.isAuthenticated}
-									<button
-										class="btn-edit"
-										onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
-									>
-										{msg.edit_btn()}
-									</button>
+										<button
+											class="btn-edit"
+											onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
+										>
+											{msg.edit_btn()}
+										</button>
 									{/if}
 								</div>
 							{:else}

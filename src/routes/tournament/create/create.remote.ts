@@ -105,10 +105,7 @@ export const createTournamentForm = form(
 				(p: ParsedPlayer) => p.seedPoints === null
 			);
 			if (missingPoints.length > 0) {
-				error(
-					400,
-					m.err_preseed_points({ names: missingPoints.join(', ') })
-				);
+				error(400, m.err_preseed_points({ names: missingPoints.join(', ') }));
 			}
 		}
 

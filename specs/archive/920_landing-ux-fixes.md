@@ -9,6 +9,7 @@ Minor UI/i18n bugs discovered during manual testing of the landing page and tour
 ## Bug 1: Language Switcher Only Visible When Logged In
 
 ### Location
+
 `src/routes/+layout.svelte:28-34`
 
 ### Root Cause
@@ -17,10 +18,10 @@ The entire nav bar (including `LanguageSwitcher`) is wrapped in `{#if data?.user
 
 ```svelte
 {#if data?.user}
-    <nav class="top-nav">
-        <LanguageSwitcher />
-        ...
-    </nav>
+	<nav class="top-nav">
+		<LanguageSwitcher />
+		...
+	</nav>
 {/if}
 ```
 
@@ -32,11 +33,11 @@ Move `LanguageSwitcher` outside the auth check. Show it in a nav bar for all use
 
 ```svelte
 <nav class="top-nav">
-    <LanguageSwitcher />
-    {#if data?.user}
-        <span class="user-email">{data.user.email}</span>
-        <button onclick={handleSignOut} class="btn-signout">{m.sign_out()}</button>
-    {/if}
+	<LanguageSwitcher />
+	{#if data?.user}
+		<span class="user-email">{data.user.email}</span>
+		<button onclick={handleSignOut} class="btn-signout">{m.sign_out()}</button>
+	{/if}
 </nav>
 ```
 
@@ -47,6 +48,7 @@ Or conditionally show the banner but always show LanguageSwitcher.
 ## Bug 2: Language Switch Loses Form Input
 
 ### Location
+
 `src/lib/components/LanguageSwitcher.svelte`
 
 ### Root Cause
@@ -62,11 +64,13 @@ Kept `data-sveltekit-reload` — the Paraglide-recommended approach. Form input 
 ## Bug 3: German Translation Missing for Player Input Help Text
 
 ### Location
+
 `src/routes/tournament/create/+page.svelte:350`
 
 ### Current State
 
 Hardcoded English text:
+
 ```html
 One name per line, optionally with seed points:<br />
 Name 1250
@@ -77,6 +81,7 @@ Not using Paraglide-js `m.*` message. When user switches to German, this text st
 ### Fix
 
 Replace with a Paraglide message:
+
 ```svelte
 {m.create_player_help()}<br />
 {m.create_player_example()}
@@ -89,6 +94,7 @@ Add translations for German (and other locales).
 ## Bug 4: WVV CSV Import Label Wrong
 
 ### Location
+
 Create tournament page — WVV import section
 
 ### Current State
@@ -108,6 +114,7 @@ Update the label and any help text to use "Setzliste" instead of "Meldungen".
 ## Bug 5: CSV Help Text Overly Specific
 
 ### Location
+
 Create tournament page — WVV import help section
 
 ### Current State
@@ -130,6 +137,7 @@ Simplify help text to list supported separators concisely.
 ## Bug 6: Random Seed Format Doesn't Need Points
 
 ### Location
+
 Create tournament page — player input section
 
 ### Root Cause
@@ -139,6 +147,7 @@ The help text always mentions "seed points" regardless of selected format. But f
 ### Fix
 
 Show format-specific help text:
+
 - **Random seed**: "One name per line" (no points needed, random assignment)
 - **Preseed**: "One name per line, with seed points: `Name 1250`" (points required for ranking)
 

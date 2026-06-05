@@ -15,6 +15,7 @@ All stem from the same root: `closeRoundForm` has an early-exit that skips savin
 ## Bug 1: Final Round Results Not Saved
 
 ### Location
+
 `src/routes/tournament/[id]/tournament-actions.remote.ts:55-64`
 
 ### Root Cause
@@ -31,14 +32,14 @@ When the tournament is in its final round and the user clicks "Close Round & Adv
 
 ### Trace (16p random-seed, 4 rounds)
 
-| Event | `currentRound` | `numRounds` | Check `>=` | Action |
-|-------|---------------|-------------|------------|--------|
-| Create | 0 | 4 | — | — |
-| Start R1 | 1 | 4 | 1 >= 4? No | — |
-| Close R1 | 1→2 | 4 | 1 >= 4? No | Saves R1, generates R2 |
-| Close R2 | 2→3 | 4 | 2 >= 4? No | Saves R2, generates R3 |
-| Close R3 | 3→4 | 4 | 3 >= 4? No | Saves R3, generates R4 |
-| **Close R4** | **4** | **4** | **4 >= 4? Yes** | **Skips save, marks completed** |
+| Event        | `currentRound` | `numRounds` | Check `>=`      | Action                          |
+| ------------ | -------------- | ----------- | --------------- | ------------------------------- |
+| Create       | 0              | 4           | —               | —                               |
+| Start R1     | 1              | 4           | 1 >= 4? No      | —                               |
+| Close R1     | 1→2            | 4           | 1 >= 4? No      | Saves R1, generates R2          |
+| Close R2     | 2→3            | 4           | 2 >= 4? No      | Saves R2, generates R3          |
+| Close R3     | 3→4            | 4           | 3 >= 4? No      | Saves R3, generates R4          |
+| **Close R4** | **4**          | **4**       | **4 >= 4? Yes** | **Skips save, marks completed** |
 
 Round 4 scores are lost. Standings show only rounds 1-3.
 
@@ -64,21 +65,24 @@ The check `currentRound >= numRounds` is fundamentally wrong because it evaluate
 ## Bug 2: Final Standings Sorted by Total Points
 
 ### Location
+
 `src/routes/tournament/[id]/standings/+page.server.ts:130-149`
 
 ### Current Behavior
 
 ```typescript
 const standings = Object.values(playerStats)
-    .filter((s) => s.roundsPlayed > 0)
-    .sort((a, b) => {
-        // Round 1 only: court position
-        if (tourney.currentRound === 1) { /* ... */ }
-        // Default: TOTAL POINTS descending (WRONG)
-        if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-        if (b.totalDiff !== a.totalDiff) return b.totalDiff - a.totalDiff;
-        return a.playerId - b.playerId;
-    })
+	.filter((s) => s.roundsPlayed > 0)
+	.sort((a, b) => {
+		// Round 1 only: court position
+		if (tourney.currentRound === 1) {
+			/* ... */
+		}
+		// Default: TOTAL POINTS descending (WRONG)
+		if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+		if (b.totalDiff !== a.totalDiff) return b.totalDiff - a.totalDiff;
+		return a.playerId - b.playerId;
+	});
 ```
 
 This sorts by aggregate points across all rounds. For a completed 4-round tournament, the player with the most total points is shown as winner — regardless of who finished 1st on Court 1 in the final round.
@@ -108,6 +112,7 @@ rank = (courtNumber - 1) * 4 + rankOnCourt
 ```
 
 Where:
+
 - `courtNumber` = which court the player was on in the final round
 - `rankOnCourt` = their position on that court (1=best)
 - A 1st place on Court 2 is overall 5th, not 3rd just because they had high total points
@@ -152,6 +157,7 @@ Spec 090's sort order is wrong. Standings are always sorted by current round cou
 ## Bug 4: Standalone DB `finalStanding` Missing for Active Players
 
 ### Location
+
 `src/routes/tournament/[id]/tournament-actions.remote.ts:153-165`
 
 ### Current Behavior
@@ -159,9 +165,7 @@ Spec 090's sort order is wrong. Standings are always sorted by current round cou
 When tournament completes, `finalStanding` is only set for retired players:
 
 ```typescript
-const retiredWithoutStanding = dbPlayers.filter(
-    (p) => p.retiredAt && p.finalStanding === null
-);
+const retiredWithoutStanding = dbPlayers.filter((p) => p.retiredAt && p.finalStanding === null);
 // Sets finalStanding for retired players only
 ```
 
@@ -180,9 +184,11 @@ At tournament completion, compute final standings by court position (from Bug 2'
 Two different round-count sources:
 
 **State** (`createInitialState` in `src/lib/tournament-logic.ts:191`):
+
 ```typescript
-totalRounds: calculateRoundCount(courtSizes.length, formatType)
+totalRounds: calculateRoundCount(courtSizes.length, formatType);
 ```
+
 Returns 4 for 4-court random-seed, variable for preseed.
 
 **DB** (stored `tournament.numRounds`):
@@ -214,7 +220,7 @@ This means `closeRound()` might think there are 4 rounds, but the UI shows 3 rou
 **File**: `src/routes/tournament/[id]/tournament-actions.remote.ts`
 
 - Remove lines 55-64 (early exit)
-- Always call `closeRound(state, courtSizes)` 
+- Always call `closeRound(state, courtSizes)`
 - Branch on `closedState.isComplete`:
   - If complete: save `finalStanding` for all players, mark tournament completed
   - If not complete: generate next round (existing code)

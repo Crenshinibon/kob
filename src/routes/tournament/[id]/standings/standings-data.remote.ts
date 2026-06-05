@@ -13,10 +13,7 @@ import {
 } from '$lib/server/tournament-logic';
 
 async function fetchStandingsData(tournamentId: number) {
-	const [tourney] = await db
-		.select()
-		.from(tournament)
-		.where(eq(tournament.id, tournamentId));
+	const [tourney] = await db.select().from(tournament).where(eq(tournament.id, tournamentId));
 
 	if (!tourney) return { error: m.tournament_not_found() };
 
@@ -35,7 +32,8 @@ async function fetchStandingsData(tournamentId: number) {
 	const courtAssignment: Record<number, { court: number; rank: number | null }> = {};
 	for (const cr of currentRotations) {
 		const pIds = [
-			cr.player1Id, cr.player2Id,
+			cr.player1Id,
+			cr.player2Id,
 			...(cr.player3Id ? [cr.player3Id] : []),
 			...(cr.player4Id ? [cr.player4Id] : []),
 			...(cr.player5Id ? [cr.player5Id] : []),

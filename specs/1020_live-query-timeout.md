@@ -3,6 +3,7 @@
 ## Problem
 
 Vercel logs show `Task timed out after 300 seconds` on:
+
 - `/_app/remote/i9cliw/getTournamentDataLive`
 - `/_app/remote/tkwzue/getStandingsDataLive`
 
@@ -15,16 +16,17 @@ These are `query.live()` generators that poll every 3 seconds in an infinite `wh
 ```ts
 // tournament-data.remote.ts:270
 export const getTournamentDataLive = query.live(v.number(), async function* (tournamentId) {
-  while (true) {
-    yield await fetchTournamentData(tournamentId);
-    await new Promise((f) => setTimeout(f, 3000));
-  }
+	while (true) {
+		yield await fetchTournamentData(tournamentId);
+		await new Promise((f) => setTimeout(f, 3000));
+	}
 });
 ```
 
 This is a **streaming response** — the server keeps the connection open and yields new data every 3s. On Vercel serverless, this exceeds the function timeout.
 
 Additionally, `fetchTournamentData()` is expensive:
+
 - 1 query for tournament
 - 1 query for all players
 - 1 query for rotation IDs (current round)
@@ -41,6 +43,7 @@ For 8 courts: ~19 queries every 3 seconds.
 ### 1. Replace `query.live()` with client-side polling
 
 Server should not hold connections open. Instead:
+
 - Keep `getTournamentData` (non-live) as a regular `query()`
 - Client polls via `setInterval` or `query.live()` with abort after first yield
 - Or use SvelteKit's built-in revalidation pattern
@@ -51,11 +54,20 @@ Replace N+1 queries with batched queries:
 
 ```ts
 // Instead of per-rotation queries:
-const allMatches = await db.select().from(match)
-  .where(inArray(match.courtRotationId, rotationIdList));
+const allMatches = await db
+	.select()
+	.from(match)
+	.where(inArray(match.courtRotationId, rotationIdList));
 
-const allCourts = await db.select().from(court)
-  .where(inArray(court.id, rotationIds.map(r => r.courtId)));
+const allCourts = await db
+	.select()
+	.from(court)
+	.where(
+		inArray(
+			court.id,
+			rotationIds.map((r) => r.courtId)
+		)
+	);
 ```
 
 Reduces ~19 queries to ~5 per request.

@@ -14,20 +14,22 @@ When the scoring mode is best-of-3, matches that end 2-0 (no deciding set needed
 
 ```typescript
 const expectedMatchCount = courtSizes.reduce(
-    (sum, size) => sum + matchCountForCourtSize(size), 0  // returns 3 (matches, not sets)
+	(sum, size) => sum + matchCountForCourtSize(size),
+	0 // returns 3 (matches, not sets)
 );
 const completedMatchCount = allMatches.filter(
-    (m) => (m.teamAScore !== null && m.teamBScore !== null) || m.isCanceled
-).length;  // counts individual set rows (9 rows for best-of-3)
+	(m) => (m.teamAScore !== null && m.teamBScore !== null) || m.isCanceled
+).length; // counts individual set rows (9 rows for best-of-3)
 canCloseRound =
-    allMatches.length >= expectedMatchCount && completedMatchCount === expectedMatchCount;
+	allMatches.length >= expectedMatchCount && completedMatchCount === expectedMatchCount;
 ```
 
 `matchCountForCourtSize(4)` = 3 (number of matches per 4-player court). But the DB has 3 matches × 3 sets = 9 rows for best-of-3. `completedMatchCount` counts scored set rows, not completed matches.
 
 When a match ends 2-0:
+
 - Set 1 rows: scored ✓
-- Set 2 rows: scored ✓  
+- Set 2 rows: scored ✓
 - Set 3 rows: unscores (match already decided)
 
 Total: 7 out of 9 rows scored (2 matches 2-0, 1 match 2-1). But `expectedMatchCount` = 3, making comparison invalid.
@@ -44,17 +46,18 @@ Change `expectedMatchCount` to count set rows, not matches. Each match generates
 
 ```typescript
 // Group set rows by match number, check each match is complete
-const setByMatch = new Map<string, Array<typeof allMatches[0]>>();
+const setByMatch = new Map<string, Array<(typeof allMatches)[0]>>();
 for (const m of allMatches) {
-    const key = `${m.courtRotationId}-${m.matchNumber}`;
-    if (!setByMatch.has(key)) setByMatch.set(key, []);
-    setByMatch.get(key)!.push(m);
+	const key = `${m.courtRotationId}-${m.matchNumber}`;
+	if (!setByMatch.has(key)) setByMatch.set(key, []);
+	setByMatch.get(key)!.push(m);
 }
-const completedMatches = [...setByMatch.values()].filter(sets => isMatchComplete(sets));
+const completedMatches = [...setByMatch.values()].filter((sets) => isMatchComplete(sets));
 canCloseRound = completedMatches.length === expectedMatchCount;
 ```
 
 `isMatchComplete` logic:
+
 - Single-set: 1 set row with both scores filled → done
 - Best-of-3: first 2 sets scored, same team won both → done (no 3rd set needed). OR 3 sets scored → done.
 - Canceled: match is complete
@@ -77,22 +80,23 @@ Better: count completed MATCHES, not rows. Find the max `matchNumber` per rotati
 
 ```typescript
 function isMatchComplete(sets: SetRow[]): boolean {
-    if (sets.every(s => s.isCanceled)) return true;
-    
-    const scored = sets.filter(s => s.teamAScore !== null && s.teamBScore !== null);
-    if (scored.length === 0) return false;
-    
-    // Single-set: 1 set decides
-    if (sets.length === 1) return scored.length === 1;
-    
-    // Best-of-3: check if one team won 2 sets
-    let teamAWins = 0, teamBWins = 0;
-    for (const s of scored) {
-        if (s.teamAScore! > s.teamBScore!) teamAWins++;
-        else teamBWins++;
-    }
-    const setsToWin = Math.ceil(sets.length / 2); // 2 for best-of-3
-    return teamAWins >= setsToWin || teamBWins >= setsToWin;
+	if (sets.every((s) => s.isCanceled)) return true;
+
+	const scored = sets.filter((s) => s.teamAScore !== null && s.teamBScore !== null);
+	if (scored.length === 0) return false;
+
+	// Single-set: 1 set decides
+	if (sets.length === 1) return scored.length === 1;
+
+	// Best-of-3: check if one team won 2 sets
+	let teamAWins = 0,
+		teamBWins = 0;
+	for (const s of scored) {
+		if (s.teamAScore! > s.teamBScore!) teamAWins++;
+		else teamBWins++;
+	}
+	const setsToWin = Math.ceil(sets.length / 2); // 2 for best-of-3
+	return teamAWins >= setsToWin || teamBWins >= setsToWin;
 }
 ```
 

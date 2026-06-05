@@ -22,11 +22,7 @@
 		<div class="cookie-content">
 			<p>
 				{m.cookie_notice()}
-				<button
-					type="button"
-					onclick={() => goto('/privacy')}
-					class="cookie-link-btn"
-				>
+				<button type="button" onclick={() => goto('/privacy')} class="cookie-link-btn">
 					{m.cookie_learn_more()}
 				</button>
 			</p>

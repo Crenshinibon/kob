@@ -17,6 +17,7 @@ R1→R2: splitSize(4)=2 → 2W + 2L
 ```
 
 **Current ranking** (court position, within-court by points):
+
 ```
 1st:  Court 1, rank 1 (60 pts)
 2nd:  Court 1, rank 2 (55 pts)
@@ -30,6 +31,7 @@ R1→R2: splitSize(4)=2 → 2W + 2L
 ```
 
 **Bracket-level ranking** (rank all 8 in winners bracket by points):
+
 ```
 1st:  Court 2, rank 1 (65 pts)  ← moves up
 2nd:  Court 1, rank 1 (60 pts)  ← moves down
@@ -75,15 +77,15 @@ For 20p preseed the bracket tree is more complex — 3-level tree with asymmetri
 
 ### Difficulty Assessment
 
-| Concern | Complexity | Notes |
-|---------|-----------|-------|
-| Bracket boundary computation | Medium | `getPreseedBracketRange(courtNum, totalCourts)` gives `{min,max}` place range per court. Courts with equal range share a bracket. But this doesn't work for the final round where each court is its own bracket. Need to compute bracket groups per round. |
-| Sort logic changes | Medium | Current sort is simple: court→rank→points. Bracket sort would group-by-bracket then sort-within-bracket. Changes needed in `standings/+page.server.ts` sort function. |
-| Bracket labels/UI | Low | Just add visual grouping, no new data. Left-border already groups by court; bracket grouping would merge adjacent courts with same bracket. |
-| Asymmetric brackets (20p, 12p) | High | `splitSize` creates irregular trees. The `L` bracket in 20p (Court 5) stays constant across rounds while winner courts keep splitting. Need generic bracket tree traversal. |
-| Round 1 handling | None | No brackets in round 1 — flat seeding, keep current behavior. |
-| Random seed format | None | Random seed doesn't use brackets — keep current court-position sort. |
-| Pre-existing retirement bracket logic | Low | `getPreseedBracketRange` already used in retirement final-standing computation. |
+| Concern                               | Complexity | Notes                                                                                                                                                                                                                                                      |
+| ------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bracket boundary computation          | Medium     | `getPreseedBracketRange(courtNum, totalCourts)` gives `{min,max}` place range per court. Courts with equal range share a bracket. But this doesn't work for the final round where each court is its own bracket. Need to compute bracket groups per round. |
+| Sort logic changes                    | Medium     | Current sort is simple: court→rank→points. Bracket sort would group-by-bracket then sort-within-bracket. Changes needed in `standings/+page.server.ts` sort function.                                                                                      |
+| Bracket labels/UI                     | Low        | Just add visual grouping, no new data. Left-border already groups by court; bracket grouping would merge adjacent courts with same bracket.                                                                                                                |
+| Asymmetric brackets (20p, 12p)        | High       | `splitSize` creates irregular trees. The `L` bracket in 20p (Court 5) stays constant across rounds while winner courts keep splitting. Need generic bracket tree traversal.                                                                                |
+| Round 1 handling                      | None       | No brackets in round 1 — flat seeding, keep current behavior.                                                                                                                                                                                              |
+| Random seed format                    | None       | Random seed doesn't use brackets — keep current court-position sort.                                                                                                                                                                                       |
+| Pre-existing retirement bracket logic | Low        | `getPreseedBracketRange` already used in retirement final-standing computation.                                                                                                                                                                            |
 
 ### Risk
 

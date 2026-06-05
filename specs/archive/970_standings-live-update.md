@@ -7,6 +7,7 @@ Does the standings page live-update with incoming scores and pre-calculated stan
 ## Current Behavior
 
 The standings page (`/tournament/[id]/standings`) is a server-rendered page:
+
 - `+page.server.ts` loads all data on page load
 - No live query, no polling, no WebSocket
 - Page shows a snapshot at load time
@@ -23,6 +24,7 @@ Standings page should reflect incoming scores in near-real-time. When players en
 ### Option A: `query.live()` Polling (Recommended)
 
 Mirror the tournament page approach:
+
 - Convert standings data loading to a `query.live()` function
 - Poll every 3-5 seconds
 - On each poll, recalculate standings from current match data

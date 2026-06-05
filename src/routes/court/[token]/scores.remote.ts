@@ -98,21 +98,18 @@ export const saveScore = form(baseScoreSchema, async (data, issue) => {
 
 	if (!isValidFinalScore(winner, loser, minPoints, effective.winBy)) {
 		if (teamAScore > teamBScore) {
-			return invalid(
-				issue.teamAScore(
-					m.err_score_invalid({ minPoints, winBy: effective.winBy })
-				)
-			);
+			return invalid(issue.teamAScore(m.err_score_invalid({ minPoints, winBy: effective.winBy })));
 		} else {
-			return invalid(
-				issue.teamBScore(
-					m.err_score_invalid({ minPoints, winBy: effective.winBy })
-				)
-			);
+			return invalid(issue.teamBScore(m.err_score_invalid({ minPoints, winBy: effective.winBy })));
 		}
 	}
 
 	await db.update(match).set({ teamAScore, teamBScore }).where(eq(match.id, matchId));
+
+	await db
+		.update(tournament)
+		.set({ lastActivityAt: new Date() })
+		.where(eq(tournament.id, rotation.tournamentId));
 
 	return { success: true, matchId, teamAScore, teamBScore };
 });
@@ -150,12 +147,8 @@ export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 
 	if (!isValidFinalScore(winner, loser, minPoints, effective.winBy)) {
 		return invalid(
-			issue.teamAScore(
-				m.err_score_invalid({ minPoints, winBy: effective.winBy })
-			),
-			issue.teamBScore(
-				m.err_score_invalid({ minPoints, winBy: effective.winBy })
-			)
+			issue.teamAScore(m.err_score_invalid({ minPoints, winBy: effective.winBy })),
+			issue.teamBScore(m.err_score_invalid({ minPoints, winBy: effective.winBy }))
 		);
 	}
 
@@ -185,6 +178,11 @@ export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 			teamBScore
 		});
 	}
+
+	await db
+		.update(tournament)
+		.set({ lastActivityAt: new Date() })
+		.where(eq(tournament.id, rotation.tournamentId));
 
 	return { success: true, matchId, setNumber, teamAScore, teamBScore };
 });

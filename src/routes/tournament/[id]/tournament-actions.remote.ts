@@ -73,7 +73,11 @@ export const closeRoundForm = form(
 			courtSizes = newConfig.courtSizes;
 			await db
 				.update(tournament)
-				.set({ playerCount: activePlayerCount, courtSizes: JSON.stringify(courtSizes) })
+				.set({
+					playerCount: activePlayerCount,
+					courtSizes: JSON.stringify(courtSizes),
+					lastActivityAt: new Date()
+				})
 				.where(eq(tournament.id, tournamentId));
 		}
 
@@ -142,11 +146,8 @@ export const closeRoundForm = form(
 		);
 
 		if (closedState.isComplete) {
-			const finalRoundResults =
-				closedState.completedRounds[closedState.completedRounds.length - 1];
-			const activeIds = new Set(
-				dbPlayers.filter((p) => !p.retiredAt).map((p) => p.id)
-			);
+			const finalRoundResults = closedState.completedRounds[closedState.completedRounds.length - 1];
+			const activeIds = new Set(dbPlayers.filter((p) => !p.retiredAt).map((p) => p.id));
 
 			let position = 1;
 			const standingsByPlayer = new Map<number, number>();
@@ -159,10 +160,7 @@ export const closeRoundForm = form(
 			}
 
 			for (const [playerId, standing] of standingsByPlayer) {
-				await db
-					.update(player)
-					.set({ finalStanding: standing })
-					.where(eq(player.id, playerId));
+				await db.update(player).set({ finalStanding: standing }).where(eq(player.id, playerId));
 			}
 
 			const retiredWithoutStanding = dbPlayers.filter(
@@ -177,7 +175,11 @@ export const closeRoundForm = form(
 
 			await db
 				.update(tournament)
-				.set({ status: 'completed', currentRound: closedState.roundsCompleted })
+				.set({
+					status: 'completed',
+					currentRound: closedState.roundsCompleted,
+					lastActivityAt: new Date()
+				})
 				.where(eq(tournament.id, tournamentId));
 
 			getTournamentDataLive(tournamentId).reconnect();
@@ -317,13 +319,19 @@ export const closeRoundForm = form(
 			.update(tournament)
 			.set({
 				currentRound: nextRoundNumber,
-				courtSizes: JSON.stringify(nextCourtSizes)
+				courtSizes: JSON.stringify(nextCourtSizes),
+				lastActivityAt: new Date()
 			})
+			.where(eq(tournament.id, tournamentId));
+
+		await db
+			.update(tournament)
+			.set({ lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
 		getTournamentDataLive(tournamentId).reconnect();
 
-		return { success: true, nextRound: nextRoundNumber };
+		return { success: true };
 	}
 );
 
@@ -418,7 +426,7 @@ export const updateScoringOverrides = command(
 
 		await db
 			.update(tournament)
-			.set({ scoringOverrides: overrides })
+			.set({ scoringOverrides: overrides, lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
 		getTournamentDataLive(tournamentId).reconnect();
@@ -544,7 +552,8 @@ export const retirePlayer = command(
 			.update(tournament)
 			.set({
 				playerCount: activeCount,
-				courtSizes: JSON.stringify(newCourtSizes)
+				courtSizes: JSON.stringify(newCourtSizes),
+				lastActivityAt: new Date()
 			})
 			.where(eq(tournament.id, tournamentId));
 
@@ -735,6 +744,11 @@ export const retirePlayer = command(
 			}
 		}
 
+		await db
+			.update(tournament)
+			.set({ lastActivityAt: new Date() })
+			.where(eq(tournament.id, tournamentId));
+
 		getTournamentDataLive(tournamentId).reconnect();
 
 		return { success: true };
@@ -847,6 +861,11 @@ export const reportInjury = command(
 			})
 			.where(eq(player.id, playerId));
 
+		await db
+			.update(tournament)
+			.set({ lastActivityAt: new Date() })
+			.where(eq(tournament.id, tournamentId));
+
 		getTournamentDataLive(tournamentId).reconnect();
 
 		return { success: true };
@@ -876,8 +895,7 @@ export const undoRetirement = command(
 			.where(and(eq(player.id, playerId), eq(player.tournamentId, tournamentId)));
 		if (!targetPlayer) error(404, m.player_not_found());
 		if (!targetPlayer.retiredAt) error(400, 'Player is not retired');
-		if (targetPlayer.injuredAt)
-			error(400, m.err_wrong_undo_type_injury());
+		if (targetPlayer.injuredAt) error(400, m.err_wrong_undo_type_injury());
 
 		const currentRound = tourney.currentRound || 0;
 		if (currentRound === 0) error(400, m.tournament_not_started());
@@ -1120,6 +1138,11 @@ export const undoRetirement = command(
 			}
 		}
 
+		await db
+			.update(tournament)
+			.set({ lastActivityAt: new Date() })
+			.where(eq(tournament.id, tournamentId));
+
 		getTournamentDataLive(tournamentId).reconnect();
 
 		return { success: true };
@@ -1149,8 +1172,7 @@ export const undoInjury = command(
 			.where(and(eq(player.id, playerId), eq(player.tournamentId, tournamentId)));
 		if (!targetPlayer) error(404, m.player_not_found());
 		if (!targetPlayer.retiredAt) error(400, 'Player is not retired');
-		if (!targetPlayer.injuredAt)
-			error(400, m.err_wrong_undo_type_retire());
+		if (!targetPlayer.injuredAt) error(400, m.err_wrong_undo_type_retire());
 
 		const currentRound = tourney.currentRound || 0;
 		if (currentRound === 0) error(400, m.tournament_not_started());

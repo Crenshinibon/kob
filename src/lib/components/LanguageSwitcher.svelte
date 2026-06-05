@@ -36,7 +36,9 @@
 		color: var(--text-muted);
 		text-decoration: none;
 		border-radius: 4px;
-		transition: background 0.15s, color 0.15s;
+		transition:
+			background 0.15s,
+			color 0.15s;
 	}
 
 	.lang-switcher a:hover {

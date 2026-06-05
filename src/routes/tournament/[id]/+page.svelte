@@ -71,17 +71,17 @@
 		return 'var(--accent-info)';
 	}
 
-			function confirmDelete(e: Event) {
-				if (!confirm(m.delete_tournament_confirm())) {
-					e.preventDefault();
-				}
-			}
+	function confirmDelete(e: Event) {
+		if (!confirm(m.delete_tournament_confirm())) {
+			e.preventDefault();
+		}
+	}
 
-			function handleLabelSave(courtId: number, value: string) {
-				setCourtLabel({ courtId, label: value });
-			}
+	function handleLabelSave(courtId: number, value: string) {
+		setCourtLabel({ courtId, label: value });
+	}
 
-			let labelTimers = $state<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+	let labelTimers = $state<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
 	function isUndoableRetirement(rp: { retiredAt: Date | null; injuredAt: Date | null }): boolean {
 		return (
@@ -93,17 +93,13 @@
 		rp: { id: number; name: string; injuredAt: Date | null; retiredAt: Date | null },
 		courts: CourtDisplayData[]
 	): { canUndoInjury: boolean; courtComplete: boolean } {
-		const court = courts.find((c) =>
-			c.players.some((p) => p.id === rp.id)
-		);
+		const court = courts.find((c) => c.players.some((p) => p.id === rp.id));
 		if (!court) return { canUndoInjury: false, courtComplete: false };
 		// Determine injury type from match state:
 		// - Cancel: some matches are isCanceled on this court
 		// - Substitute: some matches have injuredPlayerIds for this player
 		const hasCanceled = court.matches.some((m) => m.isCanceled);
-		const hasInjuredFlag = court.matches.some(
-			(m) => (m.injuredPlayerIds ?? []).includes(rp.id)
-		);
+		const hasInjuredFlag = court.matches.some((m) => (m.injuredPlayerIds ?? []).includes(rp.id));
 		let hasProgressed = false;
 		if (hasCanceled) {
 			// For cancel: a scored + canceled match means fresh scores (pre-injury scores are not canceled)
@@ -119,7 +115,7 @@
 </script>
 
 {#await liveQuery}
-		<div class="loading">{m.loading_tournament()}</div>
+	<div class="loading">{m.loading_tournament()}</div>
 {:then state}
 	{@const tournament = state?.tournament}
 	{@const courts = state?.courts ?? []}
@@ -162,7 +158,7 @@
 	})()}
 
 	{#if !tournament}
-	<div class="loading">{m.loading_tournament()}</div>
+		<div class="loading">{m.loading_tournament()}</div>
 	{:else if state.error}
 		<div class="error">{state.error}</div>
 	{:else}
@@ -234,7 +230,9 @@
 										class:active={court.shift === 1}
 										class:waiting={court.shift > 1}
 									>
-										{court.shift === 1 ? '▶ Active' : m.shift_count({ current: court.shift, total: court.totalShifts })}
+										{court.shift === 1
+											? '▶ Active'
+											: m.shift_count({ current: court.shift, total: court.totalShifts })}
 									</span>
 									{#if court.waitLabel}
 										<span class="wait-time">{m.est_wait({ wait: court.waitLabel })}</span>
@@ -250,21 +248,21 @@
 								class="court-label-input"
 								placeholder="e.g. Court A"
 								value={court.label ?? ''}
-							oninput={(e) => {
-								const tid = court.courtId;
-								const timerId = setTimeout(() => {
+								oninput={(e) => {
+									const tid = court.courtId;
+									const timerId = setTimeout(() => {
+										handleLabelSave(tid, e.currentTarget.value);
+									}, 500);
+									const existing = labelTimers.get(tid);
+									if (existing) clearTimeout(existing);
+									labelTimers = new Map([...labelTimers, [tid, timerId]]);
+								}}
+								onblur={(e) => {
+									const tid = court.courtId;
+									const existing = labelTimers.get(tid);
+									if (existing) clearTimeout(existing);
 									handleLabelSave(tid, e.currentTarget.value);
-								}, 500);
-								const existing = labelTimers.get(tid);
-								if (existing) clearTimeout(existing);
-								labelTimers = new Map([...labelTimers, [tid, timerId]]);
-							}}
-							onblur={(e) => {
-								const tid = court.courtId;
-								const existing = labelTimers.get(tid);
-								if (existing) clearTimeout(existing);
-								handleLabelSave(tid, e.currentTarget.value);
-							}}
+								}}
 							/>
 						</label>
 
@@ -285,9 +283,8 @@
 
 						{#if court.token}
 							<div class="qr-link">
-								<a
-									href={resolve('/court/[token]', { token: String(court.token) })}
-									target="_blank">{m.open_court_page()}</a
+								<a href={resolve('/court/[token]', { token: String(court.token) })} target="_blank"
+									>{m.open_court_page()}</a
 								>
 							</div>
 						{/if}
@@ -319,7 +316,9 @@
 						class="delete-form"
 					>
 						<input {...deleteTournamentForm.fields.tournamentId.as('hidden', tournament.id)} />
-						<button type="submit" class="btn-danger" onclick={confirmDelete}>{m.delete_tournament()}</button>
+						<button type="submit" class="btn-danger" onclick={confirmDelete}
+							>{m.delete_tournament()}</button
+						>
 					</form>
 				{/if}
 			</section>
@@ -358,17 +357,18 @@
 												type="number"
 												min="1"
 												max="50"
-												value={ovr.pointsToWin ?? getMinPointsForSet(
-												1,
-												size,
-												{
-													pointsToWin: tournament.pointsToWin ?? 21,
-													winBy: tournament.winBy ?? 2,
-													setsToWin: tournament.setsToWin ?? 1,
-													decidingSetPoints: tournament.decidingSetPoints ?? 15
-												},
-												tournament.scoringOverrides
-											)}
+												value={ovr.pointsToWin ??
+													getMinPointsForSet(
+														1,
+														size,
+														{
+															pointsToWin: tournament.pointsToWin ?? 21,
+															winBy: tournament.winBy ?? 2,
+															setsToWin: tournament.setsToWin ?? 1,
+															decidingSetPoints: tournament.decidingSetPoints ?? 15
+														},
+														tournament.scoringOverrides
+													)}
 												oninput={(e) => {
 													const v = parseInt(e.currentTarget.value);
 													if (!isNaN(v))
@@ -579,15 +579,17 @@
 										)}
 										{@const secondsLeft = Math.ceil(remaining / 1000)}
 										<div class="undo-item">
-											<span class="undo-desc">{m.retire_undo_seconds({ name: rp.name, seconds: secondsLeft })}</span>
+											<span class="undo-desc"
+												>{m.retire_undo_seconds({ name: rp.name, seconds: secondsLeft })}</span
+											>
 											<button
 												class="btn-undo"
 												onclick={async () => {
-												await undoRetirement({
-													tournamentId: data.tournamentId,
-													playerId: rp.id
-												});
-											}}>{m.retire_undo_btn()}</button
+													await undoRetirement({
+														tournamentId: data.tournamentId,
+														playerId: rp.id
+													});
+												}}>{m.retire_undo_btn()}</button
 											>
 										</div>
 									{/each}
@@ -613,17 +615,15 @@
 								<select id="injuryPlayerId" bind:value={injuryPlayerId} required>
 									<option value="">{m.injury_select_placeholder()}</option>
 									{#each eligibleInjuryPlayers as ep (ep.id)}
-										<option value={ep.id}>{m.injury_player_label({ name: ep.name, court: ep.courtNumber })}</option>
+										<option value={ep.id}
+											>{m.injury_player_label({ name: ep.name, court: ep.courtNumber })}</option
+										>
 									{/each}
 								</select>
 							</div>
 							<div class="field">
 								<span class="label-text">{m.injury_options_label()}</span>
-								<div
-									class="radio-group"
-									role="radiogroup"
-									aria-label={m.injury_options_label()}
-								>
+								<div class="radio-group" role="radiogroup" aria-label={m.injury_options_label()}>
 									<label class="radio-label">
 										<input type="radio" bind:group={injuryOption} value="substitute" required />
 										<span class="radio-title">{m.injury_substitute()}</span>

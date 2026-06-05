@@ -14,6 +14,7 @@ TypeError: Cannot read properties of undefined (reading 'playerIds')
 ## Root Cause
 
 When a player retires pre-round (no scores entered), the retirement handler must:
+
 1. Recalculate court sizes (5p → 4p or different config)
 2. Delete current round's rotations (no scores were entered, safe to regenerate)
 3. Redistribute remaining players
@@ -25,6 +26,7 @@ Specifically, `redistributePreseedRecursive` calls `distributeGroup` at line 386
 ## Investigation Needed
 
 Look at `tournament-logic.ts:432` in `distributeGroup`:
+
 ```typescript
 const players = results.flatMap(r => r.standings.map(s => ({...})));
 ```
