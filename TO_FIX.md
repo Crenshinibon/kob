@@ -2,7 +2,9 @@
 
 ## ToDo
 
-(none — all items addressed)
+- [x] There is a strange looking flicker when selecting an option in the tournament create page. Like a very short transition. This look irritating, just remove the transition.
+- [x] in the "create page" code src/routes/tournament/create/+page.svelte there is the leftoverDescription (line 90) which holds a bunch of english strings, which should be part of i18n
+
 
 ## Done
 

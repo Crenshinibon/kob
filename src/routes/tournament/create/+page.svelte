@@ -91,32 +91,26 @@
 		if (leftoverCount === 0) return null;
 		if (leftoverCount === 1) {
 			return {
-				title: '5-Player Court',
-				short: '1 leftover → 5p court',
-				format: '2 parallel games per run, 2 runs = 4 games/round',
-				scoring: '1 set to 15 points (default), win by 2',
-				ranking: 'Average points per round (normalized)',
-				rules: 'Players rotate every point. One player plays 4 games, others play 3.'
+				format: m.create_leftover_5p_format(),
+				scoring: m.create_leftover_5p_scoring(),
+				ranking: m.create_leftover_5p_ranking(),
+				rules: m.create_leftover_5p_rules()
 			};
 		}
 		if (leftoverCount === 2) {
 			return {
-				title: '6-Player Court',
-				short: '2 leftovers → 6p court',
-				format: '2 parallel games per run, 2 runs = 4 games/round',
-				scoring: '1 set to 15 points (default), win by 2',
-				ranking: 'Average points per round (normalized)',
-				rules: 'Pairs rotate every point. Some play 3 games, others play 2.'
+				format: m.create_leftover_6p_format(),
+				scoring: m.create_leftover_6p_scoring(),
+				ranking: m.create_leftover_6p_ranking(),
+				rules: m.create_leftover_6p_rules()
 			};
 		}
 		if (leftoverCount === 3) {
 			return {
-				title: '3-Player Court',
-				short: '3 leftovers → 3p court',
-				format: '2v1 format, 3 matches per round',
-				scoring: 'Same as standard (21 points or per tournament settings)',
-				ranking: 'Total points (same as standard courts)',
-				rules: 'Each player takes a solo turn against the pair.'
+				format: m.create_leftover_3p_format(),
+				scoring: m.create_leftover_3p_scoring(),
+				ranking: m.create_leftover_3p_ranking(),
+				rules: m.create_leftover_3p_rules()
 			};
 		}
 		return null;
@@ -377,7 +371,9 @@
 							<div class="leftover-description">
 								<p class="leftover-format">{leftoverDescription!.format}</p>
 								<p class="leftover-scoring">{leftoverDescription!.scoring}</p>
-								<p class="leftover-ranking">Ranking: {leftoverDescription!.ranking}</p>
+								<p class="leftover-ranking">
+									{m.create_leftover_ranking_label()}: {leftoverDescription!.ranking}
+								</p>
 								<p class="leftover-rules">{leftoverDescription!.rules}</p>
 							</div>
 							<div class="leftover-actions">
@@ -557,23 +553,11 @@
 		letter-spacing: normal;
 		cursor: pointer;
 		opacity: 0.85;
-		transition: opacity var(--transition-fast);
 	}
 
 	.radio-label:has(input:checked) {
 		opacity: 1;
 		font-weight: 600;
-	}
-
-	.radio-label:hover {
-		opacity: 1;
-	}
-
-	.radio-label input[type='radio'] {
-		accent-color: var(--accent-primary);
-		width: 18px;
-		height: 18px;
-		cursor: pointer;
 	}
 
 	label,
@@ -753,7 +737,6 @@
 		border: var(--border-thickness) solid var(--border-strong);
 		border-radius: var(--radius-sm);
 		cursor: pointer;
-		transition: all var(--transition-fast);
 	}
 
 	.radio-text {
