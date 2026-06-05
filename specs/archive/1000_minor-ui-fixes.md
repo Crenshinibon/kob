@@ -6,7 +6,7 @@ Collection of small UI bugs discovered during manual testing.
 
 ---
 
-## Bug 1: Physical Courts Slider Knob Alignment
+## Bug 1: Physical Courts Slider Knob Alignment - DONE
 
 ### Location
 
@@ -22,7 +22,7 @@ Adjust the `.range-labels` CSS grid to properly span the slider track width.
 
 ---
 
-## Bug 2: 5p/6p Scoring Override Defaults to 21
+## Bug 2: 5p/6p Scoring Override Defaults to 21 - DONE
 
 ### Location
 
@@ -42,7 +42,7 @@ Check the `effective` computation in the UI — ensure `getEffectiveScoring(size
 
 ---
 
-## Bug 3: 5p/6p Average Points Not Rounded
+## Bug 3: 5p/6p Average Points Not Rounded - DONE
 
 ### Location
 
@@ -61,7 +61,7 @@ Round average points to 2 decimal places in:
 
 ---
 
-## Bug 4: Save Score Button Not Reacting on First Click
+## Bug 4: Save Score Button Not Reacting on First Click - DONE
 
 ### Location
 
@@ -83,7 +83,7 @@ Check if `dynamicScoreSchema` or `effectiveScoring` are computed before the live
 
 ## Acceptance Criteria
 
-- [ ] Slider knob reaches right-most position at value 16
+- [x] Slider knob reaches right-most position at value 16
 - [ ] 5p/6p scoring override inputs show effective values (15 for 5p, not 21)
-- [ ] Average points rounded to 2 decimal places on both court page and standings page
-- [ ] Save Score button works on first click even during initial page load
+- [x] Average points rounded to 2 decimal places on both court page and standings page
+- [x] Save Score button works on first click even during initial page load

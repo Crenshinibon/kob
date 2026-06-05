@@ -1,12 +1,12 @@
-# KoB Tracker
+# KoB
 
-A mobile-first web application for managing King of the Beach beach volleyball tournaments with 4-8 courts and 16-32 players.
+A web application for managing "King of the Beach" beach volleyball tournaments with 8–32 players.
 
 ## What is KoB?
 
 King of the Beach is a beach volleyball tournament format where:
 
-- **16 or 32 players** compete across **4 or 8 courts** (4 players per court)
+- **8–32 players** compete across **2–8 courts** (4 players each court)
 - Players rotate partners each round, ensuring everyone plays with everyone
 - Individual performance determines promotion/relegation between courts
 - Winner is determined by final court position, not total points
@@ -14,14 +14,21 @@ King of the Beach is a beach volleyball tournament format where:
 ## Features
 
 - **Tournament Management**: Create tournaments, add players, control rounds
+- **Flexible Player Counts**: 8–32 players with automatic court sizing, 4 players standard courts and possibly one court with 3, 5 or 6 players, to accommodate player number no a multiple of 4.
 - **Two Formats**:
   - **Random Seed**: Flexible rounds with ladder redistribution
   - **Preseed**: Fixed rounds with tiered binary redistribution based on seed points
-- **16 & 32 Player Support**: Automatically configures 4 or 8 courts
+- **Virtual & Physical Courts**: When virtual courts exceed physical courts, batch shift scheduling with wait time estimates
+- **Configurable Scoring**: Single-set (21pts), best-of-3, or custom — with per-round and per court-type overrides (e.g. 5p courts to 15pts)
 - **Score Entry**: Mobile-optimized court pages via QR code access
+- **Injury Handling**: Mid-round injury support — substitute or cancel remaining matches
+- **Player Retirement**: Between-rounds retirement with 5-minute undo window; automatic court reshuffling
+- **Live Updates**: Client-side polling with in-place reactive updates (no page flash)
 - **Live Standings**: Real-time court rankings with automatic tie-breakers
 - **Total Standings**: Cumulative rankings across all rounds with podium view and achievement categories
 - **Promotion/Relegation**: Automated redistribution moves players between courts
+- **Auto-Cleanup**: Vercel cronjob deletes completed tournaments after 14 days and stale tournaments after 31 days
+- **Internationalization**: English, German, Spanish, French via Paraglide-js
 - **Dark Theme**: High-contrast UI optimized for outdoor visibility
 
 ## Tech Stack

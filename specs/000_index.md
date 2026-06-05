@@ -29,13 +29,13 @@
 
 - **[300_pluggable-formats.md](./300_pluggable-formats.md)**: [PLANNED EXTENSION] Extensible architecture for supporting multiple tournament formats. Not yet implemented.
 
-- **[980_standings-hydration-fix.md](./980_standings-hydration-fix.md)**: [IMPLEMENTED] `ssr = false` on standings page. Client-only render avoids `query.live()` hydration mismatch. Shows all players even before any scores entered.
-- **[990_retirement-5p-crash.md](./990_retirement-5p-crash.md)**: [IMPLEMENTED] Fixed `distributeGroup` fallback for 5p origin overflow. Filtered retired players from preseed redistribution results.
-- **[1000_minor-ui-fixes.md](./1000_minor-ui-fixes.md)**: [IMPLEMENTED] 3 of 4 fixed: slider alignment, scoring override defaults, average points rounding. Bug 4 (save button first click) deferred.
+- **[980_standings-hydration-fix.md](./archive/980_standings-hydration-fix.md)**: [IMPLEMENTED] `ssr = false` on standings page. Client-only render avoids `query.live()` hydration mismatch. Shows all players even before any scores entered.
+- **[990_retirement-5p-crash.md](./archive/990_retirement-5p-crash.md)**: [IMPLEMENTED] Fixed `distributeGroup` fallback for 5p origin overflow. Filtered retired players from preseed redistribution results.
+- **[1000_minor-ui-fixes.md](./archive/1000_minor-ui-fixes.md)**: [IMPLEMENTED] Slider alignment, 5p/6p scoring defaults, average points rounding, save button first-click fix.
 
-- **[1010_cleanup-cronjob.md](./1010_cleanup-cronjob.md)**: [IMPLEMENTED] Vercel cronjob + API route + `lastActivityAt` column. Auto-deletes completed (14d) and stale (31d) tournaments.
+- **[1010_cleanup-cronjob.md](./archive/1010_cleanup-cronjob.md)**: [IMPLEMENTED] Vercel cronjob + API route + `lastActivityAt` column. Auto-deletes completed (14d) and stale (31d) tournaments.
 
-- **[1020_live-query-timeout.md](./1020_live-query-timeout.md)**: [IMPLEMENTED] Replaced `query.live()` with `query()` + client-side polling (5s). Removed infinite server loops causing Vercel 300s timeouts. N+1 query batching deferred.
+- **[1020_live-query-timeout.md](./archive/1020_live-query-timeout.md)**: [IMPLEMENTED] Replaced `query.live()` with `query()` + client-side polling (5s). Removed infinite server loops causing Vercel 300s timeouts. N+1 query batching deferred.
 
 - **[600_incomplete-rosters-index.md](./600_incomplete-rosters-index.md)**: [IN PROGRESS] Index for incomplete roster specs. Supports 8-64 players, recursive preseed, physical/virtual courts.
   - **[610_incomplete-core.md](./610_incomplete-core.md)**: Problem statement, physical vs virtual courts, player count extension (8-64), vertical seeding, leftover configuration.
@@ -78,3 +78,8 @@
   - **[950_preseed-bracket-ranking.md](./archive/950_preseed-bracket-ranking.md)**: Preseed bracket ranking analysis — court position already correct [INVESTIGATED — NO CHANGE]
   - **[960_physical-court-names.md](./archive/960_physical-court-names.md)**: Court label input on tournament page, displayed on court page [COMPLETE]
   - **[970_standings-live-update.md](./archive/970_standings-live-update.md)**: query.live() polling for standings page, auto-updates [COMPLETE]
+  - **[980_standings-hydration-fix.md](./archive/980_standings-hydration-fix.md)**: `ssr = false` on standings page, hydration mismatch fix [COMPLETE]
+  - **[990_retirement-5p-crash.md](./archive/990_retirement-5p-crash.md)**: 5p preseed retirement crash fix [COMPLETE]
+  - **[1000_minor-ui-fixes.md](./archive/1000_minor-ui-fixes.md)**: Minor UI fixes — slider, scoring defaults, rounding, save button [COMPLETE]
+  - **[1010_cleanup-cronjob.md](./archive/1010_cleanup-cronjob.md)**: Vercel cronjob + `lastActivityAt` + auto-cleanup [COMPLETE]
+  - **[1020_live-query-timeout.md](./archive/1020_live-query-timeout.md)**: `query.live()` → `query()` + polling, Vercel timeout fix [COMPLETE]
