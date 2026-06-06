@@ -37,7 +37,7 @@
 
 - **[1020_live-query-timeout.md](./archive/1020_live-query-timeout.md)**: [IMPLEMENTED] Replaced `query.live()` with `query()` + client-side polling (5s). Removed infinite server loops causing Vercel 300s timeouts. N+1 query batching deferred.
 
-- **[1030_player-input-parsing.md](./1030_player-input-parsing.md)**: Fix paste from spreadsheet (tab-separated name+points split into separate lines), add WVV CSV file upload, improve parsePlayerLine regex. New unit tests for all parsers.
+- **[1030_player-input-parsing.md](./archive/1030_player-input-parsing.md)**: [IMPLEMENTED] Fix paste from spreadsheet (tab-separated name+points), add WVV CSV file upload, improve parsePlayerLine regex. Unit tests for all parsers.
 
 - **[600_incomplete-rosters-index.md](./600_incomplete-rosters-index.md)**: [IN PROGRESS] Index for incomplete roster specs. Supports 8-64 players, recursive preseed, physical/virtual courts.
   - **[610_incomplete-core.md](./610_incomplete-core.md)**: Problem statement, physical vs virtual courts, player count extension (8-64), vertical seeding, leftover configuration.
@@ -85,3 +85,4 @@
   - **[1000_minor-ui-fixes.md](./archive/1000_minor-ui-fixes.md)**: Minor UI fixes — slider, scoring defaults, rounding, save button [COMPLETE]
   - **[1010_cleanup-cronjob.md](./archive/1010_cleanup-cronjob.md)**: Vercel cronjob + `lastActivityAt` + auto-cleanup [COMPLETE]
   - **[1020_live-query-timeout.md](./archive/1020_live-query-timeout.md)**: `query.live()` → `query()` + polling, Vercel timeout fix [COMPLETE]
+  - **[1030_player-input-parsing.md](./archive/1030_player-input-parsing.md)**: Tab-aware paste, CSV upload, parsePlayerLine regex [COMPLETE]
