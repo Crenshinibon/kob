@@ -100,7 +100,7 @@
 	"create_names_placeholder_random": "Un nombre por línea",
 	"create_names_placeholder_preseed": "Un nombre por línea, con puntos de siembra:",
 	"create_player_example": "Nombre 1250",
-	"create_wvv_tip": "Desde el sitio de gestión WVV, descargue el CSV de \"Setzliste\". Copie las columnas \"spieler 1\" y \"wvv\" y péguelas aquí. Nombre y Puntos separados por coma, punto y coma, tabulación o espacio son compatibles.",
+	"create_wvv_tip": "Suba el CSV desde \"Setzliste\" directamente, o copie las columnas \"spieler 1\" y \"wvv\" desde una hoja de cálculo y péguelas aquí. Nombre y Puntos separados por coma, punto y coma, tabulación o espacio son compatibles.",
 	"create_wvv_summary": "Importar CSV WVV desde Setzliste",
 	"create_min_players": "Se requieren al menos 8 jugadores para iniciar un torneo.",
 	"create_max_players": "Máximo 64 jugadores permitidos para un torneo.",
@@ -146,7 +146,6 @@
 	"create_leftover_3p_ranking": "Puntos totales (igual a canchas estándar)",
 	"create_leftover_3p_rules": "Cada jugador toma un turno individual contra la pareja.",
 	"create_leftover_ranking_label": "Clasificación",
-
 	"court_title": "Cancha {number}",
 	"court_match": "Partido {number}",
 	"court_team_a": "Equipo A",
@@ -326,5 +325,8 @@
 	"plural_court": "{count, plural, one {1 cancha} other {{count} canchas}}",
 	"plural_round": "{count, plural, one {1 ronda} other {{count} rondas}}",
 	"plural_shift": "{count, plural, one {1 turno} other {{count} turnos}}",
-	"plural_minute": "{count, plural, one {1 minuto} other {{count} minutos}}"
+	"plural_minute": "{count, plural, one {1 minuto} other {{count} minutos}}",
+	"create_csv_upload": "Subir CSV",
+	"create_csv_no_spieler1": "El CSV no tiene columna 'spieler1'",
+	"create_csv_error": "No se pudo leer el archivo CSV"
 }

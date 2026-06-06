@@ -49,8 +49,9 @@ Combined form with:
 - Physical courts: slider (1-16)
 - **Duration estimation**: Live display with round-by-round breakdown
 - Number of rounds (auto-calculated for preseed, configurable 1-10 for random seed)
-- Player names textarea (supports smart paste with comma/semicolon splitting)
+- Player names textarea (supports smart paste with comma/semicolon splitting, tab-separated name+points from spreadsheets)
 - For preseed: names + seed points input
+- CSV file upload: Upload WVV Setzliste CSV directly (extracts `spieler1` and `wvv` columns, auto-switches to preseed format)
 - [Create] button — immediately starts tournament with Round 1
 
 ### Tournament View (`/tournament/[id]`)

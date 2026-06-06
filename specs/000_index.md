@@ -37,6 +37,8 @@
 
 - **[1020_live-query-timeout.md](./archive/1020_live-query-timeout.md)**: [IMPLEMENTED] Replaced `query.live()` with `query()` + client-side polling (5s). Removed infinite server loops causing Vercel 300s timeouts. N+1 query batching deferred.
 
+- **[1030_player-input-parsing.md](./1030_player-input-parsing.md)**: Fix paste from spreadsheet (tab-separated name+points split into separate lines), add WVV CSV file upload, improve parsePlayerLine regex. New unit tests for all parsers.
+
 - **[600_incomplete-rosters-index.md](./600_incomplete-rosters-index.md)**: [IN PROGRESS] Index for incomplete roster specs. Supports 8-64 players, recursive preseed, physical/virtual courts.
   - **[610_incomplete-core.md](./610_incomplete-core.md)**: Problem statement, physical vs virtual courts, player count extension (8-64), vertical seeding, leftover configuration.
   - **[620_incomplete-options.md](./620_incomplete-options.md)**: Options A (recursive preseed), B (mixed courts), D (parallel games), E (generalized recursive split).

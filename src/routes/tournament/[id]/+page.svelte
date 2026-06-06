@@ -701,7 +701,9 @@
 		</main>
 	{/if}
 {:else if tournamentQuery.error}
-	<div class="error">{m.failed_load_tournament({ error: tournamentQuery.error?.message ?? 'Unknown error' })}</div>
+	<div class="error">
+		{m.failed_load_tournament({ error: tournamentQuery.error?.message ?? 'Unknown error' })}
+	</div>
 {:else}
 	<div class="loading">{m.loading_tournament()}</div>
 {/if}

@@ -16,23 +16,7 @@ import {
 	getMaxSets,
 	type FormatType
 } from '$lib/server/tournament-logic';
-
-type ParsedPlayer = { name: string; seedPoints: number | null };
-
-function parsePlayerLine(line: string, formatType: string): ParsedPlayer {
-	const trimmed = line.trim();
-	if (!trimmed) return { name: '', seedPoints: null };
-
-	if (formatType === 'preseed') {
-		const playerMatch = trimmed.match(/^(.+?)\s+(\d+)$/);
-		if (playerMatch) {
-			return { name: playerMatch[1].trim(), seedPoints: parseInt(playerMatch[2], 10) };
-		}
-		return { name: trimmed, seedPoints: null };
-	}
-
-	return { name: trimmed, seedPoints: null };
-}
+import { parsePlayerLine, type ParsedPlayer } from '$lib/parse-players';
 
 export const createTournamentForm = form(
 	v.object({
@@ -101,11 +85,10 @@ export const createTournamentForm = form(
 		const parsed: ParsedPlayer[] = lines.map((line: string) => parsePlayerLine(line, formatType));
 
 		if (formatType === 'preseed') {
-			const missingPoints: ParsedPlayer[] = parsed.filter(
-				(p: ParsedPlayer) => p.seedPoints === null
-			);
-			if (missingPoints.length > 0) {
-				error(400, m.err_preseed_points({ names: missingPoints.join(', ') }));
+			for (const p of parsed) {
+				if (p.seedPoints === null) {
+					p.seedPoints = 0;
+				}
 			}
 		}
 

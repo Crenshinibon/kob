@@ -7,9 +7,11 @@
 		type DurationConfig
 	} from '$lib/tournament-logic';
 	import * as m from '$lib/paraglide/messages';
+	import { parsePastedText, parseCsvText, parsePlayerLine } from '$lib/parse-players';
 	import { createTournamentForm } from './create.remote';
 
 	let createError = $state('');
+	let csvUploadError = $state('');
 
 	let tournamentName = $state('');
 	let formatType = $state<'random-seed' | 'preseed'>('random-seed');
@@ -31,29 +33,58 @@
 
 	function handlePaste(e: ClipboardEvent) {
 		const pastedText = e.clipboardData?.getData('text') || '';
+		if (!textareaEl || !pastedText) return;
 
-		if (textareaEl && /[,;\t]/.test(pastedText)) {
-			e.preventDefault();
+		const needsProcessing = /[,;\t]/.test(pastedText);
+		if (!needsProcessing) return;
 
-			const names = pastedText
-				.split(/[,;\t]+/)
-				.map((n) => n.trim())
-				.filter((n) => n.length > 0);
+		e.preventDefault();
 
-			const formattedNames = names.join('\n');
+		const names = parsePastedText(pastedText);
+		const formattedNames = names.join('\n');
 
-			const start = textareaEl.selectionStart;
-			const end = textareaEl.selectionEnd;
-			const before = playerNames.substring(0, start);
-			const after = playerNames.substring(end);
+		const start = textareaEl.selectionStart;
+		const end = textareaEl.selectionEnd;
+		const before = playerNames.substring(0, start);
+		const after = playerNames.substring(end);
 
-			playerNames = before + formattedNames + (after ? '\n' + after : '');
+		playerNames = before + formattedNames + (after ? '\n' + after : '');
 
-			setTimeout(() => {
-				if (textareaEl)
-					textareaEl.selectionStart = textareaEl.selectionEnd = start + formattedNames.length;
-			}, 0);
-		}
+		setTimeout(() => {
+			if (textareaEl)
+				textareaEl.selectionStart = textareaEl.selectionEnd = start + formattedNames.length;
+		}, 0);
+	}
+
+	function handleCsvUpload(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+
+		csvUploadError = '';
+		const reader = new FileReader();
+		reader.onload = () => {
+			const text = reader.result as string;
+			const result = parseCsvText(text);
+			if (!result.ok) {
+				csvUploadError = m.create_csv_no_spieler1();
+				return;
+			}
+			if (result.lines.length === 0) {
+				csvUploadError = m.create_csv_error();
+				return;
+			}
+			const newNames = result.lines.join('\n');
+			playerNames = playerNames.trim() ? playerNames.trim() + '\n' + newNames : newNames;
+			if (result.hasWvvPoints) {
+				formatType = 'preseed';
+			}
+		};
+		reader.onerror = () => {
+			csvUploadError = m.create_csv_error();
+		};
+		reader.readAsText(file);
+		input.value = '';
 	}
 
 	function removeLastPlayers() {
@@ -68,8 +99,9 @@
 		const n = leftoverCount;
 		if (n === 0) return;
 		const parsed = lines.map((line) => {
-			const match = line.trim().match(/^(.+?)\s+(\d+)$/);
-			if (match) return { line: line.trim(), name: match[1], points: parseInt(match[2]) };
+			const result = parsePlayerLine(line, 'preseed');
+			if (result.seedPoints !== null)
+				return { line: line.trim(), name: result.name, points: result.seedPoints };
 			return { line: line.trim(), name: line.trim(), points: 0 };
 		});
 		parsed.sort((a, b) => a.points - b.points);
@@ -355,6 +387,21 @@
 				<p class="import-tip-text">
 					{m.create_wvv_tip()}
 				</p>
+				<div class="csv-upload">
+					<label class="btn-small csv-upload-btn" for="csv-upload">
+						{m.create_csv_upload()}
+					</label>
+					<input
+						id="csv-upload"
+						type="file"
+						accept=".csv,.txt"
+						onchange={handleCsvUpload}
+						class="csv-file-input"
+					/>
+				</div>
+				{#if csvUploadError}
+					<p class="info warn">{csvUploadError}</p>
+				{/if}
 			</details>
 			<p class="count">{m.create_names_entered({ count: computedPlayerCount })}</p>
 			{#if computedPlayerCount > 0 && computedPlayerCount < minPlayers}
@@ -683,6 +730,19 @@
 		font-size: var(--font-size-sm);
 		color: var(--text-secondary);
 		line-height: 1.5;
+	}
+
+	.csv-upload {
+		margin-top: var(--spacing-sm);
+	}
+
+	.csv-upload-btn {
+		display: inline-block;
+		cursor: pointer;
+	}
+
+	.csv-file-input {
+		display: none;
 	}
 
 	.field-hint {

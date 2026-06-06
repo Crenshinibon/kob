@@ -2,12 +2,10 @@
 
 ## ToDo
 
-- [x] There is a strange looking flicker when selecting an option in the tournament create page. Like a very short transition. This look irritating, just remove the transition.
-- [x] in the "create page" code src/routes/tournament/create/+page.svelte there is the leftoverDescription (line 90) which holds a bunch of english strings, which should be part of i18n
-
-
 ## Done
 
+- [x] There is a strange looking flicker when selecting an option in the tournament create page. Like a very short transition. This look irritating, just remove the transition.
+- [x] in the "create page" code src/routes/tournament/create/+page.svelte there is the leftoverDescription (line 90) which holds a bunch of english strings, which should be part of i18n
 - [x] On "create tournament" page, the top end (16) of the physical courts slider is not at the right most position, but rather right behind the label displaying the current selected number of courts. (Fixed: `.range-labels` changed from `display: grid` to `display: flex; justify-content: space-between`. Spec 1000.)
 - [x] On "standings" page. When there are no entries for the first round, it shows just "Loading...". Same with one court (or even all courts) having completed all games. Even after advancing to the 2nd round. Also hydration error `hydratable_missing_but_required`. (Fixed: `ssr = false` in `+page.ts`, client-only render, show all players when no scores. Spec 980.)
 - [x] When we have a 5p court (6p might also be affected) and I select the "Court Scoring Configuration" the court defaults to Points to Win == 21, despite the info text in the bottom showing "1 set to 15". (Fixed: scoring input uses `getMinPointsForSet()` for accurate default. Spec 1000.)

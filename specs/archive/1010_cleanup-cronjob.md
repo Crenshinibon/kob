@@ -14,10 +14,12 @@
 - Updated `scripts/cleanup-old-tournaments.ts` to use `lastActivityAt`
 
 ### Mutation points updated
+
 - `create.remote.ts` — insert gets `defaultNow()` via schema
 - `scores.remote.ts` — `saveScore`, `saveSetScore`
 - `tournament-actions.remote.ts` — `closeRoundForm` (3 updates), `updateScoringOverrides`, `retirePlayer`, `reportInjury`, `undoRetirement`, `undoInjury`
 
 ### To deploy
+
 - Run `bun run db:push` to apply migration
 - Set `CRON_SECRET` env var on Vercel
