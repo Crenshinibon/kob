@@ -2,6 +2,9 @@
 	import CookieNotice from '$lib/components/CookieNotice.svelte';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import * as m from '$lib/paraglide/messages';
+	import { shouldRedirect, localizeHref } from '$lib/paraglide/runtime';
+	import { goto, afterNavigate } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
 
 	let {
@@ -12,9 +15,30 @@
 		data: { user?: { id: string; email: string } | null };
 	} = $props();
 
+	async function syncLocaleUrl(url: string) {
+		const decision = await shouldRedirect({ url });
+		if (decision.shouldRedirect && decision.redirectUrl) {
+			if (decision.redirectUrl.origin !== window.location.origin) {
+				window.location.href = decision.redirectUrl.href;
+				return;
+			}
+			await goto(decision.redirectUrl, { invalidateAll: true });
+		}
+	}
+
+	onMount(() => {
+		void syncLocaleUrl(window.location.href);
+	});
+
+	afterNavigate((navigation) => {
+		if (navigation.to) {
+			void syncLocaleUrl(navigation.to.url.href);
+		}
+	});
+
 	async function handleSignOut() {
 		await fetch('/auth/sign-out', { method: 'POST' });
-		window.location.href = '/';
+		window.location.href = localizeHref('/');
 	}
 </script>
 

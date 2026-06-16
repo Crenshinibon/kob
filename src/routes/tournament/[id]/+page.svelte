@@ -285,9 +285,8 @@
 
 						{#if court.token}
 							<div class="qr-link">
-								<a
-									href={resolve('/court/[token]', { token: String(court.token) })}
-									target="_blank">{m.open_court_page()}</a
+								<a href={resolve('/court/[token]', { token: String(court.token) })} target="_blank"
+									>{m.open_court_page()}</a
 								>
 							</div>
 						{/if}

@@ -1,8 +1,8 @@
 import * as v from 'valibot';
-import { error, redirect } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
+import { redirectLocalized } from '$lib/i18n/redirect';
 import { form, command, getRequestEvent } from '$app/server';
 import * as m from '$lib/paraglide/messages';
-import { localizeHref } from '$lib/paraglide/runtime';
 import { db } from '$lib/server/db';
 import { tournament, player, courtRotation, match, court } from '$lib/server/db/schema';
 import { eq, and, inArray, isNull, or } from 'drizzle-orm';
@@ -185,7 +185,7 @@ export const closeRoundForm = form(
 
 			getTournamentData(tournamentId).refresh();
 
-			redirect(303, `/tournament/${tournamentId}/standings`);
+			redirectLocalized(303, `/tournament/${tournamentId}/standings`, getRequestEvent());
 		}
 
 		let nextAssignments = closedState.nextAssignments;
@@ -396,7 +396,7 @@ export const deleteTournamentForm = form(
 		await db.delete(player).where(eq(player.tournamentId, tournamentId));
 		await db.delete(tournament).where(eq(tournament.id, tournamentId));
 
-		redirect(303, localizeHref('/'));
+		redirectLocalized(303, '/', getRequestEvent());
 	}
 );
 
@@ -666,16 +666,15 @@ export const retirePlayer = command(
 				playerIds: [...a.playerIds]
 			}));
 		} else {
-			const allPlayerIds = nextAssignments.flatMap((a) => a.playerIds);
-			const uniquePlayerIds = [...new Set(allPlayerIds)];
-			uniquePlayerIds.sort((a, b) => a - b);
+			const allPlayerIds = activePlayers.map((p) => p.id);
+			allPlayerIds.sort((a, b) => a - b);
 
 			finalAssignments = [];
 			let offset = 0;
 			for (let i = 0; i < newCourtSizes.length; i++) {
 				finalAssignments.push({
 					courtNumber: i + 1,
-					playerIds: uniquePlayerIds.slice(offset, offset + newCourtSizes[i])
+					playerIds: allPlayerIds.slice(offset, offset + newCourtSizes[i])
 				});
 				offset += newCourtSizes[i];
 			}
