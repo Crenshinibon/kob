@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import * as m from '$lib/paraglide/messages';
+	import { localizeHref } from '$lib/paraglide/runtime';
 
 	interface TournamentSummary {
 		id: number;
@@ -37,9 +38,11 @@
 			</h1>
 		</div>
 		{#if data?.user}
-			<a href="/tournament/create" class="btn-primary">{m.new_tournament()}</a>
+			<a href={localizeHref(resolve('/tournament/create'))} class="btn-primary"
+				>{m.new_tournament()}</a
+			>
 		{:else}
-			<a href="/login" class="btn-primary">{m.login()}</a>
+			<a href={localizeHref(resolve('/login'))} class="btn-primary">{m.login()}</a>
 		{/if}
 	</header>
 
@@ -55,7 +58,7 @@
 				<div class="tournament-list">
 					{#each data.active as tournament (tournament.id)}
 						<a
-							href={resolve('/tournament/[id]', { id: String(tournament.id) })}
+							href={localizeHref(resolve('/tournament/[id]', { id: String(tournament.id) }))}
 							class="tournament-card"
 						>
 							<h3>{tournament.name}</h3>
@@ -76,7 +79,7 @@
 				<div class="tournament-list">
 					{#each data.finished as tournament (tournament.id)}
 						<a
-							href={resolve('/tournament/[id]', { id: String(tournament.id) })}
+							href={localizeHref(resolve('/tournament/[id]', { id: String(tournament.id) }))}
 							class="tournament-card"
 						>
 							<h3>{tournament.name}</h3>
@@ -94,7 +97,7 @@
 				<div class="tournament-list">
 					{#each data.archived as tournament (tournament.id)}
 						<a
-							href={resolve('/tournament/[id]', { id: String(tournament.id) })}
+							href={localizeHref(resolve('/tournament/[id]', { id: String(tournament.id) }))}
 							class="tournament-card"
 						>
 							<h3>{tournament.name}</h3>
@@ -108,7 +111,9 @@
 		{#if data.active.length === 0 && data.finished.length === 0 && data.archived.length === 0}
 			<section class="empty">
 				<p>{m.no_tournaments()}</p>
-				<a href="/tournament/create" class="btn-primary">{m.create_first()}</a>
+				<a href={localizeHref(resolve('/tournament/create'))} class="btn-primary"
+					>{m.create_first()}</a
+				>
 			</section>
 		{/if}
 	{/if}

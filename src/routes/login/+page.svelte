@@ -1,5 +1,7 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
+	import { localizeHref } from '$lib/paraglide/runtime';
 
 	let email = $state('');
 	let password = $state('');
@@ -57,7 +59,7 @@
 		</form>
 
 		<p class="switch">
-			{m.no_account()} <a href="/signup">{m.sign_up()}</a>
+			{m.no_account()} <a href={localizeHref(resolve('/signup'))}>{m.sign_up()}</a>
 		</p>
 	</div>
 </main>

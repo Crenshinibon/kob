@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import * as m from '$lib/paraglide/messages';
+	import { localizeHref } from '$lib/paraglide/runtime';
 
 	let dismissed = $state(false);
 	let mounted = $state(false);
@@ -22,7 +24,11 @@
 		<div class="cookie-content">
 			<p>
 				{m.cookie_notice()}
-				<button type="button" onclick={() => goto('/privacy')} class="cookie-link-btn">
+				<button
+					type="button"
+					onclick={() => goto(localizeHref(resolve('/privacy')))}
+					class="cookie-link-btn"
+				>
 					{m.cookie_learn_more()}
 				</button>
 			</p>

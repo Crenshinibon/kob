@@ -1,9 +1,11 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { localizeHref } from '$lib/paraglide/runtime';
 
 	function handleBack() {
-		goto('/');
+		goto(localizeHref(resolve('/')));
 	}
 </script>
 

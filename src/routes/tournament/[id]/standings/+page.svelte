@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import * as m from '$lib/paraglide/messages';
+	import { localizeHref } from '$lib/paraglide/runtime';
 	import { getStandingsData } from './standings-data.remote';
 
 	let { data } = $props<{
@@ -80,7 +81,8 @@
 
 <main>
 	<header>
-		<a href={resolve('/tournament/[id]', { id: String(data.tournamentId) })}>{m.standings_back()}</a
+		<a href={localizeHref(resolve('/tournament/[id]', { id: String(data.tournamentId) }))}
+			>{m.standings_back()}</a
 		>
 		<h1>{data.tournament.name}</h1>
 	</header>

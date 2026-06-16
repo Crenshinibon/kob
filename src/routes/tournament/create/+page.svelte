@@ -7,6 +7,8 @@
 		type DurationConfig
 	} from '$lib/tournament-logic';
 	import * as m from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
+	import { localizeHref } from '$lib/paraglide/runtime';
 	import { parsePastedText, parseCsvText, parsePlayerLine } from '$lib/parse-players';
 	import { createTournamentForm } from './create.remote';
 
@@ -211,7 +213,7 @@
 
 <main>
 	<header>
-		<a href="/">{m.create_back()}</a>
+		<a href={localizeHref(resolve('/'))}>{m.create_back()}</a>
 		<h1>{m.create_submit()}</h1>
 	</header>
 

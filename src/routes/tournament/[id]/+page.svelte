@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getTournamentData, type CourtDisplayData } from './tournament-data.remote';
 	import * as m from '$lib/paraglide/messages';
+	import { localizeHref } from '$lib/paraglide/runtime';
 	import {
 		closeRoundForm,
 		deleteTournamentForm,
@@ -170,7 +171,7 @@
 	{:else}
 		<main>
 			<header>
-				<a href="/">{m.dashboard_btn()}</a>
+				<a href={localizeHref(resolve('/'))}>{m.dashboard_btn()}</a>
 				<h1>{tournament.name}</h1>
 				{#if isActive}
 					<p>{m.round_label({ current: currentRound, total: tournament.numRounds })}</p>
@@ -178,7 +179,7 @@
 					<p class="status-completed">{m.completed()}</p>
 				{/if}
 				<a
-					href={resolve('/tournament/[id]/standings', { id: String(tournament.id) })}
+					href={localizeHref(resolve('/tournament/[id]/standings', { id: String(tournament.id) }))}
 					class="standings-link">{m.view_standings()}</a
 				>
 			</header>
@@ -284,8 +285,9 @@
 
 						{#if court.token}
 							<div class="qr-link">
-								<a href={resolve('/court/[token]', { token: String(court.token) })} target="_blank"
-									>{m.open_court_page()}</a
+								<a
+									href={resolve('/court/[token]', { token: String(court.token) })}
+									target="_blank">{m.open_court_page()}</a
 								>
 							</div>
 						{/if}

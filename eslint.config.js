@@ -22,7 +22,15 @@ export default defineConfig(
 		rules: {
 			// typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
 			// see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
-			'no-undef': 'off'
+			'no-undef': 'off',
+			// Used with paraglide's localizeHref(resolve(...)) for i18n — rule can't see through wrapper
+			'svelte/no-navigation-without-resolve': [
+				'error',
+				{
+					ignoreLinks: true,
+					ignoreGoto: true
+				}
+			]
 		}
 	},
 	{

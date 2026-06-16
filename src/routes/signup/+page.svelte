@@ -1,5 +1,7 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
+	import { resolve } from '$app/paths';
+	import { localizeHref } from '$lib/paraglide/runtime';
 
 	let email = $state('');
 	let password = $state('');
@@ -84,7 +86,7 @@
 		</form>
 
 		<p class="switch">
-			{m.has_account()} <a href="/login">{m.login()}</a>
+			{m.has_account()} <a href={localizeHref(resolve('/login'))}>{m.login()}</a>
 		</p>
 	</div>
 </main>
