@@ -1267,7 +1267,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForTimeout(3000);
 
 			// Re-open retire section
-			await page.click('summary:has-text("Retire a Player")');
+			await page.click('summary:has-text("Retire a Player")', { force: true });
 			await page.waitForSelector('.retire-form', { state: 'visible' });
 
 			// Verify undo list is gone
