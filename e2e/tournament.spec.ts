@@ -1253,7 +1253,10 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForTimeout(3000);
 
 			// Re-open retire section (details close after live query refresh)
-			await page.click('summary:has-text("Retire a Player")', { force: true });
+			await page.evaluate(() => {
+				const details = document.querySelector('.retire-section details');
+				if (details) details.open = true;
+			});
 			await page.waitForSelector('.retire-form', { state: 'visible' });
 
 			// Verify undo button is visible for Player1
@@ -1267,7 +1270,10 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForTimeout(3000);
 
 			// Re-open retire section
-			await page.click('summary:has-text("Retire a Player")', { force: true });
+			await page.evaluate(() => {
+				const details = document.querySelector('.retire-section details');
+				if (details) details.open = true;
+			});
 			await page.waitForSelector('.retire-form', { state: 'visible' });
 
 			// Verify undo list is gone

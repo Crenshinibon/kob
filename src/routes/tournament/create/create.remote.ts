@@ -1,5 +1,6 @@
 import * as v from 'valibot';
 import * as m from '$lib/paraglide/messages';
+import { localizeHref } from '$lib/paraglide/runtime';
 import { error, redirect } from '@sveltejs/kit';
 import { form, getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
@@ -219,6 +220,6 @@ export const createTournamentForm = form(
 			}
 		}
 
-		redirect(303, `/tournament/${newTournament.id}`);
+		redirect(303, localizeHref(`/tournament/${newTournament.id}`));
 	}
 );

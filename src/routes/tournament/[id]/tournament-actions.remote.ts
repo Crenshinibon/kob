@@ -2,6 +2,7 @@ import * as v from 'valibot';
 import { error, redirect } from '@sveltejs/kit';
 import { form, command, getRequestEvent } from '$app/server';
 import * as m from '$lib/paraglide/messages';
+import { localizeHref } from '$lib/paraglide/runtime';
 import { db } from '$lib/server/db';
 import { tournament, player, courtRotation, match, court } from '$lib/server/db/schema';
 import { eq, and, inArray, isNull, or } from 'drizzle-orm';
@@ -395,7 +396,7 @@ export const deleteTournamentForm = form(
 		await db.delete(player).where(eq(player.tournamentId, tournamentId));
 		await db.delete(tournament).where(eq(tournament.id, tournamentId));
 
-		redirect(303, '/');
+		redirect(303, localizeHref('/'));
 	}
 );
 
