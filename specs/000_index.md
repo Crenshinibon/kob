@@ -14,10 +14,13 @@
 
 - **[070_scoring-and-standings.md](./070_scoring-and-standings.md)**: Points = your score each match. Tiebreakers: points → differential → playerId (deterministic). 5p/6p use average points per game. Canceled matches use averages. Scoring modes: single-21, best-of-3, custom. Per-court-type overrides.
 
-- **[080_promotion-relegation.md](./080_promotion-relegation.md)**: Random Seed: Round 1 redistributes by rank (vertical seeding), Round 2+ uses ladder system (2 up, 2 down). Preseed: recursive tiered redistribution. All work for 8-64 players (2-16 courts). Non-standard bottom court for leftovers.
+- **[080_promotion-relegation.md](./080_promotion-relegation.md)**: Random Seed: R1→R2 vertical seeding (flatten by rank, sort by points, fill courts top-to-bottom), R2+ ladder (2 up, 2 down). Preseed: recursive tiered redistribution with origin mixing. All work for 8-64 players (2-16 courts). Non-standard bottom court for leftovers.
   - **[081_preseed-example-12p.md](./081_preseed-example-12p.md)**: 12 players (3 courts, 3 rounds) — bracket tree: 3→2W+1L→1F+1L(W)+1L. Shows origin mixing on first split, recursive halving on second.
   - **[082_preseed-example-16p.md](./082_preseed-example-16p.md)**: 16 players (4 courts, 3 rounds) — balanced bracket tree: 4→2W+2L→1F+1L(W)+1TL+1BL. Canonical preseed example.
   - **[083_preseed-example-20p.md](./083_preseed-example-20p.md)**: 20 players (5 courts, 4 rounds) — asymmetric bracket: 5→4W+1L→2WW+2LW+1L→1F+1L(WW)+1TL+1BL+1L. 3-level tree.
+  - **[084_random-example-12p.md](./084_random-example-12p.md)**: 12 players (3 courts, 4 rounds) — random shuffle R1, vertical seeding R2, ladder (2-up/2-down) R3-R4. No bracket splitting.
+  - **[085_random-example-16p.md](./085_random-example-16p.md)**: 16 players (4 courts, 4 rounds) — perfect tier separation in vertical seeding, balanced 4-court ladder.
+  - **[086_random-example-20p.md](./086_random-example-20p.md)**: 20 players (5 courts, 4 rounds) — cross-tier mixing in vertical seeding, 5-court ladder with slow climb from Court 5.
 
 - **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export] Sorted by court position (not total points), per spec 070.
 

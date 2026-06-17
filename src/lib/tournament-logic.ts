@@ -506,31 +506,26 @@ export function verticalSeeding(
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
 	const maxRank = sorted.reduce((m, c) => Math.max(m, c.standings.length), 0);
-	const groups: number[][] = [];
+
+	const flattened: number[] = [];
 
 	for (let r = 0; r < maxRank; r++) {
-		const g: number[] = [];
-		for (const c of sorted) if (c.standings[r]) g.push(c.standings[r].playerId);
-		g.sort((a, b) => a - b);
-		groups.push(g);
+		const tier: { playerId: number; points: number; diff: number }[] = [];
+		for (const c of sorted) {
+			const s = c.standings[r];
+			if (s) tier.push({ playerId: s.playerId, points: s.points, diff: s.diff });
+		}
+		tier.sort((a, b) => b.points - a.points || b.diff - a.diff || a.playerId - b.playerId);
+		for (const t of tier) flattened.push(t.playerId);
 	}
 
 	const assignments: CourtAssignment[] = [];
-	const pos = new Array(groups.length).fill(0);
+	let idx = 0;
 
 	for (let c = 0; c < targetCourtCount; c++) {
-		const pids: number[] = [];
 		const targetSize = courtSizes?.[c] ?? 4;
-		let gi = 0;
-		while (pids.length < targetSize && gi < groups.length) {
-			const g = groups[gi];
-			const canTake = Math.min(targetSize - pids.length, g.length - pos[gi]);
-			for (let k = 0; k < canTake; k++) pids.push(g[pos[gi] + k]);
-			pos[gi] += canTake;
-			if (pos[gi] >= g.length) gi++;
-			else if (pids.length >= targetSize) break;
-			else gi++;
-		}
+		const pids = flattened.slice(idx, idx + targetSize);
+		idx += targetSize;
 		if (pids.length > 0) assignments.push({ courtNumber: c + 1, playerIds: pids });
 	}
 	return assignments;
@@ -546,50 +541,30 @@ export function ladderRedistribute(
 	courtSizes?: readonly number[]
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
-	const n = sorted.length;
+	const sizes = courtSizes ?? Array(targetCourtCount).fill(4);
 	const assignments: CourtAssignment[] = [];
 
 	for (let i = 0; i < targetCourtCount; i++) {
+		const targetSize = sizes[i];
 		const pids: number[] = [];
 
-		if (n === 2) {
-			if (i === 0) {
-				takeN(sorted[0], 0, 2, pids);
-				takeN(sorted[1], 0, 2, pids);
-			} else {
-				takeN(sorted[0], 2, 4, pids);
-				takeN(sorted[1], 2, 4, pids);
-			}
-		} else if (i === 0) {
+		if (i === 0) {
 			takeN(sorted[0], 0, 2, pids);
 			if (sorted[1]) takeN(sorted[1], 0, 2, pids);
 		} else if (i === targetCourtCount - 1) {
-			if (sorted[i - 1])
-				takeN(
-					sorted[i - 1],
-					Math.max(0, sorted[i - 1].standings.length - 2),
-					sorted[i - 1].standings.length,
-					pids
-				);
-			takeN(
-				sorted[i],
-				Math.max(0, sorted[i].standings.length - 2),
-				sorted[i].standings.length,
-				pids
-			);
+			if (sorted[i - 1]) {
+				const bottomFrom = Math.max(0, sorted[i - 1].standings.length - 2);
+				takeN(sorted[i - 1], bottomFrom, sorted[i - 1].standings.length, pids);
+			}
+			takeN(sorted[i], 2, sorted[i].standings.length, pids);
 		} else {
-			if (sorted[i - 1])
-				takeN(
-					sorted[i - 1],
-					Math.max(0, sorted[i - 1].standings.length - 2),
-					sorted[i - 1].standings.length,
-					pids
-				);
+			if (sorted[i - 1]) {
+				const bottomFrom = Math.max(0, sorted[i - 1].standings.length - 2);
+				takeN(sorted[i - 1], bottomFrom, sorted[i - 1].standings.length, pids);
+			}
 			if (sorted[i + 1]) takeN(sorted[i + 1], 0, 2, pids);
 		}
 
-		// Trim playerIds to match court size for non-standard courts
-		const targetSize = courtSizes?.[i] ?? 4;
 		const trimmedPids = pids.slice(0, targetSize);
 
 		if (trimmedPids.length > 0) assignments.push({ courtNumber: i + 1, playerIds: trimmedPids });

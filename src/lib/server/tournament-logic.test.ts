@@ -734,7 +734,7 @@ describe('processPreseedTransition', () => {
 // ============================================================================
 
 describe('verticalSeeding', () => {
-	it('redistributes 4 courts correctly', () => {
+	it('fills courts sequentially by rank tier sorted by points', () => {
 		const results = [
 			mockCourtResult(1, [
 				{ playerId: 1, rank: 1, points: 63, diff: 5, matchCount: 3 },
@@ -761,12 +761,87 @@ describe('verticalSeeding', () => {
 				{ playerId: 16, rank: 4, points: 20, diff: -5, matchCount: 3 }
 			])
 		];
+
 		const a = verticalSeeding(results, 4);
-		expect(a[0].playerIds).toEqual([1, 5, 9, 13]);
+
 		expect(a.length).toBe(4);
+
+		expect(a[0].playerIds).toEqual([1, 5, 9, 13]);
+		expect(a[1].playerIds).toEqual([2, 6, 10, 14]);
+		expect(a[2].playerIds).toEqual([3, 7, 11, 15]);
+		expect(a[3].playerIds).toEqual([4, 8, 12, 16]);
 	});
 
-	it('redistributes 8 courts', () => {
+	it('sorts tiers by points desc with tiebreaker diff then playerId', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 10, rank: 1, points: 60, diff: 0, matchCount: 3 },
+				{ playerId: 20, rank: 2, points: 30, diff: 0, matchCount: 3 },
+				{ playerId: 30, rank: 3, points: 10, diff: 0, matchCount: 3 },
+				{ playerId: 40, rank: 4, points: 0, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 50, rank: 1, points: 60, diff: 2, matchCount: 3 },
+				{ playerId: 60, rank: 2, points: 35, diff: 0, matchCount: 3 },
+				{ playerId: 70, rank: 3, points: 15, diff: 0, matchCount: 3 },
+				{ playerId: 80, rank: 4, points: 5, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 90, rank: 1, points: 55, diff: 0, matchCount: 3 },
+				{ playerId: 100, rank: 2, points: 25, diff: 0, matchCount: 3 },
+				{ playerId: 110, rank: 3, points: 5, diff: 0, matchCount: 3 },
+				{ playerId: 120, rank: 4, points: -5, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 130, rank: 1, points: 60, diff: 0, matchCount: 3 },
+				{ playerId: 140, rank: 2, points: 20, diff: 0, matchCount: 3 },
+				{ playerId: 150, rank: 3, points: 0, diff: 0, matchCount: 3 },
+				{ playerId: 160, rank: 4, points: -10, diff: 0, matchCount: 3 }
+			])
+		];
+
+		const a = verticalSeeding(results, 4);
+
+		expect(a.length).toBe(4);
+
+		expect(a[0].playerIds).toEqual([50, 10, 130, 90]);
+		expect(a[1].playerIds).toEqual([60, 20, 100, 140]);
+		expect(a[2].playerIds).toEqual([70, 30, 110, 150]);
+		expect(a[3].playerIds).toEqual([80, 40, 120, 160]);
+	});
+
+	it('handles 3 courts with mixed tiers across courts', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 30, diff: 0, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 20, diff: 0, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 10, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 0, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 28, diff: 0, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 18, diff: 0, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 8, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: -2, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 9, rank: 1, points: 26, diff: 0, matchCount: 3 },
+				{ playerId: 10, rank: 2, points: 16, diff: 0, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 6, diff: 0, matchCount: 3 },
+				{ playerId: 12, rank: 4, points: -4, diff: 0, matchCount: 3 }
+			])
+		];
+
+		const a = verticalSeeding(results, 3);
+
+		expect(a.length).toBe(3);
+
+		expect(a[0].playerIds).toEqual([1, 5, 9, 2]);
+		expect(a[1].playerIds).toEqual([6, 10, 3, 7]);
+		expect(a[2].playerIds).toEqual([11, 4, 8, 12]);
+	});
+
+	it('redistributes 8 courts preserving all players', () => {
 		const results = Array.from({ length: 8 }, (_, i) =>
 			mockCourtResult(
 				i + 1,
@@ -785,23 +860,30 @@ describe('verticalSeeding', () => {
 		expect(new Set(a.flatMap((x) => x.playerIds)).size).toBe(32);
 	});
 
-	it('handles 3 courts, 12 players', () => {
-		const results = [1, 5, 9].map((start, ci) =>
+	it('handles 5 courts, 20 players (mixed tier sizes)', () => {
+		const results = Array.from({ length: 5 }, (_, i) =>
 			mockCourtResult(
-				ci + 1,
+				i + 1,
 				Array.from({ length: 4 }, (_, j) => ({
-					playerId: start + j,
+					playerId: i * 4 + j + 1,
 					rank: j + 1,
-					points: 40 - j * 5,
+					points: 40 - j * 10 - i * 2,
 					diff: 0,
 					matchCount: 3
 				}))
 			)
 		);
-		const a = verticalSeeding(results, 3);
-		expect(a.length).toBe(3);
-		expect(a.flatMap((x) => x.playerIds).length).toBe(12);
-		expect(new Set(a.flatMap((x) => x.playerIds)).size).toBe(12);
+
+		const a = verticalSeeding(results, 5);
+		expect(a.length).toBe(5);
+		expect(a.flatMap((x) => x.playerIds).length).toBe(20);
+		expect(new Set(a.flatMap((x) => x.playerIds)).size).toBe(20);
+
+		expect(a[0].playerIds).toEqual([1, 5, 9, 13]);
+		expect(a[1].playerIds).toEqual([17, 2, 6, 10]);
+		expect(a[2].playerIds).toEqual([14, 18, 3, 7]);
+		expect(a[3].playerIds).toEqual([11, 15, 19, 4]);
+		expect(a[4].playerIds).toEqual([8, 12, 16, 20]);
 	});
 });
 
@@ -880,6 +962,710 @@ describe('ladderRedistribute', () => {
 		const a = ladderRedistribute(results, 8);
 		expect(a.length).toBe(8);
 		expect(new Set(a.flatMap((x) => x.playerIds)).size).toBe(32);
+	});
+});
+
+// ============================================================================
+// Vertical Seeding: Non-Standard Courts & Extended Coverage
+// ============================================================================
+
+describe('verticalSeeding: non-standard courts', () => {
+	it('9 players (4+5): fills 4p court then 5p court', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 40, diff: 5, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 20, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 10, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 50, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 30, diff: 2, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 15, diff: -3, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 5, diff: -7, matchCount: 3 },
+				{ playerId: 9, rank: 5, points: 0, diff: -10, matchCount: 3 }
+			])
+		];
+
+		const a = verticalSeeding(results, 2, [4, 5]);
+
+		expect(a[0].playerIds).toEqual([1, 5, 2, 6]);
+		expect(a[1].playerIds).toEqual([3, 7, 4, 8, 9]);
+	});
+
+	it('11 players (4+4+3): fills standard courts first, bottom court gets remainder', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 40, diff: 5, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 20, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 10, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 50, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 35, diff: 3, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 15, diff: -2, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 5, diff: -8, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 9, rank: 1, points: 45, diff: 6, matchCount: 3 },
+				{ playerId: 10, rank: 2, points: 25, diff: 1, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 10, diff: -5, matchCount: 3 }
+			])
+		];
+
+		const a = verticalSeeding(results, 3, [4, 4, 3]);
+
+		expect(a.length).toBe(3);
+		expect(a.flatMap((x) => x.playerIds).length).toBe(11);
+		expect(new Set(a.flatMap((x) => x.playerIds)).size).toBe(11);
+
+		expect(a[0].playerIds).toEqual([1, 5, 9, 2]);
+		expect(a[1].playerIds).toEqual([6, 10, 3, 7]);
+		expect(a[2].playerIds).toEqual([11, 4, 8]);
+	});
+});
+
+describe('verticalSeeding: tiebreaking', () => {
+	it('sorts by points desc, then diff desc, then playerId asc', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 10, rank: 1, points: 50, diff: 5, matchCount: 3 },
+				{ playerId: 20, rank: 2, points: 30, diff: 0, matchCount: 3 },
+				{ playerId: 30, rank: 3, points: 10, diff: -3, matchCount: 3 },
+				{ playerId: 40, rank: 4, points: 0, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 11, rank: 1, points: 50, diff: 2, matchCount: 3 },
+				{ playerId: 21, rank: 2, points: 30, diff: 0, matchCount: 3 },
+				{ playerId: 31, rank: 3, points: 10, diff: -3, matchCount: 3 },
+				{ playerId: 41, rank: 4, points: 0, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 12, rank: 1, points: 50, diff: 2, matchCount: 3 },
+				{ playerId: 22, rank: 2, points: 25, diff: -1, matchCount: 3 },
+				{ playerId: 32, rank: 3, points: 5, diff: -5, matchCount: 3 },
+				{ playerId: 42, rank: 4, points: -10, diff: -8, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 13, rank: 1, points: 45, diff: 1, matchCount: 3 },
+				{ playerId: 23, rank: 2, points: 35, diff: 3, matchCount: 3 },
+				{ playerId: 33, rank: 3, points: 15, diff: -2, matchCount: 3 },
+				{ playerId: 43, rank: 4, points: -5, diff: -6, matchCount: 3 }
+			])
+		];
+
+		const a = verticalSeeding(results, 4);
+
+		expect(a[0].playerIds).toEqual([10, 11, 12, 13]);
+
+		expect(a[1].playerIds).toEqual([23, 20, 21, 22]);
+	});
+
+	it('resolves all-3-way tie with diff then playerId', () => {
+		const results = [
+			mockCourtResult(1, [{ playerId: 1, rank: 1, points: 40, diff: 0, matchCount: 3 }]),
+			mockCourtResult(2, [{ playerId: 2, rank: 1, points: 40, diff: 0, matchCount: 3 }]),
+			mockCourtResult(3, [{ playerId: 3, rank: 1, points: 40, diff: 0, matchCount: 3 }])
+		];
+
+		const a = verticalSeeding(results, 3, [1, 1, 1]);
+
+		expect(a[0].playerIds).toEqual([1]);
+		expect(a[1].playerIds).toEqual([2]);
+		expect(a[2].playerIds).toEqual([3]);
+	});
+});
+
+// ============================================================================
+// Ladder Redistribution: Extended Coverage
+// ============================================================================
+
+describe('ladderRedistribute: extended coverage', () => {
+	it('3 courts: middle court pulls from neighbors', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 50, diff: 5, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 20, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 10, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 55, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 45, diff: 3, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 25, diff: -2, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 15, diff: -6, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 9, rank: 1, points: 40, diff: 2, matchCount: 3 },
+				{ playerId: 10, rank: 2, points: 30, diff: 0, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 10, diff: -5, matchCount: 3 },
+				{ playerId: 12, rank: 4, points: 5, diff: -8, matchCount: 3 }
+			])
+		];
+
+		const a = ladderRedistribute(results, 3);
+
+		expect(a[0].playerIds).toEqual([1, 2, 5, 6]);
+		expect(a[1].playerIds).toEqual([3, 4, 9, 10]);
+		expect(a[2].playerIds).toEqual([7, 8, 11, 12]);
+	});
+
+	it('5 courts: full ladder chain', () => {
+		const results = Array.from({ length: 5 }, (_, i) =>
+			mockCourtResult(i + 1, [
+				{ playerId: i * 4 + 1, rank: 1, points: 80 - i * 10, diff: 0, matchCount: 3 },
+				{ playerId: i * 4 + 2, rank: 2, points: 60 - i * 10, diff: 0, matchCount: 3 },
+				{ playerId: i * 4 + 3, rank: 3, points: 40 - i * 10, diff: 0, matchCount: 3 },
+				{ playerId: i * 4 + 4, rank: 4, points: 20 - i * 10, diff: 0, matchCount: 3 }
+			])
+		);
+
+		const a = ladderRedistribute(results, 5);
+
+		expect(a.length).toBe(5);
+		expect(new Set(a.flatMap((x) => x.playerIds)).size).toBe(20);
+
+		expect(a[0].playerIds).toEqual([1, 2, 5, 6]);
+		expect(a[1].playerIds).toEqual([3, 4, 9, 10]);
+		expect(a[2].playerIds).toEqual([7, 8, 13, 14]);
+		expect(a[3].playerIds).toEqual([11, 12, 17, 18]);
+		expect(a[4].playerIds).toEqual([15, 16, 19, 20]);
+	});
+
+	it('2 courts: swap halves', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 63, diff: 5, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 50, diff: 3, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 40, diff: 1, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 30, diff: -2, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 58, diff: 4, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 45, diff: 2, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 35, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 25, diff: -3, matchCount: 3 }
+			])
+		];
+		const a = ladderRedistribute(results, 2);
+		expect(a[0].playerIds).toEqual([1, 2, 5, 6]);
+		expect(a[1].playerIds).toEqual([3, 4, 7, 8]);
+	});
+});
+
+// ============================================================================
+// Ladder Redistribution: Non-Standard Court Sizes
+// ============================================================================
+
+describe('ladderRedistribute: non-standard courts', () => {
+	it('9 players (4+5): top 2 go up, bottom stay on C2 with 5 slots', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 50, diff: 5, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 30, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 20, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 55, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 45, diff: 3, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 25, diff: -2, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 15, diff: -6, matchCount: 3 },
+				{ playerId: 9, rank: 5, points: 5, diff: -8, matchCount: 3 }
+			])
+		];
+
+		const a = ladderRedistribute(results, 2, [4, 5]);
+
+		expect(a[0].playerIds).toEqual([1, 2, 5, 6]);
+		expect(a[0].playerIds).toHaveLength(4);
+
+		expect(a[1].playerIds).toEqual([3, 4, 7, 8, 9]);
+		expect(a[1].playerIds).toHaveLength(5);
+
+		expect(new Set(a.flatMap((x) => x.playerIds)).size).toBe(9);
+	});
+
+	it('11 players (4+4+3): bottom court keeps 1, receives 2 from above', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 50, diff: 5, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 30, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 20, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 55, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 45, diff: 3, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 25, diff: -2, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 15, diff: -6, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 9, rank: 1, points: 40, diff: 2, matchCount: 3 },
+				{ playerId: 10, rank: 2, points: 35, diff: 0, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 10, diff: -5, matchCount: 3 }
+			])
+		];
+
+		const a = ladderRedistribute(results, 3, [4, 4, 3]);
+
+		expect(a[0].playerIds).toEqual([1, 2, 5, 6]);
+		expect(a[0].playerIds).toHaveLength(4);
+
+		expect(a[1].playerIds).toEqual([3, 4, 9, 10]);
+		expect(a[1].playerIds).toHaveLength(4);
+
+		expect(a[2].playerIds).toEqual([7, 8, 11]);
+		expect(a[2].playerIds).toHaveLength(3);
+
+		expect(new Set(a.flatMap((x) => x.playerIds)).size).toBe(11);
+	});
+
+	it('10 players (4+6): top 2 from 6p court go up, bottom 4 stay on 6p court', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 70, diff: 15, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 60, diff: 10, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 30, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 55, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 50, diff: 5, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 35, diff: -2, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 25, diff: -6, matchCount: 3 },
+				{ playerId: 9, rank: 5, points: 20, diff: -10, matchCount: 3 },
+				{ playerId: 10, rank: 6, points: 10, diff: -12, matchCount: 3 }
+			])
+		];
+
+		const a = ladderRedistribute(results, 2, [4, 6]);
+
+		expect(a[0].playerIds).toEqual([1, 2, 5, 6]);
+		expect(a[0].playerIds).toHaveLength(4);
+
+		expect(a[1].playerIds).toEqual([3, 4, 7, 8, 9, 10]);
+		expect(a[1].playerIds).toHaveLength(6);
+
+		expect(new Set(a.flatMap((x) => x.playerIds)).size).toBe(10);
+	});
+});
+
+// ============================================================================
+// Multi-Round Random Seed Progression
+// ============================================================================
+
+describe('Random seed multi-round progression', () => {
+	function runRandomRoundTrip(
+		playerCount: number,
+		courtSizes: number[],
+		scoreWins: { winner: 'A' | 'B'; scoreA: number; scoreB: number }[]
+	): TournamentState {
+		let s = createInitialState({
+			tournamentId: 1,
+			formatType: 'random-seed',
+			playerCount
+		});
+		s = addPlayers(
+			s,
+			Array.from({ length: playerCount }, (_, i) => mockPlayer(i + 1))
+		);
+
+		const totalRounds = s.totalRounds;
+		let scoreIdx = 0;
+
+		for (let r = 0; r < totalRounds; r++) {
+			s = startRound(s);
+			const score = scoreWins[scoreIdx % scoreWins.length];
+			scoreIdx++;
+			s = closeRound({
+				...s,
+				currentMatches: scoreAllMatches(s, score)
+			});
+		}
+		return s;
+	}
+
+	it('8 players completes 4 rounds', () => {
+		const s = runRandomRoundTrip(
+			8,
+			[4, 4],
+			[
+				{ winner: 'A', scoreA: 21, scoreB: 15 },
+				{ winner: 'A', scoreA: 21, scoreB: 18 },
+				{ winner: 'A', scoreA: 21, scoreB: 19 },
+				{ winner: 'A', scoreA: 21, scoreB: 17 }
+			]
+		);
+		expect(s.isComplete).toBe(true);
+		expect(s.completedRounds).toHaveLength(4);
+		expect(s.roundsCompleted).toBe(4);
+	});
+
+	it('12 players completes 4 rounds', () => {
+		const s = runRandomRoundTrip(
+			12,
+			[4, 4, 4],
+			[
+				{ winner: 'A', scoreA: 21, scoreB: 15 },
+				{ winner: 'A', scoreA: 21, scoreB: 18 },
+				{ winner: 'A', scoreA: 21, scoreB: 19 },
+				{ winner: 'A', scoreA: 21, scoreB: 17 }
+			]
+		);
+		expect(s.isComplete).toBe(true);
+		expect(s.completedRounds).toHaveLength(4);
+
+		const allPlayers = new Set(
+			s.completedRounds[3].flatMap((cr) => cr.standings.map((s) => s.playerId))
+		);
+		expect(allPlayers.size).toBe(12);
+	});
+
+	it('16 players completes 4 rounds', () => {
+		const s = runRandomRoundTrip(
+			16,
+			[4, 4, 4, 4],
+			[
+				{ winner: 'A', scoreA: 21, scoreB: 15 },
+				{ winner: 'A', scoreA: 21, scoreB: 18 },
+				{ winner: 'A', scoreA: 21, scoreB: 19 },
+				{ winner: 'A', scoreA: 21, scoreB: 17 }
+			]
+		);
+		expect(s.isComplete).toBe(true);
+		expect(s.completedRounds).toHaveLength(4);
+	});
+
+	it('20 players completes 4 rounds', () => {
+		const s = runRandomRoundTrip(
+			20,
+			[4, 4, 4, 4, 4],
+			[
+				{ winner: 'A', scoreA: 21, scoreB: 15 },
+				{ winner: 'A', scoreA: 21, scoreB: 18 },
+				{ winner: 'A', scoreA: 21, scoreB: 19 },
+				{ winner: 'A', scoreA: 21, scoreB: 17 }
+			]
+		);
+		expect(s.isComplete).toBe(true);
+		expect(s.completedRounds).toHaveLength(4);
+	});
+
+	it('9 players (4+5) completes 4 rounds', () => {
+		const s = runRandomRoundTrip(
+			9,
+			[4, 5],
+			[
+				{ winner: 'A', scoreA: 21, scoreB: 15 },
+				{ winner: 'A', scoreA: 21, scoreB: 18 },
+				{ winner: 'A', scoreA: 21, scoreB: 19 },
+				{ winner: 'A', scoreA: 21, scoreB: 17 }
+			]
+		);
+		expect(s.isComplete).toBe(true);
+		expect(s.completedRounds).toHaveLength(4);
+
+		for (const round of s.completedRounds) {
+			const allPlayers = round.flatMap((cr) => cr.standings.map((st) => st.playerId));
+			expect(allPlayers.length).toBe(9);
+			expect(new Set(allPlayers).size).toBe(9);
+		}
+	});
+
+	it('32 players completes 4 rounds', () => {
+		const s = runRandomRoundTrip(32, Array(8).fill(4), [
+			{ winner: 'A', scoreA: 21, scoreB: 15 },
+			{ winner: 'A', scoreA: 21, scoreB: 18 },
+			{ winner: 'A', scoreA: 21, scoreB: 19 },
+			{ winner: 'A', scoreA: 21, scoreB: 17 }
+		]);
+		expect(s.isComplete).toBe(true);
+		expect(s.completedRounds).toHaveLength(4);
+	});
+
+	it('every player appears exactly once per round after redistribution', () => {
+		const s = runRandomRoundTrip(
+			12,
+			[4, 4, 4],
+			[
+				{ winner: 'A', scoreA: 21, scoreB: 15 },
+				{ winner: 'A', scoreA: 21, scoreB: 18 },
+				{ winner: 'A', scoreA: 21, scoreB: 19 },
+				{ winner: 'A', scoreA: 21, scoreB: 17 }
+			]
+		);
+
+		for (const round of s.completedRounds) {
+			const allPlayers = round.flatMap((cr) => cr.standings.map((st) => st.playerId));
+			expect(allPlayers.length).toBe(12);
+			expect(new Set(allPlayers).size).toBe(12);
+		}
+	});
+});
+
+// ============================================================================
+// Multi-Round Preseed Progression
+// ============================================================================
+
+describe('Preseed multi-round progression', () => {
+	it('8 players completes 2 rounds', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 8 });
+		s = addPlayers(
+			s,
+			Array.from({ length: 8 }, (_, i) => mockPlayer(i + 1, 8 - i))
+		);
+
+		s = startRound(s);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 15 })
+		});
+
+		s = startRound(s);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 18 })
+		});
+
+		expect(s.isComplete).toBe(true);
+		expect(s.completedRounds).toHaveLength(2);
+	});
+
+	it('12 players completes 3 rounds', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 12 });
+		s = addPlayers(
+			s,
+			Array.from({ length: 12 }, (_, i) => mockPlayer(i + 1, 12 - i))
+		);
+
+		s = startRound(s);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 15 })
+		});
+
+		s = startRound(s);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 18 })
+		});
+
+		s = startRound(s);
+		s = closeRound({
+			...s,
+			currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 19 })
+		});
+
+		expect(s.isComplete).toBe(true);
+		expect(s.completedRounds).toHaveLength(3);
+	});
+
+	it('20 players completes 4 rounds', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 20 });
+		s = addPlayers(
+			s,
+			Array.from({ length: 20 }, (_, i) => mockPlayer(i + 1, 20 - i))
+		);
+
+		for (let r = 0; r < 4; r++) {
+			s = startRound(s);
+			s = closeRound({
+				...s,
+				currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 15 })
+			});
+		}
+
+		expect(s.isComplete).toBe(true);
+		expect(s.completedRounds).toHaveLength(4);
+	});
+
+	it('every player appears exactly once per round after preseed redistribution', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 16 });
+		s = addPlayers(
+			s,
+			Array.from({ length: 16 }, (_, i) => mockPlayer(i + 1, 16 - i))
+		);
+
+		for (let r = 0; r < 3; r++) {
+			s = startRound(s);
+			s = closeRound({
+				...s,
+				currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 15 })
+			});
+		}
+
+		for (const round of s.completedRounds) {
+			const allPlayers = round.flatMap((cr) => cr.standings.map((st) => st.playerId));
+			expect(allPlayers.length).toBe(16);
+			expect(new Set(allPlayers).size).toBe(16);
+		}
+	});
+});
+
+// ============================================================================
+// redistributePreseedRecursive: Non-Standard Courts
+// ============================================================================
+
+describe('redistributePreseedRecursive: non-standard courts', () => {
+	it('9 players (4+5) first split preserves all players', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 40, diff: 5, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 20, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 10, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 50, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 30, diff: 2, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 15, diff: -3, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 5, diff: -7, matchCount: 3 },
+				{ playerId: 9, rank: 5, points: 0, diff: -10, matchCount: 3 }
+			])
+		];
+
+		const a = redistributePreseedRecursive(results, [4, 5]);
+		expect(a.length).toBe(2);
+		const allPlayers = a.flatMap((x) => x.playerIds);
+		expect(new Set(allPlayers).size).toBe(9);
+	});
+});
+
+// ============================================================================
+// processPreseedTransition: Non-Standard Courts
+// ============================================================================
+
+describe('processPreseedTransition: non-standard courts', () => {
+	it('9 players (4+5) subsequent split preserves all players', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 40, diff: 5, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 20, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 10, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 50, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 30, diff: 2, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 15, diff: -3, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 5, diff: -7, matchCount: 3 },
+				{ playerId: 9, rank: 5, points: 0, diff: -10, matchCount: 3 }
+			])
+		];
+
+		const a = processPreseedTransition(results, [4, 5], false);
+		expect(a.length).toBe(2);
+		const allPlayers = a.flatMap((x) => x.playerIds);
+		expect(new Set(allPlayers).size).toBe(9);
+	});
+});
+
+// ============================================================================
+// Vertical Seeding → Ladder Chain (Manual R1→R2→R3)
+// ============================================================================
+
+describe('random seed vertical seeding → ladder chain', () => {
+	it('4 courts: vertical seeding output feeds correctly into ladder', () => {
+		const r1 = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 24, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 20, diff: 5, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 14, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 10, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 22, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 18, diff: 3, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 12, diff: -2, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 8, diff: -7, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 9, rank: 1, points: 16, diff: 6, matchCount: 3 },
+				{ playerId: 10, rank: 2, points: 12, diff: 1, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 6, diff: -3, matchCount: 3 },
+				{ playerId: 12, rank: 4, points: 2, diff: -8, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 13, rank: 1, points: 14, diff: 4, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 10, diff: 0, matchCount: 3 },
+				{ playerId: 15, rank: 3, points: 4, diff: -4, matchCount: 3 },
+				{ playerId: 16, rank: 4, points: 0, diff: -10, matchCount: 3 }
+			])
+		];
+
+		const seeded = verticalSeeding(r1, 4);
+		expect(seeded.length).toBe(4);
+		expect(new Set(seeded.flatMap((s) => s.playerIds)).size).toBe(16);
+
+		expect(seeded[0].playerIds).toEqual([1, 5, 9, 13]);
+		expect(seeded[1].playerIds).toEqual([2, 6, 10, 14]);
+		expect(seeded[2].playerIds).toEqual([3, 7, 11, 15]);
+		expect(seeded[3].playerIds).toEqual([4, 8, 12, 16]);
+
+		const r2 = seeded.map((assignment, i) =>
+			mockCourtResult(
+				i + 1,
+				assignment.playerIds.map((pid, j) => ({
+					playerId: pid,
+					rank: j + 1,
+					points: 30 - j * 5 - i,
+					diff: 10 - j * 3,
+					matchCount: 3
+				}))
+			)
+		);
+
+		const afterLadder = ladderRedistribute(r2, 4);
+		expect(afterLadder.length).toBe(4);
+		expect(new Set(afterLadder.flatMap((a) => a.playerIds)).size).toBe(16);
+	});
+
+	it('3 courts: vertical → ladder chain preserves all 12 players', () => {
+		const r1 = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 30, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 20, diff: 5, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 10, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 0, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 28, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 18, diff: 3, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 8, diff: -2, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: -2, diff: -7, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 9, rank: 1, points: 26, diff: 6, matchCount: 3 },
+				{ playerId: 10, rank: 2, points: 16, diff: 1, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 6, diff: -3, matchCount: 3 },
+				{ playerId: 12, rank: 4, points: -4, diff: -8, matchCount: 3 }
+			])
+		];
+
+		const seeded = verticalSeeding(r1, 3);
+		expect(new Set(seeded.flatMap((s) => s.playerIds)).size).toBe(12);
+
+		expect(seeded[0].playerIds).toEqual([1, 5, 9, 2]);
+		expect(seeded[1].playerIds).toEqual([6, 10, 3, 7]);
+		expect(seeded[2].playerIds).toEqual([11, 4, 8, 12]);
+
+		const r2 = seeded.map((assignment, i) =>
+			mockCourtResult(
+				i + 1,
+				assignment.playerIds.map((pid, j) => ({
+					playerId: pid,
+					rank: j + 1,
+					points: 30 - j * 5 - i,
+					diff: 10 - j * 3,
+					matchCount: 3
+				}))
+			)
+		);
+
+		const afterLadder = ladderRedistribute(r2, 3);
+		expect(new Set(afterLadder.flatMap((a) => a.playerIds)).size).toBe(12);
 	});
 });
 
