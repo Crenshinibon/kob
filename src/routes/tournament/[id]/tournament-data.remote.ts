@@ -11,8 +11,10 @@ import {
 	getBatchShifts,
 	getShiftForCourt,
 	estimateRoundDurationMinutes,
+	getFrozenCourts,
 	type DurationConfig,
-	type MatchSetScore
+	type MatchSetScore,
+	type FrozenCourt
 } from '$lib/server/tournament-logic';
 import { formatDuration } from '$lib/i18n/format';
 
@@ -53,6 +55,7 @@ export interface TournamentDisplayData {
 		injuredAt: Date | null;
 	}[];
 	allCourtsComplete: boolean;
+	frozenCourts: FrozenCourt[];
 	error?: string;
 }
 
@@ -216,6 +219,14 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 	const virtualCourtCount = courts.length;
 	const shifts = getBatchShifts(virtualCourtCount, physicalCourtCount);
 
+	// Compute frozen courts for preseed format
+	const roundsCompleted = currentRound > 0 ? currentRound - 1 : 0;
+	const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
+	const frozenCourts =
+		tourney.formatType === 'preseed'
+			? getFrozenCourts(originalCourtSizes, roundsCompleted, 'preseed')
+			: [];
+
 	const durationConfig: DurationConfig = {
 		setupTimeMinutes: tourney.setupTimeMinutes ?? 15,
 		transitionTimeMinutes: tourney.transitionTimeMinutes ?? 10,
@@ -259,7 +270,8 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		currentPlayerCount: players.length,
 		activePlayerCount,
 		retiredPlayers,
-		allCourtsComplete
+		allCourtsComplete,
+		frozenCourts
 	};
 }
 

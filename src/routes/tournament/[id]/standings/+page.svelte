@@ -103,6 +103,11 @@
 		{@const injuredPlayerIds = (state?.injuredPlayerIds ?? []) as number[]}
 		{@const allPlayers = (state?.players ?? []) as Array<{ id: number; name: string }>}
 		{@const assignment = (state?.courtAssignment ?? {}) as Record<number, { court: number }>}
+		{@const frozenCourts = (state?.frozenCourts ?? []) as Array<{
+			courtNumber: number;
+			freezeAfterRound: number;
+		}>}
+		{@const frozenCourtNumbers = new Set(frozenCourts.map((f) => f.courtNumber))}
 
 		{#if tournament}
 			{@const currentRound = tournament.currentRound ?? 0}
@@ -234,6 +239,15 @@
 											: ''}
 									>
 										{currentCourt}
+										{#if frozenCourtNumbers.has(currentCourt)}
+											<span class="settled-badge"
+												>{m.frozen_after_round({
+													round:
+														frozenCourts.find((f) => f.courtNumber === currentCourt)
+															?.freezeAfterRound ?? 0
+												})}</span
+											>
+										{/if}
 									</td>
 								{/if}
 								<td class="rank">
@@ -565,6 +579,14 @@
 		vertical-align: middle;
 		width: 2.5rem;
 		border-right: 3px solid;
+	}
+
+	.settled-badge {
+		display: block;
+		font-size: var(--font-size-2xs);
+		font-weight: 400;
+		color: var(--accent-warning);
+		white-space: nowrap;
 	}
 
 	.pos {

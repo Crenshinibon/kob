@@ -242,6 +242,9 @@
 	"close_round": "Close Round & Advance",
 	"finalize_tournament": "Finalize Tournament",
 	"waiting_for_scores": "Waiting for all scores...",
+	"frozen_courts_title": "Settled Courts",
+	"frozen_courts_info": "These courts have completed their bracket and their standings are final.",
+	"frozen_after_round": "Settled after round {round}",
 
 	"login": "Log In",
 	"sign_up": "Sign Up",

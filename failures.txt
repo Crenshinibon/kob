@@ -1,130 +1,93 @@
 $ playwright test "--workers=1" "--reporter=list"
-[2m[WebServer] [22m[33m[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
-[2m[WebServer] [22m  - vite-plugin-sveltekit-guard (49%)
-[2m[WebServer] [22m  - vite-plugin-sveltekit-remote (28%)
-[2m[WebServer] [22m  - vite-plugin-sveltekit-compile (8%)
-[2m[WebServer] [22m  - vite-plugin-sveltekit-virtual-modules (5%)
-[2m[WebServer] [22mSee https://rolldown.rs/options/checks#plugintimings for more details.
-[2m[WebServer] [22m[39m
 🧹 Cleaning up old test tournaments...
-🗑️ Found 165 tournaments older than 1 hour
-✅ Cleaned up 165 old tournaments
+🗑️ Found 13 tournaments older than 1 hour
+✅ Cleaned up 13 old tournaments
 
 Running 84 tests using 1 worker
 
-[2m[WebServer] [22m[2m2026-06-16T19:51:12.377Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
-  ✘   1 e2e/bestof3.spec.ts:96:2 › Best-of-3 Round Transition › round closes when best-of-3 matches end 2-0 (no deciding set) (1.1m)
-  ✓   2 e2e/demo.test.ts:3:1 › home page has expected h1 (176ms)
-  ✓   3 e2e/format.spec.ts:52:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) (584ms)
-  ✓   4 e2e/format.spec.ts:66:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range (524ms)
-  ✓   5 e2e/format.spec.ts:75:3 › Tournament Format Selection › Random Format › rounds input is editable (521ms)
-  ✓   6 e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (3.5s)
-  ✓   7 e2e/format.spec.ts:109:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (3.1s)
-  ✓   8 e2e/format.spec.ts:133:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (4.6s)
-  ✓   9 e2e/format.spec.ts:156:3 › Tournament Format Selection › Pre-Seed Format › switching player count updates fixed rounds (547ms)
-  ✓  10 e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again (622ms)
+  ✓   1 e2e/bestof3.spec.ts:96:2 › Best-of-3 Round Transition › round closes when best-of-3 matches end 2-0 (no deciding set) (1.5m)
+  ✓   2 e2e/demo.test.ts:3:1 › home page has expected h1 (110ms)
+  ✓   3 e2e/format.spec.ts:52:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) (535ms)
+  ✓   4 e2e/format.spec.ts:66:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range (533ms)
+  ✓   5 e2e/format.spec.ts:75:3 › Tournament Format Selection › Random Format › rounds input is editable (534ms)
+  ✓   6 e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (3.6s)
+  ✓   7 e2e/format.spec.ts:109:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (3.0s)
+  ✓   8 e2e/format.spec.ts:133:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (4.4s)
+  ✓   9 e2e/format.spec.ts:156:3 › Tournament Format Selection › Pre-Seed Format › switching player count updates fixed rounds (546ms)
+  ✓  10 e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again (591ms)
   ✓  11 e2e/format.spec.ts:176:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (3.3s)
-  ✓  12 e2e/format.spec.ts:215:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description (676ms)
-  ✓  13 e2e/format.spec.ts:237:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description (686ms)
-  ✓  14 e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description (672ms)
-  ✓  15 e2e/format.spec.ts:273:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) (681ms)
-  ✓  16 e2e/format.spec.ts:288:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (600ms)
-  ✓  17 e2e/format.spec.ts:307:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches (2.7s)
+  ✓  12 e2e/format.spec.ts:215:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description (628ms)
+  ✓  13 e2e/format.spec.ts:237:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description (624ms)
+  ✓  14 e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description (641ms)
+  ✓  15 e2e/format.spec.ts:273:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) (644ms)
+  ✓  16 e2e/format.spec.ts:288:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (578ms)
+  ✓  17 e2e/format.spec.ts:307:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches (2.6s)
   ✓  18 e2e/format.spec.ts:343:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games (3.3s)
   ✓  19 e2e/format.spec.ts:379:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games (3.3s)
   ✓  20 e2e/format.spec.ts:417:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts (1.7s)
-  ✓  21 e2e/format.spec.ts:440:3 › Tournament Format Selection › Player Count Range (8-64) › below 8 players shows minimum warning and button is disabled (545ms)
-  ✓  22 e2e/format.spec.ts:451:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (6.2s)
-  ✓  23 e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning and button is disabled (584ms)
-  ✓  24 e2e/i18n.test.ts:4:2 › i18n › home page in default locale (English) (107ms)
-  ✓  25 e2e/i18n.test.ts:9:2 › i18n › home page loads in German via /de/ (110ms)
-  ✓  26 e2e/i18n.test.ts:14:2 › i18n › home page loads in French via /fr/ (111ms)
-  ✓  27 e2e/i18n.test.ts:19:2 › i18n › home page loads in Spanish via /es/ (117ms)
-  ✓  28 e2e/i18n.test.ts:24:2 › i18n › login page has German text at /de/login (111ms)
-  ✓  29 e2e/i18n.test.ts:29:2 › i18n › login page has French text at /fr/login (109ms)
-  ✓  30 e2e/i18n.test.ts:34:2 › i18n › login page has Spanish text at /es/login (120ms)
-  ✓  31 e2e/i18n.test.ts:39:2 › i18n › signup page in German (119ms)
-  ✓  32 e2e/i18n.test.ts:44:2 › i18n › signup page in French (117ms)
-  ✓  33 e2e/i18n.test.ts:49:2 › i18n › signup page in Spanish (111ms)
+  ✓  21 e2e/format.spec.ts:440:3 › Tournament Format Selection › Player Count Range (8-64) › below 8 players shows minimum warning and button is disabled (547ms)
+  ✓  22 e2e/format.spec.ts:451:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (6.1s)
+  ✓  23 e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning and button is disabled (557ms)
+  ✓  24 e2e/i18n.test.ts:4:2 › i18n › home page in default locale (English) (106ms)
+  ✓  25 e2e/i18n.test.ts:9:2 › i18n › home page loads in German via /de/ (119ms)
+  ✓  26 e2e/i18n.test.ts:14:2 › i18n › home page loads in French via /fr/ (109ms)
+  ✓  27 e2e/i18n.test.ts:19:2 › i18n › home page loads in Spanish via /es/ (111ms)
+  ✓  28 e2e/i18n.test.ts:24:2 › i18n › login page has German text at /de/login (112ms)
+  ✓  29 e2e/i18n.test.ts:29:2 › i18n › login page has French text at /fr/login (117ms)
+  ✓  30 e2e/i18n.test.ts:34:2 › i18n › login page has Spanish text at /es/login (111ms)
+  ✓  31 e2e/i18n.test.ts:39:2 › i18n › signup page in German (109ms)
+  ✓  32 e2e/i18n.test.ts:44:2 › i18n › signup page in French (111ms)
+  ✓  33 e2e/i18n.test.ts:49:2 › i18n › signup page in Spanish (119ms)
   ✓  34 e2e/preseed.spec.ts:164:2 › Preseed Tournament › 16-player preseed: verify snake seeding, origin mixing, and standings (1.1m)
-  ✓  35 e2e/preseed.spec.ts:264:2 › Preseed Tournament › 8-player preseed tournament (32.3s)
+  ✓  35 e2e/preseed.spec.ts:264:2 › Preseed Tournament › 8-player preseed tournament (32.1s)
   ✓  36 e2e/promotion.spec.ts:69:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (17.4s)
-  ✓  37 e2e/promotion.spec.ts:183:2 › Promotion and Relegation › close round button is disabled until all matches complete (15.6s)
-  ✓  38 e2e/promotion.spec.ts:277:2 › Promotion and Relegation › final round completion marks tournament as completed (16.1s)
-  ✓  39 e2e/promotion.spec.ts:357:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution (18.0s)
-  ✓  40 e2e/promotion.spec.ts:440:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution (13.2s)
+  ✓  37 e2e/promotion.spec.ts:183:2 › Promotion and Relegation › close round button is disabled until all matches complete (15.4s)
+  ✓  38 e2e/promotion.spec.ts:277:2 › Promotion and Relegation › final round completion marks tournament as completed (15.9s)
+  ✓  39 e2e/promotion.spec.ts:357:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution (18.2s)
+  ✓  40 e2e/promotion.spec.ts:440:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution (13.5s)
   ✓  41 e2e/promotion.spec.ts:514:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court redistributes correctly after round (21.0s)
-  ✓  42 e2e/promotion.spec.ts:589:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court redistributes correctly after round (21.0s)
-  ✓  43 e2e/standings.spec.ts:53:2 › Standings Calculation › calculates correct points for all players in a match (4.4s)
-  ✓  44 e2e/standings.spec.ts:89:2 › Standings Calculation › sorts players by total points in descending order (4.4s)
-  ✓  45 e2e/standings.spec.ts:126:2 › Standings Calculation › breaks ties using point differential (4.4s)
-  ✓  46 e2e/standings.spec.ts:158:2 › Standings Calculation › awards points correctly across multiple matches per player (4.9s)
-  ✓  47 e2e/standings.spec.ts:206:2 › Standings Calculation › validates score entry rules (min points, win by 2, no cap) (5.0s)
-  ✓  48 e2e/standings.spec.ts:257:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking (3.3s)
+  ✓  42 e2e/promotion.spec.ts:589:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court redistributes correctly after round (20.6s)
+  ✓  43 e2e/standings.spec.ts:53:2 › Standings Calculation › calculates correct points for all players in a match (4.2s)
+  ✓  44 e2e/standings.spec.ts:89:2 › Standings Calculation › sorts players by total points in descending order (4.2s)
+  ✓  45 e2e/standings.spec.ts:126:2 › Standings Calculation › breaks ties using point differential (4.2s)
+  ✓  46 e2e/standings.spec.ts:158:2 › Standings Calculation › awards points correctly across multiple matches per player (4.6s)
+  ✓  47 e2e/standings.spec.ts:206:2 › Standings Calculation › validates score entry rules (min points, win by 2, no cap) (4.7s)
+  ✓  48 e2e/standings.spec.ts:257:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking (3.2s)
   ✓  49 e2e/standings.spec.ts:288:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking (3.7s)
-  ✓  50 e2e/standings.spec.ts:319:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking (3.8s)
-  ✓  51 e2e/standings.spec.ts:350:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings rank correctly after score entry (5.8s)
-  ✓  52 e2e/standings.spec.ts:404:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings rank correctly after score entry (4.6s)
-  ✓  53 e2e/standings.spec.ts:448:3 › Standings Calculation › Round 1 Standings Ranking › ranks by court position first after round 1 (14.7s)
-  ✓  54 e2e/standings.spec.ts:532:3 › Standings Calculation › Non-Standard Court Score Validation › 5p court accepts 15-point scores (4.6s)
-  ✓  55 e2e/standings.spec.ts:568:3 › Standings Calculation › Non-Standard Court Score Validation › 3p court accepts 21-point scores (same as 4p) (4.0s)
-  ✓  56 e2e/tournament.spec.ts:88:2 › Tournament Integration Tests › complete 2-round tournament with score entry (30.6s)
+  ✓  50 e2e/standings.spec.ts:319:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking (3.6s)
+  ✓  51 e2e/standings.spec.ts:350:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings rank correctly after score entry (5.6s)
+  ✓  52 e2e/standings.spec.ts:404:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings rank correctly after score entry (4.5s)
+  ✓  53 e2e/standings.spec.ts:448:3 › Standings Calculation › Round 1 Standings Ranking › ranks by court position first after round 1 (14.8s)
+  ✓  54 e2e/standings.spec.ts:532:3 › Standings Calculation › Non-Standard Court Score Validation › 5p court accepts 15-point scores (4.4s)
+  ✓  55 e2e/standings.spec.ts:568:3 › Standings Calculation › Non-Standard Court Score Validation › 3p court accepts 21-point scores (same as 4p) (3.9s)
+  ✓  56 e2e/tournament.spec.ts:88:2 › Tournament Integration Tests › complete 2-round tournament with score entry (29.5s)
   ✓  57 e2e/tournament.spec.ts:241:2 › Tournament Integration Tests › players can access court via direct URL without login (3.8s)
-  ✓  58 e2e/tournament.spec.ts:295:2 › Tournament Integration Tests › dashboard shows active tournaments (2.1s)
-  ✓  59 e2e/tournament.spec.ts:322:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines (764ms)
-  ✓  60 e2e/tournament.spec.ts:354:3 › Tournament Integration Tests › Scoring Modes › best-of-3 scoring mode is selectable (609ms)
-  ✓  61 e2e/tournament.spec.ts:362:3 › Tournament Integration Tests › Scoring Modes › custom scoring mode reveals advanced options (619ms)
-  ✓  62 e2e/tournament.spec.ts:383:3 › Tournament Integration Tests › Scoring Modes › custom best-of-3 shows deciding set points (678ms)
-  ✓  63 e2e/tournament.spec.ts:394:3 › Tournament Integration Tests › Scoring Modes › duration estimate updates based on scoring mode (599ms)
+  ✓  58 e2e/tournament.spec.ts:295:2 › Tournament Integration Tests › dashboard shows active tournaments (2.0s)
+  ✓  59 e2e/tournament.spec.ts:322:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines (679ms)
+  ✓  60 e2e/tournament.spec.ts:354:3 › Tournament Integration Tests › Scoring Modes › best-of-3 scoring mode is selectable (575ms)
+  ✓  61 e2e/tournament.spec.ts:362:3 › Tournament Integration Tests › Scoring Modes › custom scoring mode reveals advanced options (605ms)
+  ✓  62 e2e/tournament.spec.ts:383:3 › Tournament Integration Tests › Scoring Modes › custom best-of-3 shows deciding set points (616ms)
+  ✓  63 e2e/tournament.spec.ts:394:3 › Tournament Integration Tests › Scoring Modes › duration estimate updates based on scoring mode (581ms)
   ✓  64 e2e/tournament.spec.ts:406:3 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default (3.2s)
-  ✓  65 e2e/tournament.spec.ts:431:3 › Tournament Integration Tests › Scoring Modes › best-of-3 tournament enforces per-set score entry (7.1s)
-  ✓  66 e2e/tournament.spec.ts:535:3 › Tournament Integration Tests › Scoring Modes › single-set tournament rejects scores below minimum (5.3s)
-  ✓  67 e2e/tournament.spec.ts:576:3 › Tournament Integration Tests › Scoring Modes › 5p court rejects scores below 15-point minimum (5.5s)
-  ✓  68 e2e/tournament.spec.ts:617:2 › Tournament Integration Tests › rejects blowout scores (deuce-aware validation) (7.1s)
-  ✓  69 e2e/tournament.spec.ts:679:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › shows virtual court info when physical courts < virtual courts (594ms)
-  ✓  70 e2e/tournament.spec.ts:694:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › physical courts slider ranges from 1 to 16 (630ms)
-  ✓  71 e2e/tournament.spec.ts:702:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › duration estimate accounts for physical court shifts (625ms)
-  ✓  72 e2e/tournament.spec.ts:718:3 › Tournament Integration Tests › Court Labeling › organizer can set and view physical court labels (6.1s)
-  ✓  73 e2e/tournament.spec.ts:748:3 › Tournament Integration Tests › Court Labeling › court page shows no label when not set (2.9s)
+  ✓  65 e2e/tournament.spec.ts:431:3 › Tournament Integration Tests › Scoring Modes › best-of-3 tournament enforces per-set score entry (6.8s)
+  ✓  66 e2e/tournament.spec.ts:535:3 › Tournament Integration Tests › Scoring Modes › single-set tournament rejects scores below minimum (5.2s)
+  ✓  67 e2e/tournament.spec.ts:576:3 › Tournament Integration Tests › Scoring Modes › 5p court rejects scores below 15-point minimum (5.6s)
+  ✓  68 e2e/tournament.spec.ts:617:2 › Tournament Integration Tests › rejects blowout scores (deuce-aware validation) (7.0s)
+  ✓  69 e2e/tournament.spec.ts:679:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › shows virtual court info when physical courts < virtual courts (580ms)
+  ✓  70 e2e/tournament.spec.ts:694:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › physical courts slider ranges from 1 to 16 (571ms)
+  ✓  71 e2e/tournament.spec.ts:702:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › duration estimate accounts for physical court shifts (594ms)
+  ✓  72 e2e/tournament.spec.ts:718:3 › Tournament Integration Tests › Court Labeling › organizer can set and view physical court labels (6.0s)
+  ✓  73 e2e/tournament.spec.ts:748:3 › Tournament Integration Tests › Court Labeling › court page shows no label when not set (2.8s)
   ✓  74 e2e/tournament.spec.ts:772:3 › Tournament Integration Tests › Tournament Deletion › deletes tournament from detail page (4.1s)
   ✓  75 e2e/tournament.spec.ts:802:3 › Tournament Integration Tests › Tournament Deletion › cancelling delete keeps tournament (3.2s)
-  ✓  76 e2e/tournament.spec.ts:831:3 › Tournament Integration Tests › Player Retirement › retire a player between rounds and continue tournament (43.5s)
-  ✓  77 e2e/tournament.spec.ts:951:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Cancel & Average option (16.5s)
-  ✓  78 e2e/tournament.spec.ts:1064:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Substitute option (17.1s)
-  ✓  79 e2e/tournament.spec.ts:1187:3 › Tournament Integration Tests › Player Retirement › undo retirement within 5 min window (29.7s)
-  ✓  80 e2e/tournament.spec.ts:1284:3 › Tournament Integration Tests › Player Retirement › undo injury report with Cancel option (16.3s)
+  ✓  76 e2e/tournament.spec.ts:831:3 › Tournament Integration Tests › Player Retirement › retire a player between rounds and continue tournament (42.8s)
+  ✓  77 e2e/tournament.spec.ts:951:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Cancel & Average option (16.6s)
+  ✓  78 e2e/tournament.spec.ts:1064:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Substitute option (17.4s)
+  ✓  79 e2e/tournament.spec.ts:1187:3 › Tournament Integration Tests › Player Retirement › undo retirement within 5 min window (30.4s)
+  ✓  80 e2e/tournament.spec.ts:1284:3 › Tournament Integration Tests › Player Retirement › undo injury report with Cancel option (16.1s)
   ✓  81 e2e/tournament.spec.ts:1382:3 › Tournament Integration Tests › Player Retirement › undo injury report with Substitute option (16.2s)
-  ✓  82 e2e/tournament.spec.ts:1476:3 › Tournament Integration Tests › Player Retirement › retire a player causing non-standard bottom court and complete tournament (37.1s)
-  ✓  83 e2e/tournament.spec.ts:1598:3 › Tournament Integration Tests › Scoring Overrides › override 5p court points-to-win and verify score entry (5.9s)
-  ✓  84 e2e/tournament.spec.ts:1653:3 › Tournament Integration Tests › Scoring Overrides › override 3p court to best-of-3 and verify set entry (5.1s)
+  ✓  82 e2e/tournament.spec.ts:1476:3 › Tournament Integration Tests › Player Retirement › retire a player causing non-standard bottom court and complete tournament (37.5s)
+  ✓  83 e2e/tournament.spec.ts:1598:3 › Tournament Integration Tests › Scoring Overrides › override 5p court points-to-win and verify score entry (5.8s)
+  ✓  84 e2e/tournament.spec.ts:1653:3 › Tournament Integration Tests › Scoring Overrides › override 3p court to best-of-3 and verify set entry (5.3s)
 
-
-  1) e2e/bestof3.spec.ts:96:2 › Best-of-3 Round Transition › round closes when best-of-3 matches end 2-0 (no deciding set) 
-
-    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
-
-    Locator: locator('button:has-text("Close Round")').first()
-    Expected: visible
-    Timeout: 25000ms
-    Error: element(s) not found
-
-    Call log:
-    [2m  - Expect "toBeVisible" with timeout 25000ms[22m
-    [2m  - waiting for locator('button:has-text("Close Round")').first()[22m
-
-
-      135 | 		// Wait for either close button or check if waiting button is showing
-      136 | 		const closeBtn = page.locator('button:has-text("Close Round")').first();
-    > 137 | 		await expect(closeBtn).toBeVisible({ timeout: 25000 });
-          | 		                       ^
-      138 |
-      139 | 		await closeBtn.click();
-      140 |
-        at /home/dirk/Dev/kob/e2e/bestof3.spec.ts:137:26
-
-    Error Context: test-results/bestof3-Best-of-3-Round-Tr-625a5-es-end-2-0-no-deciding-set-/error-context.md
-
-  1 failed
-    e2e/bestof3.spec.ts:96:2 › Best-of-3 Round Transition › round closes when best-of-3 matches end 2-0 (no deciding set) 
-  83 passed (11.8m)
-error: script "playwright" exited with code 1
+  84 passed (11.8m)

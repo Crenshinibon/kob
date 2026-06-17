@@ -6,8 +6,10 @@ import * as v from 'valibot';
 import * as m from '$lib/paraglide/messages';
 import {
 	calculateCourtStandings,
+	calculateCourtSizes,
 	matchCountForCourtSize,
 	isMatchComplete,
+	getFrozenCourts,
 	type MatchData,
 	type MatchSetScore
 } from '$lib/server/tournament-logic';
@@ -20,7 +22,15 @@ async function fetchStandingsData(tournamentId: number) {
 	const players = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
 
 	const courtSizes: number[] = tourney.courtSizes ? JSON.parse(tourney.courtSizes) : [4, 4, 4, 4];
+	const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
 	const matchCountPerCourt = courtSizes.map((s) => matchCountForCourtSize(s));
+
+	// Compute frozen courts for preseed
+	const roundsCompleted = (tourney.currentRound ?? 1) - 1;
+	const frozenCourts =
+		tourney.formatType === 'preseed'
+			? getFrozenCourts(originalCourtSizes, roundsCompleted, 'preseed')
+			: [];
 
 	const rotations = await db
 		.select()
@@ -176,7 +186,8 @@ async function fetchStandingsData(tournamentId: number) {
 		courtSizes,
 		retiredPlayers,
 		injuredPlayerIds: [...injuredIds],
-		courtAssignment
+		courtAssignment,
+		frozenCourts
 	};
 }
 

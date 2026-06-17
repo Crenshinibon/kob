@@ -137,6 +137,7 @@
 	{@const isActive = tournament?.status === 'active'}
 	{@const virtualCourtCount = courtSizes.length}
 	{@const allCourtsComplete = state?.allCourtsComplete ?? false}
+	{@const frozenCourts = state?.frozenCourts ?? []}
 	{@const retiredPlayers = state?.retiredPlayers ?? []}
 	{@const FIVE_MIN_MS = 5 * 60 * 1000}
 	{@const eligibleInjuryPlayers = (() => {
@@ -293,6 +294,23 @@
 					</div>
 				{/each}
 			</section>
+
+			{#if frozenCourts.length > 0}
+				<section class="frozen-courts">
+					<h2>{m.frozen_courts_title()}</h2>
+					<p class="frozen-info">{m.frozen_courts_info()}</p>
+					<div class="frozen-list">
+						{#each frozenCourts as fc (fc.courtNumber)}
+							<div class="frozen-badge">
+								{m.court_label({ number: fc.courtNumber })}
+								<span class="frozen-round"
+									>{m.frozen_after_round({ round: fc.freezeAfterRound })}</span
+								>
+							</div>
+						{/each}
+					</div>
+				</section>
+			{/if}
 
 			<section class="actions">
 				{#if canCloseRound}
@@ -1328,5 +1346,51 @@
 	.btn-undo:hover {
 		background-color: var(--accent-warning);
 		color: var(--bg-primary);
+	}
+
+	.frozen-courts {
+		margin-top: var(--spacing-lg);
+		margin-bottom: var(--spacing-lg);
+		padding: var(--spacing-md);
+		background-color: var(--bg-card);
+		border: var(--border-thickness) solid var(--accent-warning);
+		border-radius: var(--radius-md);
+	}
+
+	.frozen-courts h2 {
+		margin: 0 0 var(--spacing-sm);
+		color: var(--accent-warning);
+		font-size: var(--font-size-lg);
+	}
+
+	.frozen-info {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.frozen-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-sm);
+	}
+
+	.frozen-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		padding: var(--spacing-xs) var(--spacing-sm);
+		background-color: var(--bg-secondary);
+		border: var(--border-thickness) solid var(--accent-warning);
+		border-radius: var(--radius-sm);
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+		color: var(--text-primary);
+	}
+
+	.frozen-round {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+		font-weight: 400;
 	}
 </style>
