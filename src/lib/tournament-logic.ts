@@ -310,6 +310,81 @@ function splitSize(n: number): number {
 
 export { splitSize };
 
+// ============================================================================
+// Frozen Courts (Preseed)
+// ============================================================================
+
+export type FrozenCourt = {
+	courtNumber: number;
+	freezeAfterRound: number;
+};
+
+/**
+ * For preseed format, determines which courts are "frozen" — single-court bracket
+ * leaves that have completed a round-robin and no longer need to play.
+ *
+ * Simulates the preseed bracket tree using splitSize() and tracks when each
+ * court becomes a leaf node. A court freezes after the round where it first
+ * appears as a single-court bracket.
+ *
+ * @param courtSizes Current court size configuration (only used for length)
+ * @param roundsCompleted Number of completed rounds (1-indexed)
+ * @param formatType Tournament format; only 'preseed' produces frozen courts
+ * @returns Array of frozen courts with their freeze round
+ */
+export function getFrozenCourts(
+	courtSizes: readonly number[],
+	roundsCompleted: number,
+	formatType: FormatType
+): FrozenCourt[] {
+	if (formatType !== 'preseed') return [];
+	if (roundsCompleted < 2) return [];
+
+	const totalCourts = courtSizes.length;
+	if (totalCourts < 3) return [];
+
+	const frozen: FrozenCourt[] = [];
+	const frozenSet = new Set<number>();
+
+	// Simulate bracket tree from round 1 forward
+	let brackets: number[][] = [Array.from({ length: totalCourts }, (_, i) => i + 1)];
+
+	for (let round = 1; round <= roundsCompleted; round++) {
+		const nextBrackets: number[][] = [];
+
+		for (const bracket of brackets) {
+			if (bracket.length <= 1) {
+				continue;
+			}
+
+			const w = splitSize(bracket.length);
+			const winnerCourts = bracket.slice(0, w);
+			const loserCourts = bracket.slice(w);
+
+			if (winnerCourts.length === 1 && !frozenSet.has(winnerCourts[0])) {
+				frozen.push({ courtNumber: winnerCourts[0], freezeAfterRound: round + 1 });
+				frozenSet.add(winnerCourts[0]);
+			} else if (winnerCourts.length > 1) {
+				nextBrackets.push(winnerCourts);
+			}
+
+			if (loserCourts.length === 1 && !frozenSet.has(loserCourts[0])) {
+				frozen.push({ courtNumber: loserCourts[0], freezeAfterRound: round + 1 });
+				frozenSet.add(loserCourts[0]);
+			} else if (loserCourts.length > 1) {
+				nextBrackets.push(loserCourts);
+			}
+		}
+
+		brackets = nextBrackets;
+		if (brackets.length === 0) break;
+	}
+
+	return frozen
+		.filter((f) => f.freezeAfterRound <= roundsCompleted)
+		.sort((a, b) => a.freezeAfterRound - b.freezeAfterRound || a.courtNumber - b.courtNumber);
+}
+
 type PlayerWithOrigin = {
 	playerId: number;
 	originCourt: number;

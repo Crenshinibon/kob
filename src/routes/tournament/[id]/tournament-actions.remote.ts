@@ -23,6 +23,7 @@ import {
 	getPreseedBracketRange,
 	calculateRetiredStanding,
 	getFinalRoundCourtConfig,
+	getFrozenCourts,
 	type FormatType,
 	type MatchData
 } from '$lib/server/tournament-logic';
@@ -192,6 +193,16 @@ export const closeRoundForm = form(
 		let nextAssignments = closedState.nextAssignments;
 		let nextCourtSizes = courtSizes;
 		const nextRoundNumber = closedState.roundsCompleted + 1;
+
+		// Exclude frozen courts (preseed format only)
+		if (tourney.formatType === 'preseed') {
+			const frozenCourts = getFrozenCourts(courtSizes, closedState.roundsCompleted, 'preseed');
+			if (frozenCourts.length > 0) {
+				const frozenNumbers = new Set(frozenCourts.map((f) => f.courtNumber));
+				nextAssignments = nextAssignments.filter((a) => !frozenNumbers.has(a.courtNumber));
+				nextCourtSizes = nextAssignments.map((a) => a.playerIds.length);
+			}
+		}
 
 		// Apply final round elimination if needed
 		const isFinalRound = nextRoundNumber >= tourney.numRounds;
@@ -667,6 +678,13 @@ export const retirePlayer = command(
 				courtNumber: a.courtNumber,
 				playerIds: [...a.playerIds]
 			}));
+
+			// Exclude frozen courts
+			const frozenCourts = getFrozenCourts(newCourtSizes, prevRound, 'preseed');
+			if (frozenCourts.length > 0) {
+				const frozenNumbers = new Set(frozenCourts.map((f) => f.courtNumber));
+				finalAssignments = finalAssignments.filter((a) => !frozenNumbers.has(a.courtNumber));
+			}
 		} else {
 			const allPlayerIds = activePlayers.map((p) => p.id);
 			allPlayerIds.sort((a, b) => a - b);
@@ -1060,6 +1078,13 @@ export const undoRetirement = command(
 				courtNumber: a.courtNumber,
 				playerIds: [...a.playerIds]
 			}));
+
+			// Exclude frozen courts
+			const frozenCourts = getFrozenCourts(courtSizes, prevRound, 'preseed');
+			if (frozenCourts.length > 0) {
+				const frozenNumbers = new Set(frozenCourts.map((f) => f.courtNumber));
+				finalAssignments = finalAssignments.filter((a) => !frozenNumbers.has(a.courtNumber));
+			}
 		} else {
 			const allPlayerIds = nextAssignments.flatMap((a) => a.playerIds);
 			const uniquePlayerIds = [...new Set(allPlayerIds)];

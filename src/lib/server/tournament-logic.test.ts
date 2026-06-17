@@ -28,6 +28,7 @@ import {
 	calculateRetiredStanding,
 	getFinalRoundCourtConfig,
 	isValidFinalScore,
+	getFrozenCourts,
 	type FormatType,
 	type TournamentState,
 	type CourtResult,
@@ -2769,5 +2770,89 @@ describe('getFinalRoundCourtConfig', () => {
 		);
 		expect(result.courtSizes).toEqual([4, 3]);
 		expect(result.eliminatedPlayerIds).toEqual([]);
+	});
+});
+
+// ============================================================================
+// getFrozenCourts
+// ============================================================================
+
+describe('getFrozenCourts', () => {
+	it('returns empty for random-seed format', () => {
+		expect(getFrozenCourts([4, 4, 4, 4], 2, 'random-seed')).toEqual([]);
+	});
+
+	it('returns empty for fewer than 2 completed rounds', () => {
+		expect(getFrozenCourts([4, 4, 4, 4, 4], 0, 'preseed')).toEqual([]);
+		expect(getFrozenCourts([4, 4, 4, 4, 4], 1, 'preseed')).toEqual([]);
+	});
+
+	it('returns empty for fewer than 3 courts', () => {
+		expect(getFrozenCourts([4, 4], 2, 'preseed')).toEqual([]);
+	});
+
+	// 5 courts (20p): C5 freezes after R2
+	it('5 courts: loser court freezes after R2', () => {
+		const result = getFrozenCourts([4, 4, 4, 4, 4], 2, 'preseed');
+		expect(result).toEqual([{ courtNumber: 5, freezeAfterRound: 2 }]);
+	});
+
+	it('5 courts: no new freezes after R2 (winner bracket still active)', () => {
+		const r3 = getFrozenCourts([4, 4, 4, 4, 4], 3, 'preseed');
+		expect(r3).toEqual([{ courtNumber: 5, freezeAfterRound: 2 }]);
+	});
+
+	// 3 courts (12p): C3 freezes after R2
+	it('3 courts: loser court freezes after R2', () => {
+		const result = getFrozenCourts([4, 4, 4], 2, 'preseed');
+		expect(result).toEqual([{ courtNumber: 3, freezeAfterRound: 2 }]);
+	});
+
+	// 4 courts (16p): no early freezes (balanced)
+	it('4 courts: no early freezes before final round', () => {
+		expect(getFrozenCourts([4, 4, 4, 4], 2, 'preseed')).toEqual([]);
+	});
+
+	// 8 courts (32p): no early freezes
+	it('8 courts: no early freezes (balanced bracket)', () => {
+		expect(getFrozenCourts([4, 4, 4, 4, 4, 4, 4, 4], 2, 'preseed')).toEqual([]);
+	});
+
+	// 6 courts (24p): C5, C6 freeze after R3
+	it('6 courts: two loser courts freeze after R3', () => {
+		const result = getFrozenCourts([4, 4, 4, 4, 4, 4], 3, 'preseed');
+		expect(result).toEqual([
+			{ courtNumber: 5, freezeAfterRound: 3 },
+			{ courtNumber: 6, freezeAfterRound: 3 }
+		]);
+	});
+
+	it('6 courts: no freezes before R3', () => {
+		expect(getFrozenCourts([4, 4, 4, 4, 4, 4], 2, 'preseed')).toEqual([]);
+	});
+
+	// 7 courts (28p): C7 freezes after R3
+	it('7 courts: single loser court freezes after R3', () => {
+		const result = getFrozenCourts([4, 4, 4, 4, 4, 4, 4], 3, 'preseed');
+		expect(result).toEqual([{ courtNumber: 7, freezeAfterRound: 3 }]);
+	});
+
+	// 9 courts (36p): C9 freezes after R2
+	it('9 courts: single loser court freezes after R2', () => {
+		const result = getFrozenCourts([4, 4, 4, 4, 4, 4, 4, 4, 4], 2, 'preseed');
+		expect(result).toEqual([{ courtNumber: 9, freezeAfterRound: 2 }]);
+	});
+
+	// 11 courts (44p): cascade — C11 after R3, C9+C10 after R4
+	it('11 courts: cascade freeze — C11 after R3, C9+C10 after R4', () => {
+		const r3 = getFrozenCourts([4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4], 3, 'preseed');
+		expect(r3).toEqual([{ courtNumber: 11, freezeAfterRound: 3 }]);
+
+		const r4 = getFrozenCourts([4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4], 4, 'preseed');
+		expect(r4).toEqual([
+			{ courtNumber: 11, freezeAfterRound: 3 },
+			{ courtNumber: 9, freezeAfterRound: 4 },
+			{ courtNumber: 10, freezeAfterRound: 4 }
+		]);
 	});
 });
