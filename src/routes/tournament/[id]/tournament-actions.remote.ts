@@ -196,7 +196,12 @@ export const closeRoundForm = form(
 
 		// Exclude frozen courts (preseed format only)
 		if (tourney.formatType === 'preseed') {
-			const frozenCourts = getFrozenCourts(courtSizes, closedState.roundsCompleted, 'preseed');
+			const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
+			const frozenCourts = getFrozenCourts(
+				originalCourtSizes,
+				closedState.roundsCompleted,
+				'preseed'
+			);
 			if (frozenCourts.length > 0) {
 				const frozenNumbers = new Set(frozenCourts.map((f) => f.courtNumber));
 				nextAssignments = nextAssignments.filter((a) => !frozenNumbers.has(a.courtNumber));
@@ -680,7 +685,11 @@ export const retirePlayer = command(
 			}));
 
 			// Exclude frozen courts
-			const frozenCourts = getFrozenCourts(newCourtSizes, prevRound, 'preseed');
+			const frozenCourts = getFrozenCourts(
+				calculateCourtSizes(tourney.playerCount),
+				prevRound,
+				'preseed'
+			);
 			if (frozenCourts.length > 0) {
 				const frozenNumbers = new Set(frozenCourts.map((f) => f.courtNumber));
 				finalAssignments = finalAssignments.filter((a) => !frozenNumbers.has(a.courtNumber));
@@ -1080,7 +1089,11 @@ export const undoRetirement = command(
 			}));
 
 			// Exclude frozen courts
-			const frozenCourts = getFrozenCourts(courtSizes, prevRound, 'preseed');
+			const frozenCourts = getFrozenCourts(
+				calculateCourtSizes(tourney.playerCount),
+				prevRound,
+				'preseed'
+			);
 			if (frozenCourts.length > 0) {
 				const frozenNumbers = new Set(frozenCourts.map((f) => f.courtNumber));
 				finalAssignments = finalAssignments.filter((a) => !frozenNumbers.has(a.courtNumber));

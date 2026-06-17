@@ -54,6 +54,28 @@ async function fetchStandingsData(tournamentId: number) {
 		});
 	}
 
+	// For frozen court players not in current round, use their last round's court
+	for (const fc of frozenCourts) {
+		const frozenRotations = rotations.filter(
+			(r) => r.roundNumber === fc.freezeAfterRound && r.courtNumber === fc.courtNumber
+		);
+		for (const fr of frozenRotations) {
+			const pIds = [
+				fr.player1Id,
+				fr.player2Id,
+				...(fr.player3Id ? [fr.player3Id] : []),
+				...(fr.player4Id ? [fr.player4Id] : []),
+				...(fr.player5Id ? [fr.player5Id] : []),
+				...(fr.player6Id ? [fr.player6Id] : [])
+			];
+			for (const pid of pIds) {
+				if (pid != null && courtAssignment[pid] === undefined) {
+					courtAssignment[pid] = { court: fc.courtNumber, rank: null };
+				}
+			}
+		}
+	}
+
 	const playerStats: Record<
 		number,
 		{
@@ -147,16 +169,26 @@ async function fetchStandingsData(tournamentId: number) {
 		}
 	}
 
+	const frozenCourtNumbers = new Set(frozenCourts.map((f) => f.courtNumber));
+
 	const standings = Object.values(playerStats)
 		.filter((s) => s.roundsPlayed > 0)
 		.sort((a, b) => {
 			const aHist = a.roundHistory.find((h) => h.round === tourney.currentRound);
 			const bHist = b.roundHistory.find((h) => h.round === tourney.currentRound);
-			const aCourt = aHist?.court ?? courtAssignment[a.playerId]?.court;
-			const bCourt = bHist?.court ?? courtAssignment[b.playerId]?.court;
+			const aLastRound = a.roundHistory[a.roundHistory.length - 1];
+			const bLastRound = b.roundHistory[b.roundHistory.length - 1];
+			const aCourt = aHist?.court ?? courtAssignment[a.playerId]?.court ?? aLastRound?.court;
+			const bCourt = bHist?.court ?? courtAssignment[b.playerId]?.court ?? bLastRound?.court;
 			if (aCourt != null && bCourt != null && aCourt !== bCourt) return aCourt - bCourt;
-			if (aHist && bHist && aHist.rankOnCourt !== bHist.rankOnCourt)
-				return aHist.rankOnCourt - bHist.rankOnCourt;
+			if (aCourt == null && bCourt != null) return 1;
+			if (aCourt != null && bCourt == null) return -1;
+			const aFrozen = aCourt != null ? frozenCourtNumbers.has(aCourt) : false;
+			const bFrozen = bCourt != null ? frozenCourtNumbers.has(bCourt) : false;
+			if (aFrozen !== bFrozen) return aFrozen ? 1 : -1;
+			const aRank = aHist?.rankOnCourt ?? aLastRound?.rankOnCourt;
+			const bRank = bHist?.rankOnCourt ?? bLastRound?.rankOnCourt;
+			if (aRank != null && bRank != null && aRank !== bRank) return aRank - bRank;
 			if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
 			if (b.totalDiff !== a.totalDiff) return b.totalDiff - a.totalDiff;
 			return a.playerId - b.playerId;

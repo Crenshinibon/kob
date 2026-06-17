@@ -2856,3 +2856,90 @@ describe('getFrozenCourts', () => {
 		]);
 	});
 });
+
+// ============================================================================
+// Preseed Frozen Courts: full round-by-round court count verification
+// ============================================================================
+
+describe('Preseed frozen courts: court count per round', () => {
+	it('20 players (5 courts): R1=5, R2=5, R3=4 (C5 frozen), R4=4', () => {
+		const originalSizes = calculateCourtSizes(20);
+		expect(originalSizes).toEqual([4, 4, 4, 4, 4]);
+		expect(calculateRoundCount(5, 'preseed')).toBe(4);
+
+		// After R2: C5 freezes
+		const frozenR2 = getFrozenCourts(originalSizes, 2, 'preseed');
+		expect(frozenR2).toEqual([{ courtNumber: 5, freezeAfterRound: 2 }]);
+		const activeR3 = originalSizes.filter((_, i) => !frozenR2.some((f) => f.courtNumber === i + 1));
+		expect(activeR3).toEqual([4, 4, 4, 4]);
+
+		// After R3: same frozen set, no new freezes
+		const frozenR3 = getFrozenCourts(originalSizes, 3, 'preseed');
+		expect(frozenR3).toEqual([{ courtNumber: 5, freezeAfterRound: 2 }]);
+		const activeR4 = originalSizes.filter((_, i) => !frozenR3.some((f) => f.courtNumber === i + 1));
+		expect(activeR4).toEqual([4, 4, 4, 4]);
+
+		// Verify that using DB-modified sizes would be WRONG
+		// (this was the bug: getFrozenCourts([4,4,4,4], 3, 'preseed') freezes all courts)
+		const wrongResult = getFrozenCourts(activeR3, 3, 'preseed');
+		expect(wrongResult.length).toBeGreaterThan(0);
+	});
+
+	it('24 players (6 courts): R1=6, R2=6, R3=4 (C5+C6 frozen), R4=4', () => {
+		const originalSizes = calculateCourtSizes(24);
+		expect(originalSizes).toEqual([4, 4, 4, 4, 4, 4]);
+		expect(calculateRoundCount(6, 'preseed')).toBe(4);
+
+		// After R2: no freezes yet
+		const frozenR2 = getFrozenCourts(originalSizes, 2, 'preseed');
+		expect(frozenR2).toEqual([]);
+		expect(originalSizes.filter((_, i) => !frozenR2.some((f) => f.courtNumber === i + 1))).toEqual([
+			4, 4, 4, 4, 4, 4
+		]);
+
+		// After R3: C5, C6 freeze
+		const frozenR3 = getFrozenCourts(originalSizes, 3, 'preseed');
+		expect(frozenR3).toEqual([
+			{ courtNumber: 5, freezeAfterRound: 3 },
+			{ courtNumber: 6, freezeAfterRound: 3 }
+		]);
+		const activeR4 = originalSizes.filter((_, i) => !frozenR3.some((f) => f.courtNumber === i + 1));
+		expect(activeR4).toEqual([4, 4, 4, 4]);
+	});
+
+	it('16 players (4 courts): R1=4, R2=4, R3=4 (no freezes, balanced bracket)', () => {
+		const originalSizes = calculateCourtSizes(16);
+		expect(originalSizes).toEqual([4, 4, 4, 4]);
+		expect(calculateRoundCount(4, 'preseed')).toBe(3);
+
+		// Balanced bracket — no mid-tournament freezes
+		const frozenR1 = getFrozenCourts(originalSizes, 1, 'preseed');
+		expect(frozenR1).toEqual([]);
+		const frozenR2 = getFrozenCourts(originalSizes, 2, 'preseed');
+		expect(frozenR2).toEqual([]);
+	});
+
+	it('12 players (3 courts): R1=3, R2=2 (C3 frozen), R3=2', () => {
+		const originalSizes = calculateCourtSizes(12);
+		expect(originalSizes).toEqual([4, 4, 4]);
+		expect(calculateRoundCount(3, 'preseed')).toBe(3);
+
+		// After R2: C3 freezes
+		const frozenR2 = getFrozenCourts(originalSizes, 2, 'preseed');
+		expect(frozenR2).toEqual([{ courtNumber: 3, freezeAfterRound: 2 }]);
+		const activeR3 = originalSizes.filter((_, i) => !frozenR2.some((f) => f.courtNumber === i + 1));
+		expect(activeR3).toEqual([4, 4]);
+	});
+
+	it('28 players (7 courts): R1=7, R2=7, R3=6 (C7 frozen), R4=6', () => {
+		const originalSizes = calculateCourtSizes(28);
+		expect(originalSizes).toEqual([4, 4, 4, 4, 4, 4, 4]);
+		expect(calculateRoundCount(7, 'preseed')).toBe(4);
+
+		// After R3: C7 freezes
+		const frozenR3 = getFrozenCourts(originalSizes, 3, 'preseed');
+		expect(frozenR3).toEqual([{ courtNumber: 7, freezeAfterRound: 3 }]);
+		const activeR4 = originalSizes.filter((_, i) => !frozenR3.some((f) => f.courtNumber === i + 1));
+		expect(activeR4).toEqual([4, 4, 4, 4, 4, 4]);
+	});
+});
