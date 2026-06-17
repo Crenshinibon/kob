@@ -136,6 +136,20 @@ export const closeRoundForm = form(
 			}
 		}
 
+		// Compute frozen courts to determine active court sizes for closeRound
+		const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
+		const frozenCourtsForRound =
+			tourney.formatType === 'preseed'
+				? getFrozenCourts(originalCourtSizes, currentRound - 1, 'preseed')
+				: [];
+		const frozenCourtNumbers = new Set(frozenCourtsForRound.map((f) => f.courtNumber));
+
+		// Use only active (non-frozen) court sizes for closeRound
+		const activeCourtSizes =
+			frozenCourtsForRound.length > 0
+				? courtSizes.filter((_, i) => !frozenCourtNumbers.has(i + 1))
+				: courtSizes;
+
 		const startedState = startRound(stateWithPlayers);
 
 		const closedState = closeRound(
@@ -145,7 +159,7 @@ export const closeRoundForm = form(
 				currentAssignments: currentAssignmentsFromDb,
 				currentMatches: allMatches
 			},
-			courtSizes
+			activeCourtSizes
 		);
 
 		if (closedState.isComplete) {

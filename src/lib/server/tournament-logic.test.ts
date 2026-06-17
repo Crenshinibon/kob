@@ -2858,6 +2858,155 @@ describe('getFrozenCourts', () => {
 });
 
 // ============================================================================
+// Frozen courts + redistribution: #3/#4 finishers must not end up on top court
+// ============================================================================
+
+describe('Preseed redistribution: bracket correctness with frozen courts', () => {
+	it('20p (5 courts): after R2 freeze, R2→R3 with 4 active courts places #3/#4 in lower brackets', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 20, matchCount: 3 },
+				{ playerId: 5, rank: 2, points: 45, diff: 10, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: 30, diff: 0, matchCount: 3 },
+				{ playerId: 13, rank: 4, points: 15, diff: -15, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 2, rank: 1, points: 55, diff: 18, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 40, diff: 8, matchCount: 3 },
+				{ playerId: 10, rank: 3, points: 25, diff: -5, matchCount: 3 },
+				{ playerId: 14, rank: 4, points: 10, diff: -18, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 3, rank: 1, points: 50, diff: 15, matchCount: 3 },
+				{ playerId: 7, rank: 2, points: 35, diff: 5, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 20, diff: -10, matchCount: 3 },
+				{ playerId: 15, rank: 4, points: 5, diff: -20, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 4, rank: 1, points: 48, diff: 12, matchCount: 3 },
+				{ playerId: 8, rank: 2, points: 33, diff: 3, matchCount: 3 },
+				{ playerId: 12, rank: 3, points: 18, diff: -8, matchCount: 3 },
+				{ playerId: 16, rank: 4, points: 3, diff: -22, matchCount: 3 }
+			])
+		];
+		const sizes = [4, 4, 4, 4];
+		const assignments = processPreseedTransition(results, sizes, false);
+
+		expect(assignments).toHaveLength(4);
+		for (const c of assignments) expect(c.playerIds).toHaveLength(4);
+
+		const topCourt = assignments[0].playerIds;
+		const secondCourt = assignments[1].playerIds;
+		const thirdCourt = assignments[2].playerIds;
+		const fourthCourt = assignments[3].playerIds;
+
+		// #3 and #4 from winner bracket (C1/C2) must NOT be on top court
+		expect(topCourt).not.toContain(9);
+		expect(topCourt).not.toContain(13);
+		expect(topCourt).not.toContain(10);
+		expect(topCourt).not.toContain(14);
+
+		// #3s and #4s from C1/C2 must be on second court (L(WW))
+		for (const pid of [9, 10, 13, 14]) {
+			expect(secondCourt).toContain(pid);
+		}
+		// #1s and #2s from C3/C4 must be on third court (TL)
+		for (const pid of [3, 4, 7, 8]) {
+			expect(thirdCourt).toContain(pid);
+		}
+		// #3s and #4s from C3/C4 must be on fourth court (BL)
+		for (const pid of [11, 12, 15, 16]) {
+			expect(fourthCourt).toContain(pid);
+		}
+	});
+
+	it('4 results with 5 sizes (frozen court bug) produces wrong assignments', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 20, matchCount: 3 },
+				{ playerId: 5, rank: 2, points: 45, diff: 10, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: 30, diff: 0, matchCount: 3 },
+				{ playerId: 13, rank: 4, points: 15, diff: -15, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 2, rank: 1, points: 55, diff: 18, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 40, diff: 8, matchCount: 3 },
+				{ playerId: 10, rank: 3, points: 25, diff: -5, matchCount: 3 },
+				{ playerId: 14, rank: 4, points: 10, diff: -18, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 3, rank: 1, points: 50, diff: 15, matchCount: 3 },
+				{ playerId: 7, rank: 2, points: 35, diff: 5, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 20, diff: -10, matchCount: 3 },
+				{ playerId: 15, rank: 4, points: 5, diff: -20, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 4, rank: 1, points: 48, diff: 12, matchCount: 3 },
+				{ playerId: 8, rank: 2, points: 33, diff: 3, matchCount: 3 },
+				{ playerId: 12, rank: 3, points: 18, diff: -8, matchCount: 3 },
+				{ playerId: 16, rank: 4, points: 3, diff: -22, matchCount: 3 }
+			])
+		];
+
+		const correct = processPreseedTransition(results, [4, 4, 4, 4], false);
+		expect(correct).toHaveLength(4);
+
+		const buggy = processPreseedTransition(results, [4, 4, 4, 4, 4], false);
+
+		let differsFromCorrect = false;
+		for (let i = 0; i < Math.min(correct.length, buggy.length); i++) {
+			if (
+				correct[i].playerIds.length !== buggy[i].playerIds.length ||
+				correct[i].playerIds.some((pid, j) => pid !== buggy[i].playerIds[j])
+			) {
+				differsFromCorrect = true;
+				break;
+			}
+		}
+		expect(differsFromCorrect).toBe(true);
+	});
+
+	it('#4 finisher from top court goes to lower court in next round', () => {
+		const results = [
+			mockCourtResult(1, [
+				{ playerId: 100, rank: 1, points: 60, diff: 20, matchCount: 3 },
+				{ playerId: 200, rank: 2, points: 45, diff: 10, matchCount: 3 },
+				{ playerId: 300, rank: 3, points: 30, diff: 0, matchCount: 3 },
+				{ playerId: 400, rank: 4, points: 15, diff: -15, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 101, rank: 1, points: 55, diff: 18, matchCount: 3 },
+				{ playerId: 201, rank: 2, points: 40, diff: 8, matchCount: 3 },
+				{ playerId: 301, rank: 3, points: 25, diff: -5, matchCount: 3 },
+				{ playerId: 401, rank: 4, points: 10, diff: -18, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 102, rank: 1, points: 50, diff: 15, matchCount: 3 },
+				{ playerId: 202, rank: 2, points: 35, diff: 5, matchCount: 3 },
+				{ playerId: 302, rank: 3, points: 20, diff: -10, matchCount: 3 },
+				{ playerId: 402, rank: 4, points: 5, diff: -20, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 103, rank: 1, points: 48, diff: 12, matchCount: 3 },
+				{ playerId: 203, rank: 2, points: 33, diff: 3, matchCount: 3 },
+				{ playerId: 303, rank: 3, points: 18, diff: -8, matchCount: 3 },
+				{ playerId: 403, rank: 4, points: 3, diff: -22, matchCount: 3 }
+			])
+		];
+
+		const assignments = processPreseedTransition(results, [4, 4, 4, 4], false);
+
+		// #4 on C1 must NOT be on C1 (top court)
+		expect(assignments[0].playerIds).not.toContain(400);
+		// #3 on C1 must NOT be on C1 (top court)
+		expect(assignments[0].playerIds).not.toContain(300);
+		// #1s from C1/C2 must be on C1
+		expect(assignments[0].playerIds).toContain(100);
+		expect(assignments[0].playerIds).toContain(101);
+	});
+});
+
+// ============================================================================
 // Preseed Frozen Courts: full round-by-round court count verification
 // ============================================================================
 
