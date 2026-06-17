@@ -1563,6 +1563,192 @@ describe('processPreseedTransition: non-standard courts', () => {
 });
 
 // ============================================================================
+// Regression: Unsorted courtResults must not corrupt bracket splitting
+// ============================================================================
+
+describe('regression: unsorted courtResults in preseed', () => {
+	it('5 courts (20p) subsequent split: courts 1-4 in winner bracket regardless of input order', () => {
+		// R1 results for 5 courts, players finish in seed order
+		// Intentionally provided in NON-sequential order: [3, 5, 1, 4, 2]
+		const results = [
+			mockCourtResult(3, [
+				{ playerId: 9, rank: 1, points: 54, diff: 6, matchCount: 3 },
+				{ playerId: 10, rank: 2, points: 42, diff: 2, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 18, diff: -2, matchCount: 3 },
+				{ playerId: 12, rank: 4, points: 6, diff: -6, matchCount: 3 }
+			]),
+			mockCourtResult(5, [
+				{ playerId: 17, rank: 1, points: 46, diff: 2, matchCount: 3 },
+				{ playerId: 18, rank: 2, points: 34, diff: 0, matchCount: 3 },
+				{ playerId: 19, rank: 3, points: 14, diff: -4, matchCount: 3 },
+				{ playerId: 20, rank: 4, points: 2, diff: -8, matchCount: 3 }
+			]),
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 48, diff: 4, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 24, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 12, diff: -4, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 13, rank: 1, points: 52, diff: 5, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 40, diff: 1, matchCount: 3 },
+				{ playerId: 15, rank: 3, points: 16, diff: -3, matchCount: 3 },
+				{ playerId: 16, rank: 4, points: 4, diff: -7, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 56, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 44, diff: 3, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 22, diff: -1, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 8, diff: -5, matchCount: 3 }
+			])
+		];
+
+		const sizes = [4, 4, 4, 4, 4];
+		const a = processPreseedTransition(results, sizes, false);
+
+		// splitSize(5) = 4, so winner bracket = courts 1-4, loser bracket = court 5
+		// Winner bracket should contain players from courts 1-4 only (ids 1-16)
+		// Loser bracket should contain players from court 5 only (ids 17-20)
+		expect(a).toHaveLength(5);
+		for (const c of a) expect(c.playerIds).toHaveLength(4);
+
+		const winnerPlayers = [
+			...a[0].playerIds,
+			...a[1].playerIds,
+			...a[2].playerIds,
+			...a[3].playerIds
+		];
+		const loserPlayers = [...a[4].playerIds];
+
+		// All court 1-4 players (1-16) must be in the winner bracket
+		for (const pid of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) {
+			expect(winnerPlayers).toContain(pid);
+		}
+		// All court 5 players (17-20) must be in the loser bracket
+		for (const pid of [17, 18, 19, 20]) {
+			expect(loserPlayers).toContain(pid);
+		}
+
+		// Winner bracket players should NOT leak into loser bracket
+		for (const pid of winnerPlayers) {
+			expect(loserPlayers).not.toContain(pid);
+		}
+		for (const pid of loserPlayers) {
+			expect(winnerPlayers).not.toContain(pid);
+		}
+	});
+
+	it('5 courts (20p) first split: unsorted input produces correct winner/loser distribution', () => {
+		// Same data but isFirstSplit=true (R1→R2 transition)
+		const results = [
+			mockCourtResult(5, [
+				{ playerId: 17, rank: 1, points: 46, diff: 2, matchCount: 3 },
+				{ playerId: 18, rank: 2, points: 34, diff: 0, matchCount: 3 },
+				{ playerId: 19, rank: 3, points: 14, diff: -4, matchCount: 3 },
+				{ playerId: 20, rank: 4, points: 2, diff: -8, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 56, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 44, diff: 3, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 22, diff: -1, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 8, diff: -5, matchCount: 3 }
+			]),
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 48, diff: 4, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 24, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 12, diff: -4, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 13, rank: 1, points: 52, diff: 5, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 40, diff: 1, matchCount: 3 },
+				{ playerId: 15, rank: 3, points: 16, diff: -3, matchCount: 3 },
+				{ playerId: 16, rank: 4, points: 4, diff: -7, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 9, rank: 1, points: 54, diff: 6, matchCount: 3 },
+				{ playerId: 10, rank: 2, points: 42, diff: 2, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 18, diff: -2, matchCount: 3 },
+				{ playerId: 12, rank: 4, points: 6, diff: -6, matchCount: 3 }
+			])
+		];
+
+		const sizes = [4, 4, 4, 4, 4];
+		const a = processPreseedTransition(results, sizes, true);
+
+		expect(a).toHaveLength(5);
+		for (const c of a) expect(c.playerIds).toHaveLength(4);
+
+		// 16 slots in winner bracket (courts 1-4), 4 in loser bracket (court 5)
+		const winnerPlayers = [
+			...a[0].playerIds,
+			...a[1].playerIds,
+			...a[2].playerIds,
+			...a[3].playerIds
+		];
+		const loserPlayers = [...a[4].playerIds];
+
+		// All 20 players present
+		expect(new Set(a.flatMap((c) => c.playerIds)).size).toBe(20);
+
+		// Winner bracket should be the top 16 by tier (all 1sts, all 2nds, all 3rds, best 4th)
+		// At minimum, all 1st-place players should be in the winner bracket
+		for (const pid of [1, 5, 9, 13, 17]) {
+			expect(winnerPlayers).toContain(pid);
+		}
+
+		// The 4th-place players with lowest points should be in the loser bracket
+		// 4ths sorted by points: 12(6), 4(12), 16(4), 8(8), 20(2)
+		// Bottom 4 by tier order: worst 4ths go to loser bracket
+		expect(loserPlayers.length).toBe(4);
+	});
+
+	it('3 courts (12p) subsequent split: unsorted input preserves bracket integrity', () => {
+		// R2 results for 3 courts, provided in reverse order [3, 2, 1]
+		// splitSize(3)=2, so winner bracket = courts 1-2, loser = court 3
+		const results = [
+			mockCourtResult(3, [
+				{ playerId: 9, rank: 1, points: 44, diff: 4, matchCount: 3 },
+				{ playerId: 10, rank: 2, points: 36, diff: 0, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 16, diff: -4, matchCount: 3 },
+				{ playerId: 12, rank: 4, points: 4, diff: -8, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 56, diff: 8, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 40, diff: 2, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 24, diff: -2, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 8, diff: -6, matchCount: 3 }
+			]),
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 48, diff: 4, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 32, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 16, diff: -4, matchCount: 3 }
+			])
+		];
+
+		const sizes = [4, 4, 4];
+		const a = processPreseedTransition(results, sizes, false);
+
+		// splitSize(3)=2 → winner bracket (courts 1-2) splits into 2 courts,
+		// loser bracket (court 3) stays as 1 court
+		expect(a).toHaveLength(3);
+		for (const c of a) expect(c.playerIds).toHaveLength(4);
+
+		// Courts 1-2 should only contain players from original courts 1-2 (ids 1-8)
+		const topBracketPlayers = [...a[0].playerIds, ...a[1].playerIds];
+		const bottomPlayerIds = [...a[2].playerIds];
+
+		for (const pid of topBracketPlayers) {
+			expect([1, 2, 3, 4, 5, 6, 7, 8]).toContain(pid);
+		}
+		for (const pid of bottomPlayerIds) {
+			expect([9, 10, 11, 12]).toContain(pid);
+		}
+	});
+});
+
+// ============================================================================
 // Vertical Seeding → Ladder Chain (Manual R1→R2→R3)
 // ============================================================================
 

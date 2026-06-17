@@ -5,7 +5,7 @@ import { form, command, getRequestEvent } from '$app/server';
 import * as m from '$lib/paraglide/messages';
 import { db } from '$lib/server/db';
 import { tournament, player, courtRotation, match, court } from '$lib/server/db/schema';
-import { eq, and, inArray, isNull, or } from 'drizzle-orm';
+import { eq, and, inArray, isNull, or, asc } from 'drizzle-orm';
 import {
 	createInitialState,
 	addPlayers,
@@ -100,7 +100,8 @@ export const closeRoundForm = form(
 					eq(courtRotation.tournamentId, tournamentId),
 					eq(courtRotation.roundNumber, currentRound)
 				)
-			);
+			)
+			.orderBy(asc(courtRotation.courtNumber));
 
 		const currentAssignmentsFromDb = currentRotations.map((rotation) => ({
 			courtNumber: rotation.courtNumber,
@@ -618,7 +619,8 @@ export const retirePlayer = command(
 						eq(courtRotation.tournamentId, tournamentId),
 						eq(courtRotation.roundNumber, prevRound)
 					)
-				);
+				)
+				.orderBy(asc(courtRotation.courtNumber));
 
 			const resolved = await Promise.all(
 				prevRotations.map(async (rotation) => {
@@ -1013,7 +1015,8 @@ export const undoRetirement = command(
 						eq(courtRotation.tournamentId, tournamentId),
 						eq(courtRotation.roundNumber, prevRound)
 					)
-				);
+				)
+				.orderBy(asc(courtRotation.courtNumber));
 
 			const resolved = await Promise.all(
 				prevRotations.map(async (rotation) => {

@@ -331,21 +331,22 @@ export function redistributePreseedRecursive(
 	courtResults: readonly CourtResult[],
 	courtSizes?: readonly number[]
 ): CourtAssignment[] {
-	const N = courtResults.length;
+	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
+	const N = sorted.length;
 	if (N === 0) return [];
 
 	const sizes = courtSizes ?? Array(N).fill(4);
 
 	if (N === 1)
-		return [{ courtNumber: 1, playerIds: courtResults[0].standings.map((s) => s.playerId) }];
+		return [{ courtNumber: 1, playerIds: sorted[0].standings.map((s) => s.playerId) }];
 
 	// Build tiers grouped by finish position across ALL input courts
-	const maxRank = Math.max(...courtResults.map((c) => c.standings.length));
+	const maxRank = Math.max(...sorted.map((c) => c.standings.length));
 	const tiers: PlayerWithOrigin[][] = [];
 
 	for (let rank = 0; rank < maxRank; rank++) {
 		const tier: PlayerWithOrigin[] = [];
-		for (const c of courtResults) {
+		for (const c of sorted) {
 			const s = c.standings[rank];
 			if (s) {
 				tier.push({
@@ -461,13 +462,14 @@ export function processPreseedTransition(
 	courtSizes: readonly number[],
 	isFirstSplit: boolean
 ): CourtAssignment[] {
-	const N = courtResults.length;
+	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
+	const N = sorted.length;
 	if (N === 0) return [];
 	if (N === 1)
-		return [{ courtNumber: 1, playerIds: courtResults[0].standings.map((s) => s.playerId) }];
+		return [{ courtNumber: 1, playerIds: sorted[0].standings.map((s) => s.playerId) }];
 
 	if (isFirstSplit) {
-		return redistributePreseedRecursive(courtResults, courtSizes);
+		return redistributePreseedRecursive(sorted, courtSizes);
 	}
 
 	// Subsequent splits: re-rank within each bracket group
@@ -479,8 +481,8 @@ export function processPreseedTransition(
 		return redistributePreseedRecursive(courtResults, courtSizes);
 	}
 
-	const winnerResults = courtResults.slice(0, W);
-	const loserResults = courtResults.slice(W);
+	const winnerResults = sorted.slice(0, W);
+	const loserResults = sorted.slice(W);
 	const winnerSizes = courtSizes.slice(0, W);
 	const loserSizes = courtSizes.slice(W);
 
