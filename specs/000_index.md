@@ -21,6 +21,7 @@
   - **[084_random-example-12p.md](./084_random-example-12p.md)**: 12 players (3 courts, 4 rounds) — random shuffle R1, vertical seeding R2, ladder (2-up/2-down) R3-R4. No bracket splitting.
   - **[085_random-example-16p.md](./085_random-example-16p.md)**: 16 players (4 courts, 4 rounds) — perfect tier separation in vertical seeding, balanced 4-court ladder.
   - **[086_random-example-20p.md](./086_random-example-20p.md)**: 20 players (5 courts, 4 rounds) — cross-tier mixing in vertical seeding, 5-court ladder with slow climb from Court 5.
+- **[087_preseed-frozen-courts.md](./087_preseed-frozen-courts.md)**: [IN PROGRESS] Preseed frozen courts — single-court loser brackets freeze after round 2 (standings final, no more matches). Phase 1: compute frozen courts, exclude from round gating.
 
 - **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export] Sorted by court position (not total points), per spec 070.
 

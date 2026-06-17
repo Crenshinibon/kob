@@ -159,7 +159,6 @@
 							<div class="podium-place second">
 								<div class="medal">🥈</div>
 								<div class="player-name">{second.playerName}</div>
-								<div class="stats">{second.totalPoints} pts</div>
 								<div class="diff">{formatNumber(second.totalDiff)}</div>
 							</div>
 						{/if}
@@ -169,7 +168,6 @@
 								<div class="medal">🥇</div>
 								<div class="crown">👑</div>
 								<div class="player-name">{first.playerName}</div>
-								<div class="stats">{first.totalPoints} pts</div>
 								<div class="diff">{formatNumber(first.totalDiff)}</div>
 							</div>
 						{/if}
@@ -178,7 +176,6 @@
 							<div class="podium-place third">
 								<div class="medal">🥉</div>
 								<div class="player-name">{third.playerName}</div>
-								<div class="stats">{third.totalPoints} pts</div>
 								<div class="diff">{formatNumber(third.totalDiff)}</div>
 							</div>
 						{/if}
@@ -196,7 +193,6 @@
 							<th>{m.standings_place()}</th>
 							<th>Pos</th>
 							<th>{m.standings_player()}</th>
-							<th>{m.standings_points()}</th>
 							<th>{m.standings_diff()}</th>
 							<th>{m.standings_rounds()}</th>
 							{#if cr > 1}
@@ -255,7 +251,6 @@
 								<td class="player-name" style={courtColor ? `color: ${courtColor}` : ''}>
 									{player.playerName}
 								</td>
-								<td class="points">{player.totalPoints}</td>
 								<td
 									class="diff {player.totalDiff > 0
 										? 'positive'
@@ -498,11 +493,6 @@
 		margin-bottom: var(--spacing-xs);
 	}
 
-	.stats {
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-	}
-
 	.diff {
 		font-size: var(--font-size-xs);
 		color: var(--text-muted);
@@ -582,12 +572,6 @@
 		font-size: var(--font-size-2xl);
 		text-align: center;
 		color: var(--text-secondary);
-	}
-
-	.points {
-		font-weight: 700;
-		font-size: var(--font-size-lg);
-		color: var(--accent-primary);
 	}
 
 	.diff.positive {
