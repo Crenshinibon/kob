@@ -1069,6 +1069,62 @@ describe('preseed redistribution: pair subdivision', () => {
 			expect(r4.flatMap((c) => c.playerIds)).not.toContain(pid);
 		}
 	});
+
+	it('64p (spec 084): deterministic paths match gold-race and winner-only rules', () => {
+		const sizes = Array.from({ length: 16 }, () => 4);
+		const courts = 16;
+
+		function snake(items: number[]) {
+			const courtsArr = Array.from({ length: 16 }, (_, i) => ({
+				courtNumber: i + 1,
+				playerIds: [] as number[]
+			}));
+			for (let pos = 0; pos < 4; pos++) {
+				const fwd = pos % 2 === 0;
+				for (let c = 0; c < 16; c++) {
+					const idx = fwd ? c : 15 - c;
+					const ii = pos * 16 + c;
+					if (ii < items.length) courtsArr[idx].playerIds.push(items[ii]);
+				}
+			}
+			return courtsArr;
+		}
+
+		function toResults(assignments: { courtNumber: number; playerIds: number[] }[]) {
+			return assignments.map((a) => ({
+				courtNumber: a.courtNumber,
+				standings: a.playerIds.map((pid, i) => ({
+					playerId: pid,
+					rank: i + 1,
+					points: 60 - i * 10,
+					diff: 0,
+					matchCount: 3
+				}))
+			}));
+		}
+
+		let assignments = snake(Array.from({ length: 64 }, (_, i) => i + 1));
+		let results = toResults(assignments);
+		for (const rc of [0, 1, 2, 3]) {
+			const next = processPreseedTransition(results, sizes, rc, courts);
+			assignments = next.map((a) => ({ courtNumber: a.courtNumber, playerIds: [...a.playerIds] }));
+			results = toResults(assignments);
+		}
+
+		expect(assignments).toHaveLength(8);
+		expect(assignments.flatMap((a) => a.playerIds)).toHaveLength(32);
+
+		const courtOf = (pid: number) => assignments.find((a) => a.playerIds.includes(pid))!.courtNumber;
+
+		// P01: gold path → F1 (court 1)
+		expect(courtOf(1)).toBe(1);
+		// P09: settled — bottom court of pair (1,2) in R4
+		expect(assignments.flatMap((a) => a.playerIds)).not.toContain(9);
+		// P64: settled — never reaches R5
+		expect(assignments.flatMap((a) => a.playerIds)).not.toContain(64);
+		// P33: loser-bracket top path → T9 (court 5 after renumber)
+		expect(courtOf(33)).toBe(5);
+	});
 });
 
 // ============================================================================

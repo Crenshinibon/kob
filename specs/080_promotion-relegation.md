@@ -125,6 +125,16 @@ A player who finished 3rd on Court 1 drops to Court 2 (Silver), not to the Loser
 - **Pair (C3,C4):** Court 3 (LW) continues to Bronze Final; Court 4 (LL) is settled — places 13–16 determined by R3 results
 - Only 16 of 32 players play R4; the other 16 were placed when their bracket froze after R3
 
+### 64 Players (5 Rounds, 16 Courts)
+
+See **[084_preseed-example-64p.md](./084_preseed-example-64p.md)** for a full walkthrough with all 64 player paths across 5 rounds.
+
+## Preseed walkthrough specs
+
+- **[082_preseed-example-16p.md](./082_preseed-example-16p.md)** — 16 players, 3 rounds
+- **[083_preseed-example-20p.md](./083_preseed-example-20p.md)** — 20 players, 4 rounds (asymmetric)
+- **[084_preseed-example-64p.md](./084_preseed-example-64p.md)** — 64 players, 5 rounds (complete path table)
+
 ## Implementation
 
 See `src/lib/tournament-logic.ts`:
@@ -134,12 +144,10 @@ See `src/lib/tournament-logic.ts`:
 - **`ladderRedistribute(results, courtCount, courtSizes)`** — Random Seed R2+: 2-up/2-down between adjacent courts.
 - **`processPreseedTransition(results, sizes, roundsCompleted, totalCourts?)`** — Preseed redistribution.
   - `roundsCompleted=0` (R1→R2): flat tiers + slot-based winner/loser split + origin mixing via `distributeGroup`
-  - `roundsCompleted≥1`: bracket-tree subdivision via `getSubdivisionPlan` (peer / one-level / winner-only)
-  - Subsequent rounds: recursive court-pair subdivision via `subdividePreseedBracket`; at each 2-court leaf, finish-position split (1sts+2nds → top, 3rds+4ths → bottom)
-- **`subdividePreseedBracket(results, sizes)`** — Preseed: recursive court-number subdivision with finish-position split at 2-court leaves.
-- **`distributeByFinishPosition(results, sizes)`** — Preseed: within a 2-court pair, splits by finish position and distributes with origin mixing.
+  - `roundsCompleted≥1`: bracket-tree subdivision (peer / one-level / winner-only)
+- **`getBracketGroups(totalCourts, roundsCompleted)`** — Returns which court groups subdivide together.
 - **`redistributePreseedRecursive(results, sizes)`** — Preseed: flat tier-based redistribution for R1→R2 only.
-- **`distributeGroup(players, courtCount)`** — Preseed: origin-mixing distribution (1st+2nd from same origin never on same new court).
+- **`distributeGroup(players, courtSizes)`** — Preseed: origin-mixing distribution (1st+2nd from same origin never on same new court).
 - **`splitSize(N)`** — Preseed: largest power of 2 ≤ N.
 
 **Note**: `verticalSeeding` is ONLY used by the random-seed format. Preseed uses `processPreseedTransition` exclusively. Do NOT share redistribution logic between formats.
