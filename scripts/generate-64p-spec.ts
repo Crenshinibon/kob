@@ -127,16 +127,15 @@ function formatTransition(fromRound: number, toRound: number): string {
 
 - 1sts + 2nds from all courts → winner bracket (courts 1–8)
 - 3rds + 4ths from all courts → loser bracket (courts 9–16)`,
-		2: `**Round 2 → Round 3** (one-level ×2): each half subdivides independently.
+		2: `**Round 2 → Round 3** (split ×2): each half of 8 courts uses the same algorithm.
 
-- Pair (C1,C2): 1sts+2nds → top court, 3rds+4ths → bottom court
-- Same for (C3,C4)…(C7,C8) within winner bracket, and (C9,C10)…(C15,C16) within loser bracket`,
-		3: `**Round 3 → Round 4** (first-split ×4): each quarter redistributes like a 4-court preseed R1→R2.
+- Global finish tiers across courts 1–8 (or 9–16), \`splitSize(8)=4\` → top 4 courts get 1sts+2nds, bottom 4 get 3rds+4ths`,
+		3: `**Round 3 → Round 4** (split ×4): each quarter of 4 courts uses the same algorithm.
 
-- Global tiers within the group of 4 courts, then winner/loser split with origin mixing`,
-		4: `**Round 4 → Round 5** (peer ×8): each same-tier pair splits by finish position.
+- Global finish tiers within the quarter, \`splitSize(4)=2\` → top 2 courts get 1sts+2nds, bottom 2 get 3rds+4ths`,
+		4: `**Round 4 → Round 5** (split ×8): each pair of 2 courts uses the same algorithm.
 
-- 1sts+2nds → top court, 3rds+4ths → bottom court within each pair
+- Global finish tiers within the pair, \`splitSize(2)=1\` → top court gets 1sts+2nds, bottom court gets 3rds+4ths
 - All **16 courts** (64 players) play round 5`
 	};
 	return `---\n\n${notes[fromRound] ?? ''}\n\n`;
@@ -191,7 +190,7 @@ let md = `# Preseed Example: 64 Players (16 Courts, 5 Rounds)
 
 - **1st or 2nd** → stay in the upper court when the bracket pair splits.
 - **3rd or 4th** → drop to the lower court permanently within that subtree.
-- **R4→R5:** peer splits within each same-tier pair; all courts continue to round 5.
+- **Every split:** global finish tiers → \`splitSize(N)\` winner/loser courts → 1sts+2nds fill top court numbers, 3rds+4ths fill bottom court numbers.
 
 ### Bracket tree
 
@@ -199,11 +198,11 @@ let md = `# Preseed Example: 64 Players (16 Courts, 5 Rounds)
 R1:  [C1]…[C16]
        ↓ first split (8W + 8L)
 R2:  [W1]…[W8] | [L9]…[L16]
-       ↓ one-level within each half
+       ↓ split within each half (8→4+4)
 R3:  [WT×4][WB×4] | [LT×4][LB×4]
-       ↓ one-level on each quarter
+       ↓ split within each quarter (4→2+2)
 R4:  [WW/WL × 8] | [LW/LL × 8]
-       ↓ peer pairs (all 16 courts)
+       ↓ split within each pair (2→1+1)
 R5:  [F1]…[F8] | [T9]…[T16]   (64 players)
 \`\`\`
 

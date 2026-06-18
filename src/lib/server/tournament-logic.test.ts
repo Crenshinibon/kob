@@ -114,6 +114,21 @@ function mockRankedCourts(courtCount: number): CourtResult[] {
 	);
 }
 
+function expectTierSplit(
+	input: readonly CourtResult[],
+	output: readonly CourtAssignment[],
+	sourceCourtNums: readonly number[],
+	winnerOutputIndices: readonly number[],
+	loserOutputIndices: readonly number[]
+): void {
+	const winners = topFinishers(input, sourceCourtNums);
+	const losers = bottomFinishers(input, sourceCourtNums);
+	const winnerPlayers = winnerOutputIndices.flatMap((i) => output[i].playerIds);
+	const loserPlayers = loserOutputIndices.flatMap((i) => output[i].playerIds);
+	expectSamePlayerSet(winnerPlayers, winners);
+	expectSamePlayerSet(loserPlayers, losers);
+}
+
 function expectPairFinishSplit(
 	input: readonly CourtResult[],
 	output: readonly CourtAssignment[],
@@ -960,34 +975,25 @@ describe('preseed redistribution: pair subdivision', () => {
 		expect(winners).not.toContain(3);
 	});
 
-	it('R2→R3 (8 courts): four independent pairs, each split by finish position', () => {
+	it('R2→R3 (8 courts): each half splits by global finish tiers', () => {
 		const r2 = mockRankedCourts(8);
 		const r3 = processPreseedTransition(r2, eightCourtSizes, 1);
 
 		expect(r3).toHaveLength(8);
-		expectPairFinishSplit(r2, r3, 0, 1, 2);
-		expectPairFinishSplit(r2, r3, 1, 3, 4);
-		expectPairFinishSplit(r2, r3, 2, 5, 6);
-		expectPairFinishSplit(r2, r3, 3, 7, 8);
+		expectTierSplit(r2, r3, [1, 2, 3, 4], [0, 1], [2, 3]);
+		expectTierSplit(r2, r3, [5, 6, 7, 8], [4, 5], [6, 7]);
 	});
 
-	it('R3→R4 (8 courts): first-split on each quarter — like 4-court preseed R1→R2', () => {
+	it('R3→R4 (8 courts): each pair splits by global finish tiers', () => {
 		const r3 = mockRankedCourts(8);
 		const r4 = processPreseedTransition(r3, eightCourtSizes, 2);
 
 		expect(r4).toHaveLength(8);
 		expect(new Set(r4.flatMap((c) => c.playerIds)).size).toBe(32);
-
-		// Winner half [C1–C4]: global tier split within the quarter
-		expectSamePlayerSet(r4[0].playerIds, [1, 5, 2, 6]);
-		expectSamePlayerSet(r4[1].playerIds, [3, 7, 4, 8]);
-		expectSamePlayerSet(r4[2].playerIds, [9, 13, 10, 14]);
-		expectSamePlayerSet(r4[3].playerIds, [11, 15, 12, 16]);
-		// Loser half [C5–C8]
-		expectSamePlayerSet(r4[4].playerIds, [17, 21, 18, 22]);
-		expectSamePlayerSet(r4[5].playerIds, [19, 23, 20, 24]);
-		expectSamePlayerSet(r4[6].playerIds, [25, 29, 26, 30]);
-		expectSamePlayerSet(r4[7].playerIds, [27, 31, 28, 32]);
+		expectPairFinishSplit(r3, r4, 0, 1, 2);
+		expectPairFinishSplit(r3, r4, 1, 3, 4);
+		expectPairFinishSplit(r3, r4, 2, 5, 6);
+		expectPairFinishSplit(r3, r4, 3, 7, 8);
 	});
 
 	it('R3 top-4 (64p gold quarter): first-split matches 4-court preseed R1→R2', () => {
@@ -1027,9 +1033,8 @@ describe('preseed redistribution: pair subdivision', () => {
 		expectSamePlayerSet(r4[3].playerIds, [10, 11, 26, 27]);
 	});
 
-	it('R2→R3 (8 courts): 3rd on winner court 1 (R2 result) drops to court 2 within pair, not courts 3-4', () => {
-		// Player 102 finished 3rd on C1 during Round 2 — C1 is in the winner bracket.
-		// R2→R3 pair split: 1sts+2nds from C1+C2 → C1, 3rds+4ths from C1+C2 → C2.
+	it('R2→R3 (8 courts): 3rd on winner court 1 drops to loser half of its bracket, not other half', () => {
+		// Player 102 finished 3rd on C1 during Round 2 — in the winner bracket half [C1–C4].
 		const r2 = [
 			mockCourtResult(1, [
 				{ playerId: 100, rank: 1, points: 60, diff: 0, matchCount: 3 },
@@ -1050,15 +1055,17 @@ describe('preseed redistribution: pair subdivision', () => {
 		];
 		const r3 = processPreseedTransition(r2, eightCourtSizes, 1);
 
-		expect(r3[0].playerIds).toContain(100);
-		expect(r3[0].playerIds).toContain(104);
-		expect(r3[0].playerIds).not.toContain(102);
-		expect(r3[1].playerIds).toContain(102);
-		expect(r3[1].playerIds).toContain(103);
-		expect(r3[1].playerIds).toContain(106);
-		expect(r3[1].playerIds).toContain(107);
-		expect(r3[2].playerIds).not.toContain(102);
-		expect(r3[2].playerIds).not.toContain(103);
+		const winnerHalf = r3.slice(0, 2).flatMap((c) => c.playerIds);
+		const loserHalf = r3.slice(2, 4).flatMap((c) => c.playerIds);
+
+		expect(winnerHalf).toContain(100);
+		expect(winnerHalf).toContain(104);
+		expect(winnerHalf).not.toContain(102);
+		expect(loserHalf).toContain(102);
+		expect(loserHalf).toContain(103);
+		expect(loserHalf).toContain(106);
+		expect(loserHalf).toContain(107);
+		expect(r3.slice(4).flatMap((c) => c.playerIds)).not.toContain(102);
 	});
 
 	it('32p chain: R1→R2→R3→R4 preserves all players and pair bracket structure', () => {
@@ -1081,10 +1088,8 @@ describe('preseed redistribution: pair subdivision', () => {
 
 		const r3 = processPreseedTransition(results, sizes, 1);
 		expect(new Set(r3.flatMap((c) => c.playerIds)).size).toBe(32);
-		expectPairFinishSplit(results, r3, 0, 1, 2);
-		expectPairFinishSplit(results, r3, 1, 3, 4);
-		expectPairFinishSplit(results, r3, 2, 5, 6);
-		expectPairFinishSplit(results, r3, 3, 7, 8);
+		expectTierSplit(results, r3, [1, 2, 3, 4], [0, 1], [2, 3]);
+		expectTierSplit(results, r3, [5, 6, 7, 8], [4, 5], [6, 7]);
 
 		results = r3.map((a) => ({
 			courtNumber: a.courtNumber,
@@ -3368,7 +3373,7 @@ describe('Preseed redistribution: bracket correctness with frozen courts', () =>
 		}
 	});
 
-	it('20p: 4th on C2 in R2 drops to WL court in R3 and cannot reach Gold Final in R4', () => {
+	it('20p: 4th on C2 in R2 drops to WL court in R3; 1st on WL reaches top court of pair in R4', () => {
 		const gavin = 2;
 		const r2Results = [
 			mockCourtResult(1, [
@@ -3431,9 +3436,10 @@ describe('Preseed redistribution: bracket correctness with frozen courts', () =>
 
 		const r4Assignments = processPreseedTransition(r3Results, [4, 4, 4, 4], 2, 5);
 		const allR4Players = r4Assignments.flatMap((a) => a.playerIds);
-		expect(allR4Players).not.toContain(gavin);
+		expect(allR4Players).toContain(gavin);
 		expect(r4Assignments[0].playerIds).toContain(1);
-		expect(r4Assignments[0].playerIds).toContain(3);
+		expect(r4Assignments[0].playerIds).toContain(gavin);
+		expect(r4Assignments[1].playerIds).not.toContain(gavin);
 	});
 
 	it('4 results with 5 sizes matches 4-court redistribution for active courts', () => {
@@ -3464,10 +3470,10 @@ describe('Preseed redistribution: bracket correctness with frozen courts', () =>
 			])
 		];
 
-		const correct = processPreseedTransition(results, [4, 4, 4, 4], 1);
+		const correct = processPreseedTransition(results, [4, 4, 4, 4], 1, 5);
 		expect(correct).toHaveLength(4);
 
-		const withExtraSize = processPreseedTransition(results, [4, 4, 4, 4, 4], 1);
+		const withExtraSize = processPreseedTransition(results, [4, 4, 4, 4, 4], 1, 5);
 		expect(withExtraSize).toHaveLength(4);
 		expect(withExtraSize.map((a) => a.playerIds)).toEqual(correct.map((a) => a.playerIds));
 	});

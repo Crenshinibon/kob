@@ -143,19 +143,19 @@ Players finish in listed order.
 
 ---
 
-## Round 3 → Round 4: Winner-only split (final round)
+## Round 3 → Round 4: Tier split (final round)
 
-Courts 1–4 use **winner-only** subdivision: only the top court from each pair continues. The bottom court (WL, LL) is settled — placements determined by R3 finish order.
+Courts 1–4 each subdivide in pairs using the **same algorithm** as every other split: global finish tiers, top court number gets 1sts+2nds, bottom gets 3rds+4ths.
 
 ### Pair (Courts 1–2)
 
-**Court 1 (WW) → Final:** A, B, G, E (all players from WW court — championship round)
-**Court 2 (WL):** settled after R3 — L(5th), J(6th), M(7th), Q(8th). **L cannot reach the Final** despite winning Court 2 in R3, because finishing 4th on Court 2 in R2 permanently dropped out of the gold race.
+**Court 1 (top):** 1sts+2nds from WW and WL — includes A, B from WW and L, J from WL (L won WL in R3)
+**Court 2 (bottom):** 3rds+4ths from both — G, E, M, Q
 
 ### Pair (Courts 3–4)
 
-**Court 3 (LW) → TL:** D, C, H, F (all players from LW court — play for places 9–12)
-**Court 4 (LL):** settled after R3 — P(13th), I(14th), K(15th), N(16th)
+**Court 3 (top):** D, C, H, F (1sts+2nds from LW and LL)
+**Court 4 (bottom):** 3rds+4ths from both
 
 ### Round 4 Courts (active)
 
@@ -217,7 +217,7 @@ R4:   [Final] | [TL]           | [L5 frozen]
 
 1. **3rd/4th = permanent dropout from gold race.** A player who finishes 3rd or 4th on any court never returns to contention for places 1–4.
 
-2. **Peer vs winner-only pairs:** The first split of a court pair combines 1sts+2nds from both courts. Later splits only advance the top court from the pair; the bottom court is settled.
+2. **Same algorithm every split:** Global finish tiers across the bracket group, then top court numbers get 1sts+2nds, bottom get 3rds+4ths.
 
 3. **`splitSize(5)=4` is asymmetric:** 20p has 4W+1L. Court 5 (L5) freezes after R2.
 
