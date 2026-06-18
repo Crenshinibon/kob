@@ -1065,6 +1065,16 @@ export function matchCountForCourtSize(courtSize: number): number {
 	}
 }
 
+export function expectedMatchCountForRotations(
+	rotations: readonly { courtNumber: number; courtSize: number | null }[],
+	defaultCourtSizes: readonly number[]
+): number {
+	return rotations.reduce((sum, rotation) => {
+		const size = rotation.courtSize ?? defaultCourtSizes[rotation.courtNumber - 1] ?? 4;
+		return sum + matchCountForCourtSize(size);
+	}, 0);
+}
+
 export function generateAllMatchesForAssignment(
 	assignment: CourtAssignment,
 	courtSizes: readonly number[]
