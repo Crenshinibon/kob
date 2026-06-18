@@ -74,6 +74,58 @@ function mockPlayer(
 	return { id, name: `Player${id}`, seedPoints, seedRank: null };
 }
 
+function topFinishers(results: readonly CourtResult[], courtNums: readonly number[]): number[] {
+	const ids: number[] = [];
+	for (const courtNum of courtNums) {
+		const court = results.find((r) => r.courtNumber === courtNum);
+		if (!court) continue;
+		for (const s of court.standings) {
+			if (s.rank <= 2) ids.push(s.playerId);
+		}
+	}
+	return ids;
+}
+
+function bottomFinishers(results: readonly CourtResult[], courtNums: readonly number[]): number[] {
+	const ids: number[] = [];
+	for (const courtNum of courtNums) {
+		const court = results.find((r) => r.courtNumber === courtNum);
+		if (!court) continue;
+		for (const s of court.standings) {
+			if (s.rank >= 3) ids.push(s.playerId);
+		}
+	}
+	return ids;
+}
+
+function expectSamePlayerSet(actual: readonly number[], expected: readonly number[]): void {
+	expect([...actual].sort((a, b) => a - b)).toEqual([...expected].sort((a, b) => a - b));
+}
+
+function mockRankedCourts(courtCount: number): CourtResult[] {
+	return Array.from({ length: courtCount }, (_, i) =>
+		mockCourtResult(i + 1, [
+			{ playerId: i * 4 + 1, rank: 1, points: 60, diff: 0, matchCount: 3 },
+			{ playerId: i * 4 + 2, rank: 2, points: 50, diff: 0, matchCount: 3 },
+			{ playerId: i * 4 + 3, rank: 3, points: 40, diff: 0, matchCount: 3 },
+			{ playerId: i * 4 + 4, rank: 4, points: 30, diff: 0, matchCount: 3 }
+		])
+	);
+}
+
+function expectPairFinishSplit(
+	input: readonly CourtResult[],
+	output: readonly CourtAssignment[],
+	pairIndex: number,
+	courtA: number,
+	courtB: number
+): void {
+	const topIdx = pairIndex * 2;
+	const botIdx = pairIndex * 2 + 1;
+	expectSamePlayerSet(output[topIdx].playerIds, topFinishers(input, [courtA, courtB]));
+	expectSamePlayerSet(output[botIdx].playerIds, bottomFinishers(input, [courtA, courtB]));
+}
+
 function scoreAllMatches(
 	state: TournamentState,
 	scores:
@@ -817,6 +869,128 @@ describe('processPreseedTransition', () => {
 
 	it('empty input returns empty', () => {
 		expect(processPreseedTransition([], [], true)).toEqual([]);
+	});
+});
+
+// ============================================================================
+// Preseed redistribution: explicit pair-subdivision behaviour
+// ============================================================================
+
+describe('preseed redistribution: pair subdivision', () => {
+	const eightCourtSizes = Array.from({ length: 8 }, () => 4);
+
+	it('R1→R2 (8 courts): all 1sts+2nds to courts 1-4, all 3rds+4ths to courts 5-8', () => {
+		const r1 = mockRankedCourts(8);
+		const r2 = processPreseedTransition(r1, eightCourtSizes, true);
+
+		expect(r2).toHaveLength(8);
+		const winners = r2.slice(0, 4).flatMap((c) => c.playerIds);
+		const losers = r2.slice(4).flatMap((c) => c.playerIds);
+
+		for (let c = 1; c <= 8; c++) {
+			expect(winners).toContain(c * 4 - 3);
+			expect(winners).toContain(c * 4 - 2);
+			expect(losers).toContain(c * 4 - 1);
+			expect(losers).toContain(c * 4);
+		}
+	});
+
+	it('R2→R3 (8 courts): four independent pairs, each split by finish position', () => {
+		const r2 = mockRankedCourts(8);
+		const r3 = processPreseedTransition(r2, eightCourtSizes, false);
+
+		expect(r3).toHaveLength(8);
+		expectPairFinishSplit(r2, r3, 0, 1, 2);
+		expectPairFinishSplit(r2, r3, 1, 3, 4);
+		expectPairFinishSplit(r2, r3, 2, 5, 6);
+		expectPairFinishSplit(r2, r3, 3, 7, 8);
+	});
+
+	it('R3→R4 (8 courts): same four-pair structure for final placement courts', () => {
+		const r3 = mockRankedCourts(8);
+		const r4 = processPreseedTransition(r3, eightCourtSizes, false);
+
+		expect(r4).toHaveLength(8);
+		expectPairFinishSplit(r3, r4, 0, 1, 2);
+		expectPairFinishSplit(r3, r4, 1, 3, 4);
+		expectPairFinishSplit(r3, r4, 2, 5, 6);
+		expectPairFinishSplit(r3, r4, 3, 7, 8);
+	});
+
+	it('R2→R3 (8 courts): 3rd on court 1 drops within pair 1-2, not to courts 3-4', () => {
+		const r2 = [
+			mockCourtResult(1, [
+				{ playerId: 100, rank: 1, points: 60, diff: 0, matchCount: 3 },
+				{ playerId: 101, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 102, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 103, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 104, rank: 1, points: 60, diff: 0, matchCount: 3 },
+				{ playerId: 105, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 106, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 107, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			...mockRankedCourts(6).map((c) => ({
+				...c,
+				courtNumber: c.courtNumber + 2
+			}))
+		];
+		const r3 = processPreseedTransition(r2, eightCourtSizes, false);
+
+		expect(r3[0].playerIds).toContain(100);
+		expect(r3[0].playerIds).toContain(104);
+		expect(r3[0].playerIds).not.toContain(102);
+		expect(r3[1].playerIds).toContain(102);
+		expect(r3[1].playerIds).toContain(103);
+		expect(r3[1].playerIds).toContain(106);
+		expect(r3[1].playerIds).toContain(107);
+		expect(r3[2].playerIds).not.toContain(102);
+		expect(r3[2].playerIds).not.toContain(103);
+	});
+
+	it('32p chain: R1→R2→R3→R4 preserves all players and pair bracket structure', () => {
+		const sizes = eightCourtSizes;
+		let results = mockRankedCourts(8);
+
+		const r2 = processPreseedTransition(results, sizes, true);
+		expect(new Set(r2.flatMap((c) => c.playerIds)).size).toBe(32);
+
+		results = r2.map((a) => ({
+			courtNumber: a.courtNumber,
+			standings: a.playerIds.map((playerId, i) => ({
+				playerId,
+				rank: i + 1,
+				points: 60 - i * 10,
+				diff: 0,
+				matchCount: 3
+			}))
+		}));
+
+		const r3 = processPreseedTransition(results, sizes, false);
+		expect(new Set(r3.flatMap((c) => c.playerIds)).size).toBe(32);
+		expectPairFinishSplit(results, r3, 0, 1, 2);
+		expectPairFinishSplit(results, r3, 1, 3, 4);
+		expectPairFinishSplit(results, r3, 2, 5, 6);
+		expectPairFinishSplit(results, r3, 3, 7, 8);
+
+		results = r3.map((a) => ({
+			courtNumber: a.courtNumber,
+			standings: a.playerIds.map((playerId, i) => ({
+				playerId,
+				rank: i + 1,
+				points: 60 - i * 10,
+				diff: 0,
+				matchCount: 3
+			}))
+		}));
+
+		const r4 = processPreseedTransition(results, sizes, false);
+		expect(new Set(r4.flatMap((c) => c.playerIds)).size).toBe(32);
+		expectPairFinishSplit(results, r4, 0, 1, 2);
+		expectPairFinishSplit(results, r4, 1, 3, 4);
+		expectPairFinishSplit(results, r4, 2, 5, 6);
+		expectPairFinishSplit(results, r4, 3, 7, 8);
 	});
 });
 

@@ -106,12 +106,13 @@ A player who finished 3rd on Court 1 drops to Court 2 (Silver), not to the Loser
 - Winner Courts 1-4: all 1st and 2nd places from Courts 1-8, mixed with origin separation
 - Loser Courts 5-8: all 3rd and 4th places from Courts 1-8, mixed
 
-**Round 2 → Round 3:** All 8 courts redistribute together (`splitSize(8)=4` → 4 top + 4 bottom courts).
+**Round 2 → Round 3:** Recursive pair subdivision within each half (`splitSize(8)=4`).
 
-- Courts 1–4: all 1st and 2nd places from Courts 1–8
-- Courts 5–8: all 3rd and 4th places from Courts 1–8
+- **Winner half (courts 1–4):** pair (C1,C2) → C1/C2; pair (C3,C4) → C3/C4
+- **Loser half (courts 5–8):** pair (C5,C6) → C5/C6; pair (C7,C8) → C7/C8
+- Within each pair: 1sts+2nds → top court, 3rds+4ths → bottom court
 
-**Round 3 → Round 4:** Each 4-court group redistributes by finish position (`splitSize(4)=2`).
+**Round 3 → Round 4:** Same four-pair structure — final placement courts.
 
 - Court 1: Places 1-4 | Court 5: Places 17-20
 - Court 2: Places 5-8 | Court 6: Places 21-24
