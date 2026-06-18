@@ -3213,6 +3213,76 @@ describe('Preseed redistribution: bracket correctness with frozen courts', () =>
 		}
 	});
 
+	it('20p: 4th on C2 in R2 goes to C2 in R3, then 1st on C2 in R3 reaches Gold Final in R4', () => {
+		// Mirrors real tournament data: Gavin finished 4th on Court 2 in R2 but
+		// still reached Court 1 in R4 by winning Court 2 in R3 (semifinal within
+		// the winner bracket). Same pattern as player L in specs/083_preseed-example-20p.md.
+		const gavin = 2;
+		const r2Results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 20, matchCount: 3 },
+				{ playerId: 8, rank: 2, points: 50, diff: 10, matchCount: 3 },
+				{ playerId: 5, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 6, rank: 4, points: 30, diff: -10, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 3, rank: 1, points: 60, diff: 20, matchCount: 3 },
+				{ playerId: 7, rank: 2, points: 50, diff: 10, matchCount: 3 },
+				{ playerId: 4, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: gavin, rank: 4, points: 30, diff: -10, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 10, rank: 1, points: 60, diff: 20, matchCount: 3 },
+				{ playerId: 12, rank: 2, points: 50, diff: 10, matchCount: 3 },
+				{ playerId: 13, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 11, rank: 4, points: 30, diff: -10, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 15, rank: 1, points: 60, diff: 20, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 50, diff: 10, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 16, rank: 4, points: 30, diff: -10, matchCount: 3 }
+			])
+		];
+
+		const r3Assignments = processPreseedTransition(r2Results, [4, 4, 4, 4], false);
+		const gavinR3Court = r3Assignments.find((a) => a.playerIds.includes(gavin))!;
+		expect(gavinR3Court.courtNumber).toBe(2);
+		expect(r3Assignments[0].playerIds).not.toContain(gavin);
+
+		const r3Results = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 20, matchCount: 3 },
+				{ playerId: 3, rank: 2, points: 50, diff: 10, matchCount: 3 },
+				{ playerId: 8, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 7, rank: 4, points: 30, diff: -10, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: gavin, rank: 1, points: 60, diff: 20, matchCount: 3 },
+				{ playerId: 4, rank: 2, points: 50, diff: 10, matchCount: 3 },
+				{ playerId: 6, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 5, rank: 4, points: 30, diff: -10, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 10, rank: 1, points: 60, diff: 20, matchCount: 3 },
+				{ playerId: 12, rank: 2, points: 50, diff: 10, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 14, rank: 4, points: 30, diff: -10, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 15, rank: 1, points: 60, diff: 20, matchCount: 3 },
+				{ playerId: 11, rank: 2, points: 50, diff: 10, matchCount: 3 },
+				{ playerId: 13, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 16, rank: 4, points: 30, diff: -10, matchCount: 3 }
+			])
+		];
+
+		const r4Assignments = processPreseedTransition(r3Results, [4, 4, 4, 4], false);
+		const gavinR4Court = r4Assignments.find((a) => a.playerIds.includes(gavin))!;
+		expect(gavinR4Court.courtNumber).toBe(1);
+		expectSamePlayerSet(r4Assignments[0].playerIds, [1, 2, 3, 4]);
+	});
+
 	it('4 results with 5 sizes (frozen court bug) produces wrong assignments', () => {
 		const results = [
 			mockCourtResult(1, [
