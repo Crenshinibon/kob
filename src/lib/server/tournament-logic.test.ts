@@ -17,6 +17,7 @@ import {
 	generate5pMatches,
 	generate6pMatches,
 	matchCountForCourtSize,
+	expectedMatchCountForRotations,
 	countScoredMatches,
 	isDecidingSet,
 	getMaxSets,
@@ -2515,6 +2516,19 @@ describe('matchCountForCourtSize', () => {
 		[6, 4]
 	])('%dp → %d matches', (size, exp) => {
 		expect(matchCountForCourtSize(size)).toBe(exp);
+	});
+});
+
+describe('expectedMatchCountForRotations', () => {
+	it('counts only active rotations (excludes frozen courts with no rotation)', () => {
+		const courtSizes = [4, 4, 4, 4, 4, 4, 5];
+		const activeRotations = Array.from({ length: 6 }, (_, i) => ({
+			courtNumber: i + 1,
+			courtSize: 4
+		}));
+
+		expect(expectedMatchCountForRotations(activeRotations, courtSizes)).toBe(18);
+		expect(courtSizes.reduce((sum, size) => sum + matchCountForCourtSize(size), 0)).toBe(22);
 	});
 });
 

@@ -7,6 +7,7 @@ import * as m from '$lib/paraglide/messages';
 import {
 	calculateCourtSizes,
 	matchCountForCourtSize,
+	expectedMatchCountForRotations,
 	isMatchComplete,
 	getBatchShifts,
 	getShiftForCourt,
@@ -95,33 +96,30 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		}));
 	const activePlayerCount = dbPlayers.filter((p) => !p.retiredAt).length;
 
+	const displayRound = currentRound === 0 ? 1 : currentRound;
+	const rotations = await db
+		.select()
+		.from(courtRotation)
+		.where(
+			and(eq(courtRotation.tournamentId, tournamentId), eq(courtRotation.roundNumber, displayRound))
+		)
+		.orderBy(courtRotation.courtNumber);
+
 	let canCloseRound = false;
 	let isFinalRound = false;
 	let hasScores = false;
 
 	if (currentRound > 0) {
-		const rotationIds = await db
-			.select({ id: courtRotation.id })
-			.from(courtRotation)
-			.where(
-				and(
-					eq(courtRotation.tournamentId, tournamentId),
-					eq(courtRotation.roundNumber, currentRound)
-				)
-			);
+		isFinalRound = currentRound >= tourney.numRounds;
 
-		const rotationIdList = rotationIds.map((r) => r.id);
-
-		if (rotationIdList.length > 0) {
+		if (rotations.length > 0) {
+			const rotationIdList = rotations.map((r) => r.id);
 			const allMatches = await db
 				.select()
 				.from(match)
 				.where(inArray(match.courtRotationId, rotationIdList));
 
-			const expectedMatchCount = courtSizes.reduce(
-				(sum, size) => sum + matchCountForCourtSize(size),
-				0
-			);
+			const expectedMatchCount = expectedMatchCountForRotations(rotations, courtSizes);
 
 			const matchGroups = new Map<string, MatchSetScore[]>();
 			for (const m of allMatches) {
@@ -139,17 +137,7 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 			canCloseRound = completedMatchCount >= expectedMatchCount;
 			hasScores = allMatches.some((m) => m.teamAScore !== null);
 		}
-		isFinalRound = currentRound >= tourney.numRounds;
 	}
-
-	const displayRound = currentRound === 0 ? 1 : currentRound;
-	const rotations = await db
-		.select()
-		.from(courtRotation)
-		.where(
-			and(eq(courtRotation.tournamentId, tournamentId), eq(courtRotation.roundNumber, displayRound))
-		)
-		.orderBy(courtRotation.courtNumber);
 
 	const playerMap = new Map<number, (typeof dbPlayers)[0]>();
 	for (const p of dbPlayers) playerMap.set(p.id, p);
