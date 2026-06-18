@@ -83,7 +83,9 @@ After each round, players are grouped by finish position (1sts, then 2nds, then 
 2. **Loser bracket** gets the remaining players (worst 3rds, all 4ths)
 3. Within each bracket, players are distributed across courts using origin-mixing: a 1st and 2nd place from the **same original court** must NOT land on the same new court
 
-**Round 2+ (subsequent splits):** Recursively subdivide by court number (`splitSize`). At each 2-court leaf, 1sts+2nds from both courts → top court, 3rds+4ths → bottom court, with origin mixing. Asymmetric brackets (e.g. 5 courts → 4+1) keep the single overflow court unchanged.
+**Round 2+ (subsequent splits):** Each round subdivides bracket groups from the tournament tree. Within every group of N courts (power of 2), the **same algorithm** applies: rank all players by finish position globally across the group, split into `splitSize(N)` winner courts and the rest as loser courts, fill top court numbers with 1sts+2nds and bottom court numbers with 3rds+4ths, with origin mixing.
+
+Asymmetric brackets (e.g. 5 courts → 4+1) keep the single overflow court unchanged after R2.
 
 ### 16 Players (3 Rounds, 4 Courts)
 
@@ -106,18 +108,27 @@ A player who finished 3rd on Court 1 drops to Court 2 (Silver), not to the Loser
 - Winner Courts 1-4: all 1st and 2nd places from Courts 1-8, mixed with origin separation
 - Loser Courts 5-8: all 3rd and 4th places from Courts 1-8, mixed
 
-**Round 2 → Round 3:** Recursive pair subdivision within each half (`splitSize(8)=4`).
+**Round 2 → Round 3:** Same algorithm on each half of 8 courts (`splitSize(8)=4`).
 
-- **Winner half (courts 1–4):** pair (C1,C2) → C1/C2; pair (C3,C4) → C3/C4
-- **Loser half (courts 5–8):** pair (C5,C6) → C5/C6; pair (C7,C8) → C7/C8
-- Within each pair: 1sts+2nds → top court, 3rds+4ths → bottom court
+- **Winner half (courts 1–8):** global tiers → courts 1–4 (1sts+2nds), courts 5–8 (3rds+4ths)
+- **Loser half (courts 9–16):** same algorithm independently
 
-**Round 3 → Round 4:** Same four-pair structure — final placement courts.
+**Round 3 → Round 4:** Same algorithm on each quarter of 4 courts (`splitSize(4)=2`).
 
-- Court 1: Places 1-4 | Court 5: Places 17-20
-- Court 2: Places 5-8 | Court 6: Places 21-24
-- Court 3: Places 9-12 | Court 7: Places 25-28
-- Court 4: Places 13-16 | Court 8: Places 29-32
+- Top 2 court numbers get 1sts+2nds, bottom 2 get 3rds+4ths
+- All 32 players play R4
+
+### 64 Players (5 Rounds, 16 Courts)
+
+**Every transition uses the same split algorithm** at the appropriate bracket group size (16→8, 8→4, 4→2, 2→1 winner/loser courts per group).
+
+See **[088_preseed-example-64p.md](./088_preseed-example-64p.md)** for a full walkthrough with court-by-court start/end listings for all 5 rounds.
+
+## Preseed walkthrough specs
+
+- **[082_preseed-example-16p.md](./082_preseed-example-16p.md)** — 16 players, 3 rounds
+- **[083_preseed-example-20p.md](./083_preseed-example-20p.md)** — 20 players, 4 rounds (asymmetric)
+- **[088_preseed-example-64p.md](./088_preseed-example-64p.md)** — 64 players, 5 rounds (court-by-court walkthrough)
 
 ## Implementation
 
@@ -126,13 +137,12 @@ See `src/lib/tournament-logic.ts`:
 - **`verticalSeeding(results, courtCount, courtSizes)`** — Random Seed R1→R2: groups by finish position, sorts each tier by points desc (tiebreak: diff desc, playerId asc), flattens, fills courts top-to-bottom. Strongest players on Court 1.
 - **`redistributeLadder(results, isFirstRound, courtCount, courtSizes)`** — Random Seed entry point: calls `verticalSeeding` for R1→R2, `ladderRedistribute` for R2+.
 - **`ladderRedistribute(results, courtCount, courtSizes)`** — Random Seed R2+: 2-up/2-down between adjacent courts.
-- **`processPreseedTransition(results, sizes, isFirstSplit)`** — Preseed redistribution.
-  - R1→R2 uses `isFirstSplit=true` (flat tiers + slot-based winner/loser split + origin mixing via `distributeGroup`)
-  - Subsequent rounds: recursive court-pair subdivision via `subdividePreseedBracket`; at each 2-court leaf, finish-position split (1sts+2nds → top, 3rds+4ths → bottom)
-- **`subdividePreseedBracket(results, sizes)`** — Preseed: recursive court-number subdivision with finish-position split at 2-court leaves.
-- **`distributeByFinishPosition(results, sizes)`** — Preseed: within a 2-court pair, splits by finish position and distributes with origin mixing.
-- **`redistributePreseedRecursive(results, sizes)`** — Preseed: flat tier-based redistribution for R1→R2 only.
-- **`distributeGroup(players, courtCount)`** — Preseed: origin-mixing distribution (1st+2nd from same origin never on same new court).
+- **`processPreseedTransition(results, sizes, roundsCompleted, totalCourts?)`** — Preseed redistribution.
+  - `roundsCompleted=0` (R1→R2): applies tier split to all courts
+  - `roundsCompleted≥1`: same tier split applied to each bracket group from the tree
+- **`getBracketGroups(totalCourts, roundsCompleted)`** — Returns which court groups subdivide together.
+- **`redistributePreseedRecursive(results, sizes)`** — Preseed tier split: global finish-position tiers, `splitSize(N)` winner/loser courts, origin mixing.
+- **`distributeGroup(players, courtSizes)`** — Preseed: origin-mixing distribution (1st+2nd from same origin never on same new court).
 - **`splitSize(N)`** — Preseed: largest power of 2 ≤ N.
 
 **Note**: `verticalSeeding` is ONLY used by the random-seed format. Preseed uses `processPreseedTransition` exclusively. Do NOT share redistribution logic between formats.
