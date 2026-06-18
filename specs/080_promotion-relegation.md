@@ -127,13 +127,13 @@ A player who finished 3rd on Court 1 drops to Court 2 (Silver), not to the Loser
 
 ### 64 Players (5 Rounds, 16 Courts)
 
-See **[084_preseed-example-64p.md](./084_preseed-example-64p.md)** for a full walkthrough with all 64 player paths across 5 rounds.
+See **[088_preseed-example-64p.md](./088_preseed-example-64p.md)** for a full walkthrough with court-by-court start/end listings for all 5 rounds.
 
 ## Preseed walkthrough specs
 
 - **[082_preseed-example-16p.md](./082_preseed-example-16p.md)** — 16 players, 3 rounds
 - **[083_preseed-example-20p.md](./083_preseed-example-20p.md)** — 20 players, 4 rounds (asymmetric)
-- **[084_preseed-example-64p.md](./084_preseed-example-64p.md)** — 64 players, 5 rounds (complete path table)
+- **[088_preseed-example-64p.md](./088_preseed-example-64p.md)** — 64 players, 5 rounds (court-by-court walkthrough)
 
 ## Implementation
 

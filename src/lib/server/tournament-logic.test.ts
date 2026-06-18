@@ -1070,7 +1070,7 @@ describe('preseed redistribution: pair subdivision', () => {
 		}
 	});
 
-	it('64p (spec 084): deterministic paths match gold-race and winner-only rules', () => {
+	it('64p (spec 088): deterministic paths match gold-race and winner-only rules', () => {
 		const sizes = Array.from({ length: 16 }, () => 4);
 		const courts = 16;
 
