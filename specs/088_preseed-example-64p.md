@@ -679,6 +679,8 @@ Players finish in **listed order** (top player = 1st).
 
 ## Round 5
 
+Only **8 courts** (32 players) play round 5. The other 32 players were settled on R4 bottom courts (2, 4, 6, 8, 10, 12, 14, 16) and do not appear below.
+
 ### At the start of round 5
 
 **Court 1 (F1):** P01, P02, P03, P04

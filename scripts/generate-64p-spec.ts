@@ -210,6 +210,9 @@ for (let r = 1; r <= 5; r++) {
 	if (r === 1) {
 		md += `Round 1 assignments come from **snake seeding** across 16 courts.\n\n`;
 	}
+	if (r === 5) {
+		md += `Only **8 courts** (32 players) play round 5. The other 32 players were settled on R4 bottom courts (2, 4, 6, 8, 10, 12, 14, 16) and do not appear below.\n\n`;
+	}
 	md += formatStartOfRound(start, r);
 	md += formatEndOfRound(start, r);
 	if (r < 5) {
