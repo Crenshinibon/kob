@@ -895,6 +895,33 @@ describe('preseed redistribution: pair subdivision', () => {
 		}
 	});
 
+	it('R1→R2 (4 courts): 3rd on court 1 goes to loser bracket (courts 3-4), not court 2', () => {
+		const r1 = mockRankedCourts(4);
+		const r2 = processPreseedTransition(r1, [4, 4, 4, 4], true);
+
+		const winners = r2.slice(0, 2).flatMap((c) => c.playerIds);
+		const losers = r2.slice(2).flatMap((c) => c.playerIds);
+
+		// Player 3 finished 3rd on C1 in R1 → loser bracket
+		expect(losers).toContain(3);
+		expect(winners).not.toContain(3);
+		// Player 1 finished 1st on C1 → winner bracket
+		expect(winners).toContain(1);
+		expect(losers).not.toContain(1);
+	});
+
+	it('R1→R2 (8 courts): 3rd on court 1 goes to loser bracket (courts 5-8), not courts 1-4', () => {
+		const r1 = mockRankedCourts(8);
+		const r2 = processPreseedTransition(r1, eightCourtSizes, true);
+
+		const winners = r2.slice(0, 4).flatMap((c) => c.playerIds);
+		const losers = r2.slice(4).flatMap((c) => c.playerIds);
+
+		// Player 3 finished 3rd on C1 in R1 → loser bracket (courts 5-8)
+		expect(losers).toContain(3);
+		expect(winners).not.toContain(3);
+	});
+
 	it('R2→R3 (8 courts): four independent pairs, each split by finish position', () => {
 		const r2 = mockRankedCourts(8);
 		const r3 = processPreseedTransition(r2, eightCourtSizes, false);
@@ -917,7 +944,9 @@ describe('preseed redistribution: pair subdivision', () => {
 		expectPairFinishSplit(r3, r4, 3, 7, 8);
 	});
 
-	it('R2→R3 (8 courts): 3rd on court 1 drops within pair 1-2, not to courts 3-4', () => {
+	it('R2→R3 (8 courts): 3rd on winner court 1 (R2 result) drops to court 2 within pair, not courts 3-4', () => {
+		// Player 102 finished 3rd on C1 during Round 2 — C1 is in the winner bracket.
+		// R2→R3 pair split: 1sts+2nds from C1+C2 → C1, 3rds+4ths from C1+C2 → C2.
 		const r2 = [
 			mockCourtResult(1, [
 				{ playerId: 100, rank: 1, points: 60, diff: 0, matchCount: 3 },
