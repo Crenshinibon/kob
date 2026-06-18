@@ -147,7 +147,7 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		const matches = await db.select().from(match).where(eq(match.courtRotationId, rotation.id));
 
 		const access = await db
-			.select({ token: court.token, label: court.label, id: court.id })
+			.select({ label: court.label, id: court.id })
 			.from(court)
 			.where(eq(court.id, rotation.courtId))
 			.limit(1);
@@ -193,7 +193,7 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 			courtNumber: rotation.courtNumber,
 			courtSize: size,
 			matches,
-			token: access[0]?.token ?? null,
+			token: rotation.token ?? null,
 			label: access[0]?.label ?? null,
 			courtId: access[0]?.id ?? rotation.courtId,
 			players: rotationPlayers,

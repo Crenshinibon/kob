@@ -70,7 +70,6 @@
 	"failed_load_tournament": "Failed to load tournament: {error}",
 	"buy_me_coffee": "\u2615 Buy Me A Coffee",
 	"alt_logo": "King of the Beach",
-
 	"create_title": "Create Tournament",
 	"create_tournament_name": "Tournament Name",
 	"create_player_names": "Players",
@@ -150,7 +149,6 @@
 	"create_leftover_3p_ranking": "Total points (same as standard courts)",
 	"create_leftover_3p_rules": "Each player takes a solo turn against the pair.",
 	"create_leftover_ranking_label": "Ranking",
-
 	"court_title": "Court {number}",
 	"court_match": "Match {number}",
 	"court_team_a": "Team A",
@@ -198,7 +196,6 @@
 	"court_3p_table_avg": "Avg",
 	"court_3p_table_points": "Points",
 	"court_3p_table_diff": "Diff",
-
 	"standings_title": "Final Standings",
 	"standings_title_current": "Standings",
 	"standings_place": "Place",
@@ -219,11 +216,9 @@
 	"achievement_most_improved": "Most Improved",
 	"achievement_consistent": "Consistent Performer",
 	"achievement_court_champion": "Court Champion",
-
 	"status_active": "active",
 	"status_completed": "completed",
 	"status_archived": "archived",
-
 	"save": "Save",
 	"cancel": "Cancel",
 	"delete": "Delete",
@@ -244,8 +239,7 @@
 	"waiting_for_scores": "Waiting for all scores...",
 	"frozen_courts_title": "Settled Courts",
 	"frozen_courts_info": "These courts have completed their bracket and their standings are final.",
-	"frozen_after_round": "Settled after round {round}",
-
+	"frozen_after_round": "Done",
 	"login": "Log In",
 	"sign_up": "Sign Up",
 	"email": "Email",
@@ -267,15 +261,12 @@
 	"signup_creating": "Creating account...",
 	"signup_login_link": "Log in",
 	"signup_email_label": "Email",
-
 	"imprint_title": "Imprint / Legal Notice",
 	"imprint_legal_note": "This website is operated in accordance with EU Digital Services Act (DSA) requirements. The imprint provides legally required information about the service provider.",
-
 	"shifts_remaining": "{count} shifts remaining",
 	"virtual_court_info": "You have more courts than physical courts. This round will be played in {count} shifts.",
 	"shift_label": "Shift {current} of {total}",
 	"physical_court": "Physical Court {number}",
-
 	"format_random_seed": "Random Seed",
 	"format_preseed": "Preseed",
 	"scoring_single_set": "Single Set",
@@ -283,7 +274,6 @@
 	"scoring_custom": "Custom",
 	"scoring_mode_override": "Scoring Overrides",
 	"scoring_override_hint_court": "Customize scoring for different court sizes.",
-
 	"err_unauthorized": "Unauthorized",
 	"err_tournament_not_found": "Tournament not found",
 	"err_tournament_not_active": "Tournament is not active",
@@ -311,10 +301,8 @@
 	"err_court_error": "Court error",
 	"err_unknown": "Unknown",
 	"err_unknown_player": "Unknown",
-
 	"cookie_notice": "This site uses essential cookies for authentication and security.",
 	"cookie_learn_more": "Learn more",
-
 	"privacy_title": "Privacy & Cookies",
 	"privacy_cookies_heading": "Essential Cookies",
 	"privacy_cookies_desc": "This website uses essential cookies that are necessary for authentication and security. These cookies are required for the website to function properly and cannot be disabled.",
@@ -334,13 +322,11 @@
 	"privacy_storage_desc": "Your account information (email address) is stored securely in our database. We do not share your data with third parties.",
 	"privacy_questions_heading": "Questions?",
 	"privacy_questions_desc": "If you have questions about this policy, please contact the tournament organizer.",
-
 	"duration_setup": "Setup: {minutes} min",
 	"duration_round": "Round {round}: {minutes} min",
 	"duration_total": "~{hours}h {minutes}min",
 	"duration_hours": "h",
 	"duration_minutes": "min",
-
 	"plural_player": "{count, plural, one {1 player} other {{count} players}}",
 	"plural_court": "{count, plural, one {1 court} other {{count} courts}}",
 	"plural_round": "{count, plural, one {1 round} other {{count} rounds}}",

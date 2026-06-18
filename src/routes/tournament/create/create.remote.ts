@@ -183,6 +183,7 @@ export const createTournamentForm = form(
 				})
 				.returning();
 
+			const roundToken = crypto.randomBytes(16).toString('hex');
 			const [rotation] = await db
 				.insert(courtRotation)
 				.values({
@@ -190,6 +191,7 @@ export const createTournamentForm = form(
 					tournamentId: newTournament.id,
 					roundNumber: 1,
 					courtNumber: assignment.courtNumber,
+					token: roundToken,
 					courtSize: size,
 					player1Id: assignment.playerIds[0],
 					player2Id: assignment.playerIds[1],

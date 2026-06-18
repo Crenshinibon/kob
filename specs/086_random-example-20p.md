@@ -33,8 +33,8 @@ Round 4:    [C1] [C2] [C3] [C4] [C5]     (ladder: 1st/2nd up, 3rd/4th down) → 
 
 ## Round 1 Results
 
-| Court 1 | Court 2 | Court 3 | Court 4 | Court 5 |
-| ------- | ------- | ------- | ------- | ------- |
+| Court 1  | Court 2  | Court 3  | Court 4  | Court 5  |
+| -------- | -------- | -------- | -------- | -------- |
 | 1. A +28 | 1. B +22 | 1. C +20 | 1. D +18 | 1. E +16 |
 | 2. J +10 | 2. I +14 | 2. H +12 | 2. G +8  | 2. F +6  |
 | 3. K −8  | 3. L −4  | 3. M −2  | 3. N −6  | 3. O −10 |
@@ -63,12 +63,12 @@ Collect all players by finish position, sort each tier by points (desc), flatten
 
 ### Fill courts sequentially (4 per court)
 
-| Court 1 (top)  | Court 2        | Court 3      | Court 4      | Court 5 (bottom) |
-| --------------- | --------------- | ------------ | ------------ | ----------------- |
-| A (1st, +28)    | E (1st, +16)    | G (2nd, +8)  | N (3rd, −6)  | P (4th, −12)      |
-| B (1st, +22)    | I (2nd, +14)    | F (2nd, +6)  | K (3rd, −8)  | Q (4th, −20)      |
-| C (1st, +20)    | H (2nd, +12)    | M (3rd, −2)  | O (3rd, −10) | R (4th, −30)      |
-| D (1st, +18)    | J (2nd, +10)    | L (3rd, −4)  | ...          | ...               |
+| Court 1 (top) | Court 2      | Court 3     | Court 4      | Court 5 (bottom) |
+| ------------- | ------------ | ----------- | ------------ | ---------------- |
+| A (1st, +28)  | E (1st, +16) | G (2nd, +8) | N (3rd, −6)  | P (4th, −12)     |
+| B (1st, +22)  | I (2nd, +14) | F (2nd, +6) | K (3rd, −8)  | Q (4th, −20)     |
+| C (1st, +20)  | H (2nd, +12) | M (3rd, −2) | O (3rd, −10) | R (4th, −30)     |
+| D (1st, +18)  | J (2nd, +10) | L (3rd, −4) | ...          | ...              |
 
 Wait — let me fill exactly from the flattened list:
 
@@ -91,12 +91,12 @@ Court 1 gets 4 of 5 winners (the strongest). E (the weakest winner) starts on Co
 
 ## Round 2 Results
 
-| Court 1 | Court 2 | Court 3 | Court 4 | Court 5 |
-| ------- | ------- | ------- | ------- | ------- |
-| 1. A +24 | 1. E +20 | 1. G +10 | 1. P +8  | 1. Q +6  |
-| 2. B +18 | 2. I +12 | 2. F +4  | 2. N +4  | 2. R +2  |
-| 3. C −6  | 3. H −2  | 3. M −4  | 3. K −8  | 3. T −4  |
-| 4. D −36 | 4. J −30 | 4. L −10 | 4. O −4  | 4. S −4  |
+| Court 1  | Court 2  | Court 3  | Court 4 | Court 5 |
+| -------- | -------- | -------- | ------- | ------- |
+| 1. A +24 | 1. E +20 | 1. G +10 | 1. P +8 | 1. Q +6 |
+| 2. B +18 | 2. I +12 | 2. F +4  | 2. N +4 | 2. R +2 |
+| 3. C −6  | 3. H −2  | 3. M −4  | 3. K −8 | 3. T −4 |
+| 4. D −36 | 4. J −30 | 4. L −10 | 4. O −4 | 4. S −4 |
 
 ---
 
@@ -112,23 +112,23 @@ Court 5 ← C4[3rd+4th] + C5[3rd+4th]  →  K, O, T, S
 
 ### Round 3 Courts
 
-| Court 1     | Court 2     | Court 3     | Court 4     | Court 5     |
-| ----------- | ----------- | ----------- | ----------- | ----------- |
-| A (C1 stays) | C (C1 ↓)    | H (C2 ↓)    | M (C3 ↓)    | K (C4 ↓)    |
-| B (C1 stays) | D (C1 ↓)    | J (C2 ↓)    | L (C3 ↓)    | O (C4 ↓)    |
-| E (C2 ↑)    | G (C3 ↑)    | P (C4 ↑)    | Q (C5 ↑)    | T (C5 stays) |
-| I (C2 ↑)    | F (C3 ↑)    | N (C4 ↑)    | R (C5 ↑)    | S (C5 stays) |
+| Court 1      | Court 2  | Court 3  | Court 4  | Court 5      |
+| ------------ | -------- | -------- | -------- | ------------ |
+| A (C1 stays) | C (C1 ↓) | H (C2 ↓) | M (C3 ↓) | K (C4 ↓)     |
+| B (C1 stays) | D (C1 ↓) | J (C2 ↓) | L (C3 ↓) | O (C4 ↓)     |
+| E (C2 ↑)     | G (C3 ↑) | P (C4 ↑) | Q (C5 ↑) | T (C5 stays) |
+| I (C2 ↑)     | F (C3 ↑) | N (C4 ↑) | R (C5 ↑) | S (C5 stays) |
 
 ---
 
 ## Round 3 Results
 
-| Court 1 | Court 2 | Court 3 | Court 4 | Court 5 |
-| ------- | ------- | ------- | ------- | ------- |
-| 1. A +26 | 1. G +14 | 1. P +10 | 1. Q +8  | 1. T +6  |
-| 2. E +16 | 2. C +8  | 2. N +4  | 2. R +4  | 2. K +2  |
-| 3. B +4  | 3. F −2  | 3. H −8  | 3. M −4  | 3. O −8  |
-| 4. I −46 | 4. D −20 | 4. J −6  | 4. L −8  | 4. S −10 |
+| Court 1  | Court 2  | Court 3  | Court 4 | Court 5  |
+| -------- | -------- | -------- | ------- | -------- |
+| 1. A +26 | 1. G +14 | 1. P +10 | 1. Q +8 | 1. T +6  |
+| 2. E +16 | 2. C +8  | 2. N +4  | 2. R +4 | 2. K +2  |
+| 3. B +4  | 3. F −2  | 3. H −8  | 3. M −4 | 3. O −8  |
+| 4. I −46 | 4. D −20 | 4. J −6  | 4. L −8 | 4. S −10 |
 
 ---
 
@@ -144,23 +144,23 @@ Court 5 ← C4[3rd+4th] + C5[3rd+4th]  →  M, L, O, S
 
 ### Round 4 Courts (Final Round)
 
-| Court 1     | Court 2     | Court 3     | Court 4     | Court 5     |
-| ----------- | ----------- | ----------- | ----------- | ----------- |
-| A (C1 stays) | B (C1 ↓)    | F (C2 ↓)    | H (C3 ↓)    | M (C4 ↓)    |
-| E (C1 stays) | I (C1 ↓)    | D (C2 ↓)    | J (C3 ↓)    | L (C4 ↓)    |
-| G (C2 ↑)    | P (C3 ↑)    | Q (C4 ↑)    | T (C5 ↑)    | O (C5 stays) |
-| C (C2 ↑)    | N (C3 ↑)    | R (C4 ↑)    | K (C5 ↑)    | S (C5 stays) |
+| Court 1      | Court 2  | Court 3  | Court 4  | Court 5      |
+| ------------ | -------- | -------- | -------- | ------------ |
+| A (C1 stays) | B (C1 ↓) | F (C2 ↓) | H (C3 ↓) | M (C4 ↓)     |
+| E (C1 stays) | I (C1 ↓) | D (C2 ↓) | J (C3 ↓) | L (C4 ↓)     |
+| G (C2 ↑)     | P (C3 ↑) | Q (C4 ↑) | T (C5 ↑) | O (C5 stays) |
+| C (C2 ↑)     | N (C3 ↑) | R (C4 ↑) | K (C5 ↑) | S (C5 stays) |
 
 ---
 
 ## Round 4 Results (Final Standings)
 
-| Court 1 | Court 2 | Court 3 | Court 4 | Court 5 |
-| ------- | ------- | ------- | ------- | ------- |
-| 1. A +22 | 1. G +16 | 1. Q +10 | 1. T +8  | 1. O +6  |
-| 2. E +14 | 2. P +8  | 2. R +4  | 2. H +4  | 2. K +2  |
-| 3. C +2  | 3. N −4  | 3. F −6  | 3. J −4  | 3. M −8  |
-| 4. B −38 | 4. I −20 | 4. D −8  | 4. L −8  | 4. S −10 |
+| Court 1  | Court 2  | Court 3  | Court 4 | Court 5  |
+| -------- | -------- | -------- | ------- | -------- |
+| 1. A +22 | 1. G +16 | 1. Q +10 | 1. T +8 | 1. O +6  |
+| 2. E +14 | 2. P +8  | 2. R +4  | 2. H +4 | 2. K +2  |
+| 3. C +2  | 3. N −4  | 3. F −6  | 3. J −4 | 3. M −8  |
+| 4. B −38 | 4. I −20 | 4. D −8  | 4. L −8 | 4. S −10 |
 
 ---
 

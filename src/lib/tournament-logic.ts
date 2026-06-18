@@ -412,8 +412,7 @@ export function redistributePreseedRecursive(
 
 	const sizes = courtSizes ?? Array(N).fill(4);
 
-	if (N === 1)
-		return [{ courtNumber: 1, playerIds: sorted[0].standings.map((s) => s.playerId) }];
+	if (N === 1) return [{ courtNumber: 1, playerIds: sorted[0].standings.map((s) => s.playerId) }];
 
 	// Build tiers grouped by finish position across ALL input courts
 	const maxRank = Math.max(...sorted.map((c) => c.standings.length));

@@ -35,8 +35,8 @@ Players assigned randomly. Seed points irrelevant for random format.
 
 ## Round 1 Results
 
-| Court 1 | Court 2 | Court 3 |
-| ------- | ------- | ------- |
+| Court 1  | Court 2  | Court 3  |
+| -------- | -------- | -------- |
 | 1. A +24 | 1. B +18 | 1. D +16 |
 | 2. F +8  | 2. E +14 | 2. C +12 |
 | 3. G −6  | 3. H −2  | 3. I +4  |
@@ -66,11 +66,11 @@ Collect all players by finish position, sort each tier by points (desc), flatten
 ### Fill courts sequentially (4 per court)
 
 | Court 1 (top) | Court 2 (mid) | Court 3 (bottom) |
-| ------------- | ------------- | ----------------- |
-| A (1st)       | C (2nd)       | G (3rd)           |
-| B (1st)       | F (2nd)       | J (4th)           |
-| D (1st)       | I (3rd)       | K (4th)           |
-| E (2nd)       | H (3rd)       | L (4th)           |
+| ------------- | ------------- | ---------------- |
+| A (1st)       | C (2nd)       | G (3rd)          |
+| B (1st)       | F (2nd)       | J (4th)          |
+| D (1st)       | I (3rd)       | K (4th)          |
+| E (2nd)       | H (3rd)       | L (4th)          |
 
 Court 1 gets the 3 winners plus the best 2nd-place player. Court 3 gets the 3 worst players plus the best 3rd-place.
 
@@ -78,12 +78,12 @@ Court 1 gets the 3 winners plus the best 2nd-place player. Court 3 gets the 3 wo
 
 ## Round 2 Results
 
-| Court 1 | Court 2 | Court 3 |
-| ------- | ------- | ------- |
-| 1. A +20 | 1. I +16 | 1. H +8  |
-| 2. B +10 | 2. C +4  | 2. K +2  |
-| 3. D −8  | 3. F −2  | 3. G −6  |
-| 4. E −22 | 4. J −18 | 4. L −4  |
+| Court 1  | Court 2  | Court 3 |
+| -------- | -------- | ------- |
+| 1. A +20 | 1. I +16 | 1. H +8 |
+| 2. B +10 | 2. C +4  | 2. K +2 |
+| 3. D −8  | 3. F −2  | 3. G −6 |
+| 4. E −22 | 4. J −18 | 4. L −4 |
 
 ---
 
@@ -99,23 +99,23 @@ Court 3 ← C2[3rd+4th] + C3[3rd+4th]  →  F, J, G, L
 
 ### Round 3 Courts
 
-| Court 1     | Court 2     | Court 3     |
-| ----------- | ----------- | ----------- |
-| A (C1 stays) | D (C1 ↓)    | F (C2 ↓)    |
-| B (C1 stays) | E (C1 ↓)    | J (C2 ↓)    |
-| I (C2 ↑)    | H (C3 ↑)    | G (C3 stays) |
-| C (C2 ↑)    | K (C3 ↑)    | L (C3 stays) |
+| Court 1      | Court 2  | Court 3      |
+| ------------ | -------- | ------------ |
+| A (C1 stays) | D (C1 ↓) | F (C2 ↓)     |
+| B (C1 stays) | E (C1 ↓) | J (C2 ↓)     |
+| I (C2 ↑)     | H (C3 ↑) | G (C3 stays) |
+| C (C2 ↑)     | K (C3 ↑) | L (C3 stays) |
 
 ---
 
 ## Round 3 Results
 
-| Court 1 | Court 2 | Court 3 |
-| ------- | ------- | ------- |
-| 1. A +22 | 1. H +14 | 1. K +6  |
-| 2. I +12 | 2. D +4  | 2. F +2  |
-| 3. C +2  | 3. E −6  | 3. G −4  |
-| 4. B −36 | 4. J −12 | 4. L −4  |
+| Court 1  | Court 2  | Court 3 |
+| -------- | -------- | ------- |
+| 1. A +22 | 1. H +14 | 1. K +6 |
+| 2. I +12 | 2. D +4  | 2. F +2 |
+| 3. C +2  | 3. E −6  | 3. G −4 |
+| 4. B −36 | 4. J −12 | 4. L −4 |
 
 ---
 
@@ -129,23 +129,23 @@ Court 3 ← C2[3rd+4th] + C3[3rd+4th]  →  E, J, G, L
 
 ### Round 4 Courts (Final Round)
 
-| Court 1     | Court 2     | Court 3     |
-| ----------- | ----------- | ----------- |
-| A (C1 stays) | C (C1 ↓)    | E (C2 ↓)    |
-| I (C1 stays) | B (C1 ↓)    | J (C2 ↓)    |
-| H (C2 ↑)    | K (C3 ↑)    | G (C3 stays) |
-| D (C2 ↑)    | F (C3 ↑)    | L (C3 stays) |
+| Court 1      | Court 2  | Court 3      |
+| ------------ | -------- | ------------ |
+| A (C1 stays) | C (C1 ↓) | E (C2 ↓)     |
+| I (C1 stays) | B (C1 ↓) | J (C2 ↓)     |
+| H (C2 ↑)     | K (C3 ↑) | G (C3 stays) |
+| D (C2 ↑)     | F (C3 ↑) | L (C3 stays) |
 
 ---
 
 ## Round 4 Results (Final Standings)
 
-| Court 1 | Court 2 | Court 3 |
-| ------- | ------- | ------- |
-| 1. A +18 | 1. K +10 | 1. G +6  |
-| 2. H +14 | 2. D +8  | 2. F +2  |
-| 3. I +4  | 3. C +0  | 3. E −8  |
-| 4. B −36 | 4. J −18 | 4. L −4  |
+| Court 1  | Court 2  | Court 3 |
+| -------- | -------- | ------- |
+| 1. A +18 | 1. K +10 | 1. G +6 |
+| 2. H +14 | 2. D +8  | 2. F +2 |
+| 3. I +4  | 3. C +0  | 3. E −8 |
+| 4. B −36 | 4. J −18 | 4. L −4 |
 
 ---
 

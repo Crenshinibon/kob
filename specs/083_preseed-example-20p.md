@@ -123,10 +123,10 @@ Same assumption: players finish in listed order.
 
 | Court 1 (WW⊤) | Court 2 (WW⊥) | Court 3 (LW⊤) | Court 4 (LW⊥) | Court 5 (L) |
 | :-----------: | :-----------: | :-----------: | :-----------: | :---------: |
-|   A (C1)    |   L (C1)    |   C (C3)    |   I (C3)    |   O (L5)    |
-|   B (C2)    |   J (C2)    |   D (C4)    |   P (C4)    |   R (L5)    |
-|   E (C1)    |   M (C1)    |   F (C3)    |   N (C3)    |   T (L5)    |
-|   G (C2)    |   Q (C2)    |   H (C4)    |   K (C4)    |   S (L5)    |
+|    A (C1)     |    L (C1)     |    C (C3)     |    I (C3)     |   O (L5)    |
+|    B (C2)     |    J (C2)     |    D (C4)     |    P (C4)     |   R (L5)    |
+|    E (C1)     |    M (C1)     |    F (C3)     |    N (C3)     |   T (L5)    |
+|    G (C2)     |    Q (C2)     |    H (C4)     |    K (C4)     |   S (L5)    |
 
 ---
 
@@ -161,37 +161,37 @@ Courts 1–4 each subdivide in pairs using the **same algorithm** as every other
 
 | Final | TL  | L5 (frozen) |
 | :---: | :-: | :---------: |
-|   A   |  D  |     O       |
-|   B   |  C  |     R       |
-|   G   |  H  |     T       |
-|   E   |  F  |     S       |
+|   A   |  D  |      O      |
+|   B   |  C  |      R      |
+|   G   |  H  |      T      |
+|   E   |  F  |      S      |
 
 ---
 
 ## Final Standings
 
-| Rank | Player | Determined by |
-| :--: | :----: | :-----------: |
-| 1st  | **A**  | Final (R4 C1) 1st |
-| 2nd  |   B    | Final (R4 C1) 2nd |
-| 3rd  |   G    | Final (R4 C1) 3rd |
-| 4th  |   E    | Final (R4 C1) 4th |
+| Rank | Player |             Determined by             |
+| :--: | :----: | :-----------------------------------: |
+| 1st  | **A**  |           Final (R4 C1) 1st           |
+| 2nd  |   B    |           Final (R4 C1) 2nd           |
+| 3rd  |   G    |           Final (R4 C1) 3rd           |
+| 4th  |   E    |           Final (R4 C1) 4th           |
 | 5th  |   L    | WL (R3 C2) 1st — out of gold after R2 |
-| 6th  |   J    | WL (R3 C2) 2nd |
-| 7th  |   M    | WL (R3 C2) 3rd |
-| 8th  |   Q    | WL (R3 C2) 4th |
-| 9th  |   D    | TL (R4 C2) 1st |
-| 10th |   C    | TL (R4 C2) 2nd |
-| 11th |   H    | TL (R4 C2) 3rd |
-| 12th |   F    | TL (R4 C2) 4th |
-| 13th |   P    | LL (R3 C4) 1st |
-| 14th |   I    | LL (R3 C4) 2nd |
-| 15th |   K    | LL (R3 C4) 3rd |
-| 16th |   N    | LL (R3 C4) 4th |
-| 17th |   O    | L5 (R2+) 1st |
-| 18th |   R    | L5 (R2+) 2nd |
-| 19th |   T    | L5 (R2+) 3rd |
-| 20th |   S    | L5 (R2+) 4th |
+| 6th  |   J    |            WL (R3 C2) 2nd             |
+| 7th  |   M    |            WL (R3 C2) 3rd             |
+| 8th  |   Q    |            WL (R3 C2) 4th             |
+| 9th  |   D    |            TL (R4 C2) 1st             |
+| 10th |   C    |            TL (R4 C2) 2nd             |
+| 11th |   H    |            TL (R4 C2) 3rd             |
+| 12th |   F    |            TL (R4 C2) 4th             |
+| 13th |   P    |            LL (R3 C4) 1st             |
+| 14th |   I    |            LL (R3 C4) 2nd             |
+| 15th |   K    |            LL (R3 C4) 3rd             |
+| 16th |   N    |            LL (R3 C4) 4th             |
+| 17th |   O    |             L5 (R2+) 1st              |
+| 18th |   R    |             L5 (R2+) 2nd              |
+| 19th |   T    |             L5 (R2+) 3rd              |
+| 20th |   S    |             L5 (R2+) 4th              |
 
 ---
 

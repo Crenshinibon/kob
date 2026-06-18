@@ -1160,7 +1160,8 @@ describe('preseed redistribution: pair subdivision', () => {
 		expect(assignments).toHaveLength(16);
 		expect(assignments.flatMap((a) => a.playerIds)).toHaveLength(64);
 
-		const courtOf = (pid: number) => assignments.find((a) => a.playerIds.includes(pid))!.courtNumber;
+		const courtOf = (pid: number) =>
+			assignments.find((a) => a.playerIds.includes(pid))!.courtNumber;
 
 		// P01: gold path → top court in R5
 		expect(courtOf(1)).toBe(1);

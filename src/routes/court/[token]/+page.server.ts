@@ -15,8 +15,24 @@ import {
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const token = params.token;
 
-	// Get court by token
-	const [courtRecord] = await db.select().from(court).where(eq(court.token, token));
+	// Try rotation token first (round-specific link)
+	const [rotationByToken] = await db
+		.select()
+		.from(courtRotation)
+		.where(eq(courtRotation.token, token));
+
+	let courtRecord: typeof court.$inferSelect | undefined;
+	let rotation: typeof courtRotation.$inferSelect | undefined;
+
+	if (rotationByToken) {
+		rotation = rotationByToken;
+		const [foundCourt] = await db.select().from(court).where(eq(court.id, rotationByToken.courtId));
+		courtRecord = foundCourt;
+	} else {
+		// Fallback to stable court token (backward compatibility)
+		const [foundCourt] = await db.select().from(court).where(eq(court.token, token));
+		courtRecord = foundCourt;
+	}
 
 	if (!courtRecord) throw error(404, m.not_found());
 
@@ -30,9 +46,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const currentRound = tourney.currentRound || 0;
 
-	// Find rotation for current round on this court
-	let rotation: typeof courtRotation.$inferSelect | undefined;
-	if (currentRound > 0) {
+	// If no rotation yet (stable token path), find rotation for current round
+	if (!rotation && currentRound > 0) {
 		const [found] = await db
 			.select()
 			.from(courtRotation)

@@ -6,6 +6,7 @@ import * as m from '$lib/paraglide/messages';
 import { db } from '$lib/server/db';
 import { tournament, player, courtRotation, match, court } from '$lib/server/db/schema';
 import { eq, and, inArray, isNull, or, asc } from 'drizzle-orm';
+import crypto from 'crypto';
 import {
 	createInitialState,
 	addPlayers,
@@ -275,6 +276,7 @@ export const closeRoundForm = form(
 					and(eq(court.tournamentId, tournamentId), eq(court.courtNumber, assignment.courtNumber))
 				);
 
+			const roundToken = crypto.randomBytes(16).toString('hex');
 			const [rotation] = await db
 				.insert(courtRotation)
 				.values({
@@ -282,6 +284,7 @@ export const closeRoundForm = form(
 					tournamentId: tournamentId,
 					roundNumber: nextRoundNumber,
 					courtNumber: assignment.courtNumber,
+					token: roundToken,
 					courtSize: size,
 					player1Id: assignment.playerIds[0],
 					player2Id: assignment.playerIds[1],
@@ -740,6 +743,7 @@ export const retirePlayer = command(
 					and(eq(court.tournamentId, tournamentId), eq(court.courtNumber, assignment.courtNumber))
 				);
 
+			const roundToken = crypto.randomBytes(16).toString('hex');
 			const [newRotation] = await db
 				.insert(courtRotation)
 				.values({
@@ -747,6 +751,7 @@ export const retirePlayer = command(
 					tournamentId: tournamentId,
 					roundNumber: currentRound,
 					courtNumber: assignment.courtNumber,
+					token: roundToken,
 					courtSize: size,
 					player1Id: assignment.playerIds[0],
 					player2Id: assignment.playerIds[1],
@@ -1093,12 +1098,7 @@ export const undoRetirement = command(
 			const formatType = tourney.formatType as FormatType;
 			if (formatType === 'preseed') {
 				const totalCourts = calculateCourtSizes(tourney.playerCount).length;
-				nextAssignments = processPreseedTransition(
-					results,
-					courtSizes,
-					prevRound - 1,
-					totalCourts
-				);
+				nextAssignments = processPreseedTransition(results, courtSizes, prevRound - 1, totalCourts);
 			} else if (prevRound === 1) {
 				nextAssignments = verticalSeeding(results, courtSizes.length, courtSizes);
 			} else {
@@ -1152,6 +1152,7 @@ export const undoRetirement = command(
 					and(eq(court.tournamentId, tournamentId), eq(court.courtNumber, assignment.courtNumber))
 				);
 
+			const roundToken = crypto.randomBytes(16).toString('hex');
 			const [newRotation] = await db
 				.insert(courtRotation)
 				.values({
@@ -1159,6 +1160,7 @@ export const undoRetirement = command(
 					tournamentId: tournamentId,
 					roundNumber: currentRound,
 					courtNumber: assignment.courtNumber,
+					token: roundToken,
 					courtSize: size,
 					player1Id: assignment.playerIds[0],
 					player2Id: assignment.playerIds[1],

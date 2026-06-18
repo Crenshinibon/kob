@@ -236,7 +236,7 @@
 	"waiting_for_scores": "Esperando resultados...",
 	"frozen_courts_title": "Canchas definidas",
 	"frozen_courts_info": "Estas canchas han completado su llave y sus posiciones son definitivas.",
-	"frozen_after_round": "Definida después de la ronda {round}",
+	"frozen_after_round": "Definida!",
 	"login": "Iniciar sesión",
 	"sign_up": "Registrarse",
 	"email": "Correo electrónico",

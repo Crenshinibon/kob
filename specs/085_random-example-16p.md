@@ -33,8 +33,8 @@ Round 4:    [C1] [C2] [C3] [C4]     (ladder: 1st/2nd up, 3rd/4th down) → Final
 
 ## Round 1 Results
 
-| Court 1 | Court 2 | Court 3 | Court 4 |
-| ------- | ------- | ------- | ------- |
+| Court 1  | Court 2  | Court 3  | Court 4  |
+| -------- | -------- | -------- | -------- |
 | 1. A +24 | 1. B +20 | 1. C +18 | 1. D +16 |
 | 2. H +8  | 2. J +10 | 2. F +12 | 2. E +14 |
 | 3. I −12 | 3. G −6  | 3. K −4  | 3. L −8  |
@@ -66,11 +66,11 @@ Collect all players by finish position, sort each tier by points (desc), flatten
 With 4 courts × 4 players and exactly 4 players per tier, each tier fills exactly one court:
 
 | Court 1 (1sts) | Court 2 (2nds) | Court 3 (3rds) | Court 4 (4ths) |
-| --------------- | --------------- | --------------- | --------------- |
-| A (+24)         | E (+14)         | K (−4)          | P (−20)         |
-| B (+20)         | F (+12)         | G (−6)          | M (−22)         |
-| C (+18)         | J (+10)         | L (−8)          | O (−24)         |
-| D (+16)         | H (+8)          | I (−12)         | N (−26)         |
+| -------------- | -------------- | -------------- | -------------- |
+| A (+24)        | E (+14)        | K (−4)         | P (−20)        |
+| B (+20)        | F (+12)        | G (−6)         | M (−22)        |
+| C (+18)        | J (+10)        | L (−8)         | O (−24)        |
+| D (+16)        | H (+8)         | I (−12)        | N (−26)        |
 
 16p is the special case where each tier (4 players) fills exactly one court.
 
@@ -78,12 +78,12 @@ With 4 courts × 4 players and exactly 4 players per tier, each tier fills exact
 
 ## Round 2 Results
 
-| Court 1 | Court 2 | Court 3 | Court 4 |
-| ------- | ------- | ------- | ------- |
-| 1. A +20 | 1. E +16 | 1. K +6  | 1. P +4  |
-| 2. B +12 | 2. F +8  | 2. G +2  | 2. M +2  |
-| 3. C −4  | 3. J −2  | 3. L −6  | 3. O −6  |
-| 4. D −28 | 4. H −22 | 4. I −2  | 4. N −10 |
+| Court 1  | Court 2  | Court 3 | Court 4  |
+| -------- | -------- | ------- | -------- |
+| 1. A +20 | 1. E +16 | 1. K +6 | 1. P +4  |
+| 2. B +12 | 2. F +8  | 2. G +2 | 2. M +2  |
+| 3. C −4  | 3. J −2  | 3. L −6 | 3. O −6  |
+| 4. D −28 | 4. H −22 | 4. I −2 | 4. N −10 |
 
 ---
 
@@ -98,19 +98,19 @@ Court 4 ← C3[3rd+4th] + C4[3rd+4th]  →  L, I, O, N
 
 ### Round 3 Courts
 
-| Court 1     | Court 2     | Court 3     | Court 4     |
-| ----------- | ----------- | ----------- | ----------- |
-| A (C1 stays) | C (C1 ↓)    | J (C2 ↓)    | L (C3 ↓)    |
-| B (C1 stays) | D (C1 ↓)    | H (C2 ↓)    | I (C3 ↓)    |
-| E (C2 ↑)    | K (C3 ↑)    | P (C4 ↑)    | O (C4 stays) |
-| F (C2 ↑)    | G (C3 ↑)    | M (C4 ↑)    | N (C4 stays) |
+| Court 1      | Court 2  | Court 3  | Court 4      |
+| ------------ | -------- | -------- | ------------ |
+| A (C1 stays) | C (C1 ↓) | J (C2 ↓) | L (C3 ↓)     |
+| B (C1 stays) | D (C1 ↓) | H (C2 ↓) | I (C3 ↓)     |
+| E (C2 ↑)     | K (C3 ↑) | P (C4 ↑) | O (C4 stays) |
+| F (C2 ↑)     | G (C3 ↑) | M (C4 ↑) | N (C4 stays) |
 
 ---
 
 ## Round 3 Results
 
-| Court 1 | Court 2 | Court 3 | Court 4 |
-| ------- | ------- | ------- | ------- |
+| Court 1  | Court 2  | Court 3  | Court 4  |
+| -------- | -------- | -------- | -------- |
 | 1. A +22 | 1. K +10 | 1. P +8  | 1. O +4  |
 | 2. E +14 | 2. C +6  | 2. J +4  | 2. I +2  |
 | 3. B +2  | 3. G −4  | 3. M −2  | 3. N −6  |
@@ -129,23 +129,23 @@ Court 4 ← C3[3rd+4th] + C4[3rd+4th]  →  M, H, N, L
 
 ### Round 4 Courts (Final Round)
 
-| Court 1     | Court 2     | Court 3     | Court 4     |
-| ----------- | ----------- | ----------- | ----------- |
-| A (C1 stays) | B (C1 ↓)    | G (C2 ↓)    | M (C3 ↓)    |
-| E (C1 stays) | F (C1 ↓)    | D (C2 ↓)    | H (C3 ↓)    |
-| K (C2 ↑)    | P (C3 ↑)    | O (C4 ↑)    | N (C4 stays) |
-| C (C2 ↑)    | J (C3 ↑)    | I (C4 ↑)    | L (C4 stays) |
+| Court 1      | Court 2  | Court 3  | Court 4      |
+| ------------ | -------- | -------- | ------------ |
+| A (C1 stays) | B (C1 ↓) | G (C2 ↓) | M (C3 ↓)     |
+| E (C1 stays) | F (C1 ↓) | D (C2 ↓) | H (C3 ↓)     |
+| K (C2 ↑)     | P (C3 ↑) | O (C4 ↑) | N (C4 stays) |
+| C (C2 ↑)     | J (C3 ↑) | I (C4 ↑) | L (C4 stays) |
 
 ---
 
 ## Round 4 Results (Final Standings)
 
-| Court 1 | Court 2 | Court 3 | Court 4 |
-| ------- | ------- | ------- | ------- |
-| 1. A +18 | 1. P +10 | 1. O +8  | 1. N +4  |
-| 2. E +12 | 2. B +6  | 2. I +4  | 2. H +2  |
-| 3. K +4  | 3. J −2  | 3. G −6  | 3. M −6  |
-| 4. C −34 | 4. F −14 | 4. D −6  | 4. L −8  |
+| Court 1  | Court 2  | Court 3 | Court 4 |
+| -------- | -------- | ------- | ------- |
+| 1. A +18 | 1. P +10 | 1. O +8 | 1. N +4 |
+| 2. E +12 | 2. B +6  | 2. I +4 | 2. H +2 |
+| 3. K +4  | 3. J −2  | 3. G −6 | 3. M −6 |
+| 4. C −34 | 4. F −14 | 4. D −6 | 4. L −8 |
 
 ---
 
