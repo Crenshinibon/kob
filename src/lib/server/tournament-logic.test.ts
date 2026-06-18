@@ -971,19 +971,60 @@ describe('preseed redistribution: pair subdivision', () => {
 		expectPairFinishSplit(r2, r3, 3, 7, 8);
 	});
 
-	it('R3→R4 (8 courts): winner-only pairs — only top court from each pair continues', () => {
+	it('R3→R4 (8 courts): first-split on each quarter — like 4-court preseed R1→R2', () => {
 		const r3 = mockRankedCourts(8);
 		const r4 = processPreseedTransition(r3, eightCourtSizes, 2);
 
-		expect(r4).toHaveLength(4);
-		expectSamePlayerSet(r4[0].playerIds, [1, 2, 3, 4]);
-		expectSamePlayerSet(r4[1].playerIds, [9, 10, 11, 12]);
-		expectSamePlayerSet(r4[2].playerIds, [17, 18, 19, 20]);
-		expectSamePlayerSet(r4[3].playerIds, [25, 26, 27, 28]);
+		expect(r4).toHaveLength(8);
+		expect(new Set(r4.flatMap((c) => c.playerIds)).size).toBe(32);
 
-		for (const pid of [5, 6, 7, 8, 13, 14, 15, 16]) {
-			expect(r4.flatMap((c) => c.playerIds)).not.toContain(pid);
-		}
+		// Winner half [C1–C4]: global tier split within the quarter
+		expectSamePlayerSet(r4[0].playerIds, [1, 5, 2, 6]);
+		expectSamePlayerSet(r4[1].playerIds, [3, 7, 4, 8]);
+		expectSamePlayerSet(r4[2].playerIds, [9, 13, 10, 14]);
+		expectSamePlayerSet(r4[3].playerIds, [11, 15, 12, 16]);
+		// Loser half [C5–C8]
+		expectSamePlayerSet(r4[4].playerIds, [17, 21, 18, 22]);
+		expectSamePlayerSet(r4[5].playerIds, [19, 23, 20, 24]);
+		expectSamePlayerSet(r4[6].playerIds, [25, 29, 26, 30]);
+		expectSamePlayerSet(r4[7].playerIds, [27, 31, 28, 32]);
+	});
+
+	it('R3 top-4 (64p gold quarter): first-split matches 4-court preseed R1→R2', () => {
+		const r3Top4 = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 0, matchCount: 3 },
+				{ playerId: 3, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 10, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 12, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 2, rank: 1, points: 60, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 11, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 17, rank: 1, points: 60, diff: 0, matchCount: 3 },
+				{ playerId: 19, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 26, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 28, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 18, rank: 1, points: 60, diff: 0, matchCount: 3 },
+				{ playerId: 20, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 25, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 27, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			])
+		];
+
+		const r4 = redistributePreseedRecursive(r3Top4);
+
+		expect(r4).toHaveLength(4);
+		expectSamePlayerSet(r4[0].playerIds, [1, 4, 17, 20]);
+		expectSamePlayerSet(r4[1].playerIds, [2, 3, 18, 19]);
+		expectSamePlayerSet(r4[2].playerIds, [9, 12, 25, 28]);
+		expectSamePlayerSet(r4[3].playerIds, [10, 11, 26, 27]);
 	});
 
 	it('R2→R3 (8 courts): 3rd on winner court 1 (R2 result) drops to court 2 within pair, not courts 3-4', () => {
@@ -1057,20 +1098,18 @@ describe('preseed redistribution: pair subdivision', () => {
 		}));
 
 		const r4 = processPreseedTransition(results, sizes, 2);
-		expect(new Set(r4.flatMap((c) => c.playerIds)).size).toBe(16);
-		expect(r4).toHaveLength(4);
+		expect(new Set(r4.flatMap((c) => c.playerIds)).size).toBe(32);
+		expect(r4).toHaveLength(8);
 		for (const c of r4) expect(c.playerIds).toHaveLength(4);
 
-		const r3BottomCourts = [2, 4, 6, 8].flatMap((courtNum) => {
-			const court = results.find((r) => r.courtNumber === courtNum)!;
-			return court.standings.map((s) => s.playerId);
-		});
-		for (const pid of r3BottomCourts) {
-			expect(r4.flatMap((c) => c.playerIds)).not.toContain(pid);
-		}
+		const r3Results = results;
+		expectPairFinishSplit(r3Results, r4, 0, 1, 2);
+		expectPairFinishSplit(r3Results, r4, 1, 3, 4);
+		expectPairFinishSplit(r3Results, r4, 2, 5, 6);
+		expectPairFinishSplit(r3Results, r4, 3, 7, 8);
 	});
 
-	it('64p (spec 088): deterministic paths match gold-race and winner-only rules', () => {
+	it('64p (spec 088): all 64 players play round 5; gold-race elimination preserved', () => {
 		const sizes = Array.from({ length: 16 }, () => 4);
 		const courts = 16;
 
@@ -1105,25 +1144,37 @@ describe('preseed redistribution: pair subdivision', () => {
 
 		let assignments = snake(Array.from({ length: 64 }, (_, i) => i + 1));
 		let results = toResults(assignments);
+
 		for (const rc of [0, 1, 2, 3]) {
 			const next = processPreseedTransition(results, sizes, rc, courts);
 			assignments = next.map((a) => ({ courtNumber: a.courtNumber, playerIds: [...a.playerIds] }));
 			results = toResults(assignments);
 		}
 
-		expect(assignments).toHaveLength(8);
-		expect(assignments.flatMap((a) => a.playerIds)).toHaveLength(32);
+		expect(assignments).toHaveLength(16);
+		expect(assignments.flatMap((a) => a.playerIds)).toHaveLength(64);
 
 		const courtOf = (pid: number) => assignments.find((a) => a.playerIds.includes(pid))!.courtNumber;
 
-		// P01: gold path → F1 (court 1)
+		// P01: gold path → top court in R5
 		expect(courtOf(1)).toBe(1);
-		// P09: settled — bottom court of pair (1,2) in R4
-		expect(assignments.flatMap((a) => a.playerIds)).not.toContain(9);
-		// P64: settled — never reaches R5
-		expect(assignments.flatMap((a) => a.playerIds)).not.toContain(64);
-		// P33: loser-bracket top path → T9 (court 5 after renumber)
-		expect(courtOf(33)).toBe(5);
+		// P09: 3rd on court 2 in R2 (snake path) → not on WW courts 1 or 3 after R3→R4
+		let trace = snake(Array.from({ length: 64 }, (_, i) => i + 1));
+		let traceResults = toResults(trace);
+		for (const rc of [0, 1, 2]) {
+			const next = processPreseedTransition(traceResults, sizes, rc, courts);
+			trace = next.map((a) => ({ courtNumber: a.courtNumber, playerIds: [...a.playerIds] }));
+			traceResults = toResults(trace);
+		}
+		const r4TopHalf = trace.slice(0, 2).flatMap((a) => a.playerIds);
+		const r4BottomHalf = trace.slice(2, 4).flatMap((a) => a.playerIds);
+		expect(r4TopHalf).not.toContain(9);
+		expect(r4BottomHalf).toContain(9);
+		// P64: lowest seed stays in loser subtree (courts 9+)
+		expect(courtOf(64)).toBeGreaterThan(8);
+		// P33: tops loser bracket, still plays R5
+		expect(courtOf(33)).toBeGreaterThanOrEqual(9);
+		expect(courtOf(33)).toBeLessThanOrEqual(16);
 	});
 });
 

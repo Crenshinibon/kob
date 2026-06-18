@@ -610,12 +610,26 @@ function advanceBracketTree(brackets: readonly number[][]): number[][] {
 	return nextBrackets;
 }
 
-type SubdivisionMode = 'peer' | 'one-level' | 'winner-only';
+type SubdivisionMode = 'peer' | 'one-level' | 'first-split' | 'winner-only';
 
 type SubdivisionGroup = {
 	readonly courts: readonly number[];
 	readonly mode: SubdivisionMode;
 };
+
+function isBalancedCourtCount(totalCourts: number): boolean {
+	return totalCourts > 0 && (totalCourts & (totalCourts - 1)) === 0;
+}
+
+function getGroupMode(groupSize: number, roundsCompleted: number, totalCourts: number): SubdivisionMode {
+	if (groupSize >= 8) return 'one-level';
+	if (groupSize === 4) return roundsCompleted >= 2 ? 'first-split' : 'one-level';
+	if (groupSize === 2) {
+		if (isBalancedCourtCount(totalCourts)) return 'peer';
+		return roundsCompleted >= 2 ? 'winner-only' : 'peer';
+	}
+	return 'peer';
+}
 
 /**
  * Bracket groups that subdivide together this transition. After R1→R2 the global
@@ -638,12 +652,7 @@ function getSubdivisionPlan(totalCourts: number, roundsCompleted: number): Subdi
 
 	return brackets.map((courts) => ({
 		courts,
-		mode:
-			courts.length >= 4
-				? 'one-level'
-				: roundsCompleted >= 2 && courts.length === 2
-					? 'winner-only'
-					: 'peer'
+		mode: getGroupMode(courts.length, roundsCompleted, totalCourts)
 	}));
 }
 
@@ -661,12 +670,18 @@ function subdivideSubdivisionGroup(
 		}));
 	}
 
+	if (group.mode === 'first-split') {
+		return redistributePreseedRecursive(courtResults, sizes).map((a) => ({
+			playerIds: a.playerIds
+		}));
+	}
+
 	if (group.mode === 'winner-only') {
 		const winnerCourt = resultMap.get(courtNumbers[0])!;
 		return [{ playerIds: winnerCourt.standings.map((s) => s.playerId) }];
 	}
 
-	// one-level: split a 4+ court group into top/bottom pairs, peer-split each pair
+	// one-level: split an 8+ court group into top/bottom pairs, peer-split each pair
 	const N = courtNumbers.length;
 	const W = splitSize(N);
 	const winnerNums = courtNumbers.slice(0, W);
@@ -720,10 +735,11 @@ function processSubsequentPreseedSplit(
  *
  * roundsCompleted=0 (R1→R2): global tier ranking + slot-based winner/loser split + origin mixing.
  *
- * Subsequent rounds: subdivide each bracket group from the tree. Within a 2-court pair at the
- * same level, 1sts+2nds stay in the gold race (top court), 3rds+4ths drop out (bottom court).
- * Once dropped, players never return to the gold race. When a pair resolves to one active court
- * plus a frozen sibling, only the active court subdivides.
+ * Subsequent rounds: subdivide each bracket group from the tree.
+ * - 8+ courts: one-level (pair splits within winner/loser halves)
+ * - 4 courts: first-split (same as 4-court preseed R1→R2)
+ * - 2 courts: peer split by finish position (1sts+2nds stay up, 3rds+4ths drop)
+ * Once dropped from the gold race, players never return. Frozen courts are carried forward unchanged.
  */
 export function processPreseedTransition(
 	courtResults: readonly CourtResult[],
