@@ -126,41 +126,17 @@ Flat redistribution: build global tiers, `splitSize(4)=2`, origin mixing.
 
 ## Round 2 → Round 3: Subsequent Split (isFirstSplit=false)
 
-`splitSize(4)=2` → **Winner bracket** = first 2 results (courts 1-2), **Loser bracket** = last 2 results (courts 3-4).
+Recursively subdivide by court pairs (`splitSize(4)=2`).
 
-### Winner bracket (2 courts): re-rank & split
+### Pair (Courts 1–2) — Winners bracket
 
-Collect tiers from winner bracket results only:
+**1sts+2nds from C1 and C2 → Court 1 (Gold):** C(W1), B(W2), A(W1), H(W2)
+**3rds+4ths from C1 and C2 → Court 2 (Silver):** D(W1), E(W2), F(W2), J(W1)
 
-**1sts:** C(W1,+10), B(W2,+8) → **C, B**
-**2nds:** A(W1,+6), H(W2,+4) → **A, H**
-**3rds:** D(W1,−2), E(W2,−2) → **D, E** (tie: D.id < E.id)
-**4ths:** J(W1,−14), F(W2,−10) → **F, J** (F−10 > J−14)
+### Pair (Courts 3–4) — Losers bracket
 
-Flattened: `[C(W1), B(W2), A(W1), H(W2), D(W1), E(W2), F(W2), J(W1)]`
-
-`splitSize(2)=1` → **1 final court** (top 4) + **1 L(W) court** (bottom 4)
-
-**Final court:** [C, B, A, H]
-**L(W) court:** [D, E, F, J]
-
-### Loser bracket (2 courts): re-rank & split
-
-**1sts:** G(L3,+12), L(L4,+10) → **G, L**
-**2nds:** N(L3,+6), O(L4,+4) → **N, O**
-**3rds:** M(L3,−8), I(L4,−6) → **I, M** (I−6 > M−8)
-**4ths:** P(L3,−10), K(L4,−8) → **K, P** (K−8 > P−10... wait: both − but K−8 is LARGER than P−10. For points: K has fewer... actually points are the total scored minus total conceded. Points and diff are the same for 4-player courts. Let me check: the table shows K(L4,−8) and P(L3,−10). Sorting by points: K has more points (−8 > −10) → K first.)
-
-Actually, for `calculateCourtStandings`, the sorting is: `b.points - a.points`. So K(−8) has higher points than P(−10). So K comes first.
-
-**4ths:** K(L4,−8), P(L3,−10) → **K, P**
-
-Flattened: `[G(L3), L(L4), N(L3), O(L4), I(L4), M(L3), K(L4), P(L3)]`
-
-`splitSize(2)=1` → **1 TL court** (top 4) + **1 BL court** (bottom 4)
-
-**TL court:** [G, L, N, O]
-**BL court:** [I, M, K, P]
+**1sts+2nds from C3 and C4 → Court 3 (Bronze):** G(L3), L(L4), N(L3), O(L4)
+**3rds+4ths from C3 and C4 → Court 4 (Iron):** I(L4), M(L3), K(L4), P(L3)
 
 ### Round 3 Courts (Final Round)
 

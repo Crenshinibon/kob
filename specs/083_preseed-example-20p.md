@@ -107,42 +107,26 @@ Same assumption: players finish in listed order.
 
 ## Round 2 → Round 3: Subsequent Split (isFirstSplit=false)
 
-`splitSize(5)=4` → **Winner** = courts 1-4, **Loser** = court 5.
+`splitSize(5)=4` → **Winner bracket** = courts 1-4 subdivide by pairs. **Loser bracket** = court 5 unchanged.
 
-### Winner bracket (4 courts): subdivide
+### Pair (Courts 1–2)
 
-`splitSize(4)=2` → **WW** = courts 1-2, **LW** = courts 3-4.
+**1sts+2nds → Court 1:** A(C1), B(C2), E(C1), G(C2)
+**3rds+4ths → Court 2:** L(C1), J(C2), M(C1), Q(C2)
 
-#### WW bracket (courts 1-2): re-rank & split
+### Pair (Courts 3–4)
 
-Tiers from WW courts: 1sts=[A,B], 2nds=[E,G], 3rds=[L,J], 4ths=[M,Q]
-
-Flattened: `[A(C1), B(C2), G(C2), E(C1), L(C1), J(C2), M(C1), Q(C2)]`
-
-`splitSize(2)=1` → **Court A (WW top):** [A, B, G, E]
-→ **Court B (WW bottom):** [L, J, M, Q]
-
-#### LW bracket (courts 3-4): re-rank & split
-
-Tiers from LW courts: 1sts=[C,D], 2nds=[F,H], 3rds=[I,P], 4ths=[N,K]
-
-Flattened: `[D(C4), C(C3), H(C4), F(C3), P(C4), I(C3), K(C4), N(C3)]`
-
-`splitSize(2)=1` → **Court C (LW top):** [D, C, H, F]
-→ **Court D (LW bottom):** [P, I, K, N]
-
-### Loser bracket (1 court): unchanged
-
-Court 5 stays: [O, R, T, S]
+**1sts+2nds → Court 3:** C(C3), D(C4), F(C3), H(C4)
+**3rds+4ths → Court 4:** I(C3), P(C4), N(C3), K(C4)
 
 ### Round 3 Courts
 
-| C1 (WW⊤) | C2 (WW⊥) | C3 (LW⊤) | C4 (LW⊥) | C5 (L) |
-| :------: | :------: | :------: | :------: | :----: |
-|  A (C1)  |  L (C1)  |  D (C4)  |  P (C5)  | O (L5) |
-|  B (C2)  |  J (C2)  |  C (C3)  |  I (C3)  | R (L5) |
-|  G (C2)  |  M (C1)  |  H (C4)  |  K (C4)  | T (L5) |
-|  E (C1)  |  Q (C4)  |  F (C3)  |  N (C4)  | S (L5) |
+| Court 1 (WW⊤) | Court 2 (WW⊥) | Court 3 (LW⊤) | Court 4 (LW⊥) | Court 5 (L) |
+| :-----------: | :-----------: | :-----------: | :-----------: | :---------: |
+|   A (C1)    |   L (C1)    |   C (C3)    |   I (C3)    |   O (L5)    |
+|   B (C2)    |   J (C2)    |   D (C4)    |   P (C4)    |   R (L5)    |
+|   E (C1)    |   M (C1)    |   F (C3)    |   N (C3)    |   T (L5)    |
+|   G (C2)    |   Q (C2)    |   H (C4)    |   K (C4)    |   S (L5)    |
 
 ---
 
@@ -161,29 +145,17 @@ Players finish in listed order.
 
 ## Round 3 → Round 4: Subsequent Split (final round)
 
-`splitSize(5)=4` → **Winner** = courts 1-4, **Loser** = court 5.
+`splitSize(5)=4` → Courts 1-4 subdivide by pairs. Court 5 unchanged.
 
-### WW bracket (courts 1-2): re-rank & split
+### Pair (Courts 1–2)
 
-Tiers: 1sts=[A,L], 2nds=[B,J], 3rds=[G,M], 4ths=[E,Q]
+**1sts+2nds → Court 1 (Final):** A(C1), L(C2), B(C1), J(C2)
+**3rds+4ths → Court 2 (L(WW)):** G(C1), M(C2), E(C1), Q(C2)
 
-Flattened: `[A(C1), L(C2), B(C1), J(C2), G(C1), M(C2), E(C1), Q(C2)]`
+### Pair (Courts 3–4)
 
-`splitSize(2)=1` → **Final court:** [A, L, B, J]
-→ **L(WW) court:** [G, M, E, Q]
-
-### LW bracket (courts 3-4): re-rank & split
-
-Tiers: 1sts=[D,P], 2nds=[C,I], 3rds=[H,K], 4ths=[F,N]
-
-Flattened: `[D(C3), P(C4), C(C3), I(C4), H(C3), K(C4), N(C4), F(C3)]`
-
-`splitSize(2)=1` → **TL court:** [D, P, C, I]
-→ **BL court:** [H, K, N, F]
-
-### Loser court: unchanged
-
-[O, R, T, S]
+**1sts+2nds → Court 3 (TL):** D(C3), P(C4), C(C3), I(C4)
+**3rds+4ths → Court 4 (BL):** H(C3), K(C4), F(C3), N(C4)
 
 ### Round 4 Courts (Final Round)
 
@@ -191,8 +163,8 @@ Flattened: `[D(C3), P(C4), C(C3), I(C4), H(C3), K(C4), N(C4), F(C3)]`
 | :---: | :---: | :-: | :-: | :-: |
 |   A   |   G   |  D  |  H  |  O  |
 |   L   |   M   |  P  |  K  |  R  |
-|   B   |   E   |  C  |  N  |  T  |
-|   J   |   Q   |  I  |  F  |  S  |
+|   B   |   E   |  C  |  F  |  T  |
+|   J   |   Q   |  I  |  N  |  S  |
 
 ---
 
@@ -234,12 +206,11 @@ R1→R2:    global tiers → splitSize(5)=4 → 4W+1L + origin mixing
             │                   │
 R2:    [W1][W2][W3][W4]  |  [L5]
          │    │    │    │      │
-R2→R3:  │WW  │WW  │LW  │LW    │
-        splitSize(4)=2 → 2WW+2LW, each 2-court bracket re-ranks independently
+R2→R3:  pair subdivision within winner courts (C1/C2 → C1/C2, C3/C4 → C3/C4)
          │          │            │
 R3:   [WW⊤][WW⊥] | [LW⊤][LW⊥] | [L5]
          │          │            │
-R3→R4: each 2-court bracket → 1F+1L per bracket
+R3→R4: pair subdivision across 4 active courts
          │          │            │
 R4:   [Final][L(WW)]|[TL][BL]  | [L5]
 ```
@@ -248,7 +219,7 @@ R4:   [Final][L(WW)]|[TL][BL]  | [L5]
 
 1. **`splitSize(5)=4` is asymmetric:** Unlike 16p (balanced 2W+2L), 20p has 4W+1L. Only 4 players per round enter the single loser court.
 
-2. **Sub-brackets re-rank independently:** Players from WW⊤ are NOT compared with players from LW⊤ when determining the final — they already competed in different sub-brackets.
+2. **Sub-brackets subdivide by court pairs:** Within each pair, 1sts+2nds → top court, 3rds+4ths → bottom court. A 3rd-place finisher on Court 1 drops to Court 2 (within the winners pair), not to the losers bracket.
 
 3. **Winner bracket doesn't shrink in count** (always 4 courts), but the COMPETITION within it gets more granular each round.
 
