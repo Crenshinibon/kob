@@ -202,7 +202,7 @@
 					{/if}
 					{#if shifts.length > 1}
 						<div class="shift-list">
-							{#each shifts as shift, si (si)}
+							{#each shifts as _shift, si (si)}
 								<span class="shift-badge" class:active={si === 0}
 									>{m.shift_label({ current: si + 1, total: shifts.length })}</span
 								>

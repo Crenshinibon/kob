@@ -11,7 +11,7 @@
 </script>
 
 <nav class="lang-switcher" aria-label="Language">
-	{#each locales as locale}
+	{#each locales as locale (locale)}
 		<a
 			href={localizeHref(page.url.pathname, { locale })}
 			data-sveltekit-reload

@@ -121,7 +121,7 @@ function formatEndOfRound(
 	return md;
 }
 
-function formatTransition(fromRound: number, toRound: number): string {
+function formatTransition(fromRound: number, _toRound: number): string {
 	const notes: Record<number, string> = {
 		1: `**Round 1 → Round 2** (first split): global tiers, \`splitSize(16)=8\` → courts 1–8 winner bracket, courts 9–16 loser bracket. Origin mixing within each bracket.
 

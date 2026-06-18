@@ -1,14 +1,52 @@
 $ playwright test "--workers=1" "--reporter=list"
 [2m[WebServer] [22m[33m[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
-[2m[WebServer] [22m  - vite-plugin-sveltekit-guard (69%)
-[2m[WebServer] [22m  - vite-plugin-sveltekit-remote (14%)
-[2m[WebServer] [22m  - vite-plugin-sveltekit-compile (5%)
+[2m[WebServer] [22m  - vite-plugin-sveltekit-guard (64%)
+[2m[WebServer] [22m  - vite-plugin-sveltekit-remote (19%)
+[2m[WebServer] [22m  - vite-plugin-sveltekit-compile (6%)
+[2m[WebServer] [22m  - vite-plugin-sveltekit-virtual-modules (4%)
 [2m[WebServer] [22mSee https://rolldown.rs/options/checks#plugintimings for more details.
 [2m[WebServer] [22m[39m
 🧹 Cleaning up old test tournaments...
-🗑️ Found 60 tournaments older than 1 hour
-✅ Cleaned up 60 old tournaments
+✅ No old tournaments to clean up
 
 Running 85 tests using 1 worker
 
-[2m[WebServer] [22m[2m2026-06-18T20:44:07.391Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
+[2m[WebServer] [22m[2m2026-06-18T20:45:54.419Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
+  ✘   1 e2e/bestof3.spec.ts:96:2 › Best-of-3 Round Transition › round closes when best-of-3 matches end 2-0 (no deciding set) (3.0m)
+  ✓   2 e2e/demo.test.ts:3:1 › home page has expected h1 (189ms)
+  ✓   3 e2e/format.spec.ts:52:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) (705ms)
+  ✓   4 e2e/format.spec.ts:66:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range (631ms)
+  ✓   5 e2e/format.spec.ts:75:3 › Tournament Format Selection › Random Format › rounds input is editable (558ms)
+  ✓   6 e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (4.2s)
+  ✓   7 e2e/format.spec.ts:109:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (3.6s)
+  ✓   8 e2e/format.spec.ts:133:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (5.0s)
+  ✓   9 e2e/format.spec.ts:156:3 › Tournament Format Selection › Pre-Seed Format › switching player count updates fixed rounds (596ms)
+  ✓  10 e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again (675ms)
+  ✓  11 e2e/format.spec.ts:176:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (3.5s)
+  ✓  12 e2e/format.spec.ts:215:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description (674ms)
+  ✓  13 e2e/format.spec.ts:237:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description (709ms)
+  ✓  14 e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description (707ms)
+  ✓  15 e2e/format.spec.ts:273:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) (713ms)
+  ✓  16 e2e/format.spec.ts:288:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (602ms)
+  ✓  17 e2e/format.spec.ts:307:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches (3.1s)
+  ✓  18 e2e/format.spec.ts:343:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games (3.6s)
+  ✓  19 e2e/format.spec.ts:379:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games (3.7s)
+  ✓  20 e2e/format.spec.ts:417:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts (2.4s)
+  ✓  21 e2e/format.spec.ts:440:3 › Tournament Format Selection › Player Count Range (8-64) › below 8 players shows minimum warning and button is disabled (708ms)
+  ✓  22 e2e/format.spec.ts:451:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (6.9s)
+  ✓  23 e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning and button is disabled (628ms)
+  ✘  24 e2e/frozen-courts.spec.ts:129:2 › Preseed Frozen Courts (20 players, 5 courts) › 20-player preseed: complete tournament with frozen court (1.8m)
+  ✓  25 e2e/i18n.test.ts:4:2 › i18n › home page in default locale (English) (191ms)
+  ✓  26 e2e/i18n.test.ts:9:2 › i18n › home page loads in German via /de/ (122ms)
+  ✓  27 e2e/i18n.test.ts:14:2 › i18n › home page loads in French via /fr/ (132ms)
+  ✓  28 e2e/i18n.test.ts:19:2 › i18n › home page loads in Spanish via /es/ (145ms)
+  ✓  29 e2e/i18n.test.ts:24:2 › i18n › login page has German text at /de/login (122ms)
+  ✓  30 e2e/i18n.test.ts:29:2 › i18n › login page has French text at /fr/login (119ms)
+  ✓  31 e2e/i18n.test.ts:34:2 › i18n › login page has Spanish text at /es/login (116ms)
+  ✓  32 e2e/i18n.test.ts:39:2 › i18n › signup page in German (121ms)
+  ✓  33 e2e/i18n.test.ts:44:2 › i18n › signup page in French (120ms)
+  ✓  34 e2e/i18n.test.ts:49:2 › i18n › signup page in Spanish (120ms)
+  ✓  35 e2e/preseed.spec.ts:164:2 › Preseed Tournament › 16-player preseed: verify snake seeding, origin mixing, and standings (1.2m)
+  ✓  36 e2e/preseed.spec.ts:264:2 › Preseed Tournament › 8-player preseed tournament (35.1s)
+  ✓  37 e2e/promotion.spec.ts:69:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (19.7s)
+  ✓  38 e2e/promotion.spec.ts:183:2 › Promotion and Relegation › close round button is disabled until all matches complete (16.8s)

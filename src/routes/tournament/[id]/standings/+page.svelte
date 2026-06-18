@@ -101,7 +101,6 @@
 			finalStanding: number | null;
 		}>}
 		{@const injuredPlayerIds = (state?.injuredPlayerIds ?? []) as number[]}
-		{@const allPlayers = (state?.players ?? []) as Array<{ id: number; name: string }>}
 		{@const assignment = (state?.courtAssignment ?? {}) as Record<number, { court: number }>}
 		{@const frozenCourts = (state?.frozenCourts ?? []) as Array<{
 			courtNumber: number;
