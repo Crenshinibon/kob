@@ -637,8 +637,8 @@ describe('processPreseedTransition', () => {
 		}
 	});
 
-	it('subsequent split for 4 courts: winner bracket halves to 1F+1L(W), loser bracket to 2 consolation', () => {
-		// Simulate R2 results: winner bracket = courts 1-2, loser bracket = courts 3-4
+	it('subsequent split for 4 courts: 1sts+2nds to top half, 3rds+4ths to bottom half', () => {
+		// Simulate R2 results across all 4 courts
 		const results = [
 			mockCourtResult(1, [
 				{ playerId: 1, rank: 1, points: 50, diff: 5, matchCount: 3 },
@@ -671,19 +671,19 @@ describe('processPreseedTransition', () => {
 		expect(a).toHaveLength(4);
 		for (const c of a) expect(c.playerIds).toHaveLength(4);
 
-		// Winner bracket (courts 1-2): re-ranked independently
-		// Tiers: 1sts=[1(50),2(48)], 2nds=[5(42),6(40)], 3rds=[11(30),12(28)], 4ths=[15(22),16(20)]
-		// Flattened: [1,2,5,6,11,12,15,16]
-		// splitSize(2)=1 → Final(top 4)=[1,2,5,6], L(W)=[11,12,15,16]
-		expect(a[0].playerIds).toEqual([1, 2, 5, 6]);
-		expect(a[1].playerIds).toEqual([11, 12, 15, 16]);
+		const topHalf = [...a[0].playerIds, ...a[1].playerIds];
+		const bottomHalf = [...a[2].playerIds, ...a[3].playerIds];
 
-		// Loser bracket (courts 3-4): re-ranked independently
-		// Tiers: 1sts=[3(35),4(32)], 2nds=[8(30),7(28)], 3rds=[10(25),9(22)], 4ths=[13(18),14(15)]
-		// Flattened: [3,4,8,7,10,9,13,14]
-		// splitSize(2)=1 → TL(top 4)=[3,4,8,7], BL=[10,9,13,14]
-		expect(a[2].playerIds).toEqual([3, 4, 8, 7]);
-		expect(a[3].playerIds).toEqual([10, 9, 13, 14]);
+		// All 1sts and 2nds across every court → top half
+		for (const p of [1, 2, 3, 4, 5, 6, 7, 8]) {
+			expect(topHalf).toContain(p);
+			expect(bottomHalf).not.toContain(p);
+		}
+		// All 3rds and 4ths across every court → bottom half
+		for (const p of [9, 10, 11, 12, 13, 14, 15, 16]) {
+			expect(bottomHalf).toContain(p);
+			expect(topHalf).not.toContain(p);
+		}
 	});
 
 	it('subsequent split for 2 courts: halves to 1F+1L(W)', () => {
@@ -2900,23 +2900,25 @@ describe('Preseed redistribution: bracket correctness with frozen courts', () =>
 		const thirdCourt = assignments[2].playerIds;
 		const fourthCourt = assignments[3].playerIds;
 
-		// #3 and #4 from winner bracket (C1/C2) must NOT be on top court
+		// #3 and #4 from any court must NOT be on top half courts
 		expect(topCourt).not.toContain(9);
 		expect(topCourt).not.toContain(13);
 		expect(topCourt).not.toContain(10);
 		expect(topCourt).not.toContain(14);
+		expect(secondCourt).not.toContain(9);
+		expect(secondCourt).not.toContain(13);
+		expect(secondCourt).not.toContain(10);
+		expect(secondCourt).not.toContain(14);
 
-		// #3s and #4s from C1/C2 must be on second court (L(WW))
-		for (const pid of [9, 10, 13, 14]) {
-			expect(secondCourt).toContain(pid);
+		// #3s and #4s from all courts must be on bottom half courts
+		const bottomHalf = [...thirdCourt, ...fourthCourt];
+		for (const pid of [9, 10, 11, 12, 13, 14, 15, 16]) {
+			expect(bottomHalf).toContain(pid);
 		}
-		// #1s and #2s from C3/C4 must be on third court (TL)
-		for (const pid of [3, 4, 7, 8]) {
-			expect(thirdCourt).toContain(pid);
-		}
-		// #3s and #4s from C3/C4 must be on fourth court (BL)
-		for (const pid of [11, 12, 15, 16]) {
-			expect(fourthCourt).toContain(pid);
+		// #1s and #2s from all courts must be on top half courts
+		const topHalf = [...topCourt, ...secondCourt];
+		for (const pid of [1, 2, 3, 4, 5, 6, 7, 8]) {
+			expect(topHalf).toContain(pid);
 		}
 	});
 
@@ -2996,13 +2998,21 @@ describe('Preseed redistribution: bracket correctness with frozen courts', () =>
 
 		const assignments = processPreseedTransition(results, [4, 4, 4, 4], false);
 
-		// #4 on C1 must NOT be on C1 (top court)
-		expect(assignments[0].playerIds).not.toContain(400);
-		// #3 on C1 must NOT be on C1 (top court)
-		expect(assignments[0].playerIds).not.toContain(300);
-		// #1s from C1/C2 must be on C1
-		expect(assignments[0].playerIds).toContain(100);
-		expect(assignments[0].playerIds).toContain(101);
+		const topHalf = [...assignments[0].playerIds, ...assignments[1].playerIds];
+		const bottomHalf = [...assignments[2].playerIds, ...assignments[3].playerIds];
+
+		// #4 and #3 on C1 must NOT be on top half courts
+		expect(topHalf).not.toContain(400);
+		expect(topHalf).not.toContain(300);
+		// #1s from all courts must be on top half
+		expect(topHalf).toContain(100);
+		expect(topHalf).toContain(101);
+		expect(topHalf).toContain(102);
+		expect(topHalf).toContain(103);
+		// #4s from all courts must be on bottom half
+		for (const pid of [400, 401, 402, 403]) {
+			expect(bottomHalf).toContain(pid);
+		}
 	});
 });
 

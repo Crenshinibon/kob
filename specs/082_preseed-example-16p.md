@@ -126,50 +126,24 @@ Flat redistribution: build global tiers, `splitSize(4)=2`, origin mixing.
 
 ## Round 2 → Round 3: Subsequent Split (isFirstSplit=false)
 
-`splitSize(4)=2` → **Winner bracket** = first 2 results (courts 1-2), **Loser bracket** = last 2 results (courts 3-4).
+All 4 courts redistribute together by finish position (`splitSize(4)=2` → 2 top + 2 bottom courts).
 
-### Winner bracket (2 courts): re-rank & split
+**1sts+2nds from all courts → Courts 1–2** (origin mixing):
+1sts: G(C3,+12), C(W1,+10), L(L4,+10), B(W2,+8)
+2nds: A(W1,+6), N(L3,+6), H(W2,+4), O(L4,+4)
 
-Collect tiers from winner bracket results only:
-
-**1sts:** C(W1,+10), B(W2,+8) → **C, B**
-**2nds:** A(W1,+6), H(W2,+4) → **A, H**
-**3rds:** D(W1,−2), E(W2,−2) → **D, E** (tie: D.id < E.id)
-**4ths:** J(W1,−14), F(W2,−10) → **F, J** (F−10 > J−14)
-
-Flattened: `[C(W1), B(W2), A(W1), H(W2), D(W1), E(W2), F(W2), J(W1)]`
-
-`splitSize(2)=1` → **1 final court** (top 4) + **1 L(W) court** (bottom 4)
-
-**Final court:** [C, B, A, H]
-**L(W) court:** [D, E, F, J]
-
-### Loser bracket (2 courts): re-rank & split
-
-**1sts:** G(L3,+12), L(L4,+10) → **G, L**
-**2nds:** N(L3,+6), O(L4,+4) → **N, O**
-**3rds:** M(L3,−8), I(L4,−6) → **I, M** (I−6 > M−8)
-**4ths:** P(L3,−10), K(L4,−8) → **K, P** (K−8 > P−10... wait: both − but K−8 is LARGER than P−10. For points: K has fewer... actually points are the total scored minus total conceded. Points and diff are the same for 4-player courts. Let me check: the table shows K(L4,−8) and P(L3,−10). Sorting by points: K has more points (−8 > −10) → K first.)
-
-Actually, for `calculateCourtStandings`, the sorting is: `b.points - a.points`. So K(−8) has higher points than P(−10). So K comes first.
-
-**4ths:** K(L4,−8), P(L3,−10) → **K, P**
-
-Flattened: `[G(L3), L(L4), N(L3), O(L4), I(L4), M(L3), K(L4), P(L3)]`
-
-`splitSize(2)=1` → **1 TL court** (top 4) + **1 BL court** (bottom 4)
-
-**TL court:** [G, L, N, O]
-**BL court:** [I, M, K, P]
+**3rds+4ths from all courts → Courts 3–4** (origin mixing):
+3rds: D(W1,−2), E(W2,−2), I(L4,−6), M(L3,−8)
+4ths: K(L4,−8), F(W2,−10), P(L3,−10), J(W1,−14)
 
 ### Round 3 Courts (Final Round)
 
 | Court 1 (F) | Court 2 (L(W)) | Court 3 (TL) | Court 4 (BL) |
 | :---------: | :------------: | :----------: | :----------: |
-|   C (W1)    |     D (W1)     |    G (L3)    |    I (L4)    |
-|   B (W2)    |     E (W2)     |    L (L4)    |    M (L3)    |
-|   A (W1)    |     F (W2)     |    N (L3)    |    K (L4)    |
-|   H (W2)    |     J (W1)     |    O (L4)    |    P (L3)    |
+|   G (L3)    |     C (W1)     |    D (W1)    |    E (W2)    |
+|   L (L4)    |     B (W2)     |    I (L4)    |    M (L3)    |
+|   A (W1)    |     N (L3)     |    F (W2)    |    K (L4)    |
+|   H (W2)    |     O (L4)     |    P (L3)    |    J (W1)    |
 
 ---
 
