@@ -107,24 +107,26 @@ Same assumption: players finish in listed order.
 
 ## Round 2 → Round 3: Subsequent Split (isFirstSplit=false)
 
-`splitSize(5)=4` → **Winner bracket** = courts 1-4 redistribute together. **Loser bracket** = court 5 unchanged.
+`splitSize(5)=4` → **Winner bracket** = courts 1-4 subdivide by pairs. **Loser bracket** = court 5 unchanged.
 
-### Winner bracket (4 courts): finish-position split
+### Pair (Courts 1–2)
 
-All 1sts and 2nds from Courts 1–4 → Courts 1–2 (origin mixing).
-All 3rds and 4ths from Courts 1–4 → Courts 3–4 (origin mixing).
+**1sts+2nds → Court 1:** A(C1), B(C2), E(C1), G(C2)
+**3rds+4ths → Court 2:** L(C1), J(C2), M(C1), Q(C2)
 
-**1sts+2nds:** A(C1), B(C2), C(C3), D(C4), E(C1), G(C2), F(C3), H(C4)
-**3rds+4ths:** L(C1), J(C2), I(C3), P(C4), M(C1), Q(C2), N(C3), K(C4)
+### Pair (Courts 3–4)
+
+**1sts+2nds → Court 3:** C(C3), D(C4), F(C3), H(C4)
+**3rds+4ths → Court 4:** I(C3), P(C4), N(C3), K(C4)
 
 ### Round 3 Courts
 
-| Court 1 (WW⊤) | Court 2 (WW⊤) | Court 3 (LW⊥) | Court 4 (LW⊥) | Court 5 (L) |
+| Court 1 (WW⊤) | Court 2 (WW⊥) | Court 3 (LW⊤) | Court 4 (LW⊥) | Court 5 (L) |
 | :-----------: | :-----------: | :-----------: | :-----------: | :---------: |
-|   A (C1)    |   B (C2)    |   I (C3)    |   J (C2)    |   O (L5)    |
-|   C (C3)    |   D (C4)    |   L (C1)    |   P (C4)    |   R (L5)    |
-|   G (C2)    |   H (C4)    |   K (C4)    |   Q (C2)    |   T (L5)    |
-|   E (C1)    |   F (C3)    |   M (C1)    |   N (C3)    |   S (L5)    |
+|   A (C1)    |   L (C1)    |   C (C3)    |   I (C3)    |   O (L5)    |
+|   B (C2)    |   J (C2)    |   D (C4)    |   P (C4)    |   R (L5)    |
+|   E (C1)    |   M (C1)    |   F (C3)    |   N (C3)    |   T (L5)    |
+|   G (C2)    |   Q (C2)    |   H (C4)    |   K (C4)    |   S (L5)    |
 
 ---
 
@@ -143,21 +145,26 @@ Players finish in listed order.
 
 ## Round 3 → Round 4: Subsequent Split (final round)
 
-`splitSize(5)=4` → **Winner bracket** = courts 1-4 redistribute together. **Loser bracket** = court 5 unchanged.
+`splitSize(5)=4` → Courts 1-4 subdivide by pairs. Court 5 unchanged.
 
-### Winner bracket (4 courts): finish-position split
+### Pair (Courts 1–2)
 
-**1sts+2nds:** A(C1), L(C2), D(C3), P(C4), B(C1), J(C2), C(C3), I(C4)
-**3rds+4ths:** G(C1), M(C2), H(C3), K(C4), E(C1), Q(C2), F(C3), N(C4)
+**1sts+2nds → Court 1 (Final):** A(C1), L(C2), B(C1), J(C2)
+**3rds+4ths → Court 2 (L(WW)):** G(C1), M(C2), E(C1), Q(C2)
+
+### Pair (Courts 3–4)
+
+**1sts+2nds → Court 3 (TL):** D(C3), P(C4), C(C3), I(C4)
+**3rds+4ths → Court 4 (BL):** H(C3), K(C4), F(C3), N(C4)
 
 ### Round 4 Courts (Final Round)
 
 | Final | L(WW) | TL  | BL  | L5  |
 | :---: | :---: | :-: | :-: | :-: |
-|   A   |   D   |  G  |  H  |  O  |
-|   L   |   P   |  K  |  M  |  R  |
-|   C   |   B   |  F  |  E  |  T  |
-|   I   |   J   |  Q  |  N  |  S  |
+|   A   |   G   |  D  |  H  |  O  |
+|   L   |   M   |  P  |  K  |  R  |
+|   B   |   E   |  C  |  F  |  T  |
+|   J   |   Q   |  I  |  N  |  S  |
 
 ---
 
@@ -199,11 +206,11 @@ R1→R2:    global tiers → splitSize(5)=4 → 4W+1L + origin mixing
             │                   │
 R2:    [W1][W2][W3][W4]  |  [L5]
          │    │    │    │      │
-R2→R3:  finish-position split across all 4 winner courts (1sts+2nds → C1/C2, 3rds+4ths → C3/C4)
+R2→R3:  pair subdivision within winner courts (C1/C2 → C1/C2, C3/C4 → C3/C4)
          │          │            │
 R3:   [WW⊤][WW⊥] | [LW⊤][LW⊥] | [L5]
          │          │            │
-R3→R4: finish-position split across all 4 active courts
+R3→R4: pair subdivision across 4 active courts
          │          │            │
 R4:   [Final][L(WW)]|[TL][BL]  | [L5]
 ```
@@ -212,7 +219,7 @@ R4:   [Final][L(WW)]|[TL][BL]  | [L5]
 
 1. **`splitSize(5)=4` is asymmetric:** Unlike 16p (balanced 2W+2L), 20p has 4W+1L. Only 4 players per round enter the single loser court.
 
-2. **Sub-brackets split by finish position:** All 1sts+2nds from every court in a group move to the top half of courts; all 3rds+4ths move to the bottom half. Players are NOT split by their previous court number within the group.
+2. **Sub-brackets subdivide by court pairs:** Within each pair, 1sts+2nds → top court, 3rds+4ths → bottom court. A 3rd-place finisher on Court 1 drops to Court 2 (within the winners pair), not to the losers bracket.
 
 3. **Winner bracket doesn't shrink in count** (always 4 courts), but the COMPETITION within it gets more granular each round.
 

@@ -637,8 +637,7 @@ describe('processPreseedTransition', () => {
 		}
 	});
 
-	it('subsequent split for 4 courts: 1sts+2nds to top half, 3rds+4ths to bottom half', () => {
-		// Simulate R2 results across all 4 courts
+	it('subsequent split for 4 courts: pairs split by finish position within bracket', () => {
 		const results = [
 			mockCourtResult(1, [
 				{ playerId: 1, rank: 1, points: 50, diff: 5, matchCount: 3 },
@@ -671,19 +670,110 @@ describe('processPreseedTransition', () => {
 		expect(a).toHaveLength(4);
 		for (const c of a) expect(c.playerIds).toHaveLength(4);
 
-		const topHalf = [...a[0].playerIds, ...a[1].playerIds];
-		const bottomHalf = [...a[2].playerIds, ...a[3].playerIds];
+		expect(a[0].playerIds).toEqual([1, 2, 5, 6]);
+		expect(a[1].playerIds).toEqual([11, 12, 15, 16]);
+		expect(a[2].playerIds).toEqual([3, 4, 8, 7]);
+		expect(a[3].playerIds).toEqual([10, 9, 13, 14]);
+	});
 
-		// All 1sts and 2nds across every court → top half
-		for (const p of [1, 2, 3, 4, 5, 6, 7, 8]) {
-			expect(topHalf).toContain(p);
-			expect(bottomHalf).not.toContain(p);
+	it('16p walkthrough: R1→R2 brackets and R2→R3 finals convergence', () => {
+		const Alex = 1;
+		const Ben = 2;
+		const Chris = 3;
+		const Dan = 4;
+		const Eli = 5;
+		const Finn = 6;
+		const Greg = 7;
+		const Hugo = 8;
+		const Ian = 9;
+		const Jack = 10;
+		const Karl = 11;
+		const Leo = 12;
+		const Max = 13;
+		const Noah = 14;
+		const Owen = 15;
+		const Paul = 16;
+
+		const r1 = [
+			mockCourtResult(1, [
+				{ playerId: Alex, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: Ian, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: Hugo, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: Paul, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: Ben, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: Greg, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: Jack, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: Owen, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: Finn, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: Chris, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: Karl, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: Noah, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: Dan, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: Eli, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: Max, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: Leo, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			])
+		];
+
+		const r2 = processPreseedTransition(r1, [4, 4, 4, 4], true);
+		const winners = [...r2[0].playerIds, ...r2[1].playerIds];
+		const losers = [...r2[2].playerIds, ...r2[3].playerIds];
+
+		for (const p of [Alex, Ben, Finn, Dan, Ian, Greg, Chris, Eli]) {
+			expect(winners).toContain(p);
+			expect(losers).not.toContain(p);
 		}
-		// All 3rds and 4ths across every court → bottom half
-		for (const p of [9, 10, 11, 12, 13, 14, 15, 16]) {
-			expect(bottomHalf).toContain(p);
-			expect(topHalf).not.toContain(p);
+		for (const p of [Hugo, Jack, Karl, Max, Paul, Owen, Noah, Leo]) {
+			expect(losers).toContain(p);
+			expect(winners).not.toContain(p);
 		}
+
+		const r2Results = [
+			mockCourtResult(1, [
+				{ playerId: Alex, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: Finn, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: Eli, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: Greg, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: Dan, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: Ben, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: Ian, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: Chris, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: Karl, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: Hugo, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: Leo, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: Owen, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: Max, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: Noah, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: Jack, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: Paul, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			])
+		];
+
+		const r3 = processPreseedTransition(r2Results, [4, 4, 4, 4], false);
+
+		const sameSet = (a: number[], b: number[]) =>
+			expect([...a].sort((x, y) => x - y)).toEqual([...b].sort((x, y) => x - y));
+
+		// Gold Final: top 2 from Winners A + top 2 from Winners B
+		sameSet(r3[0].playerIds, [Alex, Finn, Dan, Ben]);
+		// Silver Final: bottom 2 from Winners A + bottom 2 from Winners B
+		sameSet(r3[1].playerIds, [Eli, Ian, Chris, Greg]);
+		// Bronze Final: top 2 from Losers A + top 2 from Losers B
+		sameSet(r3[2].playerIds, [Karl, Hugo, Max, Noah]);
+		// Iron Final: bottom 2 from Losers A + bottom 2 from Losers B
+		sameSet(r3[3].playerIds, [Leo, Jack, Owen, Paul]);
 	});
 
 	it('subsequent split for 2 courts: halves to 1F+1L(W)', () => {
@@ -2900,25 +2990,23 @@ describe('Preseed redistribution: bracket correctness with frozen courts', () =>
 		const thirdCourt = assignments[2].playerIds;
 		const fourthCourt = assignments[3].playerIds;
 
-		// #3 and #4 from any court must NOT be on top half courts
+		// #3 and #4 from winner bracket (C1/C2) must NOT be on top court
 		expect(topCourt).not.toContain(9);
 		expect(topCourt).not.toContain(13);
 		expect(topCourt).not.toContain(10);
 		expect(topCourt).not.toContain(14);
-		expect(secondCourt).not.toContain(9);
-		expect(secondCourt).not.toContain(13);
-		expect(secondCourt).not.toContain(10);
-		expect(secondCourt).not.toContain(14);
 
-		// #3s and #4s from all courts must be on bottom half courts
-		const bottomHalf = [...thirdCourt, ...fourthCourt];
-		for (const pid of [9, 10, 11, 12, 13, 14, 15, 16]) {
-			expect(bottomHalf).toContain(pid);
+		// #3s and #4s from C1/C2 must be on second court (Silver within winners pair)
+		for (const pid of [9, 10, 13, 14]) {
+			expect(secondCourt).toContain(pid);
 		}
-		// #1s and #2s from all courts must be on top half courts
-		const topHalf = [...topCourt, ...secondCourt];
-		for (const pid of [1, 2, 3, 4, 5, 6, 7, 8]) {
-			expect(topHalf).toContain(pid);
+		// #1s and #2s from C3/C4 must be on third court (Bronze within losers pair)
+		for (const pid of [3, 4, 7, 8]) {
+			expect(thirdCourt).toContain(pid);
+		}
+		// #3s and #4s from C3/C4 must be on fourth court (Iron within losers pair)
+		for (const pid of [11, 12, 15, 16]) {
+			expect(fourthCourt).toContain(pid);
 		}
 	});
 
@@ -2998,21 +3086,13 @@ describe('Preseed redistribution: bracket correctness with frozen courts', () =>
 
 		const assignments = processPreseedTransition(results, [4, 4, 4, 4], false);
 
-		const topHalf = [...assignments[0].playerIds, ...assignments[1].playerIds];
-		const bottomHalf = [...assignments[2].playerIds, ...assignments[3].playerIds];
-
-		// #4 and #3 on C1 must NOT be on top half courts
-		expect(topHalf).not.toContain(400);
-		expect(topHalf).not.toContain(300);
-		// #1s from all courts must be on top half
-		expect(topHalf).toContain(100);
-		expect(topHalf).toContain(101);
-		expect(topHalf).toContain(102);
-		expect(topHalf).toContain(103);
-		// #4s from all courts must be on bottom half
-		for (const pid of [400, 401, 402, 403]) {
-			expect(bottomHalf).toContain(pid);
-		}
+		// #4 on C1 must NOT be on C1 (top of winners pair)
+		expect(assignments[0].playerIds).not.toContain(400);
+		// #3 on C1 must NOT be on C1 (top of winners pair)
+		expect(assignments[0].playerIds).not.toContain(300);
+		// #1s from C1/C2 must be on C1
+		expect(assignments[0].playerIds).toContain(100);
+		expect(assignments[0].playerIds).toContain(101);
 	});
 });
 

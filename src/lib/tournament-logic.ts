@@ -597,6 +597,34 @@ function distributeByFinishPosition(
 	return assignments;
 }
 
+/**
+ * Recursively subdivide a bracket by court number. At each 2-court leaf,
+ * 1sts+2nds from both courts → top court, 3rds+4ths → bottom court (with origin mixing).
+ */
+function subdividePreseedBracket(
+	courtResults: readonly CourtResult[],
+	courtSizes: readonly number[]
+): CourtAssignment[] {
+	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
+	const N = sorted.length;
+	if (N === 0) return [];
+	if (N === 1) {
+		return [{ courtNumber: 1, playerIds: sorted[0].standings.map((s) => s.playerId) }];
+	}
+	if (N === 2) {
+		return distributeByFinishPosition(sorted, courtSizes);
+	}
+
+	const W = splitSize(N);
+	const topAssignments = subdividePreseedBracket(sorted.slice(0, W), courtSizes.slice(0, W));
+	const bottomAssignments = subdividePreseedBracket(sorted.slice(W), courtSizes.slice(W));
+	const offset = topAssignments.length;
+	return [
+		...topAssignments,
+		...bottomAssignments.map((a) => ({ ...a, courtNumber: a.courtNumber + offset }))
+	];
+}
+
 function isPowerOfTwo(n: number): boolean {
 	return n > 0 && (n & (n - 1)) === 0;
 }
@@ -606,9 +634,9 @@ function isPowerOfTwo(n: number): boolean {
  *
  * R1→R2 (isFirstSplit): global tier ranking + slot-based winner/loser split + origin mixing.
  *
- * Subsequent rounds: within each bracket group, 1sts+2nds from all courts go to the top half
- * of courts; 3rds+4ths go to the bottom half. Asymmetric brackets (e.g. 5 courts) keep the
- * single overflow court unchanged.
+ * Subsequent rounds: recursively subdivide by court number (splitSize). At each 2-court leaf,
+ * 1sts+2nds from both courts → top court, 3rds+4ths → bottom court. Asymmetric brackets
+ * (e.g. 5 courts) keep the single overflow court unchanged.
  */
 export function processPreseedTransition(
 	courtResults: readonly CourtResult[],
@@ -627,19 +655,15 @@ export function processPreseedTransition(
 
 	const W = splitSize(N);
 	if (!isPowerOfTwo(N) && N - W === 1 && W > 1) {
-		const assignments: CourtAssignment[] = [];
-		let courtNumber = 1;
-		for (const a of distributeByFinishPosition(sorted.slice(0, W), courtSizes.slice(0, W))) {
-			assignments.push({ courtNumber: courtNumber++, playerIds: a.playerIds });
-		}
+		const assignments = subdividePreseedBracket(sorted.slice(0, W), courtSizes.slice(0, W));
 		assignments.push({
-			courtNumber: courtNumber++,
+			courtNumber: assignments.length + 1,
 			playerIds: sorted[W].standings.map((s) => s.playerId)
 		});
 		return assignments;
 	}
 
-	return distributeByFinishPosition(sorted, courtSizes);
+	return subdividePreseedBracket(sorted, courtSizes);
 }
 
 // ============================================================================

@@ -126,24 +126,26 @@ Flat redistribution: build global tiers, `splitSize(4)=2`, origin mixing.
 
 ## Round 2 → Round 3: Subsequent Split (isFirstSplit=false)
 
-All 4 courts redistribute together by finish position (`splitSize(4)=2` → 2 top + 2 bottom courts).
+Recursively subdivide by court pairs (`splitSize(4)=2`).
 
-**1sts+2nds from all courts → Courts 1–2** (origin mixing):
-1sts: G(C3,+12), C(W1,+10), L(L4,+10), B(W2,+8)
-2nds: A(W1,+6), N(L3,+6), H(W2,+4), O(L4,+4)
+### Pair (Courts 1–2) — Winners bracket
 
-**3rds+4ths from all courts → Courts 3–4** (origin mixing):
-3rds: D(W1,−2), E(W2,−2), I(L4,−6), M(L3,−8)
-4ths: K(L4,−8), F(W2,−10), P(L3,−10), J(W1,−14)
+**1sts+2nds from C1 and C2 → Court 1 (Gold):** C(W1), B(W2), A(W1), H(W2)
+**3rds+4ths from C1 and C2 → Court 2 (Silver):** D(W1), E(W2), F(W2), J(W1)
+
+### Pair (Courts 3–4) — Losers bracket
+
+**1sts+2nds from C3 and C4 → Court 3 (Bronze):** G(L3), L(L4), N(L3), O(L4)
+**3rds+4ths from C3 and C4 → Court 4 (Iron):** I(L4), M(L3), K(L4), P(L3)
 
 ### Round 3 Courts (Final Round)
 
 | Court 1 (F) | Court 2 (L(W)) | Court 3 (TL) | Court 4 (BL) |
 | :---------: | :------------: | :----------: | :----------: |
-|   G (L3)    |     C (W1)     |    D (W1)    |    E (W2)    |
-|   L (L4)    |     B (W2)     |    I (L4)    |    M (L3)    |
-|   A (W1)    |     N (L3)     |    F (W2)    |    K (L4)    |
-|   H (W2)    |     O (L4)     |    P (L3)    |    J (W1)    |
+|   C (W1)    |     D (W1)     |    G (L3)    |    I (L4)    |
+|   B (W2)    |     E (W2)     |    L (L4)    |    M (L3)    |
+|   A (W1)    |     F (W2)     |    N (L3)    |    K (L4)    |
+|   H (W2)    |     J (W1)     |    O (L4)    |    P (L3)    |
 
 ---
 
