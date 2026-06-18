@@ -562,8 +562,8 @@ function collectFinishGroups(courtResults: readonly CourtResult[]): {
 }
 
 /**
- * Within a bracket group, split by finish position:
- * 1sts+2nds → top courts (splitSize), 3rds+4ths → bottom courts, with origin mixing.
+ * Within a 2-court pair at the same bracket level, split by finish position:
+ * 1sts+2nds → top court, 3rds+4ths → bottom court, with origin mixing.
  */
 function distributeByFinishPosition(
 	courtResults: readonly CourtResult[],
@@ -597,73 +597,150 @@ function distributeByFinishPosition(
 	return assignments;
 }
 
-/**
- * Recursively subdivide a bracket by court number. At each 2-court leaf,
- * 1sts+2nds from both courts → top court, 3rds+4ths → bottom court (with origin mixing).
- */
-function subdividePreseedBracket(
-	courtResults: readonly CourtResult[],
-	courtSizes: readonly number[]
-): CourtAssignment[] {
-	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
-	const N = sorted.length;
-	if (N === 0) return [];
-	if (N === 1) {
-		return [{ courtNumber: 1, playerIds: sorted[0].standings.map((s) => s.playerId) }];
+function advanceBracketTree(brackets: readonly number[][]): number[][] {
+	const nextBrackets: number[][] = [];
+	for (const bracket of brackets) {
+		if (bracket.length <= 1) continue;
+		const w = splitSize(bracket.length);
+		const winnerCourts = bracket.slice(0, w);
+		const loserCourts = bracket.slice(w);
+		if (winnerCourts.length > 1) nextBrackets.push(winnerCourts);
+		if (loserCourts.length > 1) nextBrackets.push(loserCourts);
 	}
-	if (N === 2) {
-		return distributeByFinishPosition(sorted, courtSizes);
-	}
-
-	const W = splitSize(N);
-	const topAssignments = subdividePreseedBracket(sorted.slice(0, W), courtSizes.slice(0, W));
-	const bottomAssignments = subdividePreseedBracket(sorted.slice(W), courtSizes.slice(W));
-	const offset = topAssignments.length;
-	return [
-		...topAssignments,
-		...bottomAssignments.map((a) => ({ ...a, courtNumber: a.courtNumber + offset }))
-	];
+	return nextBrackets;
 }
 
-function isPowerOfTwo(n: number): boolean {
-	return n > 0 && (n & (n - 1)) === 0;
+type SubdivisionMode = 'peer' | 'one-level' | 'winner-only';
+
+type SubdivisionGroup = {
+	readonly courts: readonly number[];
+	readonly mode: SubdivisionMode;
+};
+
+/**
+ * Bracket groups that subdivide together this transition. After R1→R2 the global
+ * first split is applied once; each further round advances the tree one level.
+ */
+export function getBracketGroups(totalCourts: number, roundsCompleted: number): number[][] {
+	return getSubdivisionPlan(totalCourts, roundsCompleted).map((g) => [...g.courts]);
+}
+
+function getSubdivisionPlan(totalCourts: number, roundsCompleted: number): SubdivisionGroup[] {
+	let brackets: number[][] = [Array.from({ length: totalCourts }, (_, i) => i + 1)];
+
+	if (totalCourts > 2) {
+		brackets = advanceBracketTree(brackets);
+	}
+
+	for (let i = 1; i < roundsCompleted; i++) {
+		brackets = advanceBracketTree(brackets);
+	}
+
+	return brackets.map((courts) => ({
+		courts,
+		mode:
+			courts.length >= 4
+				? 'one-level'
+				: roundsCompleted >= 2 && courts.length === 2
+					? 'winner-only'
+					: 'peer'
+	}));
+}
+
+function subdivideSubdivisionGroup(
+	group: SubdivisionGroup,
+	resultMap: ReadonlyMap<number, CourtResult>,
+	sizes: readonly number[]
+): readonly { playerIds: readonly number[] }[] {
+	const courtNumbers = group.courts;
+	const courtResults = courtNumbers.map((n) => resultMap.get(n)!);
+
+	if (group.mode === 'peer') {
+		return distributeByFinishPosition(courtResults, sizes).map((a) => ({
+			playerIds: a.playerIds
+		}));
+	}
+
+	if (group.mode === 'winner-only') {
+		const winnerCourt = resultMap.get(courtNumbers[0])!;
+		return [{ playerIds: winnerCourt.standings.map((s) => s.playerId) }];
+	}
+
+	// one-level: split a 4+ court group into top/bottom pairs, peer-split each pair
+	const N = courtNumbers.length;
+	const W = splitSize(N);
+	const winnerNums = courtNumbers.slice(0, W);
+	const loserNums = courtNumbers.slice(W);
+	const winnerResults = winnerNums.map((n) => resultMap.get(n)!);
+	const loserResults = loserNums.map((n) => resultMap.get(n)!);
+	const winnerSizes = sizes.slice(0, W);
+	const loserSizes = sizes.slice(W);
+
+	const top = distributeByFinishPosition(winnerResults, winnerSizes);
+	const bottom = distributeByFinishPosition(loserResults, loserSizes);
+	return top.concat(bottom).map((a) => ({ playerIds: a.playerIds }));
+}
+
+function processSubsequentPreseedSplit(
+	courtResults: readonly CourtResult[],
+	courtSizes: readonly number[],
+	totalCourts: number,
+	roundsCompleted: number
+): CourtAssignment[] {
+	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
+	const resultMap = new Map(sorted.map((c) => [c.courtNumber, c]));
+	const plan = getSubdivisionPlan(totalCourts, roundsCompleted);
+	const activeCourts = new Set(plan.flatMap((g) => g.courts));
+
+	const assignments: CourtAssignment[] = [];
+	let courtNumber = 1;
+
+	for (const group of plan) {
+		const groupSizes = group.courts.map((n) => courtSizes[n - 1] ?? 4);
+		const groupAssignments = subdivideSubdivisionGroup(group, resultMap, groupSizes);
+		for (const a of groupAssignments) {
+			assignments.push({ courtNumber: courtNumber++, playerIds: [...a.playerIds] });
+		}
+	}
+
+	for (const c of sorted) {
+		if (!activeCourts.has(c.courtNumber)) {
+			assignments.push({
+				courtNumber: courtNumber++,
+				playerIds: c.standings.map((s) => s.playerId)
+			});
+		}
+	}
+
+	return assignments;
 }
 
 /**
  * Preseed redistribution between rounds.
  *
- * R1→R2 (isFirstSplit): global tier ranking + slot-based winner/loser split + origin mixing.
+ * roundsCompleted=0 (R1→R2): global tier ranking + slot-based winner/loser split + origin mixing.
  *
- * Subsequent rounds: recursively subdivide by court number (splitSize). At each 2-court leaf,
- * 1sts+2nds from both courts → top court, 3rds+4ths → bottom court. Asymmetric brackets
- * (e.g. 5 courts) keep the single overflow court unchanged.
+ * Subsequent rounds: subdivide each bracket group from the tree. Within a 2-court pair at the
+ * same level, 1sts+2nds stay in the gold race (top court), 3rds+4ths drop out (bottom court).
+ * Once dropped, players never return to the gold race. When a pair resolves to one active court
+ * plus a frozen sibling, only the active court subdivides.
  */
 export function processPreseedTransition(
 	courtResults: readonly CourtResult[],
 	courtSizes: readonly number[],
-	isFirstSplit: boolean
+	roundsCompleted: number,
+	totalCourts: number = courtSizes.length
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
-	const N = sorted.length;
-	if (N === 0) return [];
-	if (N === 1)
+	if (sorted.length === 0) return [];
+	if (sorted.length === 1)
 		return [{ courtNumber: 1, playerIds: sorted[0].standings.map((s) => s.playerId) }];
 
-	if (isFirstSplit) {
+	if (roundsCompleted === 0) {
 		return redistributePreseedRecursive(sorted, courtSizes);
 	}
 
-	const W = splitSize(N);
-	if (!isPowerOfTwo(N) && N - W === 1 && W > 1) {
-		const assignments = subdividePreseedBracket(sorted.slice(0, W), courtSizes.slice(0, W));
-		assignments.push({
-			courtNumber: assignments.length + 1,
-			playerIds: sorted[W].standings.map((s) => s.playerId)
-		});
-		return assignments;
-	}
-
-	return subdividePreseedBracket(sorted, courtSizes);
+	return processSubsequentPreseedSplit(sorted, courtSizes, totalCourts, roundsCompleted);
 }
 
 // ============================================================================
@@ -818,7 +895,8 @@ export function closeRound(
 		nextAssignments = processPreseedTransition(
 			courtResults,
 			courtSizes,
-			state.roundsCompleted === 0
+			state.roundsCompleted,
+			state.config.courtSizes.length
 		);
 	} else if (state.roundsCompleted === 0) {
 		nextAssignments = verticalSeeding(courtResults, courtCount, courtSizes);

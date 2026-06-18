@@ -681,7 +681,13 @@ export const retirePlayer = command(
 
 			const formatType = tourney.formatType as FormatType;
 			if (formatType === 'preseed') {
-				nextAssignments = processPreseedTransition(results, newCourtSizes, prevRound === 1);
+				const totalCourts = calculateCourtSizes(tourney.playerCount).length;
+				nextAssignments = processPreseedTransition(
+					results,
+					newCourtSizes,
+					prevRound - 1,
+					totalCourts
+				);
 			} else if (prevRound === 1) {
 				nextAssignments = verticalSeeding(results, newCourtSizes.length, newCourtSizes);
 			} else {
@@ -1086,7 +1092,13 @@ export const undoRetirement = command(
 
 			const formatType = tourney.formatType as FormatType;
 			if (formatType === 'preseed') {
-				nextAssignments = processPreseedTransition(results, courtSizes, prevRound === 1);
+				const totalCourts = calculateCourtSizes(tourney.playerCount).length;
+				nextAssignments = processPreseedTransition(
+					results,
+					courtSizes,
+					prevRound - 1,
+					totalCourts
+				);
 			} else if (prevRound === 1) {
 				nextAssignments = verticalSeeding(results, courtSizes.length, courtSizes);
 			} else {

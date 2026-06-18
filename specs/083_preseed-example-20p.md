@@ -143,57 +143,55 @@ Players finish in listed order.
 
 ---
 
-## Round 3 → Round 4: Subsequent Split (final round)
+## Round 3 → Round 4: Winner-only split (final round)
 
-`splitSize(5)=4` → Courts 1-4 subdivide by pairs. Court 5 unchanged.
+Courts 1–4 use **winner-only** subdivision: only the top court from each pair continues. The bottom court (WL, LL) is settled — placements determined by R3 finish order.
 
 ### Pair (Courts 1–2)
 
-**1sts+2nds → Court 1 (Final):** A(C1), L(C2), B(C1), J(C2)
-**3rds+4ths → Court 2 (L(WW)):** G(C1), M(C2), E(C1), Q(C2)
+**Court 1 (WW) → Final:** A, B, G, E (all players from WW court — championship round)
+**Court 2 (WL):** settled after R3 — L(5th), J(6th), M(7th), Q(8th). **L cannot reach the Final** despite winning Court 2 in R3, because finishing 4th on Court 2 in R2 permanently dropped out of the gold race.
 
 ### Pair (Courts 3–4)
 
-**1sts+2nds → Court 3 (TL):** D(C3), P(C4), C(C3), I(C4)
-**3rds+4ths → Court 4 (BL):** H(C3), K(C4), F(C3), N(C4)
+**Court 3 (LW) → TL:** D, C, H, F (all players from LW court — play for places 9–12)
+**Court 4 (LL):** settled after R3 — P(13th), I(14th), K(15th), N(16th)
 
-### Round 4 Courts (Final Round)
+### Round 4 Courts (active)
 
-| Final | L(WW) | TL  | BL  | L5  |
-| :---: | :---: | :-: | :-: | :-: |
-|   A   |   G   |  D  |  H  |  O  |
-|   L   |   M   |  P  |  K  |  R  |
-|   B   |   E   |  C  |  F  |  T  |
-|   J   |   Q   |  I  |  N  |  S  |
+| Final | TL  | L5 (frozen) |
+| :---: | :-: | :---------: |
+|   A   |  D  |     O       |
+|   B   |  C  |     R       |
+|   G   |  H  |     T       |
+|   E   |  F  |     S       |
 
 ---
 
 ## Final Standings
 
-Champion determined by final Court 1 position:
-
-| Rank | Player | Final Court | Position |
-| :--: | :----: | :---------: | :------: |
-| 1st  | **A**  |    Final    |   1st    |
-| 2nd  |   L    |    Final    |   2nd    |
-| 3rd  |   B    |    Final    |   3rd    |
-| 4th  |   J    |    Final    |   4th    |
-| 5th  |   G    |    L(WW)    |   1st    |
-| 6th  |   M    |    L(WW)    |   2nd    |
-| 7th  |   E    |    L(WW)    |   3rd    |
-| 8th  |   Q    |    L(WW)    |   4th    |
-| 9th  |   D    |     TL      |   1st    |
-| 10th |   P    |     TL      |   2nd    |
-| 11th |   C    |     TL      |   3rd    |
-| 12th |   I    |     TL      |   4th    |
-| 13th |   H    |     BL      |   1st    |
-| 14th |   K    |     BL      |   2nd    |
-| 15th |   N    |     BL      |   3rd    |
-| 16th |   F    |     BL      |   4th    |
-| 17th |   O    |     L5      |   1st    |
-| 18th |   R    |     L5      |   2nd    |
-| 19th |   T    |     L5      |   3rd    |
-| 20th |   S    |     L5      |   4th    |
+| Rank | Player | Determined by |
+| :--: | :----: | :-----------: |
+| 1st  | **A**  | Final (R4 C1) 1st |
+| 2nd  |   B    | Final (R4 C1) 2nd |
+| 3rd  |   G    | Final (R4 C1) 3rd |
+| 4th  |   E    | Final (R4 C1) 4th |
+| 5th  |   L    | WL (R3 C2) 1st — out of gold after R2 |
+| 6th  |   J    | WL (R3 C2) 2nd |
+| 7th  |   M    | WL (R3 C2) 3rd |
+| 8th  |   Q    | WL (R3 C2) 4th |
+| 9th  |   D    | TL (R4 C2) 1st |
+| 10th |   C    | TL (R4 C2) 2nd |
+| 11th |   H    | TL (R4 C2) 3rd |
+| 12th |   F    | TL (R4 C2) 4th |
+| 13th |   P    | LL (R3 C4) 1st |
+| 14th |   I    | LL (R3 C4) 2nd |
+| 15th |   K    | LL (R3 C4) 3rd |
+| 16th |   N    | LL (R3 C4) 4th |
+| 17th |   O    | L5 (R2+) 1st |
+| 18th |   R    | L5 (R2+) 2nd |
+| 19th |   T    | L5 (R2+) 3rd |
+| 20th |   S    | L5 (R2+) 4th |
 
 ---
 
@@ -210,19 +208,17 @@ R2→R3:  pair subdivision within winner courts (C1/C2 → C1/C2, C3/C4 → C3/C
          │          │            │
 R3:   [WW⊤][WW⊥] | [LW⊤][LW⊥] | [L5]
          │          │            │
-R3→R4: pair subdivision across 4 active courts
+R3→R4: winner-only pairs — WW and LW continue, WL and LL settled
          │          │            │
-R4:   [Final][L(WW)]|[TL][BL]  | [L5]
+R4:   [Final] | [TL]           | [L5 frozen]
 ```
 
 ### Key Points
 
-1. **`splitSize(5)=4` is asymmetric:** Unlike 16p (balanced 2W+2L), 20p has 4W+1L. Only 4 players per round enter the single loser court.
+1. **3rd/4th = permanent dropout from gold race.** A player who finishes 3rd or 4th on any court never returns to contention for places 1–4.
 
-2. **Sub-brackets subdivide by court pairs:** Within each pair, 1sts+2nds → top court, 3rds+4ths → bottom court. A 3rd-place finisher on Court 1 drops to Court 2 (within the winners pair), not to the losers bracket.
+2. **Peer vs winner-only pairs:** The first split of a court pair combines 1sts+2nds from both courts. Later splits only advance the top court from the pair; the bottom court is settled.
 
-3. **Winner bracket doesn't shrink in count** (always 4 courts), but the COMPETITION within it gets more granular each round.
+3. **`splitSize(5)=4` is asymmetric:** 20p has 4W+1L. Court 5 (L5) freezes after R2.
 
-4. **The loser court is a round-robin:** Same 4 players every round. Only the winner of Court 5 advances to the winner bracket in the next round (but since there's only 1 loser court and 4+ winner courts, the loser winner always moves up).
-
-5. **Origin mixing only for R1→R2:** The first split uses `distributeGroup` to avoid same-origin 1st+2nd pairs. Subsequent splits don't need it — the tier-based split within each bracket naturally separates different finish positions.
+4. **Origin mixing only for R1→R2:** Subsequent splits separate by finish position within each bracket group.
