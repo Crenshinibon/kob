@@ -50,3 +50,115 @@ Running 85 tests using 1 worker
   ✓  36 e2e/preseed.spec.ts:264:2 › Preseed Tournament › 8-player preseed tournament (35.1s)
   ✓  37 e2e/promotion.spec.ts:69:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (19.7s)
   ✓  38 e2e/promotion.spec.ts:183:2 › Promotion and Relegation › close round button is disabled until all matches complete (16.8s)
+  ✓  39 e2e/promotion.spec.ts:277:2 › Promotion and Relegation › final round completion marks tournament as completed (17.1s)
+  ✓  40 e2e/promotion.spec.ts:357:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution (18.6s)
+  ✓  41 e2e/promotion.spec.ts:440:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution (15.4s)
+  ✓  42 e2e/promotion.spec.ts:514:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court redistributes correctly after round (22.7s)
+  ✓  43 e2e/promotion.spec.ts:589:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court redistributes correctly after round (22.7s)
+  ✓  44 e2e/standings.spec.ts:53:2 › Standings Calculation › calculates correct points for all players in a match (4.7s)
+  ✓  45 e2e/standings.spec.ts:89:2 › Standings Calculation › sorts players by total points in descending order (4.8s)
+  ✓  46 e2e/standings.spec.ts:126:2 › Standings Calculation › breaks ties using point differential (4.9s)
+  ✓  47 e2e/standings.spec.ts:158:2 › Standings Calculation › awards points correctly across multiple matches per player (5.3s)
+  ✓  48 e2e/standings.spec.ts:206:2 › Standings Calculation › validates score entry rules (min points, win by 2, no cap) (5.3s)
+  ✓  49 e2e/standings.spec.ts:257:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking (3.5s)
+  ✓  50 e2e/standings.spec.ts:288:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking (4.2s)
+  ✓  51 e2e/standings.spec.ts:319:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking (4.4s)
+  ✓  52 e2e/standings.spec.ts:350:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings rank correctly after score entry (6.3s)
+  ✓  53 e2e/standings.spec.ts:404:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings rank correctly after score entry (5.2s)
+  ✓  54 e2e/standings.spec.ts:448:3 › Standings Calculation › Round 1 Standings Ranking › ranks by court position first after round 1 (17.0s)
+  ✓  55 e2e/standings.spec.ts:532:3 › Standings Calculation › Non-Standard Court Score Validation › 5p court accepts 15-point scores (5.0s)
+  ✓  56 e2e/standings.spec.ts:568:3 › Standings Calculation › Non-Standard Court Score Validation › 3p court accepts 21-point scores (same as 4p) (4.3s)
+  ✓  57 e2e/tournament.spec.ts:88:2 › Tournament Integration Tests › complete 2-round tournament with score entry (33.9s)
+  ✓  58 e2e/tournament.spec.ts:241:2 › Tournament Integration Tests › players can access court via direct URL without login (4.0s)
+  ✓  59 e2e/tournament.spec.ts:295:2 › Tournament Integration Tests › dashboard shows active tournaments (2.3s)
+  ✓  60 e2e/tournament.spec.ts:322:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines (858ms)
+  ✓  61 e2e/tournament.spec.ts:354:3 › Tournament Integration Tests › Scoring Modes › best-of-3 scoring mode is selectable (648ms)
+  ✓  62 e2e/tournament.spec.ts:362:3 › Tournament Integration Tests › Scoring Modes › custom scoring mode reveals advanced options (634ms)
+  ✓  63 e2e/tournament.spec.ts:383:3 › Tournament Integration Tests › Scoring Modes › custom best-of-3 shows deciding set points (765ms)
+  ✓  64 e2e/tournament.spec.ts:394:3 › Tournament Integration Tests › Scoring Modes › duration estimate updates based on scoring mode (621ms)
+  ✓  65 e2e/tournament.spec.ts:406:3 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default (3.6s)
+  ✓  66 e2e/tournament.spec.ts:431:3 › Tournament Integration Tests › Scoring Modes › best-of-3 tournament enforces per-set score entry (7.5s)
+  ✓  67 e2e/tournament.spec.ts:535:3 › Tournament Integration Tests › Scoring Modes › single-set tournament rejects scores below minimum (5.5s)
+  ✓  68 e2e/tournament.spec.ts:576:3 › Tournament Integration Tests › Scoring Modes › 5p court rejects scores below 15-point minimum (5.9s)
+  ✓  69 e2e/tournament.spec.ts:617:2 › Tournament Integration Tests › rejects blowout scores (deuce-aware validation) (7.4s)
+  ✓  70 e2e/tournament.spec.ts:679:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › shows virtual court info when physical courts < virtual courts (606ms)
+  ✓  71 e2e/tournament.spec.ts:694:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › physical courts slider ranges from 1 to 16 (599ms)
+  ✓  72 e2e/tournament.spec.ts:702:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › duration estimate accounts for physical court shifts (601ms)
+  ✓  73 e2e/tournament.spec.ts:718:3 › Tournament Integration Tests › Court Labeling › organizer can set and view physical court labels (6.3s)
+  ✓  74 e2e/tournament.spec.ts:748:3 › Tournament Integration Tests › Court Labeling › court page shows no label when not set (3.0s)
+  ✓  75 e2e/tournament.spec.ts:772:3 › Tournament Integration Tests › Tournament Deletion › deletes tournament from detail page (4.4s)
+  ✓  76 e2e/tournament.spec.ts:802:3 › Tournament Integration Tests › Tournament Deletion › cancelling delete keeps tournament (3.5s)
+  ✓  77 e2e/tournament.spec.ts:831:3 › Tournament Integration Tests › Player Retirement › retire a player between rounds and continue tournament (45.3s)
+  ✓  78 e2e/tournament.spec.ts:951:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Cancel & Average option (17.1s)
+  ✓  79 e2e/tournament.spec.ts:1064:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Substitute option (17.8s)
+  ✓  80 e2e/tournament.spec.ts:1187:3 › Tournament Integration Tests › Player Retirement › undo retirement within 5 min window (30.9s)
+  ✓  81 e2e/tournament.spec.ts:1284:3 › Tournament Integration Tests › Player Retirement › undo injury report with Cancel option (16.6s)
+  ✓  82 e2e/tournament.spec.ts:1382:3 › Tournament Integration Tests › Player Retirement › undo injury report with Substitute option (16.6s)
+  ✓  83 e2e/tournament.spec.ts:1476:3 › Tournament Integration Tests › Player Retirement › retire a player causing non-standard bottom court and complete tournament (39.0s)
+  ✓  84 e2e/tournament.spec.ts:1598:3 › Tournament Integration Tests › Scoring Overrides › override 5p court points-to-win and verify score entry (6.0s)
+  ✓  85 e2e/tournament.spec.ts:1653:3 › Tournament Integration Tests › Scoring Overrides › override 3p court to best-of-3 and verify set entry (5.4s)
+
+
+  1) e2e/bestof3.spec.ts:96:2 › Best-of-3 Round Transition › round closes when best-of-3 matches end 2-0 (no deciding set) 
+
+    [31mTest timeout of 180000ms exceeded.[39m
+
+    Error: page.click: Test timeout of 180000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('[data-testid="save-score-106823"]')[22m
+    [2m    - locator resolved to <button type="submit" data-testid="save-score-106823" class="btn-primary svelte-3v0kge">…</button>[22m
+    [2m  - attempting click action[22m
+    [2m    - waiting for element to be visible, enabled and stable[22m
+    [2m    - element is not stable[22m
+    [2m  - retrying click action[22m
+    [2m    - waiting for element to be visible, enabled and stable[22m
+    [2m  - element was detached from the DOM, retrying[22m
+    [2m    - waiting for" http://localhost:4173/" navigation to finish...[22m
+    [2m    - navigated to "http://localhost:4173/"[22m
+
+
+      19 | 	await page.fill(`[data-testid="team-a-score-${matchId}"]`, String(scoreA));
+      20 | 	await page.fill(`[data-testid="team-b-score-${matchId}"]`, String(scoreB));
+    > 21 | 	await page.click(`[data-testid="save-score-${matchId}"]`);
+         | 	           ^
+      22 | 	await expect(matchGroup.locator('.saved').first()).toBeVisible({ timeout: 15000 });
+      23 | 	await page.waitForTimeout(500);
+      24 | }
+        at enterSingleSet (/home/dirk/Dev/kob/e2e/bestof3.spec.ts:21:13)
+        at fillCourtBestOf3 (/home/dirk/Dev/kob/e2e/bestof3.spec.ts:37:2)
+        at /home/dirk/Dev/kob/e2e/bestof3.spec.ts:127:4
+
+    Error Context: test-results/bestof3-Best-of-3-Round-Tr-625a5-es-end-2-0-no-deciding-set-/error-context.md
+
+  2) e2e/frozen-courts.spec.ts:129:2 › Preseed Frozen Courts (20 players, 5 courts) › 20-player preseed: complete tournament with frozen court 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('.settled-badge').first()
+    Expected substring: [32m"Settled"[39m
+    Received string:    [31m"Done"[39m
+    Timeout: 5000ms
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 5000ms[22m
+    [2m  - waiting for locator('.settled-badge').first()[22m
+    [2m    14 × locator resolved to <span class="settled-badge svelte-1i7scpm">Done</span>[22m
+    [2m       - unexpected value "Done"[22m
+
+
+      214 | 		const settledBadge = page.locator('.settled-badge');
+      215 | 		await expect(settledBadge.first()).toBeVisible();
+    > 216 | 		await expect(settledBadge.first()).toContainText('Settled');
+          | 		                                   ^
+      217 |
+      218 | 		// All 20 players in standings
+      219 | 		const rows = await page.locator('.standings-table tbody tr').count();
+        at /home/dirk/Dev/kob/e2e/frozen-courts.spec.ts:216:38
+
+    Error Context: test-results/frozen-courts-Preseed-Froz-26d68-ournament-with-frozen-court/error-context.md
+
+  2 failed
+    e2e/bestof3.spec.ts:96:2 › Best-of-3 Round Transition › round closes when best-of-3 matches end 2-0 (no deciding set) 
+    e2e/frozen-courts.spec.ts:129:2 › Preseed Frozen Courts (20 players, 5 courts) › 20-player preseed: complete tournament with frozen court 
+  83 passed (15.8m)
+error: script "playwright" exited with code 1
