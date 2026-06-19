@@ -17,7 +17,7 @@
 		"test": "npm run test:unit && npm run test:e2e",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
-		"db:push": "drizzle-kit push",
+		"db:push": "bun scripts/db-push.ts",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
