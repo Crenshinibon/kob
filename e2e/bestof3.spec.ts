@@ -6,26 +6,32 @@ async function enterSingleSet(
 	scoreA: number,
 	scoreB: number
 ): Promise<void> {
+	await expect(page).toHaveURL(/\/court\//);
+
 	const matchGroup = page.locator('.match-run').nth(matchGroupIndex);
-	// Pick the first unscores form — it has visible score inputs, not "Saved" text
 	const form = matchGroup
 		.locator('[data-testid^="set-form-"]')
-		.filter({ has: page.locator('[data-testid^="team-a-score-"]') })
+		.filter({ has: matchGroup.locator('[data-testid^="team-a-score-"]') })
 		.first();
+
+	await expect(form).toBeVisible({ timeout: 10000 });
+
 	const testId = await form.getAttribute('data-testid');
 	const matchId = testId?.replace('set-form-', '');
-	if (!matchId) throw new Error('Could not find unscores set form');
+	if (!matchId) throw new Error('Could not find unscored set form');
 
-	await page.fill(`[data-testid="team-a-score-${matchId}"]`, String(scoreA));
-	await page.fill(`[data-testid="team-b-score-${matchId}"]`, String(scoreB));
-	await page.click(`[data-testid="save-score-${matchId}"]`);
-	await expect(matchGroup.locator('.saved').first()).toBeVisible({ timeout: 15000 });
-	await page.waitForTimeout(500);
+	await form.locator(`[data-testid="team-a-score-${matchId}"]`).fill(String(scoreA));
+	await form.locator(`[data-testid="team-b-score-${matchId}"]`).fill(String(scoreB));
+	await form.locator(`[data-testid="save-score-${matchId}"]`).click();
+
+	await page.waitForLoadState('networkidle');
+	await expect(matchGroup.locator(`[data-testid="saved-${matchId}"]`)).toBeVisible({
+		timeout: 15000
+	});
 }
 
 async function fillCourtBestOf3(page: Page): Promise<void> {
-	// Wait for score forms
-	await page.waitForSelector('[data-testid^="set-form-"]', { timeout: 15000 });
+	await page.waitForSelector('.match-run', { timeout: 15000 });
 
 	// Match 1: 2-0 (team A wins both sets, no deciding set needed)
 	await enterSingleSet(page, 0, 21, 19);
@@ -132,7 +138,6 @@ test.describe('Best-of-3 Round Transition', () => {
 		await page.waitForURL(/\/tournament\/\d+/);
 		await page.waitForTimeout(5000); // Let polling refresh
 
-		// Wait for either close button or check if waiting button is showing
 		const closeBtn = page.locator('button:has-text("Close Round")').first();
 		await expect(closeBtn).toBeVisible({ timeout: 25000 });
 
@@ -140,7 +145,6 @@ test.describe('Best-of-3 Round Transition', () => {
 
 		// Close round returns success inline, live query reconnects
 		await page.waitForTimeout(5000);
-		// Navigate away and back to force refresh
 		await page.goto(tournamentUrl);
 		await expect(page.locator('.court-card').first()).toBeVisible({ timeout: 10000 });
 		await expect(page.locator('text=Round 2 of 2')).toBeVisible({ timeout: 10000 });
@@ -168,10 +172,8 @@ test.describe('Best-of-3 Round Transition', () => {
 		await expect(finalizeBtn).toBeVisible({ timeout: 25000 });
 
 		await finalizeBtn.click();
-		// Finalize redirects to standings page
 		await page.waitForURL(/\/standings/, { timeout: 15000 });
 
-		// Verify standings page loads
 		await expect(page.locator('text=Final Standings').first()).toBeVisible({ timeout: 10000 });
 	});
 });

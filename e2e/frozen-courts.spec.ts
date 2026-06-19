@@ -210,10 +210,10 @@ test.describe('Preseed Frozen Courts (20 players, 5 courts)', () => {
 		await page.goto(`/tournament/${tid}/standings`);
 		await page.waitForTimeout(2000);
 
-		// Settled badge visible for frozen court
+		// Frozen court badge visible (i18n: "Done" in English)
 		const settledBadge = page.locator('.settled-badge');
 		await expect(settledBadge.first()).toBeVisible();
-		await expect(settledBadge.first()).toContainText('Settled');
+		await expect(settledBadge.first()).toContainText('Done');
 
 		// All 20 players in standings
 		const rows = await page.locator('.standings-table tbody tr').count();
