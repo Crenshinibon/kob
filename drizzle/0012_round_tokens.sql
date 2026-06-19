@@ -1,9 +1,10 @@
 -- Add round-specific tokens to court_rotation (idempotent; safe after db:push)
 ALTER TABLE "court_rotation" ADD COLUMN IF NOT EXISTS "token" text;
 
+-- Backfill: 32-char hex tokens (same length as crypto.randomBytes(16).toString('hex'))
 UPDATE "court_rotation"
-SET "token" = md5('court_rotation:' || "id"::text)
-WHERE "token" IS NULL;
+SET "token" = substr(md5(random()::text || "id"::text || clock_timestamp()::text), 1, 32)
+WHERE "token" IS NULL OR "token" = '';
 
 DO $$
 BEGIN
@@ -12,7 +13,6 @@ EXCEPTION WHEN others THEN
 	RAISE NOTICE 'token NOT NULL constraint: %', SQLERRM;
 END $$;
 
--- db:push may already create a unique constraint under a different name
 DO $$
 BEGIN
 	IF NOT EXISTS (
