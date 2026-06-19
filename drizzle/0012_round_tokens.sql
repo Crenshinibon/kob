@@ -1,9 +1,9 @@
--- Add round-specific tokens to court_rotation (idempotent; safe after db:push)
+-- court_rotation.token: round-specific QR link tokens (idempotent)
 ALTER TABLE "court_rotation" ADD COLUMN IF NOT EXISTS "token" text;
 
--- Backfill: 32-char hex tokens (same length as crypto.randomBytes(16).toString('hex'))
+-- Generate a unique 32-char hex token for every existing row (same length as randomBytes(16))
 UPDATE "court_rotation"
-SET "token" = substr(md5(random()::text || "id"::text || clock_timestamp()::text), 1, 32)
+SET "token" = md5('court_rotation:' || "id"::text)
 WHERE "token" IS NULL OR "token" = '';
 
 DO $$
