@@ -443,9 +443,36 @@ describe('startRound', () => {
 		s = startRound(s);
 
 		expect(s.currentAssignments).toHaveLength(3);
-		expect(s.currentAssignments[0].playerIds.length).toBe(4);
-		expect(s.currentAssignments[1].playerIds.length).toBe(4);
-		expect(s.currentAssignments[2].playerIds.length).toBe(3);
+		expect(s.currentAssignments[0].playerIds).toEqual([1, 6, 7, 11]);
+		expect(s.currentAssignments[1].playerIds).toEqual([2, 5, 8, 10]);
+		expect(s.currentAssignments[2].playerIds).toEqual([3, 4, 9]);
+	});
+
+	it('generates Round 1 for 17 players (5p bottom court) with snake seeding', () => {
+		let s = createInitialState({ tournamentId: 4, formatType: 'preseed', playerCount: 17 });
+		const players = Array.from({ length: 17 }, (_, i) => mockPlayer(i + 1, 17 - i));
+		s = addPlayers(s, players);
+		s = startRound(s);
+
+		expect(calculateCourtSizes(17)).toEqual([4, 4, 4, 5]);
+		expect(s.currentAssignments).toHaveLength(4);
+		expect(s.currentAssignments[0].playerIds).toEqual([1, 8, 9, 16]);
+		expect(s.currentAssignments[1].playerIds).toEqual([2, 7, 10, 15]);
+		expect(s.currentAssignments[2].playerIds).toEqual([3, 6, 11, 14]);
+		// 5p court mixes seeds — not all bottom-ranked players
+		expect(s.currentAssignments[3].playerIds).toEqual([4, 5, 12, 13, 17]);
+	});
+
+	it('generates Round 1 for 25 players (5p bottom court) without dumping losers on last court', () => {
+		let s = createInitialState({ tournamentId: 5, formatType: 'preseed', playerCount: 25 });
+		const players = Array.from({ length: 25 }, (_, i) => mockPlayer(i + 1, 25 - i));
+		s = addPlayers(s, players);
+		s = startRound(s);
+
+		const bottomCourt = s.currentAssignments[5].playerIds;
+		expect(bottomCourt).toEqual([6, 7, 18, 19, 25]);
+		expect(bottomCourt).toContain(6);
+		expect(bottomCourt).not.toEqual([21, 22, 23, 24, 25]);
 	});
 
 	it('requires players for Round 1', () => {
