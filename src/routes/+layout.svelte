@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CookieNotice from '$lib/components/CookieNotice.svelte';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
+	import { authClient } from '$lib/auth-client';
 	import * as m from '$lib/paraglide/messages';
 	import { shouldRedirect, localizeHref } from '$lib/paraglide/runtime';
 	import { goto, afterNavigate } from '$app/navigation';
@@ -37,8 +38,13 @@
 	});
 
 	async function handleSignOut() {
-		await fetch('/auth/sign-out', { method: 'POST' });
-		window.location.href = localizeHref('/');
+		await authClient.signOut({
+			fetchOptions: {
+				onSuccess: () => {
+					window.location.href = localizeHref('/');
+				}
+			}
+		});
 	}
 </script>
 
@@ -53,7 +59,7 @@
 		<LanguageSwitcher />
 		{#if data?.user}
 			<span class="user-email">{data.user.email}</span>
-			<button onclick={handleSignOut} class="btn-signout">{m.sign_out()}</button>
+			<button type="button" onclick={handleSignOut} class="btn-signout">{m.sign_out()}</button>
 		{/if}
 	</nav>
 
