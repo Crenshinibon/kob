@@ -250,24 +250,26 @@ export function startRound(state: TournamentState): TournamentState {
 
 function snakeDistribute(items: number[], courtSizes: readonly number[]): CourtAssignment[] {
 	const courtCount = courtSizes.length;
-	const stdCourts = courtSizes.filter((s) => s === 4).length;
-	const courts = Array.from({ length: courtCount }, (_, i) => ({
+	const courts = courtSizes.map((size, i) => ({
 		courtNumber: i + 1,
-		playerIds: [] as number[]
+		playerIds: [] as number[],
+		capacity: size
 	}));
 
-	for (let pos = 0; pos < 4; pos++) {
-		const fwd = pos % 2 === 0;
-		for (let c = 0; c < stdCourts; c++) {
-			const idx = fwd ? c : stdCourts - 1 - c;
-			const ii = pos * stdCourts + c;
-			if (ii < items.length) courts[idx].playerIds.push(items[ii]);
+	let itemIndex = 0;
+	const maxRows = Math.max(...courtSizes);
+
+	for (let row = 0; row < maxRows && itemIndex < items.length; row++) {
+		const forward = row % 2 === 0;
+		for (let c = 0; c < courtCount; c++) {
+			const courtIdx = forward ? c : courtCount - 1 - c;
+			if (courts[courtIdx].playerIds.length < courts[courtIdx].capacity && itemIndex < items.length) {
+				courts[courtIdx].playerIds.push(items[itemIndex++]);
+			}
 		}
 	}
 
-	const leftover = items.slice(stdCourts * 4);
-	if (leftover.length) courts[courtCount - 1].playerIds.push(...leftover);
-	return courts;
+	return courts.map(({ courtNumber, playerIds }) => ({ courtNumber, playerIds }));
 }
 
 function generatePreseedRound1(
