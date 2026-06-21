@@ -687,7 +687,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.locator('input[name="n:physicalCourts"]').fill('4');
 
 			// Should show virtual court info
-			await expect(page.locator('.info:has-text("Virtual courts")')).toBeVisible();
+			await expect(page.locator('.info:has-text("groups")')).toBeVisible();
 			await expect(page.locator('.info:has-text("batch shifts")')).toBeVisible();
 		});
 

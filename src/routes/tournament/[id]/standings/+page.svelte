@@ -237,7 +237,7 @@
 											? `color: ${courtColor}; border-right-color: ${courtColor}`
 											: ''}
 									>
-										{currentCourt}
+										{currentCourt != null ? m.court_label({ number: currentCourt }) : ''}
 										{#if frozenCourtNumbers.has(currentCourt)}
 											<span class="settled-badge"
 												>{m.frozen_after_round({

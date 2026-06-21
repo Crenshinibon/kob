@@ -25,6 +25,8 @@ import {
 	getScoringLabel,
 	getEffectiveScoring,
 	recalculateCourtConfigAfterRetirement,
+	preserveAssignmentsAfterRetirement,
+	restorePlayerToAssignments,
 	getPreseedBracketRange,
 	calculateRetiredStanding,
 	getFinalRoundCourtConfig,
@@ -3230,6 +3232,71 @@ describe('calculateRetiredStanding', () => {
 		// splitSize(8)=4, winner courts = 1-4 (max 16), loser courts = 5-8 (max 32)
 		const standing = calculateRetiredStanding(2, 8, 1, 4, 'preseed', Array(8).fill(4));
 		expect(standing).toBe(16);
+	});
+});
+
+describe('preserveAssignmentsAfterRetirement', () => {
+	const assignments17: CourtAssignment[] = [
+		{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
+		{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
+		{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
+		{ courtNumber: 4, playerIds: [13, 14, 15, 16, 17] }
+	];
+
+	it('17p: retiring from bottom 5p group keeps top three groups unchanged', () => {
+		const retired = new Set([17]);
+		const result = preserveAssignmentsAfterRetirement(assignments17, retired, [4, 4, 4, 4]);
+		expect(result).not.toBeNull();
+		expect(result![0].playerIds).toEqual([1, 2, 3, 4]);
+		expect(result![1].playerIds).toEqual([5, 6, 7, 8]);
+		expect(result![2].playerIds).toEqual([9, 10, 11, 12]);
+		expect(result![3].playerIds).toEqual([13, 14, 15, 16]);
+	});
+
+	it('returns null when retirement requires cross-group redistribution', () => {
+		const result = preserveAssignmentsAfterRetirement(assignments17, new Set([1]), [4, 4, 4, 4]);
+		expect(result).toBeNull();
+	});
+
+	it('handles multiple retirees shrinking a 6p bottom group to 4p', () => {
+		const assignments22: CourtAssignment[] = [
+			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
+			{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
+			{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
+			{ courtNumber: 4, playerIds: [13, 14, 15, 16] },
+			{ courtNumber: 5, playerIds: [17, 18, 19, 20, 21, 22] }
+		];
+		const result = preserveAssignmentsAfterRetirement(assignments22, new Set([21, 22]), [
+			4, 4, 4, 4, 4
+		]);
+		expect(result).not.toBeNull();
+		expect(result![4].playerIds).toEqual([17, 18, 19, 20]);
+	});
+});
+
+describe('restorePlayerToAssignments', () => {
+	it('restores retired player to their former group without moving others', () => {
+		const afterRetire: CourtAssignment[] = [
+			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
+			{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
+			{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
+			{ courtNumber: 4, playerIds: [13, 14, 15, 16] }
+		];
+		const restored = restorePlayerToAssignments(afterRetire, 17, 4, [4, 4, 4, 5]);
+		expect(restored).not.toBeNull();
+		expect(restored![0].playerIds).toEqual([1, 2, 3, 4]);
+		expect(restored![3].playerIds).toContain(17);
+		expect(restored![3].playerIds).toHaveLength(5);
+	});
+
+	it('returns null when restore would break court size config', () => {
+		const afterRetire: CourtAssignment[] = [
+			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
+			{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
+			{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
+			{ courtNumber: 4, playerIds: [13, 14, 15, 16] }
+		];
+		expect(restorePlayerToAssignments(afterRetire, 1, 1, [4, 4, 4, 5])).toBeNull();
 	});
 });
 

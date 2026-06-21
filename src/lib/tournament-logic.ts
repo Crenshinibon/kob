@@ -1379,6 +1379,52 @@ export function formatDuration(totalMinutes: number): string {
 // Player Retirement
 // ============================================================================
 
+/**
+ * Keep current group assignments when retirement only shrinks affected groups
+ * (e.g. 17p bottom 5p group loses one player → four 4p groups, top three unchanged).
+ */
+export function preserveAssignmentsAfterRetirement(
+	assignments: readonly CourtAssignment[],
+	retiredPlayerIds: ReadonlySet<number>,
+	newCourtSizes: readonly number[]
+): CourtAssignment[] | null {
+	const sorted = [...assignments].sort((a, b) => a.courtNumber - b.courtNumber);
+	const updated = sorted.map((a) => ({
+		courtNumber: a.courtNumber,
+		playerIds: a.playerIds.filter((id) => !retiredPlayerIds.has(id))
+	}));
+
+	if (updated.length !== newCourtSizes.length) return null;
+	for (let i = 0; i < updated.length; i++) {
+		if (updated[i].playerIds.length !== newCourtSizes[i]) return null;
+	}
+	return updated;
+}
+
+/** Re-add a retired player to their former group when undoing retirement. */
+export function restorePlayerToAssignments(
+	assignments: readonly CourtAssignment[],
+	playerId: number,
+	courtNumber: number,
+	newCourtSizes: readonly number[]
+): CourtAssignment[] | null {
+	const sorted = [...assignments].sort((a, b) => a.courtNumber - b.courtNumber);
+	const court = sorted.find((a) => a.courtNumber === courtNumber);
+	if (!court || court.playerIds.includes(playerId)) return null;
+
+	const updated = sorted.map((a) =>
+		a.courtNumber === courtNumber
+			? { courtNumber: a.courtNumber, playerIds: [...a.playerIds, playerId] }
+			: { courtNumber: a.courtNumber, playerIds: [...a.playerIds] }
+	);
+
+	if (updated.length !== newCourtSizes.length) return null;
+	for (let i = 0; i < updated.length; i++) {
+		if (updated[i].playerIds.length !== newCourtSizes[i]) return null;
+	}
+	return updated;
+}
+
 export function recalculateCourtConfigAfterRetirement(newPlayerCount: number): {
 	courtSizes: number[];
 	totalCourts: number;

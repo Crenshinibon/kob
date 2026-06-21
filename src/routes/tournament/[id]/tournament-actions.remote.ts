@@ -15,6 +15,8 @@ import {
 	calculateCourtSizes,
 	calculateCourtStandings,
 	recalculateCourtConfigAfterRetirement,
+	preserveAssignmentsAfterRetirement,
+	restorePlayerToAssignments,
 	processPreseedTransition,
 	verticalSeeding,
 	ladderRedistribute,
@@ -593,6 +595,20 @@ export const retirePlayer = command(
 			.where(eq(tournament.id, tournamentId));
 
 		const currentRotationIds = currentRotations.map((r) => r.id);
+		const currentAssignments = currentRotations
+			.sort((a, b) => a.courtNumber - b.courtNumber)
+			.map((rotation) => ({
+				courtNumber: rotation.courtNumber,
+				playerIds: [
+					rotation.player1Id,
+					rotation.player2Id,
+					...(rotation.player3Id !== null ? [rotation.player3Id] : []),
+					...(rotation.player4Id !== null ? [rotation.player4Id] : []),
+					...(rotation.player5Id !== null ? [rotation.player5Id] : []),
+					...(rotation.player6Id !== null ? [rotation.player6Id] : [])
+				].filter((id): id is number => id !== null)
+			}));
+
 		if (currentRotationIds.length > 0) {
 			await db.delete(match).where(inArray(match.courtRotationId, currentRotationIds));
 		}
@@ -700,7 +716,19 @@ export const retirePlayer = command(
 
 		let finalAssignments: { courtNumber: number; playerIds: number[] }[];
 
-		if (tourney.formatType === 'preseed') {
+		const retiredIds = new Set([playerId, ...priorRetirees.map((p) => p.id)]);
+		const preserved = preserveAssignmentsAfterRetirement(
+			currentAssignments,
+			retiredIds,
+			newCourtSizes
+		);
+
+		if (preserved) {
+			finalAssignments = preserved.map((a) => ({
+				courtNumber: a.courtNumber,
+				playerIds: [...a.playerIds]
+			}));
+		} else if (tourney.formatType === 'preseed') {
 			// Use preseed assignments directly to preserve bracket mixing
 			finalAssignments = nextAssignments.map((a) => ({
 				courtNumber: a.courtNumber,
@@ -718,18 +746,10 @@ export const retirePlayer = command(
 				finalAssignments = finalAssignments.filter((a) => !frozenNumbers.has(a.courtNumber));
 			}
 		} else {
-			const allPlayerIds = activePlayers.map((p) => p.id);
-			allPlayerIds.sort((a, b) => a - b);
-
-			finalAssignments = [];
-			let offset = 0;
-			for (let i = 0; i < newCourtSizes.length; i++) {
-				finalAssignments.push({
-					courtNumber: i + 1,
-					playerIds: allPlayerIds.slice(offset, offset + newCourtSizes[i])
-				});
-				offset += newCourtSizes[i];
-			}
+			finalAssignments = nextAssignments.map((a) => ({
+				courtNumber: a.courtNumber,
+				playerIds: [...a.playerIds]
+			}));
 		}
 
 		for (const assignment of finalAssignments) {
@@ -970,6 +990,20 @@ export const undoRetirement = command(
 				)
 			);
 
+		const currentAssignments = currentRotations
+			.sort((a, b) => a.courtNumber - b.courtNumber)
+			.map((rotation) => ({
+				courtNumber: rotation.courtNumber,
+				playerIds: [
+					rotation.player1Id,
+					rotation.player2Id,
+					...(rotation.player3Id !== null ? [rotation.player3Id] : []),
+					...(rotation.player4Id !== null ? [rotation.player4Id] : []),
+					...(rotation.player5Id !== null ? [rotation.player5Id] : []),
+					...(rotation.player6Id !== null ? [rotation.player6Id] : [])
+				].filter((id): id is number => id !== null)
+			}));
+
 		const allRotationIds = currentRotations.map((r) => r.id);
 		if (allRotationIds.length > 0) {
 			const allMatches = await db
@@ -1012,18 +1046,34 @@ export const undoRetirement = command(
 		const activeCount = activePlayers.length;
 
 		const prevRound = currentRound - 1;
-		let assignCourtSizes: number[] = JSON.parse(tourney.courtSizes || '[]') as number[];
-		if (activeCount !== tourney.playerCount) {
-			const newConfig = recalculateCourtConfigAfterRetirement(activeCount);
-			assignCourtSizes = newConfig.courtSizes;
-		}
+		const restoredCount = activeCount + 1;
+		const restoredConfig = recalculateCourtConfigAfterRetirement(restoredCount);
+		const restoredCourtSizes = restoredConfig.courtSizes;
 
-		const courtSizes =
-			assignCourtSizes.length > 0 ? assignCourtSizes : calculateCourtSizes(activeCount);
+		await db
+			.update(tournament)
+			.set({
+				playerCount: restoredCount,
+				courtSizes: JSON.stringify(restoredCourtSizes),
+				lastActivityAt: new Date()
+			})
+			.where(eq(tournament.id, tournamentId));
 
+		let assignCourtSizes = restoredCourtSizes;
 		let nextAssignments: { courtNumber: number; playerIds: readonly number[] }[];
 
-		if (prevRound === 0) {
+		const restored = targetPlayer.retiredCourt
+			? restorePlayerToAssignments(
+					currentAssignments,
+					playerId,
+					targetPlayer.retiredCourt,
+					restoredCourtSizes
+				)
+			: null;
+
+		if (restored) {
+			nextAssignments = restored;
+		} else if (prevRound === 0) {
 			const formatType = tourney.formatType as FormatType;
 			const allActivePlayerIds = activePlayers.map((p) => p.id);
 			if (formatType === 'random-seed') {
@@ -1043,14 +1093,14 @@ export const undoRetirement = command(
 			}
 
 			const courts: { courtNumber: number; playerIds: number[] }[] = [];
-			for (let i = 0; i < courtSizes.length; i++) {
+			for (let i = 0; i < assignCourtSizes.length; i++) {
 				courts.push({ courtNumber: i + 1, playerIds: [] });
 			}
 			let idx = 0;
 			for (let pos = 0; pos < 4; pos++) {
 				const fwd = pos % 2 === 0;
-				for (let c = 0; c < courtSizes.length; c++) {
-					const courtIdx = fwd ? c : courtSizes.length - 1 - c;
+				for (let c = 0; c < assignCourtSizes.length; c++) {
+					const courtIdx = fwd ? c : assignCourtSizes.length - 1 - c;
 					if (idx < allActivePlayerIds.length) {
 						courts[courtIdx].playerIds.push(allActivePlayerIds[idx]);
 						idx++;
@@ -1097,18 +1147,28 @@ export const undoRetirement = command(
 
 			const formatType = tourney.formatType as FormatType;
 			if (formatType === 'preseed') {
-				const totalCourts = calculateCourtSizes(tourney.playerCount).length;
-				nextAssignments = processPreseedTransition(results, courtSizes, prevRound - 1, totalCourts);
+				const totalCourts = calculateCourtSizes(restoredCount).length;
+				nextAssignments = processPreseedTransition(
+					results,
+					assignCourtSizes,
+					prevRound - 1,
+					totalCourts
+				);
 			} else if (prevRound === 1) {
-				nextAssignments = verticalSeeding(results, courtSizes.length, courtSizes);
+				nextAssignments = verticalSeeding(results, assignCourtSizes.length, assignCourtSizes);
 			} else {
-				nextAssignments = ladderRedistribute(results, courtSizes.length, courtSizes);
+				nextAssignments = ladderRedistribute(results, assignCourtSizes.length, assignCourtSizes);
 			}
 		}
 
 		let finalAssignments: { courtNumber: number; playerIds: number[] }[];
 
-		if (tourney.formatType === 'preseed') {
+		if (restored) {
+			finalAssignments = restored.map((a) => ({
+				courtNumber: a.courtNumber,
+				playerIds: [...a.playerIds]
+			}));
+		} else if (tourney.formatType === 'preseed') {
 			finalAssignments = nextAssignments.map((a) => ({
 				courtNumber: a.courtNumber,
 				playerIds: [...a.playerIds]
@@ -1116,7 +1176,7 @@ export const undoRetirement = command(
 
 			// Exclude frozen courts
 			const frozenCourts = getFrozenCourts(
-				calculateCourtSizes(tourney.playerCount),
+				calculateCourtSizes(restoredCount),
 				prevRound,
 				'preseed'
 			);
@@ -1125,25 +1185,16 @@ export const undoRetirement = command(
 				finalAssignments = finalAssignments.filter((a) => !frozenNumbers.has(a.courtNumber));
 			}
 		} else {
-			const allPlayerIds = nextAssignments.flatMap((a) => a.playerIds);
-			const uniquePlayerIds = [...new Set(allPlayerIds)];
-			uniquePlayerIds.sort((a, b) => a - b);
-
-			finalAssignments = [];
-			let offset = 0;
-			for (let i = 0; i < courtSizes.length; i++) {
-				finalAssignments.push({
-					courtNumber: i + 1,
-					playerIds: uniquePlayerIds.slice(offset, offset + courtSizes[i])
-				});
-				offset += courtSizes[i];
-			}
+			finalAssignments = nextAssignments.map((a) => ({
+				courtNumber: a.courtNumber,
+				playerIds: [...a.playerIds]
+			}));
 		}
 
 		// Recreate court rotations and matches
 		for (const assignment of finalAssignments) {
 			const idx = assignment.courtNumber - 1;
-			const size = courtSizes[idx] ?? 4;
+			const size = assignCourtSizes[idx] ?? 4;
 
 			const [existingCourt] = await db
 				.select()
@@ -1173,7 +1224,7 @@ export const undoRetirement = command(
 
 			const allMatchesForCourt = generateAllMatchesForAssignment(
 				{ courtNumber: assignment.courtNumber, playerIds: assignment.playerIds },
-				courtSizes
+				assignCourtSizes
 			);
 
 			const effective = getEffectiveScoring(
