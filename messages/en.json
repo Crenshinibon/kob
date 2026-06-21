@@ -250,7 +250,7 @@
 	"duration_hours": "h",
 	"duration_minutes": "min",
 	"scheduling_batch_info": "Batch shifts · {physical} physical court(s) · {groups} group(s) · {shifts} shift(s)",
-	"retire_note": "Remove a player before any scores are entered. Only the affected group changes when possible; other groups keep their players. The retired player is removed for the remainder of the tournament.",
+	"retire_note": "Remove a player before any scores are entered in the current round. Remaining players are redistributed for this round the same way as when advancing between rounds.",
 	"injury_note": "Handle a player injury mid-round. This only affects the player's current group for this round. Other groups continue normally. At the end of the round, the injured player can either continue (substitute) or be retired.",
 	"physical_court_label": "Physical:",
 	"physical_court_placeholder": "e.g. Court A",

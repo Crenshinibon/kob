@@ -573,19 +573,6 @@ export const retirePlayer = command(
 			.where(eq(tournament.id, tournamentId));
 
 		const currentRotationIds = currentRotations.map((r) => r.id);
-		const currentAssignments = currentRotations
-			.sort((a, b) => a.courtNumber - b.courtNumber)
-			.map((rotation) => ({
-				courtNumber: rotation.courtNumber,
-				playerIds: [
-					rotation.player1Id,
-					rotation.player2Id,
-					...(rotation.player3Id !== null ? [rotation.player3Id] : []),
-					...(rotation.player4Id !== null ? [rotation.player4Id] : []),
-					...(rotation.player5Id !== null ? [rotation.player5Id] : []),
-					...(rotation.player6Id !== null ? [rotation.player6Id] : [])
-				].filter((id): id is number => id !== null)
-			}));
 
 		if (currentRotationIds.length > 0) {
 			await db.delete(match).where(inArray(match.courtRotationId, currentRotationIds));
@@ -686,13 +673,9 @@ export const retirePlayer = command(
 			);
 		}
 
-		const retiredIds = new Set([playerId, ...priorRetirees.map((p) => p.id)]);
 		const finalAssignments = resolveAssignmentsAfterRetirement({
 			formatType: tourney.formatType as FormatType,
-			currentAssignments,
 			redistributedAssignments: nextAssignments,
-			retiredPlayerIds: retiredIds,
-			newCourtSizes,
 			originalPlayerCount: tourney.playerCount,
 			roundsCompleted: prevRound
 		});
@@ -935,20 +918,6 @@ export const undoRetirement = command(
 				)
 			);
 
-		const currentAssignments = currentRotations
-			.sort((a, b) => a.courtNumber - b.courtNumber)
-			.map((rotation) => ({
-				courtNumber: rotation.courtNumber,
-				playerIds: [
-					rotation.player1Id,
-					rotation.player2Id,
-					...(rotation.player3Id !== null ? [rotation.player3Id] : []),
-					...(rotation.player4Id !== null ? [rotation.player4Id] : []),
-					...(rotation.player5Id !== null ? [rotation.player5Id] : []),
-					...(rotation.player6Id !== null ? [rotation.player6Id] : [])
-				].filter((id): id is number => id !== null)
-			}));
-
 		const allRotationIds = currentRotations.map((r) => r.id);
 		if (allRotationIds.length > 0) {
 			const allMatches = await db
@@ -1092,20 +1061,13 @@ export const undoRetirement = command(
 		const finalAssignments = targetPlayer.retiredCourt
 			? resolveAssignmentsAfterUndoRetirement({
 					formatType: tourney.formatType as FormatType,
-					currentAssignments,
 					redistributedAssignments: nextAssignments,
-					playerId,
-					retiredCourt: targetPlayer.retiredCourt,
-					restoredCourtSizes,
 					restoredPlayerCount: restoredCount,
 					roundsCompleted: prevRound
 				})
 			: resolveAssignmentsAfterRetirement({
 					formatType: tourney.formatType as FormatType,
-					currentAssignments,
 					redistributedAssignments: nextAssignments,
-					retiredPlayerIds: new Set(),
-					newCourtSizes: assignCourtSizes,
 					originalPlayerCount: restoredCount,
 					roundsCompleted: prevRound
 				});

@@ -250,7 +250,7 @@
 	"create_csv_no_spieler1": "CSV hat keine 'spieler1'-Spalte",
 	"create_csv_error": "CSV-Datei konnte nicht gelesen werden",
 	"scheduling_batch_info": "Durchgänge · {physical} physische Plätze · {groups} Gruppen · {shifts} Durchgänge",
-	"retire_note": "Spieler vor Ergebnis-Eingabe entfernen. Wenn möglich ändert sich nur die betroffene Gruppe; andere Gruppen behalten ihre Spieler. Der Spieler scheidet für den Rest des Turniers aus.",
+	"retire_note": "Spieler vor Ergebnis-Eingabe in der aktuellen Runde entfernen. Die verbleibenden Spieler werden für diese Runde neu verteilt — wie beim Wechsel zwischen Runden.",
 	"injury_note": "Verletzung während der Runde behandeln. Betrifft nur die aktuelle Gruppe des Spielers in dieser Runde. Andere Gruppen spielen normal weiter. Am Rundenende kann der verletzte Spieler weiterspielen (Ersatz) oder ausscheiden.",
 	"physical_court_label": "Physisch:",
 	"physical_court_placeholder": "z. B. Platz A",

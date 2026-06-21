@@ -1379,52 +1379,6 @@ export function formatDuration(totalMinutes: number): string {
 // Player Retirement
 // ============================================================================
 
-/**
- * Keep current group assignments when retirement only shrinks affected groups
- * (e.g. 17p bottom 5p group loses one player → four 4p groups, top three unchanged).
- */
-export function preserveAssignmentsAfterRetirement(
-	assignments: readonly CourtAssignment[],
-	retiredPlayerIds: ReadonlySet<number>,
-	newCourtSizes: readonly number[]
-): CourtAssignment[] | null {
-	const sorted = [...assignments].sort((a, b) => a.courtNumber - b.courtNumber);
-	const updated = sorted.map((a) => ({
-		courtNumber: a.courtNumber,
-		playerIds: a.playerIds.filter((id) => !retiredPlayerIds.has(id))
-	}));
-
-	if (updated.length !== newCourtSizes.length) return null;
-	for (let i = 0; i < updated.length; i++) {
-		if (updated[i].playerIds.length !== newCourtSizes[i]) return null;
-	}
-	return updated;
-}
-
-/** Re-add a retired player to their former group when undoing retirement. */
-export function restorePlayerToAssignments(
-	assignments: readonly CourtAssignment[],
-	playerId: number,
-	courtNumber: number,
-	newCourtSizes: readonly number[]
-): CourtAssignment[] | null {
-	const sorted = [...assignments].sort((a, b) => a.courtNumber - b.courtNumber);
-	const court = sorted.find((a) => a.courtNumber === courtNumber);
-	if (!court || court.playerIds.includes(playerId)) return null;
-
-	const updated = sorted.map((a) =>
-		a.courtNumber === courtNumber
-			? { courtNumber: a.courtNumber, playerIds: [...a.playerIds, playerId] }
-			: { courtNumber: a.courtNumber, playerIds: [...a.playerIds] }
-	);
-
-	if (updated.length !== newCourtSizes.length) return null;
-	for (let i = 0; i < updated.length; i++) {
-		if (updated[i].playerIds.length !== newCourtSizes[i]) return null;
-	}
-	return updated;
-}
-
 export type PriorRetiree = {
 	readonly retiredCourt: number | null;
 	readonly finalStanding: number | null;
@@ -1504,20 +1458,10 @@ export function buildRedistributionFromResults(
 
 export function resolveAssignmentsAfterRetirement(opts: {
 	formatType: FormatType;
-	currentAssignments: readonly CourtAssignment[];
 	redistributedAssignments: readonly CourtAssignment[];
-	retiredPlayerIds: ReadonlySet<number>;
-	newCourtSizes: readonly number[];
 	originalPlayerCount: number;
 	roundsCompleted: number;
 }): CourtAssignment[] {
-	const preserved = preserveAssignmentsAfterRetirement(
-		opts.currentAssignments,
-		opts.retiredPlayerIds,
-		opts.newCourtSizes
-	);
-	if (preserved) return preserved;
-
 	if (opts.formatType === 'preseed') {
 		const frozenCourts = getFrozenCourts(
 			calculateCourtSizes(opts.originalPlayerCount),
@@ -1547,28 +1491,13 @@ export function resolveAssignmentsAfterRetirement(opts: {
 
 export function resolveAssignmentsAfterUndoRetirement(opts: {
 	formatType: FormatType;
-	currentAssignments: readonly CourtAssignment[];
 	redistributedAssignments: readonly CourtAssignment[];
-	playerId: number;
-	retiredCourt: number;
-	restoredCourtSizes: readonly number[];
 	restoredPlayerCount: number;
 	roundsCompleted: number;
 }): CourtAssignment[] {
-	const restored = restorePlayerToAssignments(
-		opts.currentAssignments,
-		opts.playerId,
-		opts.retiredCourt,
-		opts.restoredCourtSizes
-	);
-	if (restored) return restored;
-
 	return resolveAssignmentsAfterRetirement({
 		formatType: opts.formatType,
-		currentAssignments: opts.currentAssignments,
 		redistributedAssignments: opts.redistributedAssignments,
-		retiredPlayerIds: new Set(),
-		newCourtSizes: opts.restoredCourtSizes,
 		originalPlayerCount: opts.restoredPlayerCount,
 		roundsCompleted: opts.roundsCompleted
 	});

@@ -250,7 +250,7 @@
 	"frozen_courts_title": "Groupes terminés",
 	"frozen_courts_info": "Ces groupes ont terminé leur bracket et leurs classements sont définitifs.",
 	"scheduling_batch_info": "Rotations · {physical} terrain(s) physique(s) · {groups} groupe(s) · {shifts} rotation(s)",
-	"retire_note": "Retirer un joueur avant toute saisie de score. Seul le groupe concerné change si possible ; les autres groupes gardent leurs joueurs. Le joueur est retiré pour le reste du tournoi.",
+	"retire_note": "Retirer un joueur avant toute saisie de score du tour en cours. Les joueurs restants sont redistribués pour ce tour comme lors du passage entre tours.",
 	"injury_note": "Gérer une blessure en cours de tour. Cela n'affecte que le groupe actuel du joueur pour ce tour. Les autres groupes continuent normalement. À la fin du tour, le joueur blessé peut continuer (remplaçant) ou être retiré.",
 	"physical_court_label": "Physique :",
 	"physical_court_placeholder": "ex. Terrain A",

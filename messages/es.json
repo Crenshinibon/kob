@@ -250,7 +250,7 @@
 	"create_csv_no_spieler1": "El CSV no tiene columna 'spieler1'",
 	"create_csv_error": "No se pudo leer el archivo CSV",
 	"scheduling_batch_info": "Turnos · {physical} cancha(s) física(s) · {groups} grupo(s) · {shifts} turno(s)",
-	"retire_note": "Retira a un jugador antes de ingresar resultados. Solo cambia el grupo afectado cuando es posible; los demás grupos mantienen sus jugadores. El jugador queda fuera del torneo.",
+	"retire_note": "Retira a un jugador antes de ingresar resultados en la ronda actual. Los jugadores restantes se redistribuyen para esta ronda igual que al avanzar entre rondas.",
 	"injury_note": "Gestiona una lesión durante la ronda. Solo afecta al grupo actual del jugador en esta ronda. Los demás grupos continúan con normalidad. Al final de la ronda, el jugador lesionado puede continuar (sustituto) o retirarse.",
 	"physical_court_label": "Física:",
 	"physical_court_placeholder": "ej. Cancha A",

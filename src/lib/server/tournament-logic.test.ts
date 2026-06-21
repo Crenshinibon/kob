@@ -25,8 +25,6 @@ import {
 	getScoringLabel,
 	getEffectiveScoring,
 	recalculateCourtConfigAfterRetirement,
-	preserveAssignmentsAfterRetirement,
-	restorePlayerToAssignments,
 	computeRetirementFinalStanding,
 	buildRedistributionFromResults,
 	resolveAssignmentsAfterRetirement,
@@ -3245,150 +3243,6 @@ describe('calculateRetiredStanding', () => {
 	});
 });
 
-describe('preserveAssignmentsAfterRetirement', () => {
-	const assignments17: CourtAssignment[] = [
-		{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
-		{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
-		{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
-		{ courtNumber: 4, playerIds: [13, 14, 15, 16, 17] }
-	];
-
-	it('17p: retiring from bottom 5p group keeps top three groups unchanged', () => {
-		const retired = new Set([17]);
-		const result = preserveAssignmentsAfterRetirement(assignments17, retired, [4, 4, 4, 4]);
-		expect(result).not.toBeNull();
-		expect(result![0].playerIds).toEqual([1, 2, 3, 4]);
-		expect(result![1].playerIds).toEqual([5, 6, 7, 8]);
-		expect(result![2].playerIds).toEqual([9, 10, 11, 12]);
-		expect(result![3].playerIds).toEqual([13, 14, 15, 16]);
-	});
-
-	it('returns null when retirement requires cross-group redistribution', () => {
-		const result = preserveAssignmentsAfterRetirement(assignments17, new Set([1]), [4, 4, 4, 4]);
-		expect(result).toBeNull();
-	});
-
-	it('handles multiple retirees shrinking a 6p bottom group to 4p', () => {
-		const assignments22: CourtAssignment[] = [
-			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
-			{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
-			{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
-			{ courtNumber: 4, playerIds: [13, 14, 15, 16] },
-			{ courtNumber: 5, playerIds: [17, 18, 19, 20, 21, 22] }
-		];
-		const result = preserveAssignmentsAfterRetirement(assignments22, new Set([21, 22]), [
-			4, 4, 4, 4, 4
-		]);
-		expect(result).not.toBeNull();
-		expect(result![4].playerIds).toEqual([17, 18, 19, 20]);
-	});
-
-	it('20p: retire from bottom 4p group preserves top groups', () => {
-		const assignments20: CourtAssignment[] = [
-			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
-			{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
-			{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
-			{ courtNumber: 4, playerIds: [13, 14, 15, 16] },
-			{ courtNumber: 5, playerIds: [17, 18, 19, 20] }
-		];
-		const result = preserveAssignmentsAfterRetirement(assignments20, new Set([20]), [4, 4, 4, 4, 3]);
-		expect(result).not.toBeNull();
-		expect(result![0].playerIds).toEqual([1, 2, 3, 4]);
-		expect(result![4].playerIds).toEqual([17, 18, 19]);
-	});
-
-	it('includes multiple prior retirees in the retired set', () => {
-		const result = preserveAssignmentsAfterRetirement(
-			assignments17,
-			new Set([10, 17]),
-			[4, 4, 4, 3]
-		);
-		expect(result).toBeNull();
-	});
-});
-
-describe('buildRedistributionFromResults', () => {
-	it('random seed round 2 uses vertical seeding', () => {
-		const results: CourtResult[] = [
-			mockCourtResult(1, [
-				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
-				{ playerId: 2, rank: 2, points: 55, diff: 5, matchCount: 3 },
-				{ playerId: 3, rank: 3, points: 50, diff: 0, matchCount: 3 },
-				{ playerId: 4, rank: 4, points: 45, diff: -5, matchCount: 3 }
-			]),
-			mockCourtResult(2, [
-				{ playerId: 5, rank: 1, points: 60, diff: 10, matchCount: 3 },
-				{ playerId: 6, rank: 2, points: 55, diff: 5, matchCount: 3 },
-				{ playerId: 7, rank: 3, points: 50, diff: 0, matchCount: 3 },
-				{ playerId: 8, rank: 4, points: 45, diff: -5, matchCount: 3 }
-			])
-		];
-		const assignments = buildRedistributionFromResults('random-seed', results, [4, 4], 0, 2);
-		expect(assignments).toHaveLength(2);
-		expect(assignments[0].playerIds).toContain(1);
-		expect(assignments[0].playerIds).toContain(5);
-	});
-
-	it('random seed round 3+ uses ladder redistribution', () => {
-		const results: CourtResult[] = [
-			mockCourtResult(1, [
-				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
-				{ playerId: 2, rank: 2, points: 55, diff: 5, matchCount: 3 },
-				{ playerId: 3, rank: 3, points: 50, diff: 0, matchCount: 3 },
-				{ playerId: 4, rank: 4, points: 45, diff: -5, matchCount: 3 }
-			]),
-			mockCourtResult(2, [
-				{ playerId: 5, rank: 1, points: 60, diff: 10, matchCount: 3 },
-				{ playerId: 6, rank: 2, points: 55, diff: 5, matchCount: 3 },
-				{ playerId: 7, rank: 3, points: 50, diff: 0, matchCount: 3 },
-				{ playerId: 8, rank: 4, points: 45, diff: -5, matchCount: 3 }
-			])
-		];
-		const vertical = buildRedistributionFromResults('random-seed', results, [4, 4], 0, 2);
-		const ladder = buildRedistributionFromResults('random-seed', results, [4, 4], 1, 2);
-		expect(ladder).not.toEqual(vertical);
-	});
-});
-
-describe('restorePlayerToAssignments', () => {
-	it('restores retired player to their former group without moving others', () => {
-		const afterRetire: CourtAssignment[] = [
-			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
-			{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
-			{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
-			{ courtNumber: 4, playerIds: [13, 14, 15, 16] }
-		];
-		const restored = restorePlayerToAssignments(afterRetire, 17, 4, [4, 4, 4, 5]);
-		expect(restored).not.toBeNull();
-		expect(restored![0].playerIds).toEqual([1, 2, 3, 4]);
-		expect(restored![3].playerIds).toContain(17);
-		expect(restored![3].playerIds).toHaveLength(5);
-	});
-
-	it('returns null when restore would break court size config', () => {
-		const afterRetire: CourtAssignment[] = [
-			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
-			{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
-			{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
-			{ courtNumber: 4, playerIds: [13, 14, 15, 16] }
-		];
-		expect(restorePlayerToAssignments(afterRetire, 1, 1, [4, 4, 4, 5])).toBeNull();
-	});
-
-	it('returns null when court number is missing', () => {
-		const afterRetire: CourtAssignment[] = [{ courtNumber: 1, playerIds: [1, 2, 3, 4] }];
-		expect(restorePlayerToAssignments(afterRetire, 5, 2, [4])).toBeNull();
-	});
-
-	it('returns null when player is already on a group', () => {
-		const afterRetire: CourtAssignment[] = [
-			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
-			{ courtNumber: 2, playerIds: [5, 6, 7, 8] }
-		];
-		expect(restorePlayerToAssignments(afterRetire, 3, 1, [4, 4])).toBeNull();
-	});
-});
-
 describe('computeRetirementFinalStanding', () => {
 	it('preseed: first retiree in loser bracket gets bracket max', () => {
 		const standing = computeRetirementFinalStanding({
@@ -3446,37 +3300,8 @@ describe('computeRetirementFinalStanding', () => {
 });
 
 describe('resolveAssignmentsAfterRetirement', () => {
-	const assignments17: CourtAssignment[] = [
-		{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
-		{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
-		{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
-		{ courtNumber: 4, playerIds: [13, 14, 15, 16, 17] }
-	];
-
-	it('preserves groups when bottom 5p loses one player (17→16)', () => {
+	it('random seed: always uses redistributed assignments', () => {
 		const redistributed: CourtAssignment[] = [
-			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
-			{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
-			{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
-			{ courtNumber: 4, playerIds: [13, 14, 15, 16] }
-		];
-		const result = resolveAssignmentsAfterRetirement({
-			formatType: 'random-seed',
-			currentAssignments: assignments17,
-			redistributedAssignments: redistributed,
-			retiredPlayerIds: new Set([17]),
-			newCourtSizes: [4, 4, 4, 4],
-			originalPlayerCount: 17,
-			roundsCompleted: 2
-		});
-		expect(result[0].playerIds).toEqual([1, 2, 3, 4]);
-		expect(result[1].playerIds).toEqual([5, 6, 7, 8]);
-		expect(result[2].playerIds).toEqual([9, 10, 11, 12]);
-		expect(result[3].playerIds).toEqual([13, 14, 15, 16]);
-	});
-
-	it('uses redistribution when preserve is impossible (retire from top group)', () => {
-		const ladderResult: CourtAssignment[] = [
 			{ courtNumber: 1, playerIds: [2, 6, 10, 14] },
 			{ courtNumber: 2, playerIds: [3, 7, 11, 15] },
 			{ courtNumber: 3, playerIds: [4, 8, 12, 16] },
@@ -3484,27 +3309,14 @@ describe('resolveAssignmentsAfterRetirement', () => {
 		];
 		const result = resolveAssignmentsAfterRetirement({
 			formatType: 'random-seed',
-			currentAssignments: assignments17,
-			redistributedAssignments: ladderResult,
-			retiredPlayerIds: new Set([1]),
-			newCourtSizes: [4, 4, 4, 4],
+			redistributedAssignments: redistributed,
 			originalPlayerCount: 17,
 			roundsCompleted: 2
 		});
-		expect(result).toEqual(ladderResult);
-		expect(result.flatMap((a) => a.playerIds).sort((a, b) => a - b)).not.toEqual(
-			Array.from({ length: 16 }, (_, i) => i + 2)
-		);
+		expect(result).toEqual(redistributed);
 	});
 
 	it('preseed: excludes frozen courts when redistribution is required', () => {
-		const current: CourtAssignment[] = [
-			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
-			{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
-			{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
-			{ courtNumber: 4, playerIds: [13, 14, 15, 16] },
-			{ courtNumber: 5, playerIds: [17, 18, 19, 20] }
-		];
 		const redistributed: CourtAssignment[] = [
 			{ courtNumber: 1, playerIds: [2, 3, 4, 5] },
 			{ courtNumber: 2, playerIds: [6, 7, 8, 9] },
@@ -3514,10 +3326,7 @@ describe('resolveAssignmentsAfterRetirement', () => {
 		];
 		const result = resolveAssignmentsAfterRetirement({
 			formatType: 'preseed',
-			currentAssignments: current,
 			redistributedAssignments: redistributed,
-			retiredPlayerIds: new Set([1]),
-			newCourtSizes: [4, 4, 4, 4, 3],
 			originalPlayerCount: 20,
 			roundsCompleted: 2
 		});
@@ -3527,27 +3336,20 @@ describe('resolveAssignmentsAfterRetirement', () => {
 });
 
 describe('resolveAssignmentsAfterUndoRetirement', () => {
-	const afterRetire16: CourtAssignment[] = [
-		{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
-		{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
-		{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
-		{ courtNumber: 4, playerIds: [13, 14, 15, 16] }
-	];
-
-	it('restores player to former group without moving others', () => {
+	it('redistributes like retirement when undoing', () => {
+		const redistributed: CourtAssignment[] = [
+			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
+			{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
+			{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
+			{ courtNumber: 4, playerIds: [13, 14, 15, 16, 17] }
+		];
 		const result = resolveAssignmentsAfterUndoRetirement({
 			formatType: 'random-seed',
-			currentAssignments: afterRetire16,
-			redistributedAssignments: [],
-			playerId: 17,
-			retiredCourt: 4,
-			restoredCourtSizes: [4, 4, 4, 5],
+			redistributedAssignments: redistributed,
 			restoredPlayerCount: 17,
 			roundsCompleted: 2
 		});
-		expect(result[0].playerIds).toEqual([1, 2, 3, 4]);
-		expect(result[3].playerIds).toContain(17);
-		expect(result[3].playerIds).toHaveLength(5);
+		expect(result).toEqual(redistributed);
 	});
 });
 
@@ -3639,7 +3441,7 @@ describe('retirement integration (17p random seed)', () => {
 		return s;
 	}
 
-	it('round 3 retire from bottom 5p group preserves groups 1–3', () => {
+	it('round 3 retire from bottom 5p group redistributes all groups via ladder', () => {
 		vi.spyOn(global.Math, 'random').mockReturnValue(0.5);
 		let s = createInitialState({
 			tournamentId: 1,
@@ -3658,19 +3460,31 @@ describe('retirement integration (17p random seed)', () => {
 
 		const retiredId = currentAssignments[3].playerIds[4];
 		const newSizes = recalculateCourtConfigAfterRetirement(16).courtSizes;
-		const preserved = preserveAssignmentsAfterRetirement(
-			currentAssignments,
-			new Set([retiredId]),
-			newSizes
+		expect(newSizes).toEqual([4, 4, 4, 4]);
+
+		const prevResults: CourtResult[] = s.completedRounds[s.completedRounds.length - 1];
+		const redistributed = buildRedistributionFromResults(
+			'random-seed',
+			prevResults.map((cr) => ({
+				...cr,
+				standings: cr.standings.filter((st) => st.playerId !== retiredId)
+			})),
+			newSizes,
+			2,
+			4
 		);
-		expect(preserved).not.toBeNull();
-		expect(preserved![0].playerIds).toEqual(currentAssignments[0].playerIds);
-		expect(preserved![1].playerIds).toEqual(currentAssignments[1].playerIds);
-		expect(preserved![2].playerIds).toEqual(currentAssignments[2].playerIds);
-		expect(preserved![3].playerIds).toEqual(currentAssignments[3].playerIds.filter((id) => id !== retiredId));
+		const resolved = resolveAssignmentsAfterRetirement({
+			formatType: 'random-seed',
+			redistributedAssignments: redistributed,
+			originalPlayerCount: 17,
+			roundsCompleted: 2
+		});
+		expect(resolved.flatMap((a) => a.playerIds)).not.toContain(retiredId);
+		expect(resolved.flatMap((a) => a.playerIds)).toHaveLength(16);
+		expect(resolved).toEqual(redistributed);
 	});
 
-	it('round 3 retire from top group requires redistribution', () => {
+	it('round 3 retire from top group also redistributes via ladder', () => {
 		vi.spyOn(global.Math, 'random').mockReturnValue(0.5);
 		let s = createInitialState({
 			tournamentId: 1,
@@ -3686,42 +3500,26 @@ describe('retirement integration (17p random seed)', () => {
 
 		const retiredId = s.currentAssignments[0].playerIds[0];
 		const newSizes = recalculateCourtConfigAfterRetirement(16).courtSizes;
-		expect(
-			preserveAssignmentsAfterRetirement(s.currentAssignments, new Set([retiredId]), newSizes)
-		).toBeNull();
 
-		const ladderResult: CourtAssignment[] = [
-			{ courtNumber: 1, playerIds: [2, 6, 10, 14] },
-			{ courtNumber: 2, playerIds: [3, 7, 11, 15] },
-			{ courtNumber: 3, playerIds: [4, 8, 12, 16] },
-			{ courtNumber: 4, playerIds: [5, 9, 13, 17] }
-		];
+		const prevResults: CourtResult[] = s.completedRounds[s.completedRounds.length - 1];
+		const redistributed = buildRedistributionFromResults(
+			'random-seed',
+			prevResults.map((cr) => ({
+				...cr,
+				standings: cr.standings.filter((st) => st.playerId !== retiredId)
+			})),
+			newSizes,
+			2,
+			4
+		);
 		const resolved = resolveAssignmentsAfterRetirement({
 			formatType: 'random-seed',
-			currentAssignments: s.currentAssignments,
-			redistributedAssignments: ladderResult,
-			retiredPlayerIds: new Set([retiredId]),
-			newCourtSizes: newSizes,
+			redistributedAssignments: redistributed,
 			originalPlayerCount: 17,
 			roundsCompleted: 2
 		});
-		expect(resolved).toEqual(ladderResult);
+		expect(resolved).toEqual(redistributed);
 		expect(resolved.flatMap((a) => a.playerIds)).not.toContain(retiredId);
-	});
-
-	it('16→15 retire creates 3p bottom group via preserve when retiring from bottom 4p', () => {
-		const assignments16: CourtAssignment[] = [
-			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
-			{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
-			{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
-			{ courtNumber: 4, playerIds: [13, 14, 15, 16] }
-		];
-		const newSizes = recalculateCourtConfigAfterRetirement(15).courtSizes;
-		expect(newSizes).toEqual([4, 4, 4, 3]);
-		const result = preserveAssignmentsAfterRetirement(assignments16, new Set([16]), newSizes);
-		expect(result).not.toBeNull();
-		expect(result![3].playerIds).toEqual([13, 14, 15]);
-		expect(result![0].playerIds).toEqual([1, 2, 3, 4]);
 	});
 });
 
