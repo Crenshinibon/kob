@@ -1425,6 +1425,224 @@ export function restorePlayerToAssignments(
 	return updated;
 }
 
+export type PriorRetiree = {
+	readonly retiredCourt: number | null;
+	readonly finalStanding: number | null;
+};
+
+export function computeRetirementFinalStanding(opts: {
+	formatType: FormatType;
+	retiredCourt: number;
+	totalCourts: number;
+	currentRound: number;
+	numRounds: number;
+	newCourtSizes: readonly number[];
+	priorRetirees: readonly PriorRetiree[];
+}): number {
+	const {
+		formatType,
+		retiredCourt,
+		totalCourts,
+		currentRound,
+		numRounds,
+		newCourtSizes,
+		priorRetirees
+	} = opts;
+
+	if (formatType === 'preseed') {
+		const bracketRange = getPreseedBracketRange(retiredCourt, totalCourts);
+		const sameBracketCount = priorRetirees.filter((p) => {
+			if (!p.retiredCourt) return false;
+			const pRange = getPreseedBracketRange(p.retiredCourt, totalCourts);
+			return pRange.min === bracketRange.min && pRange.max === bracketRange.max;
+		}).length;
+		return bracketRange.max - sameBracketCount;
+	}
+
+	const standing = calculateRetiredStanding(
+		retiredCourt,
+		totalCourts,
+		currentRound - 1,
+		numRounds,
+		'random-seed',
+		newCourtSizes
+	);
+	const sameStandingRetirees = priorRetirees.filter(
+		(p) => p.finalStanding === standing || p.finalStanding === standing - 1
+	);
+	let adjusted = standing;
+	for (const r of sameStandingRetirees) {
+		if (r.retiredCourt && r.retiredCourt > retiredCourt) {
+			adjusted = standing - 1;
+			break;
+		}
+	}
+	return adjusted;
+}
+
+export function buildRedistributionFromResults(
+	formatType: FormatType,
+	courtResults: readonly CourtResult[],
+	newCourtSizes: readonly number[],
+	roundsCompleted: number,
+	originalCourtCount: number
+): CourtAssignment[] {
+	const courtCount = newCourtSizes.length;
+	if (formatType === 'preseed') {
+		return processPreseedTransition(
+			courtResults,
+			newCourtSizes,
+			roundsCompleted,
+			originalCourtCount
+		);
+	}
+	if (roundsCompleted === 0) {
+		return verticalSeeding(courtResults, courtCount, newCourtSizes);
+	}
+	return ladderRedistribute(courtResults, courtCount, newCourtSizes);
+}
+
+export function resolveAssignmentsAfterRetirement(opts: {
+	formatType: FormatType;
+	currentAssignments: readonly CourtAssignment[];
+	redistributedAssignments: readonly CourtAssignment[];
+	retiredPlayerIds: ReadonlySet<number>;
+	newCourtSizes: readonly number[];
+	originalPlayerCount: number;
+	roundsCompleted: number;
+}): CourtAssignment[] {
+	const preserved = preserveAssignmentsAfterRetirement(
+		opts.currentAssignments,
+		opts.retiredPlayerIds,
+		opts.newCourtSizes
+	);
+	if (preserved) return preserved;
+
+	if (opts.formatType === 'preseed') {
+		const frozenCourts = getFrozenCourts(
+			calculateCourtSizes(opts.originalPlayerCount),
+			opts.roundsCompleted,
+			'preseed'
+		);
+		if (frozenCourts.length === 0) {
+			return opts.redistributedAssignments.map((a) => ({
+				courtNumber: a.courtNumber,
+				playerIds: [...a.playerIds]
+			}));
+		}
+		const frozenNumbers = new Set(frozenCourts.map((f) => f.courtNumber));
+		return opts.redistributedAssignments
+			.filter((a) => !frozenNumbers.has(a.courtNumber))
+			.map((a) => ({
+				courtNumber: a.courtNumber,
+				playerIds: [...a.playerIds]
+			}));
+	}
+
+	return opts.redistributedAssignments.map((a) => ({
+		courtNumber: a.courtNumber,
+		playerIds: [...a.playerIds]
+	}));
+}
+
+export function resolveAssignmentsAfterUndoRetirement(opts: {
+	formatType: FormatType;
+	currentAssignments: readonly CourtAssignment[];
+	redistributedAssignments: readonly CourtAssignment[];
+	playerId: number;
+	retiredCourt: number;
+	restoredCourtSizes: readonly number[];
+	restoredPlayerCount: number;
+	roundsCompleted: number;
+}): CourtAssignment[] {
+	const restored = restorePlayerToAssignments(
+		opts.currentAssignments,
+		opts.playerId,
+		opts.retiredCourt,
+		opts.restoredCourtSizes
+	);
+	if (restored) return restored;
+
+	return resolveAssignmentsAfterRetirement({
+		formatType: opts.formatType,
+		currentAssignments: opts.currentAssignments,
+		redistributedAssignments: opts.redistributedAssignments,
+		retiredPlayerIds: new Set(),
+		newCourtSizes: opts.restoredCourtSizes,
+		originalPlayerCount: opts.restoredPlayerCount,
+		roundsCompleted: opts.roundsCompleted
+	});
+}
+
+export function matchInvolvesPlayer(
+	m: Pick<MatchData, 'teamAPlayer1Id' | 'teamAPlayer2Id' | 'teamBPlayer1Id' | 'teamBPlayer2Id'>,
+	playerId: number
+): boolean {
+	return (
+		m.teamAPlayer1Id === playerId ||
+		m.teamAPlayer2Id === playerId ||
+		m.teamBPlayer1Id === playerId ||
+		m.teamBPlayer2Id === playerId
+	);
+}
+
+export function applyInjuryToUnscoredMatch(
+	match: MatchData,
+	playerId: number,
+	option: 'substitute' | 'cancel'
+): MatchData {
+	if (match.teamAScore !== null) return match;
+	if (!matchInvolvesPlayer(match, playerId)) return match;
+	if (option === 'cancel') {
+		return { ...match, isCanceled: true };
+	}
+	return { ...match, injuredPlayerIds: [playerId] };
+}
+
+export function applyInjuryToGroupMatches(
+	matches: readonly MatchData[],
+	playerId: number,
+	option: 'substitute' | 'cancel'
+): MatchData[] {
+	return matches.map((m) => applyInjuryToUnscoredMatch(m, playerId, option));
+}
+
+export function revertInjuryOnMatch(match: MatchData, playerId: number): MatchData {
+	if (match.isCanceled && matchInvolvesPlayer(match, playerId) && match.teamAScore === null) {
+		return { ...match, isCanceled: false };
+	}
+	if ((match.injuredPlayerIds ?? []).includes(playerId) && match.teamAScore === null) {
+		return { ...match, injuredPlayerIds: [] };
+	}
+	return match;
+}
+
+export function revertInjuryOnGroupMatches(
+	matches: readonly MatchData[],
+	playerId: number
+): MatchData[] {
+	return matches.map((m) => revertInjuryOnMatch(m, playerId));
+}
+
+/** True when scores were entered on injury-affected matches after the injury report. */
+export function hasFreshScoresAfterInjury(
+	matches: readonly MatchData[],
+	playerId: number
+): boolean {
+	const hasCanceled = matches.some((m) => m.isCanceled);
+	const hasInjuredFlag = matches.some((m) => (m.injuredPlayerIds ?? []).includes(playerId));
+
+	if (hasCanceled) {
+		return matches.some((m) => m.teamAScore !== null && m.isCanceled);
+	}
+	if (hasInjuredFlag) {
+		return matches.some(
+			(m) => m.teamAScore !== null && (m.injuredPlayerIds ?? []).includes(playerId)
+		);
+	}
+	return false;
+}
+
 export function recalculateCourtConfigAfterRetirement(newPlayerCount: number): {
 	courtSizes: number[];
 	totalCourts: number;
