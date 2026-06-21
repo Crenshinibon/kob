@@ -634,10 +634,12 @@ export function processPreseedTransition(
 export function verticalSeeding(
 	courtResults: readonly CourtResult[],
 	targetCourtCount: number,
-	courtSizes?: readonly number[]
+	courtSizes?: readonly number[],
+	excludedPlayerIds?: ReadonlySet<number>
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
 	const maxRank = sorted.reduce((m, c) => Math.max(m, c.standings.length), 0);
+	const exclude = excludedPlayerIds ?? new Set<number>();
 
 	const flattened: number[] = [];
 
@@ -645,7 +647,8 @@ export function verticalSeeding(
 		const tier: { playerId: number; points: number; diff: number }[] = [];
 		for (const c of sorted) {
 			const s = c.standings[r];
-			if (s) tier.push({ playerId: s.playerId, points: s.points, diff: s.diff });
+			if (s && !exclude.has(s.playerId))
+				tier.push({ playerId: s.playerId, points: s.points, diff: s.diff });
 		}
 		tier.sort((a, b) => b.points - a.points || b.diff - a.diff || a.playerId - b.playerId);
 		for (const t of tier) flattened.push(t.playerId);
@@ -667,13 +670,37 @@ export function verticalSeeding(
 // Ladder Redistribution (2-up/2-down)
 // ============================================================================
 
+function sourceCourtSize(court: CourtResult): number {
+	return court.standings.reduce((max, s) => Math.max(max, s.rank), 0);
+}
+
+function takeByRank(
+	court: CourtResult,
+	minRank: number,
+	maxRank: number,
+	target: number[],
+	exclude: ReadonlySet<number>,
+	assigned: Set<number>
+): void {
+	for (const s of court.standings) {
+		if (s.rank < minRank || s.rank > maxRank) continue;
+		if (exclude.has(s.playerId) || assigned.has(s.playerId)) continue;
+		target.push(s.playerId);
+		assigned.add(s.playerId);
+	}
+}
+
 export function ladderRedistribute(
 	courtResults: readonly CourtResult[],
 	targetCourtCount: number,
-	courtSizes?: readonly number[]
+	courtSizes?: readonly number[],
+	excludedPlayerIds?: ReadonlySet<number>
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
 	const sizes = courtSizes ?? Array(targetCourtCount).fill(4);
+	const exclude = excludedPlayerIds ?? new Set<number>();
+	const assigned = new Set<number>();
+	const sourceSizes = sorted.map(sourceCourtSize);
 	const assignments: CourtAssignment[] = [];
 
 	for (let i = 0; i < targetCourtCount; i++) {
@@ -681,32 +708,34 @@ export function ladderRedistribute(
 		const pids: number[] = [];
 
 		if (i === 0) {
-			takeN(sorted[0], 0, 2, pids);
-			if (sorted[1]) takeN(sorted[1], 0, 2, pids);
+			takeByRank(sorted[0], 1, 2, pids, exclude, assigned);
+			if (sorted[1]) takeByRank(sorted[1], 1, 2, pids, exclude, assigned);
 		} else if (i === targetCourtCount - 1) {
-			if (sorted[i - 1]) {
-				const bottomFrom = Math.max(0, sorted[i - 1].standings.length - 2);
-				takeN(sorted[i - 1], bottomFrom, sorted[i - 1].standings.length, pids);
-			}
-			takeN(sorted[i], 2, sorted[i].standings.length, pids);
+			const prevSize = sourceSizes[i - 1] ?? 4;
+			if (sorted[i - 1]) takeByRank(sorted[i - 1], prevSize - 1, prevSize, pids, exclude, assigned);
+			const selfSize = sourceSizes[i] ?? 4;
+			if (sorted[i]) takeByRank(sorted[i], 3, selfSize, pids, exclude, assigned);
 		} else {
-			if (sorted[i - 1]) {
-				const bottomFrom = Math.max(0, sorted[i - 1].standings.length - 2);
-				takeN(sorted[i - 1], bottomFrom, sorted[i - 1].standings.length, pids);
+			const prevSize = sourceSizes[i - 1] ?? 4;
+			if (sorted[i - 1]) takeByRank(sorted[i - 1], prevSize - 1, prevSize, pids, exclude, assigned);
+			if (sorted[i + 1]) takeByRank(sorted[i + 1], 1, 2, pids, exclude, assigned);
+		}
+
+		// Backfill short courts from relegated players on the same previous-round court
+		if (pids.length < targetSize && sorted[i]) {
+			const selfSize = sourceSizes[i] ?? 4;
+			for (let rank = 3; rank <= selfSize && pids.length < targetSize; rank++) {
+				const s = sorted[i].standings.find((st) => st.rank === rank);
+				if (!s || exclude.has(s.playerId) || assigned.has(s.playerId)) continue;
+				pids.push(s.playerId);
+				assigned.add(s.playerId);
 			}
-			if (sorted[i + 1]) takeN(sorted[i + 1], 0, 2, pids);
 		}
 
 		const trimmedPids = pids.slice(0, targetSize);
-
 		if (trimmedPids.length > 0) assignments.push({ courtNumber: i + 1, playerIds: trimmedPids });
 	}
 	return assignments;
-}
-
-function takeN(court: CourtResult, from: number, to: number, target: number[]): void {
-	for (let i = from; i < Math.min(to, court.standings.length); i++)
-		target.push(court.standings[i].playerId);
 }
 
 export function redistributeLadder(
@@ -1439,7 +1468,8 @@ export function buildRedistributionFromResults(
 	courtResults: readonly CourtResult[],
 	newCourtSizes: readonly number[],
 	roundsCompleted: number,
-	originalCourtCount: number
+	originalCourtCount: number,
+	excludedPlayerIds?: ReadonlySet<number>
 ): CourtAssignment[] {
 	const courtCount = newCourtSizes.length;
 	if (formatType === 'preseed') {
@@ -1451,9 +1481,9 @@ export function buildRedistributionFromResults(
 		);
 	}
 	if (roundsCompleted === 0) {
-		return verticalSeeding(courtResults, courtCount, newCourtSizes);
+		return verticalSeeding(courtResults, courtCount, newCourtSizes, excludedPlayerIds);
 	}
-	return ladderRedistribute(courtResults, courtCount, newCourtSizes);
+	return ladderRedistribute(courtResults, courtCount, newCourtSizes, excludedPlayerIds);
 }
 
 export function resolveAssignmentsAfterRetirement(opts: {

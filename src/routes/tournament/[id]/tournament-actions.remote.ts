@@ -656,7 +656,7 @@ export const retirePlayer = command(
 					...(cr.rotation.player4Id ? [cr.rotation.player4Id] : []),
 					...(cr.rotation.player5Id ? [cr.rotation.player5Id] : []),
 					...(cr.rotation.player6Id ? [cr.rotation.player6Id] : [])
-				].filter((id): id is number => id !== null && !retiredIds.has(id));
+				].filter((id): id is number => id !== null);
 				return {
 					courtNumber: cr.rotation.courtNumber,
 					standings: calculateCourtStandings(cr.matchData, pIds)
@@ -669,7 +669,8 @@ export const retirePlayer = command(
 				results,
 				newCourtSizes,
 				prevRound - 1,
-				calculateCourtSizes(tourney.playerCount).length
+				calculateCourtSizes(tourney.playerCount).length,
+				retiredIds
 			);
 		}
 
@@ -1033,6 +1034,10 @@ export const undoRetirement = command(
 				})
 			);
 
+			const stillRetiredIds = new Set(
+				dbPlayers.filter((p) => p.retiredAt && p.id !== playerId).map((p) => p.id)
+			);
+
 			const results = resolved.map((cr) => {
 				const pIds = [
 					cr.rotation.player1Id,
@@ -1054,7 +1059,8 @@ export const undoRetirement = command(
 				results,
 				assignCourtSizes,
 				prevRound - 1,
-				calculateCourtSizes(restoredCount).length
+				calculateCourtSizes(restoredCount).length,
+				stillRetiredIds.size > 0 ? stillRetiredIds : undefined
 			);
 		}
 

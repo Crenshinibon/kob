@@ -61,6 +61,7 @@ The weakest 1st-place player lands on Court 2, not Court 1.
 - **[084_random-example-12p.md](./084_random-example-12p.md)**: 12 players (3 courts, 4 rounds)
 - **[085_random-example-16p.md](./085_random-example-16p.md)**: 16 players (4 courts, 4 rounds)
 - **[086_random-example-20p.md](./086_random-example-20p.md)**: 20 players (5 courts, 4 rounds)
+- **[089_random-example-17p-retirement.md](./089_random-example-17p-retirement.md)**: 17 players — retirement cascade on ladder redistribution
 
 ### Round 2+ (Ladder)
 

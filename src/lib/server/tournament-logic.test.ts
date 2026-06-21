@@ -3441,7 +3441,51 @@ describe('retirement integration (17p random seed)', () => {
 		return s;
 	}
 
-	it('round 3 retire from bottom 5p group redistributes all groups via ladder', () => {
+	it('16p spec: retire D from court 2 keeps court 1 and cascades relegation', () => {
+		const r2: CourtResult[] = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 20, diff: 0, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 12, diff: 0, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: -4, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: -28, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 16, diff: 0, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 8, diff: 0, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: -2, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: -22, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 11, rank: 1, points: 6, diff: 0, matchCount: 3 },
+				{ playerId: 7, rank: 2, points: 2, diff: 0, matchCount: 3 },
+				{ playerId: 12, rank: 3, points: -6, diff: 0, matchCount: 3 },
+				{ playerId: 10, rank: 4, points: -2, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 16, rank: 1, points: 4, diff: 0, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 2, diff: 0, matchCount: 3 },
+				{ playerId: 15, rank: 3, points: -6, diff: 0, matchCount: 3 },
+				{ playerId: 13, rank: 4, points: -10, diff: 0, matchCount: 3 }
+			])
+		];
+		const normal = ladderRedistribute(r2, 4);
+		expect(normal[1].playerIds).toEqual([3, 4, 11, 7]);
+
+		const afterRetire = buildRedistributionFromResults(
+			'random-seed',
+			r2,
+			[4, 4, 4, 3],
+			1,
+			4,
+			new Set([4])
+		);
+		expect(afterRetire[0].playerIds).toEqual([1, 2, 5, 6]);
+		expect(afterRetire[1].playerIds).toEqual([3, 11, 7, 9]);
+		expect(afterRetire[2].playerIds).toEqual([8, 16, 14, 12]);
+		expect(afterRetire[3].playerIds).toEqual([10, 15, 13]);
+	});
+
+	it('round 3 retire from court 2 (ex-C1 4th) keeps court 1 and cascades', () => {
 		vi.spyOn(global.Math, 'random').mockReturnValue(0.5);
 		let s = createInitialState({
 			tournamentId: 1,
@@ -3458,20 +3502,23 @@ describe('retirement integration (17p random seed)', () => {
 		const currentAssignments = s.currentAssignments;
 		expect(calculateCourtSizes(17)).toEqual([4, 4, 4, 5]);
 
-		const retiredId = currentAssignments[3].playerIds[4];
+		const prevResults: CourtResult[] = s.completedRounds[s.completedRounds.length - 1];
+		const court2 = currentAssignments.find((a) => a.courtNumber === 2)!;
+		const retiredId = court2.playerIds.find(
+			(pid) => prevResults.find((cr) => cr.courtNumber === 1)!.standings.find((st) => st.playerId === pid)?.rank === 4
+		)!;
+		expect(retiredId).toBeDefined();
+
 		const newSizes = recalculateCourtConfigAfterRetirement(16).courtSizes;
 		expect(newSizes).toEqual([4, 4, 4, 4]);
 
-		const prevResults: CourtResult[] = s.completedRounds[s.completedRounds.length - 1];
 		const redistributed = buildRedistributionFromResults(
 			'random-seed',
-			prevResults.map((cr) => ({
-				...cr,
-				standings: cr.standings.filter((st) => st.playerId !== retiredId)
-			})),
+			prevResults,
 			newSizes,
-			2,
-			4
+			1,
+			4,
+			new Set([retiredId])
 		);
 		const resolved = resolveAssignmentsAfterRetirement({
 			formatType: 'random-seed',
@@ -3481,7 +3528,42 @@ describe('retirement integration (17p random seed)', () => {
 		});
 		expect(resolved.flatMap((a) => a.playerIds)).not.toContain(retiredId);
 		expect(resolved.flatMap((a) => a.playerIds)).toHaveLength(16);
-		expect(resolved).toEqual(redistributed);
+		expect(new Set(resolved.flatMap((a) => a.playerIds)).size).toBe(16);
+		expect(resolved[0].playerIds).toEqual(s.currentAssignments[0].playerIds);
+		expect(resolved[1].playerIds).not.toContain(retiredId);
+		expect(resolved[1].playerIds).toHaveLength(4);
+	});
+
+	it('round 3 retire from bottom 5p group shrinks bottom court', () => {
+		vi.spyOn(global.Math, 'random').mockReturnValue(0.5);
+		let s = createInitialState({
+			tournamentId: 1,
+			formatType: 'random-seed',
+			playerCount: 17,
+			numRounds: 3
+		});
+		const players = Array.from({ length: 17 }, (_, i) => mockPlayer(i + 1));
+		s = addPlayers(s, players);
+		s = startRound(s);
+		s = advanceToRound(s, 3);
+		vi.restoreAllMocks();
+
+		const retiredId = s.currentAssignments[3].playerIds[4];
+		const newSizes = recalculateCourtConfigAfterRetirement(16).courtSizes;
+		expect(newSizes).toEqual([4, 4, 4, 4]);
+
+		const prevResults: CourtResult[] = s.completedRounds[s.completedRounds.length - 1];
+		const redistributed = buildRedistributionFromResults(
+			'random-seed',
+			prevResults,
+			newSizes,
+			1,
+			4,
+			new Set([retiredId])
+		);
+		expect(redistributed.flatMap((a) => a.playerIds)).not.toContain(retiredId);
+		expect(redistributed.flatMap((a) => a.playerIds)).toHaveLength(16);
+		expect(redistributed[3].playerIds).toHaveLength(4);
 	});
 
 	it('round 3 retire from top group also redistributes via ladder', () => {
@@ -3504,13 +3586,11 @@ describe('retirement integration (17p random seed)', () => {
 		const prevResults: CourtResult[] = s.completedRounds[s.completedRounds.length - 1];
 		const redistributed = buildRedistributionFromResults(
 			'random-seed',
-			prevResults.map((cr) => ({
-				...cr,
-				standings: cr.standings.filter((st) => st.playerId !== retiredId)
-			})),
+			prevResults,
 			newSizes,
-			2,
-			4
+			1,
+			4,
+			new Set([retiredId])
 		);
 		const resolved = resolveAssignmentsAfterRetirement({
 			formatType: 'random-seed',
@@ -3520,6 +3600,7 @@ describe('retirement integration (17p random seed)', () => {
 		});
 		expect(resolved).toEqual(redistributed);
 		expect(resolved.flatMap((a) => a.playerIds)).not.toContain(retiredId);
+		expect(new Set(resolved.flatMap((a) => a.playerIds)).size).toBe(16);
 	});
 });
 
