@@ -265,5 +265,6 @@
 	"retire_replacement_seed": "Seed points",
 	"err_replace_frozen_court": "Cannot add a replacement on a frozen court",
 	"err_replace_name_required": "Replacement name is required",
-	"err_replace_duplicate_name": "A player with that name is already on the roster"
+	"err_replace_duplicate_name": "A player with that name is already on the roster",
+	"injury_use_replacement": "Add a replacement for next round (keep roster size)"
 }

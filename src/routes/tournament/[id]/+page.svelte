@@ -58,6 +58,9 @@
 	let replacementSeedPoints = $state(0);
 	let injuryPlayerId = $state(0);
 	let injuryOption = $state<'substitute' | 'cancel' | ''>('');
+	let injuryUseReplacement = $state(false);
+	let injuryReplacementName = $state('');
+	let injuryReplacementSeedPoints = $state(0);
 	let now = $state(Date.now());
 
 	$effect(() => {
@@ -699,6 +702,32 @@
 									</label>
 								</div>
 							</div>
+							<label class="checkbox-label">
+								<input type="checkbox" bind:checked={injuryUseReplacement} />
+								{m.injury_use_replacement()}
+							</label>
+							{#if injuryUseReplacement}
+								<div class="field">
+									<label for="injuryReplacementName">{m.retire_replacement_name()}</label>
+									<input
+										id="injuryReplacementName"
+										type="text"
+										bind:value={injuryReplacementName}
+										required={injuryUseReplacement}
+									/>
+								</div>
+								{#if tournament?.formatType === 'preseed'}
+									<div class="field">
+										<label for="injuryReplacementSeed">{m.retire_replacement_seed()}</label>
+										<input
+											id="injuryReplacementSeed"
+											type="number"
+											min="0"
+											bind:value={injuryReplacementSeedPoints}
+										/>
+									</div>
+								{/if}
+							{/if}
 							<button
 								class="btn-danger"
 								onclick={async () => {
@@ -707,10 +736,21 @@
 										tournamentId: data.tournamentId,
 										playerId: injuryPlayerId,
 										option: injuryOption,
-										reason: 'injury'
+										reason: 'injury',
+										useReplacement: injuryUseReplacement,
+										replacementName: injuryUseReplacement
+											? injuryReplacementName.trim()
+											: undefined,
+										replacementSeedPoints:
+											injuryUseReplacement && tournament?.formatType === 'preseed'
+												? injuryReplacementSeedPoints
+												: undefined
 									});
 									injuryPlayerId = 0;
 									injuryOption = '';
+									injuryUseReplacement = false;
+									injuryReplacementName = '';
+									injuryReplacementSeedPoints = 0;
 								}}
 							>
 								{m.injury_confirm()}
@@ -1300,6 +1340,25 @@
 		font-weight: 600;
 		font-size: var(--font-size-sm);
 		color: var(--text-secondary);
+	}
+
+	.injury-form .checkbox-label {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+	}
+
+	.injury-form input[type='text'],
+	.injury-form input[type='number'] {
+		min-height: 40px;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		font-size: var(--font-size-base);
+		background-color: var(--bg-input);
+		color: var(--text-input);
+		border: var(--border-thickness) solid var(--border-strong);
+		border-radius: var(--radius-sm);
 	}
 
 	.injury-form select {

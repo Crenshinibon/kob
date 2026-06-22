@@ -1650,6 +1650,63 @@ export function resolvePreseedRetirement(opts: {
 	);
 }
 
+export type ForwardRetirementReplacement = {
+	readonly retiredPlayerId: number;
+	readonly replacementPlayerId: number;
+};
+
+/**
+ * Apply format-specific forward retirement policies to assignment templates.
+ * Used after closeRound (injury forward) and can unify between-round preseed logic.
+ */
+export function resolveForwardRetirement(opts: {
+	readonly formatType: FormatType;
+	readonly policy: PreseedRetirementPolicy;
+	readonly templateAssignments: readonly CourtAssignment[];
+	readonly previousRoundResults: readonly CourtResult[];
+	readonly retiredPlayerIds: ReadonlySet<number>;
+	readonly replacements: readonly ForwardRetirementReplacement[];
+	readonly newCourtSizes: readonly number[];
+	readonly originalCourtCount: number;
+	readonly roundsCompleted: number;
+	readonly frozenCourtNumbers: ReadonlySet<number>;
+}): CourtAssignment[] {
+	if (opts.retiredPlayerIds.size === 0) {
+		return cloneAssignments(opts.templateAssignments);
+	}
+
+	if (opts.formatType === 'random-seed') {
+		return buildRedistributionFromResults(
+			'random-seed',
+			opts.previousRoundResults,
+			opts.newCourtSizes,
+			opts.roundsCompleted,
+			opts.originalCourtCount,
+			opts.retiredPlayerIds
+		);
+	}
+
+	const replacementMap = new Map(
+		opts.replacements.map((r) => [r.retiredPlayerId, r.replacementPlayerId])
+	);
+	let result = cloneAssignments(opts.templateAssignments);
+	const retiredOrdered = [...opts.retiredPlayerIds].sort((a, b) => a - b);
+
+	for (const retiredId of retiredOrdered) {
+		result = resolvePreseedRetirement({
+			assignments: result,
+			prevResults: opts.previousRoundResults,
+			retiredPlayerId: retiredId,
+			policy: opts.policy,
+			newCourtSizes: opts.newCourtSizes,
+			frozenCourtNumbers: opts.frozenCourtNumbers,
+			replacementPlayerId: replacementMap.get(retiredId)
+		});
+	}
+
+	return result;
+}
+
 // ============================================================================
 // Player Retirement
 // ============================================================================

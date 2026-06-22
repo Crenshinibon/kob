@@ -265,5 +265,6 @@
 	"retire_replacement_seed": "Seed-Punkte",
 	"err_replace_frozen_court": "Ersatz auf eingefrorener Gruppe nicht möglich",
 	"err_replace_name_required": "Name des Ersatzspielers erforderlich",
-	"err_replace_duplicate_name": "Ein Spieler mit diesem Namen ist bereits im Kader"
+	"err_replace_duplicate_name": "Ein Spieler mit diesem Namen ist bereits im Kader",
+	"injury_use_replacement": "Ersatzspieler für die nächste Runde hinzufügen (Kadergröße bleibt)"
 }

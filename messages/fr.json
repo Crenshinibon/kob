@@ -265,5 +265,6 @@
 	"retire_replacement_seed": "Points de seed",
 	"err_replace_frozen_court": "Impossible d'ajouter un remplaçant sur un groupe figé",
 	"err_replace_name_required": "Le nom du remplaçant est requis",
-	"err_replace_duplicate_name": "Un joueur avec ce nom est déjà inscrit"
+	"err_replace_duplicate_name": "Un joueur avec ce nom est déjà inscrit",
+	"injury_use_replacement": "Ajouter un remplaçant pour le prochain tour (effectif inchangé)"
 }

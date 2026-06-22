@@ -44,6 +44,7 @@ import {
 	applyPreseedCascade,
 	applyReplacementSlot,
 	resolvePreseedRetirement,
+	resolveForwardRetirement,
 	getActiveBracketLevels,
 	type FormatType,
 	type TournamentState,
@@ -3735,6 +3736,134 @@ describe('preseed retirement policies', () => {
 			{ courtNumber: 1, level: 1 },
 			{ courtNumber: 2, level: 2 }
 		]);
+	});
+});
+
+describe('resolveForwardRetirement (injury forward on closeRound)', () => {
+	const frozenNone = new Set<number>();
+
+	function r2Results16p(): CourtResult[] {
+		return [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 5, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 7, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 4, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 3, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 11, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 12, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 15, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 16, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 10, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 13, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			])
+		];
+	}
+
+	it('E1 RS: ladder cascade from R2 results excluding injured player', () => {
+		const r2: CourtResult[] = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 20, diff: 0, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 12, diff: 0, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: -4, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: -28, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 16, diff: 0, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 8, diff: 0, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: -2, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: -22, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 11, rank: 1, points: 6, diff: 0, matchCount: 3 },
+				{ playerId: 7, rank: 2, points: 2, diff: 0, matchCount: 3 },
+				{ playerId: 12, rank: 3, points: -6, diff: 0, matchCount: 3 },
+				{ playerId: 10, rank: 4, points: -2, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 16, rank: 1, points: 4, diff: 0, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 2, diff: 0, matchCount: 3 },
+				{ playerId: 15, rank: 3, points: -6, diff: 0, matchCount: 3 },
+				{ playerId: 13, rank: 4, points: -10, diff: 0, matchCount: 3 }
+			])
+		];
+		const expected = buildRedistributionFromResults(
+			'random-seed',
+			r2,
+			[4, 4, 4, 3],
+			1,
+			4,
+			new Set([4])
+		);
+		const result = resolveForwardRetirement({
+			formatType: 'random-seed',
+			policy: 'cascade',
+			templateAssignments: [],
+			previousRoundResults: r2,
+			retiredPlayerIds: new Set([4]),
+			replacements: [],
+			newCourtSizes: [4, 4, 4, 3],
+			originalCourtCount: 4,
+			roundsCompleted: 1,
+			frozenCourtNumbers: frozenNone
+		});
+		expect(result).toEqual(expected);
+	});
+
+	it('E2 PS: cascade on closeRound R3 template matches between-round retire', () => {
+		const r2 = r2Results16p();
+		const r3Template = processPreseedTransition(r2, [4, 4, 4, 4], 1);
+		expect(r3Template[1].playerIds).toContain(7);
+
+		const result = resolveForwardRetirement({
+			formatType: 'preseed',
+			policy: 'cascade',
+			templateAssignments: r3Template,
+			previousRoundResults: r2,
+			retiredPlayerIds: new Set([7]),
+			replacements: [],
+			newCourtSizes: [4, 4, 4, 3],
+			originalCourtCount: 4,
+			roundsCompleted: 1,
+			frozenCourtNumbers: frozenNone
+		});
+
+		expect(result[0].playerIds).toEqual(r3Template[0].playerIds);
+		expect(result[1].playerIds).toEqual([5, 9, 3, 11]);
+		expect([...result[2].playerIds].sort((a, b) => a - b)).toEqual([8, 10, 14, 16]);
+		expect([...result[3].playerIds].sort((a, b) => a - b)).toEqual([12, 13, 15]);
+	});
+
+	it('E5 PS: replacement on injury forward swaps slot only', () => {
+		const r2 = r2Results16p();
+		const r3Template = processPreseedTransition(r2, [4, 4, 4, 4], 1);
+		const result = resolveForwardRetirement({
+			formatType: 'preseed',
+			policy: 'cascade',
+			templateAssignments: r3Template,
+			previousRoundResults: r2,
+			retiredPlayerIds: new Set([7]),
+			replacements: [{ retiredPlayerId: 7, replacementPlayerId: 99 }],
+			newCourtSizes: [4, 4, 4, 4],
+			originalCourtCount: 4,
+			roundsCompleted: 1,
+			frozenCourtNumbers: frozenNone
+		});
+		expect(result[1].playerIds).toContain(99);
+		expect(result[1].playerIds).not.toContain(7);
+		expect(result[0].playerIds).toEqual(r3Template[0].playerIds);
+		expect(result[2].playerIds).toEqual(r3Template[2].playerIds);
 	});
 });
 

@@ -26,6 +26,7 @@ import {
 	getFinalRoundCourtConfig,
 	getFrozenCourts,
 	resolvePreseedRetirement,
+	resolveForwardRetirement,
 	processPreseedTransition,
 	applyReplacementSlot,
 	type FormatType,
@@ -130,17 +131,7 @@ export const closeRoundForm = form(
 			)
 			.orderBy(asc(courtRotation.courtNumber));
 
-		const currentAssignmentsFromDb = currentRotations.map((rotation) => ({
-			courtNumber: rotation.courtNumber,
-			playerIds: [
-				rotation.player1Id,
-				rotation.player2Id,
-				...(rotation.player3Id !== null ? [rotation.player3Id] : []),
-				...(rotation.player4Id !== null ? [rotation.player4Id] : []),
-				...(rotation.player5Id !== null ? [rotation.player5Id] : []),
-				...(rotation.player6Id !== null ? [rotation.player6Id] : [])
-			].filter((id): id is number => id !== null && !retiredPlayerIds.has(id))
-		}));
+		const currentAssignmentsFromDb = rotationsToAssignments(currentRotations);
 
 		const allMatches: MatchData[] = [];
 		for (const rotation of currentRotations) {
@@ -233,6 +224,41 @@ export const closeRoundForm = form(
 		let nextAssignments = closedState.nextAssignments;
 		let nextCourtSizes = courtSizes;
 		const nextRoundNumber = closedState.roundsCompleted + 1;
+
+		const justClosedResults =
+			closedState.completedRounds[closedState.completedRounds.length - 1] ?? [];
+		const formatType = tourney.formatType as FormatType;
+		const forwardFrozenCourts =
+			formatType === 'preseed'
+				? getFrozenCourts(
+						calculateCourtSizes(tourney.playerCount),
+						closedState.roundsCompleted,
+						'preseed'
+					)
+				: [];
+		const forwardFrozenNumbers = new Set(forwardFrozenCourts.map((f) => f.courtNumber));
+		const replacements = dbPlayers
+			.filter((p) => p.replacesPlayerId !== null && !p.retiredAt)
+			.map((p) => ({
+				retiredPlayerId: p.replacesPlayerId!,
+				replacementPlayerId: p.id
+			}));
+		const policy = (tourney.preseedRetirementPolicy as PreseedRetirementPolicy) ?? 'cascade';
+
+		if (retiredPlayerIds.size > 0 && !closedState.isComplete) {
+			nextAssignments = resolveForwardRetirement({
+				formatType,
+				policy,
+				templateAssignments: nextAssignments,
+				previousRoundResults: justClosedResults,
+				retiredPlayerIds,
+				replacements,
+				newCourtSizes: courtSizes,
+				originalCourtCount: calculateCourtSizes(tourney.playerCount).length,
+				roundsCompleted: closedState.roundsCompleted - 1,
+				frozenCourtNumbers: forwardFrozenNumbers
+			});
+		}
 
 		// Exclude frozen courts (preseed format only)
 		if (tourney.formatType === 'preseed') {
@@ -870,9 +896,20 @@ export const reportInjury = command(
 		tournamentId: v.pipe(v.number(), v.minValue(1)),
 		playerId: v.pipe(v.number(), v.minValue(1)),
 		option: v.picklist(['substitute', 'cancel']),
-		reason: v.optional(v.string())
+		reason: v.optional(v.string()),
+		useReplacement: v.optional(v.boolean()),
+		replacementName: v.optional(v.string()),
+		replacementSeedPoints: v.optional(v.number())
 	}),
-	async ({ tournamentId, playerId, option, reason }) => {
+	async ({
+		tournamentId,
+		playerId,
+		option,
+		reason,
+		useReplacement,
+		replacementName,
+		replacementSeedPoints
+	}) => {
 		const event = getRequestEvent();
 		const user = event.locals.user;
 		if (!user) error(401, m.unauthorized());
@@ -926,6 +963,30 @@ export const reportInjury = command(
 			error(400, m.err_retire_scores_entered());
 		}
 
+		const formatType = tourney.formatType as FormatType;
+		const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
+		const frozenCourts =
+			formatType === 'preseed'
+				? getFrozenCourts(originalCourtSizes, currentRound - 1, 'preseed')
+				: [];
+		const isFrozenCourt = frozenCourts.some((f) => f.courtNumber === playerRotation.courtNumber);
+
+		if (useReplacement) {
+			if (isFrozenCourt) error(400, m.err_replace_frozen_court());
+			const name = replacementName?.trim();
+			if (!name) error(400, m.err_replace_name_required());
+			const dbPlayers = await db
+				.select()
+				.from(player)
+				.where(eq(player.tournamentId, tournamentId));
+			const duplicate = dbPlayers.some(
+				(p) => p.name.toLowerCase() === name.toLowerCase() && !p.retiredAt
+			);
+			if (duplicate) error(400, m.err_replace_duplicate_name());
+		}
+
+		const replacing = Boolean(useReplacement && replacementName?.trim());
+
 		if (option === 'cancel') {
 			await db
 				.update(match)
@@ -970,6 +1031,24 @@ export const reportInjury = command(
 				retirementReason: reason ?? 'injury'
 			})
 			.where(eq(player.id, playerId));
+
+		if (replacing) {
+			const [replacement] = await db
+				.insert(player)
+				.values({
+					tournamentId,
+					name: replacementName!.trim(),
+					seedPoints:
+						formatType === 'preseed' ? (replacementSeedPoints ?? 0) : null,
+					seedRank: null,
+					replacesPlayerId: playerId
+				})
+				.returning();
+			await db
+				.update(player)
+				.set({ replacedByPlayerId: replacement.id })
+				.where(eq(player.id, playerId));
+		}
 
 		await db
 			.update(tournament)
@@ -1389,6 +1468,11 @@ export const undoInjury = command(
 			error(400, m.err_undo_injury_scores_entered());
 		}
 
+		const replacementId = targetPlayer.replacedByPlayerId;
+		if (replacementId) {
+			await db.delete(player).where(eq(player.id, replacementId));
+		}
+
 		const hasCanceled = rotationMatches.some((m) => m.isCanceled);
 		const hasInjuredFlag = rotationMatches.some((m) => m.injuredPlayerIds?.includes(playerId));
 
@@ -1440,7 +1524,8 @@ export const undoInjury = command(
 				retiredRound: null,
 				retiredCourt: null,
 				retirementReason: null,
-				finalStanding: null
+				finalStanding: null,
+				replacedByPlayerId: null
 			})
 			.where(eq(player.id, playerId));
 
