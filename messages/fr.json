@@ -255,5 +255,15 @@
 	"physical_court_label": "Physique :",
 	"physical_court_placeholder": "ex. Terrain A",
 	"retire_player_option": "{name} (Groupe {group})",
-	"shift_active": "▶ En cours"
+	"shift_active": "▶ En cours",
+	"preseed_retirement_policy_label": "Politique de retrait",
+	"preseed_retirement_cascade": "Cascade — promotion depuis le bracket inférieur (recommandé)",
+	"preseed_retirement_shrink": "Réduction — retirer le joueur seulement, groupe possible en 3 joueurs",
+	"preseed_retirement_policy_help": "La cascade conserve des groupes de 4 aux niveaux supérieurs. La réduction retire simplement le joueur et peut créer un groupe de 3 au milieu du bracket.",
+	"retire_use_replacement": "Ajouter un remplaçant (taille du groupe inchangée, pas de redistribution)",
+	"retire_replacement_name": "Nom du remplaçant",
+	"retire_replacement_seed": "Points de seed",
+	"err_replace_frozen_court": "Impossible d'ajouter un remplaçant sur un groupe figé",
+	"err_replace_name_required": "Le nom du remplaçant est requis",
+	"err_replace_duplicate_name": "Un joueur avec ce nom est déjà inscrit"
 }

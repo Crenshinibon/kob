@@ -1404,6 +1404,252 @@ export function formatDuration(totalMinutes: number): string {
 	return `~${m}min`;
 }
 
+export type PreseedRetirementPolicy = 'shrink' | 'cascade';
+
+export type BracketLevel = {
+	readonly courtNumber: number;
+	readonly level: number;
+};
+
+/**
+ * Placement levels for active (non-frozen) courts in the current round.
+ * Level 1 = highest bracket court; higher numbers = lower placement.
+ */
+export function getActiveBracketLevels(
+	assignments: readonly CourtAssignment[],
+	frozenCourtNumbers: ReadonlySet<number>
+): readonly BracketLevel[] {
+	const active = assignments
+		.filter((a) => !frozenCourtNumbers.has(a.courtNumber))
+		.sort((a, b) => a.courtNumber - b.courtNumber);
+	return active.map((a, idx) => ({ courtNumber: a.courtNumber, level: idx + 1 }));
+}
+
+function cloneAssignments(assignments: readonly CourtAssignment[]): CourtAssignment[] {
+	return assignments.map((a) => ({ courtNumber: a.courtNumber, playerIds: [...a.playerIds] }));
+}
+
+function standingRankOnCourt(
+	prevResults: readonly CourtResult[],
+	courtNumber: number,
+	playerId: number
+): number {
+	const court = prevResults.find((c) => c.courtNumber === courtNumber);
+	const standing = court?.standings.find((s) => s.playerId === playerId);
+	return standing?.rank ?? 999;
+}
+
+function compareByPrevRoundRank(
+	prevResults: readonly CourtResult[],
+	courtNumber: number,
+	a: number,
+	b: number
+): number {
+	const rankA = standingRankOnCourt(prevResults, courtNumber, a);
+	const rankB = standingRankOnCourt(prevResults, courtNumber, b);
+	if (rankA !== rankB) return rankA - rankB;
+	const court = prevResults.find((c) => c.courtNumber === courtNumber);
+	const sa = court?.standings.find((s) => s.playerId === a);
+	const sb = court?.standings.find((s) => s.playerId === b);
+	if (sa && sb) {
+		const byPoints = sb.points - sa.points;
+		if (byPoints !== 0) return byPoints;
+		const byDiff = sb.diff - sa.diff;
+		if (byDiff !== 0) return byDiff;
+	}
+	return a - b;
+}
+
+function findAssignment(
+	assignments: readonly CourtAssignment[],
+	courtNumber: number
+): CourtAssignment | undefined {
+	return assignments.find((a) => a.courtNumber === courtNumber);
+}
+
+function removePlayerFromCourt(
+	assignments: CourtAssignment[],
+	courtNumber: number,
+	playerId: number
+): void {
+	const courtIdx = assignments.findIndex((a) => a.courtNumber === courtNumber);
+	if (courtIdx < 0) return;
+	assignments[courtIdx] = {
+		courtNumber,
+		playerIds: assignments[courtIdx].playerIds.filter((id) => id !== playerId)
+	};
+}
+
+function addPlayerToCourt(assignments: CourtAssignment[], courtNumber: number, playerId: number): void {
+	const courtIdx = assignments.findIndex((a) => a.courtNumber === courtNumber);
+	if (courtIdx < 0) return;
+	const court = assignments[courtIdx];
+	if (!court.playerIds.includes(playerId)) {
+		assignments[courtIdx] = {
+			courtNumber,
+			playerIds: [...court.playerIds, playerId]
+		};
+	}
+}
+
+function pickBestPromotee(
+	assignments: readonly CourtAssignment[],
+	donorCourtNumber: number,
+	prevResults: readonly CourtResult[],
+	exclude: ReadonlySet<number>
+): number | null {
+	const donor = findAssignment(assignments, donorCourtNumber);
+	if (!donor) return null;
+	const candidates = donor.playerIds.filter((id) => !exclude.has(id));
+	if (candidates.length === 0) return null;
+	candidates.sort((a, b) =>
+		compareByPrevRoundRank(prevResults, donorCourtNumber, a, b)
+	);
+	return candidates[0];
+}
+
+function targetCourtSize(
+	courtNumber: number,
+	newCourtSizes: readonly number[],
+	defaultSize: number
+): number {
+	return newCourtSizes[courtNumber - 1] ?? defaultSize;
+}
+
+/**
+ * Policy A: remove retiree from their court only; no promotion between bracket levels.
+ */
+export function applyPreseedShrink(
+	assignments: readonly CourtAssignment[],
+	retiredPlayerId: number,
+	newCourtSizes: readonly number[],
+	frozenCourtNumbers: ReadonlySet<number>
+): CourtAssignment[] {
+	const result = cloneAssignments(assignments);
+	const retiredCourt = result.find((a) => a.playerIds.includes(retiredPlayerId));
+	if (!retiredCourt || frozenCourtNumbers.has(retiredCourt.courtNumber)) {
+		return result;
+	}
+	removePlayerFromCourt(result, retiredCourt.courtNumber, retiredPlayerId);
+	return result;
+}
+
+/**
+ * Policy B: remove retiree and backfill upward through bracket levels by previous-round rank.
+ */
+export function applyPreseedCascade(
+	assignments: readonly CourtAssignment[],
+	prevResults: readonly CourtResult[],
+	retiredPlayerId: number,
+	newCourtSizes: readonly number[],
+	frozenCourtNumbers: ReadonlySet<number>
+): CourtAssignment[] {
+	const result = cloneAssignments(assignments);
+	const retiredCourt = result.find((a) => a.playerIds.includes(retiredPlayerId));
+	if (!retiredCourt || frozenCourtNumbers.has(retiredCourt.courtNumber)) {
+		return result;
+	}
+
+	const levels = getActiveBracketLevels(result, frozenCourtNumbers);
+	const levelByCourt = new Map(levels.map((l) => [l.courtNumber, l.level]));
+	const courtByLevel = new Map(levels.map((l) => [l.level, l.courtNumber]));
+	const retireLevel = levelByCourt.get(retiredCourt.courtNumber);
+	if (retireLevel === undefined) return result;
+
+	removePlayerFromCourt(result, retiredCourt.courtNumber, retiredPlayerId);
+
+	const maxLevel = levels.length;
+	const moved = new Set<number>();
+
+	for (let level = retireLevel; level <= maxLevel; level++) {
+		const courtNumber = courtByLevel.get(level);
+		if (courtNumber === undefined) continue;
+
+		const targetSize = targetCourtSize(courtNumber, newCourtSizes, 4);
+
+		while ((findAssignment(result, courtNumber)?.playerIds.length ?? 0) < targetSize) {
+			let picked: number | null = null;
+			let donorCourt: number | null = null;
+
+			for (let donorLevel = level + 1; donorLevel <= maxLevel; donorLevel++) {
+				const donorCourtNumber = courtByLevel.get(donorLevel);
+				if (donorCourtNumber === undefined) continue;
+				const candidate = pickBestPromotee(result, donorCourtNumber, prevResults, moved);
+				if (candidate !== null) {
+					picked = candidate;
+					donorCourt = donorCourtNumber;
+					break;
+				}
+			}
+
+			if (picked === null || donorCourt === null) break;
+
+			removePlayerFromCourt(result, donorCourt, picked);
+			addPlayerToCourt(result, courtNumber, picked);
+			moved.add(picked);
+		}
+	}
+
+	return result;
+}
+
+/** Replacement inherits the retiree's court slot; roster count unchanged. */
+export function applyReplacementSlot(
+	assignments: readonly CourtAssignment[],
+	retiredPlayerId: number,
+	replacementPlayerId: number
+): CourtAssignment[] {
+	return assignments.map((a) => {
+		if (!a.playerIds.includes(retiredPlayerId)) {
+			return { courtNumber: a.courtNumber, playerIds: [...a.playerIds] };
+		}
+		return {
+			courtNumber: a.courtNumber,
+			playerIds: a.playerIds.map((id) => (id === retiredPlayerId ? replacementPlayerId : id))
+		};
+	});
+}
+
+export function resolvePreseedRetirement(opts: {
+	readonly assignments: readonly CourtAssignment[];
+	readonly prevResults: readonly CourtResult[];
+	readonly retiredPlayerId: number;
+	readonly policy: PreseedRetirementPolicy;
+	readonly newCourtSizes: readonly number[];
+	readonly frozenCourtNumbers: ReadonlySet<number>;
+	readonly replacementPlayerId?: number;
+}): CourtAssignment[] {
+	if (opts.replacementPlayerId !== undefined) {
+		return applyReplacementSlot(
+			opts.assignments,
+			opts.retiredPlayerId,
+			opts.replacementPlayerId
+		);
+	}
+
+	const retiredCourt = opts.assignments.find((a) => a.playerIds.includes(opts.retiredPlayerId));
+	if (retiredCourt && opts.frozenCourtNumbers.has(retiredCourt.courtNumber)) {
+		return cloneAssignments(opts.assignments);
+	}
+
+	if (opts.policy === 'shrink') {
+		return applyPreseedShrink(
+			opts.assignments,
+			opts.retiredPlayerId,
+			opts.newCourtSizes,
+			opts.frozenCourtNumbers
+		);
+	}
+
+	return applyPreseedCascade(
+		opts.assignments,
+		opts.prevResults,
+		opts.retiredPlayerId,
+		opts.newCourtSizes,
+		opts.frozenCourtNumbers
+	);
+}
+
 // ============================================================================
 // Player Retirement
 // ============================================================================

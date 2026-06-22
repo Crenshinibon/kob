@@ -53,6 +53,9 @@
 	>({});
 	let retirePlayerId = $state(0);
 	let retireReason = $state('');
+	let retireUseReplacement = $state(false);
+	let replacementName = $state('');
+	let replacementSeedPoints = $state(0);
 	let injuryPlayerId = $state(0);
 	let injuryOption = $state<'substitute' | 'cancel' | ''>('');
 	let now = $state(Date.now());
@@ -574,6 +577,32 @@
 									<option value="other">{m.retire_reason_other()}</option>
 								</select>
 							</div>
+							<label class="checkbox-label">
+								<input type="checkbox" bind:checked={retireUseReplacement} />
+								{m.retire_use_replacement()}
+							</label>
+							{#if retireUseReplacement}
+								<div class="field">
+									<label for="replacementName">{m.retire_replacement_name()}</label>
+									<input
+										id="replacementName"
+										type="text"
+										bind:value={replacementName}
+										required={retireUseReplacement}
+									/>
+								</div>
+								{#if tournament?.formatType === 'preseed'}
+									<div class="field">
+										<label for="replacementSeed">{m.retire_replacement_seed()}</label>
+										<input
+											id="replacementSeed"
+											type="number"
+											min="0"
+											bind:value={replacementSeedPoints}
+										/>
+									</div>
+								{/if}
+							{/if}
 							<button
 								class="btn-danger"
 								onclick={async () => {
@@ -581,10 +610,21 @@
 									await retirePlayer({
 										tournamentId: data.tournamentId,
 										playerId: retirePlayerId,
-										reason: retireReason || undefined
+										reason: retireReason || undefined,
+										useReplacement: retireUseReplacement,
+										replacementName: retireUseReplacement
+											? replacementName.trim()
+											: undefined,
+										replacementSeedPoints:
+											retireUseReplacement && tournament?.formatType === 'preseed'
+												? replacementSeedPoints
+												: undefined
 									});
 									retirePlayerId = 0;
 									retireReason = '';
+									retireUseReplacement = false;
+									replacementName = '';
+									replacementSeedPoints = 0;
 								}}
 							>
 								{m.retire_confirm()}
@@ -1157,6 +1197,25 @@
 		font-weight: 600;
 		font-size: var(--font-size-sm);
 		color: var(--text-secondary);
+	}
+
+	.checkbox-label {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+	}
+
+	.retire-form input[type='text'],
+	.retire-form input[type='number'] {
+		min-height: 40px;
+		padding: var(--spacing-xs) var(--spacing-sm);
+		font-size: var(--font-size-base);
+		background-color: var(--bg-input);
+		color: var(--text-input);
+		border: var(--border-thickness) solid var(--border-strong);
+		border-radius: var(--radius-sm);
 	}
 
 	.retire-form select {
