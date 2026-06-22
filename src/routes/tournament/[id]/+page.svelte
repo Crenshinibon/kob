@@ -189,13 +189,11 @@
 				<div class="scheduling-info">
 					<h3>{m.court_scheduling({ round: currentRound })}</h3>
 					<p>
-						Batch shifts · {physicalCourtCount} physical court{physicalCourtCount !== 1 ? 's' : ''}
-						· {virtualCourtCount} virtual court{virtualCourtCount !== 1 ? 's' : ''}
-						· {Math.ceil(virtualCourtCount / physicalCourtCount)} shift{Math.ceil(
-							virtualCourtCount / physicalCourtCount
-						) !== 1
-							? 's'
-							: ''}
+						{m.scheduling_batch_info({
+							physical: physicalCourtCount,
+							groups: virtualCourtCount,
+							shifts: Math.ceil(virtualCourtCount / physicalCourtCount)
+						})}
 					</p>
 					{#if roundDuration}
 						<p class="round-dur">{m.est_round_duration({ minutes: roundDuration })}</p>
@@ -234,7 +232,7 @@
 										class:waiting={court.shift > 1}
 									>
 										{court.shift === 1
-											? '▶ Active'
+											? m.shift_active()
 											: m.shift_count({ current: court.shift, total: court.totalShifts })}
 									</span>
 									{#if court.waitLabel}
@@ -245,11 +243,11 @@
 						</div>
 
 						<label class="court-label-row">
-							<span class="court-label-prefix">Physical:</span>
+							<span class="court-label-prefix">{m.physical_court_label()}</span>
 							<input
 								type="text"
 								class="court-label-input"
-								placeholder="e.g. Court A"
+								placeholder={m.physical_court_placeholder()}
 								value={court.label ?? ''}
 								oninput={(e) => {
 									const tid = court.courtId;
@@ -545,9 +543,7 @@
 						<summary class="btn-retire-header">{m.retire_player()}</summary>
 						<div class="retire-form">
 							<p class="retire-note">
-								Remove a player before any scores are entered. This will reshuffle ALL courts
-								(recalculate all player assignments). The retired player is removed for the
-								remainder of the tournament.
+								{m.retire_note()}
 							</p>
 							<div class="field">
 								<label for="retirePlayerId">{m.retire_select_hint()}</label>
@@ -556,7 +552,12 @@
 									{#each courts as court (court.courtNumber)}
 										{#each court.players as p (p.id)}
 											{#if !p.retired}
-												<option value={p.id}>{p.name} (Court {court.courtNumber})</option>
+												<option value={p.id}
+													>{m.retire_player_option({
+														name: p.name,
+														group: court.courtNumber
+													})}</option
+												>
 											{/if}
 										{/each}
 									{/each}
@@ -626,9 +627,7 @@
 						<summary class="btn-injury-header">{m.report_injury()}</summary>
 						<div class="injury-form">
 							<p class="injury-note">
-								Handle a player injury mid-round. This only affects the player's current court for
-								the current round. Other courts continue normally. At the end of the round, the
-								injured player can either continue (substitute) or be retired.
+								{m.injury_note()}
 							</p>
 							<div class="field">
 								<label for="injuryPlayerId">{m.injury_select_player()}</label>

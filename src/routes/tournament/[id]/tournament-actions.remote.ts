@@ -15,14 +15,14 @@ import {
 	calculateCourtSizes,
 	calculateCourtStandings,
 	recalculateCourtConfigAfterRetirement,
-	processPreseedTransition,
-	verticalSeeding,
-	ladderRedistribute,
+	computeRetirementFinalStanding,
+	buildRedistributionFromResults,
+	resolveAssignmentsAfterRetirement,
+	resolveAssignmentsAfterUndoRetirement,
+	hasFreshScoresAfterInjury,
 	generateAllMatchesForAssignment,
 	getMaxSets,
 	getEffectiveScoring,
-	getPreseedBracketRange,
-	calculateRetiredStanding,
 	getFinalRoundCourtConfig,
 	getFrozenCourts,
 	type FormatType,
@@ -539,38 +539,18 @@ export const retirePlayer = command(
 		const newCourtSizes = newConfig.courtSizes;
 
 		const totalCourts = currentRotations.length;
-		let finalStanding: number | null;
-
-		if (tourney.formatType === 'preseed') {
-			const bracketRange = getPreseedBracketRange(playerRotation.courtNumber, totalCourts);
-			const sameBracketCount = priorRetirees.filter((p) => {
-				if (!p.retiredCourt) return false;
-				const pRange = getPreseedBracketRange(p.retiredCourt, totalCourts);
-				return pRange.min === bracketRange.min && pRange.max === bracketRange.max;
-			}).length;
-			finalStanding = bracketRange.max - sameBracketCount;
-		} else {
-			const numRounds = tourney.numRounds;
-			const standing = calculateRetiredStanding(
-				playerRotation.courtNumber,
-				totalCourts,
-				currentRound - 1,
-				numRounds,
-				'random-seed',
-				newCourtSizes
-			);
-			const sameStandingRetirees = priorRetirees.filter(
-				(p) => p.finalStanding === standing || p.finalStanding === standing - 1
-			);
-			let adjusted = standing;
-			for (const r of sameStandingRetirees) {
-				if (r.retiredCourt && r.retiredCourt > playerRotation.courtNumber) {
-					adjusted = standing - 1;
-					break;
-				}
-			}
-			finalStanding = adjusted;
-		}
+		const finalStanding = computeRetirementFinalStanding({
+			formatType: tourney.formatType as FormatType,
+			retiredCourt: playerRotation.courtNumber,
+			totalCourts,
+			currentRound,
+			numRounds: tourney.numRounds,
+			newCourtSizes,
+			priorRetirees: priorRetirees.map((p) => ({
+				retiredCourt: p.retiredCourt,
+				finalStanding: p.finalStanding
+			}))
+		});
 
 		await db
 			.update(player)
@@ -593,6 +573,7 @@ export const retirePlayer = command(
 			.where(eq(tournament.id, tournamentId));
 
 		const currentRotationIds = currentRotations.map((r) => r.id);
+
 		if (currentRotationIds.length > 0) {
 			await db.delete(match).where(inArray(match.courtRotationId, currentRotationIds));
 		}
@@ -675,7 +656,7 @@ export const retirePlayer = command(
 					...(cr.rotation.player4Id ? [cr.rotation.player4Id] : []),
 					...(cr.rotation.player5Id ? [cr.rotation.player5Id] : []),
 					...(cr.rotation.player6Id ? [cr.rotation.player6Id] : [])
-				].filter((id): id is number => id !== null && !retiredIds.has(id));
+				].filter((id): id is number => id !== null);
 				return {
 					courtNumber: cr.rotation.courtNumber,
 					standings: calculateCourtStandings(cr.matchData, pIds)
@@ -683,54 +664,22 @@ export const retirePlayer = command(
 			});
 
 			const formatType = tourney.formatType as FormatType;
-			if (formatType === 'preseed') {
-				const totalCourts = calculateCourtSizes(tourney.playerCount).length;
-				nextAssignments = processPreseedTransition(
-					results,
-					newCourtSizes,
-					prevRound - 1,
-					totalCourts
-				);
-			} else if (prevRound === 1) {
-				nextAssignments = verticalSeeding(results, newCourtSizes.length, newCourtSizes);
-			} else {
-				nextAssignments = ladderRedistribute(results, newCourtSizes.length, newCourtSizes);
-			}
-		}
-
-		let finalAssignments: { courtNumber: number; playerIds: number[] }[];
-
-		if (tourney.formatType === 'preseed') {
-			// Use preseed assignments directly to preserve bracket mixing
-			finalAssignments = nextAssignments.map((a) => ({
-				courtNumber: a.courtNumber,
-				playerIds: [...a.playerIds]
-			}));
-
-			// Exclude frozen courts
-			const frozenCourts = getFrozenCourts(
-				calculateCourtSizes(tourney.playerCount),
-				prevRound,
-				'preseed'
+			nextAssignments = buildRedistributionFromResults(
+				formatType,
+				results,
+				newCourtSizes,
+				prevRound - 1,
+				calculateCourtSizes(tourney.playerCount).length,
+				retiredIds
 			);
-			if (frozenCourts.length > 0) {
-				const frozenNumbers = new Set(frozenCourts.map((f) => f.courtNumber));
-				finalAssignments = finalAssignments.filter((a) => !frozenNumbers.has(a.courtNumber));
-			}
-		} else {
-			const allPlayerIds = activePlayers.map((p) => p.id);
-			allPlayerIds.sort((a, b) => a - b);
-
-			finalAssignments = [];
-			let offset = 0;
-			for (let i = 0; i < newCourtSizes.length; i++) {
-				finalAssignments.push({
-					courtNumber: i + 1,
-					playerIds: allPlayerIds.slice(offset, offset + newCourtSizes[i])
-				});
-				offset += newCourtSizes[i];
-			}
 		}
+
+		const finalAssignments = resolveAssignmentsAfterRetirement({
+			formatType: tourney.formatType as FormatType,
+			redistributedAssignments: nextAssignments,
+			originalPlayerCount: tourney.playerCount,
+			roundsCompleted: prevRound
+		});
 
 		for (const assignment of finalAssignments) {
 			const idx = assignment.courtNumber - 1;
@@ -1012,15 +961,20 @@ export const undoRetirement = command(
 		const activeCount = activePlayers.length;
 
 		const prevRound = currentRound - 1;
-		let assignCourtSizes: number[] = JSON.parse(tourney.courtSizes || '[]') as number[];
-		if (activeCount !== tourney.playerCount) {
-			const newConfig = recalculateCourtConfigAfterRetirement(activeCount);
-			assignCourtSizes = newConfig.courtSizes;
-		}
+		const restoredCount = activeCount + 1;
+		const restoredConfig = recalculateCourtConfigAfterRetirement(restoredCount);
+		const restoredCourtSizes = restoredConfig.courtSizes;
 
-		const courtSizes =
-			assignCourtSizes.length > 0 ? assignCourtSizes : calculateCourtSizes(activeCount);
+		await db
+			.update(tournament)
+			.set({
+				playerCount: restoredCount,
+				courtSizes: JSON.stringify(restoredCourtSizes),
+				lastActivityAt: new Date()
+			})
+			.where(eq(tournament.id, tournamentId));
 
+		let assignCourtSizes = restoredCourtSizes;
 		let nextAssignments: { courtNumber: number; playerIds: readonly number[] }[];
 
 		if (prevRound === 0) {
@@ -1043,14 +997,14 @@ export const undoRetirement = command(
 			}
 
 			const courts: { courtNumber: number; playerIds: number[] }[] = [];
-			for (let i = 0; i < courtSizes.length; i++) {
+			for (let i = 0; i < assignCourtSizes.length; i++) {
 				courts.push({ courtNumber: i + 1, playerIds: [] });
 			}
 			let idx = 0;
 			for (let pos = 0; pos < 4; pos++) {
 				const fwd = pos % 2 === 0;
-				for (let c = 0; c < courtSizes.length; c++) {
-					const courtIdx = fwd ? c : courtSizes.length - 1 - c;
+				for (let c = 0; c < assignCourtSizes.length; c++) {
+					const courtIdx = fwd ? c : assignCourtSizes.length - 1 - c;
 					if (idx < allActivePlayerIds.length) {
 						courts[courtIdx].playerIds.push(allActivePlayerIds[idx]);
 						idx++;
@@ -1080,6 +1034,10 @@ export const undoRetirement = command(
 				})
 			);
 
+			const stillRetiredIds = new Set(
+				dbPlayers.filter((p) => p.retiredAt && p.id !== playerId).map((p) => p.id)
+			);
+
 			const results = resolved.map((cr) => {
 				const pIds = [
 					cr.rotation.player1Id,
@@ -1096,54 +1054,34 @@ export const undoRetirement = command(
 			});
 
 			const formatType = tourney.formatType as FormatType;
-			if (formatType === 'preseed') {
-				const totalCourts = calculateCourtSizes(tourney.playerCount).length;
-				nextAssignments = processPreseedTransition(results, courtSizes, prevRound - 1, totalCourts);
-			} else if (prevRound === 1) {
-				nextAssignments = verticalSeeding(results, courtSizes.length, courtSizes);
-			} else {
-				nextAssignments = ladderRedistribute(results, courtSizes.length, courtSizes);
-			}
-		}
-
-		let finalAssignments: { courtNumber: number; playerIds: number[] }[];
-
-		if (tourney.formatType === 'preseed') {
-			finalAssignments = nextAssignments.map((a) => ({
-				courtNumber: a.courtNumber,
-				playerIds: [...a.playerIds]
-			}));
-
-			// Exclude frozen courts
-			const frozenCourts = getFrozenCourts(
-				calculateCourtSizes(tourney.playerCount),
-				prevRound,
-				'preseed'
+			nextAssignments = buildRedistributionFromResults(
+				formatType,
+				results,
+				assignCourtSizes,
+				prevRound - 1,
+				calculateCourtSizes(restoredCount).length,
+				stillRetiredIds.size > 0 ? stillRetiredIds : undefined
 			);
-			if (frozenCourts.length > 0) {
-				const frozenNumbers = new Set(frozenCourts.map((f) => f.courtNumber));
-				finalAssignments = finalAssignments.filter((a) => !frozenNumbers.has(a.courtNumber));
-			}
-		} else {
-			const allPlayerIds = nextAssignments.flatMap((a) => a.playerIds);
-			const uniquePlayerIds = [...new Set(allPlayerIds)];
-			uniquePlayerIds.sort((a, b) => a - b);
-
-			finalAssignments = [];
-			let offset = 0;
-			for (let i = 0; i < courtSizes.length; i++) {
-				finalAssignments.push({
-					courtNumber: i + 1,
-					playerIds: uniquePlayerIds.slice(offset, offset + courtSizes[i])
-				});
-				offset += courtSizes[i];
-			}
 		}
+
+		const finalAssignments = targetPlayer.retiredCourt
+			? resolveAssignmentsAfterUndoRetirement({
+					formatType: tourney.formatType as FormatType,
+					redistributedAssignments: nextAssignments,
+					restoredPlayerCount: restoredCount,
+					roundsCompleted: prevRound
+				})
+			: resolveAssignmentsAfterRetirement({
+					formatType: tourney.formatType as FormatType,
+					redistributedAssignments: nextAssignments,
+					originalPlayerCount: restoredCount,
+					roundsCompleted: prevRound
+				});
 
 		// Recreate court rotations and matches
 		for (const assignment of finalAssignments) {
 			const idx = assignment.courtNumber - 1;
-			const size = courtSizes[idx] ?? 4;
+			const size = assignCourtSizes[idx] ?? 4;
 
 			const [existingCourt] = await db
 				.select()
@@ -1173,7 +1111,7 @@ export const undoRetirement = command(
 
 			const allMatchesForCourt = generateAllMatchesForAssignment(
 				{ courtNumber: assignment.courtNumber, playerIds: assignment.playerIds },
-				courtSizes
+				assignCourtSizes
 			);
 
 			const effective = getEffectiveScoring(
@@ -1274,28 +1212,28 @@ export const undoInjury = command(
 
 		if (!playerRotation) error(400, m.err_player_not_in_round());
 
-		// Check no scores were entered on the affected court after the injury
 		const rotationMatches = await db
 			.select()
 			.from(match)
 			.where(eq(match.courtRotationId, playerRotation.id));
 
-		const hasCanceled = rotationMatches.some((m) => m.isCanceled);
-		const hasInjuredFlag = rotationMatches.some((m) => m.injuredPlayerIds?.includes(playerId));
+		const matchData = rotationMatches.map((m) => ({
+			teamAPlayer1Id: m.teamAPlayer1Id,
+			teamAPlayer2Id: m.teamAPlayer2Id,
+			teamBPlayer1Id: m.teamBPlayer1Id,
+			teamBPlayer2Id: m.teamBPlayer2Id,
+			teamAScore: m.teamAScore,
+			teamBScore: m.teamBScore,
+			isCanceled: m.isCanceled ?? false,
+			injuredPlayerIds: m.injuredPlayerIds ?? undefined
+		}));
 
-		let hasFreshScores = false;
-		if (hasCanceled) {
-			// For cancel: a scored + canceled match means fresh scores entered after cancel
-			hasFreshScores = rotationMatches.some((m) => m.teamAScore !== null && m.isCanceled);
-		} else if (hasInjuredFlag) {
-			// For substitute: a scored match with injuredPlayerIds means fresh scores entered after substitution
-			hasFreshScores = rotationMatches.some(
-				(m) => m.teamAScore !== null && (m.injuredPlayerIds ?? []).includes(playerId)
-			);
-		}
-		if (hasFreshScores) {
+		if (hasFreshScoresAfterInjury(matchData, playerId)) {
 			error(400, m.err_undo_injury_scores_entered());
 		}
+
+		const hasCanceled = rotationMatches.some((m) => m.isCanceled);
+		const hasInjuredFlag = rotationMatches.some((m) => m.injuredPlayerIds?.includes(playerId));
 
 		// Determine injury type and revert
 

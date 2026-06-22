@@ -634,10 +634,12 @@ export function processPreseedTransition(
 export function verticalSeeding(
 	courtResults: readonly CourtResult[],
 	targetCourtCount: number,
-	courtSizes?: readonly number[]
+	courtSizes?: readonly number[],
+	excludedPlayerIds?: ReadonlySet<number>
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
 	const maxRank = sorted.reduce((m, c) => Math.max(m, c.standings.length), 0);
+	const exclude = excludedPlayerIds ?? new Set<number>();
 
 	const flattened: number[] = [];
 
@@ -645,7 +647,8 @@ export function verticalSeeding(
 		const tier: { playerId: number; points: number; diff: number }[] = [];
 		for (const c of sorted) {
 			const s = c.standings[r];
-			if (s) tier.push({ playerId: s.playerId, points: s.points, diff: s.diff });
+			if (s && !exclude.has(s.playerId))
+				tier.push({ playerId: s.playerId, points: s.points, diff: s.diff });
 		}
 		tier.sort((a, b) => b.points - a.points || b.diff - a.diff || a.playerId - b.playerId);
 		for (const t of tier) flattened.push(t.playerId);
@@ -667,13 +670,37 @@ export function verticalSeeding(
 // Ladder Redistribution (2-up/2-down)
 // ============================================================================
 
+function sourceCourtSize(court: CourtResult): number {
+	return court.standings.reduce((max, s) => Math.max(max, s.rank), 0);
+}
+
+function takeByRank(
+	court: CourtResult,
+	minRank: number,
+	maxRank: number,
+	target: number[],
+	exclude: ReadonlySet<number>,
+	assigned: Set<number>
+): void {
+	for (const s of court.standings) {
+		if (s.rank < minRank || s.rank > maxRank) continue;
+		if (exclude.has(s.playerId) || assigned.has(s.playerId)) continue;
+		target.push(s.playerId);
+		assigned.add(s.playerId);
+	}
+}
+
 export function ladderRedistribute(
 	courtResults: readonly CourtResult[],
 	targetCourtCount: number,
-	courtSizes?: readonly number[]
+	courtSizes?: readonly number[],
+	excludedPlayerIds?: ReadonlySet<number>
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
 	const sizes = courtSizes ?? Array(targetCourtCount).fill(4);
+	const exclude = excludedPlayerIds ?? new Set<number>();
+	const assigned = new Set<number>();
+	const sourceSizes = sorted.map(sourceCourtSize);
 	const assignments: CourtAssignment[] = [];
 
 	for (let i = 0; i < targetCourtCount; i++) {
@@ -681,32 +708,34 @@ export function ladderRedistribute(
 		const pids: number[] = [];
 
 		if (i === 0) {
-			takeN(sorted[0], 0, 2, pids);
-			if (sorted[1]) takeN(sorted[1], 0, 2, pids);
+			takeByRank(sorted[0], 1, 2, pids, exclude, assigned);
+			if (sorted[1]) takeByRank(sorted[1], 1, 2, pids, exclude, assigned);
 		} else if (i === targetCourtCount - 1) {
-			if (sorted[i - 1]) {
-				const bottomFrom = Math.max(0, sorted[i - 1].standings.length - 2);
-				takeN(sorted[i - 1], bottomFrom, sorted[i - 1].standings.length, pids);
-			}
-			takeN(sorted[i], 2, sorted[i].standings.length, pids);
+			const prevSize = sourceSizes[i - 1] ?? 4;
+			if (sorted[i - 1]) takeByRank(sorted[i - 1], prevSize - 1, prevSize, pids, exclude, assigned);
+			const selfSize = sourceSizes[i] ?? 4;
+			if (sorted[i]) takeByRank(sorted[i], 3, selfSize, pids, exclude, assigned);
 		} else {
-			if (sorted[i - 1]) {
-				const bottomFrom = Math.max(0, sorted[i - 1].standings.length - 2);
-				takeN(sorted[i - 1], bottomFrom, sorted[i - 1].standings.length, pids);
+			const prevSize = sourceSizes[i - 1] ?? 4;
+			if (sorted[i - 1]) takeByRank(sorted[i - 1], prevSize - 1, prevSize, pids, exclude, assigned);
+			if (sorted[i + 1]) takeByRank(sorted[i + 1], 1, 2, pids, exclude, assigned);
+		}
+
+		// Backfill short courts from relegated players on the same previous-round court
+		if (pids.length < targetSize && sorted[i]) {
+			const selfSize = sourceSizes[i] ?? 4;
+			for (let rank = 3; rank <= selfSize && pids.length < targetSize; rank++) {
+				const s = sorted[i].standings.find((st) => st.rank === rank);
+				if (!s || exclude.has(s.playerId) || assigned.has(s.playerId)) continue;
+				pids.push(s.playerId);
+				assigned.add(s.playerId);
 			}
-			if (sorted[i + 1]) takeN(sorted[i + 1], 0, 2, pids);
 		}
 
 		const trimmedPids = pids.slice(0, targetSize);
-
 		if (trimmedPids.length > 0) assignments.push({ courtNumber: i + 1, playerIds: trimmedPids });
 	}
 	return assignments;
-}
-
-function takeN(court: CourtResult, from: number, to: number, target: number[]): void {
-	for (let i = from; i < Math.min(to, court.standings.length); i++)
-		target.push(court.standings[i].playerId);
 }
 
 export function redistributeLadder(
@@ -1378,6 +1407,200 @@ export function formatDuration(totalMinutes: number): string {
 // ============================================================================
 // Player Retirement
 // ============================================================================
+
+export type PriorRetiree = {
+	readonly retiredCourt: number | null;
+	readonly finalStanding: number | null;
+};
+
+export function computeRetirementFinalStanding(opts: {
+	formatType: FormatType;
+	retiredCourt: number;
+	totalCourts: number;
+	currentRound: number;
+	numRounds: number;
+	newCourtSizes: readonly number[];
+	priorRetirees: readonly PriorRetiree[];
+}): number {
+	const {
+		formatType,
+		retiredCourt,
+		totalCourts,
+		currentRound,
+		numRounds,
+		newCourtSizes,
+		priorRetirees
+	} = opts;
+
+	if (formatType === 'preseed') {
+		const bracketRange = getPreseedBracketRange(retiredCourt, totalCourts);
+		const sameBracketCount = priorRetirees.filter((p) => {
+			if (!p.retiredCourt) return false;
+			const pRange = getPreseedBracketRange(p.retiredCourt, totalCourts);
+			return pRange.min === bracketRange.min && pRange.max === bracketRange.max;
+		}).length;
+		return bracketRange.max - sameBracketCount;
+	}
+
+	const standing = calculateRetiredStanding(
+		retiredCourt,
+		totalCourts,
+		currentRound - 1,
+		numRounds,
+		'random-seed',
+		newCourtSizes
+	);
+	const sameStandingRetirees = priorRetirees.filter(
+		(p) => p.finalStanding === standing || p.finalStanding === standing - 1
+	);
+	let adjusted = standing;
+	for (const r of sameStandingRetirees) {
+		if (r.retiredCourt && r.retiredCourt > retiredCourt) {
+			adjusted = standing - 1;
+			break;
+		}
+	}
+	return adjusted;
+}
+
+export function buildRedistributionFromResults(
+	formatType: FormatType,
+	courtResults: readonly CourtResult[],
+	newCourtSizes: readonly number[],
+	roundsCompleted: number,
+	originalCourtCount: number,
+	excludedPlayerIds?: ReadonlySet<number>
+): CourtAssignment[] {
+	const courtCount = newCourtSizes.length;
+	if (formatType === 'preseed') {
+		return processPreseedTransition(
+			courtResults,
+			newCourtSizes,
+			roundsCompleted,
+			originalCourtCount
+		);
+	}
+	if (roundsCompleted === 0) {
+		return verticalSeeding(courtResults, courtCount, newCourtSizes, excludedPlayerIds);
+	}
+	return ladderRedistribute(courtResults, courtCount, newCourtSizes, excludedPlayerIds);
+}
+
+export function resolveAssignmentsAfterRetirement(opts: {
+	formatType: FormatType;
+	redistributedAssignments: readonly CourtAssignment[];
+	originalPlayerCount: number;
+	roundsCompleted: number;
+}): CourtAssignment[] {
+	if (opts.formatType === 'preseed') {
+		const frozenCourts = getFrozenCourts(
+			calculateCourtSizes(opts.originalPlayerCount),
+			opts.roundsCompleted,
+			'preseed'
+		);
+		if (frozenCourts.length === 0) {
+			return opts.redistributedAssignments.map((a) => ({
+				courtNumber: a.courtNumber,
+				playerIds: [...a.playerIds]
+			}));
+		}
+		const frozenNumbers = new Set(frozenCourts.map((f) => f.courtNumber));
+		return opts.redistributedAssignments
+			.filter((a) => !frozenNumbers.has(a.courtNumber))
+			.map((a) => ({
+				courtNumber: a.courtNumber,
+				playerIds: [...a.playerIds]
+			}));
+	}
+
+	return opts.redistributedAssignments.map((a) => ({
+		courtNumber: a.courtNumber,
+		playerIds: [...a.playerIds]
+	}));
+}
+
+export function resolveAssignmentsAfterUndoRetirement(opts: {
+	formatType: FormatType;
+	redistributedAssignments: readonly CourtAssignment[];
+	restoredPlayerCount: number;
+	roundsCompleted: number;
+}): CourtAssignment[] {
+	return resolveAssignmentsAfterRetirement({
+		formatType: opts.formatType,
+		redistributedAssignments: opts.redistributedAssignments,
+		originalPlayerCount: opts.restoredPlayerCount,
+		roundsCompleted: opts.roundsCompleted
+	});
+}
+
+export function matchInvolvesPlayer(
+	m: Pick<MatchData, 'teamAPlayer1Id' | 'teamAPlayer2Id' | 'teamBPlayer1Id' | 'teamBPlayer2Id'>,
+	playerId: number
+): boolean {
+	return (
+		m.teamAPlayer1Id === playerId ||
+		m.teamAPlayer2Id === playerId ||
+		m.teamBPlayer1Id === playerId ||
+		m.teamBPlayer2Id === playerId
+	);
+}
+
+export function applyInjuryToUnscoredMatch(
+	match: MatchData,
+	playerId: number,
+	option: 'substitute' | 'cancel'
+): MatchData {
+	if (match.teamAScore !== null) return match;
+	if (!matchInvolvesPlayer(match, playerId)) return match;
+	if (option === 'cancel') {
+		return { ...match, isCanceled: true };
+	}
+	return { ...match, injuredPlayerIds: [playerId] };
+}
+
+export function applyInjuryToGroupMatches(
+	matches: readonly MatchData[],
+	playerId: number,
+	option: 'substitute' | 'cancel'
+): MatchData[] {
+	return matches.map((m) => applyInjuryToUnscoredMatch(m, playerId, option));
+}
+
+export function revertInjuryOnMatch(match: MatchData, playerId: number): MatchData {
+	if (match.isCanceled && matchInvolvesPlayer(match, playerId) && match.teamAScore === null) {
+		return { ...match, isCanceled: false };
+	}
+	if ((match.injuredPlayerIds ?? []).includes(playerId) && match.teamAScore === null) {
+		return { ...match, injuredPlayerIds: [] };
+	}
+	return match;
+}
+
+export function revertInjuryOnGroupMatches(
+	matches: readonly MatchData[],
+	playerId: number
+): MatchData[] {
+	return matches.map((m) => revertInjuryOnMatch(m, playerId));
+}
+
+/** True when scores were entered on injury-affected matches after the injury report. */
+export function hasFreshScoresAfterInjury(
+	matches: readonly MatchData[],
+	playerId: number
+): boolean {
+	const hasCanceled = matches.some((m) => m.isCanceled);
+	const hasInjuredFlag = matches.some((m) => (m.injuredPlayerIds ?? []).includes(playerId));
+
+	if (hasCanceled) {
+		return matches.some((m) => m.teamAScore !== null && m.isCanceled);
+	}
+	if (hasInjuredFlag) {
+		return matches.some(
+			(m) => m.teamAScore !== null && (m.injuredPlayerIds ?? []).includes(playerId)
+		);
+	}
+	return false;
+}
 
 export function recalculateCourtConfigAfterRetirement(newPlayerCount: number): {
 	courtSizes: number[];

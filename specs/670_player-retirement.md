@@ -89,6 +89,19 @@ Use the standard redistribution logic (ladder or preseed) with the new player co
 
 **Key rule**: The incomplete court is always the BOTTOM court (lowest ranked players). This is consistent with the one non-standard bottom court approach.
 
+**Preseed format:** Two org-selectable policies apply when the next round's groups are already calculated. See **[091_preseed-retirement-bracket-policy.md](./091_preseed-retirement-bracket-policy.md)**:
+
+| Policy | Behaviour |
+| ------ | --------- |
+| **Cascade** (recommended default) | Remove retiree; backfill from the next lower bracket level; cascade downward. Keeps 4p courts at higher levels. Analogous to random-seed ladder cascade. |
+| **Shrink** | Remove retiree only. The affected court may become 3p mid-bracket. No promotion from lower brackets. |
+
+**Optional replacement:** Organizer may add a replacement player who inherits the retiree's court slot. Player count unchanged → **no shrink/cascade**. See [091](./091_preseed-retirement-bracket-policy.md#optional-replacement-for-the-retiree).
+
+**Mid-round injury:** Current round uses substitute or cancel & average. **Next round** uses the same forward rules as between-round retirement on `closeRound`. See [092](./092_mid-round-injury-forward-retirement.md).
+
+Random-seed format always uses cascade (ladder backfill) when not replacing. See [089_random-example-17p-retirement.md](./089_random-example-17p-retirement.md).
+
 ### Step 3: Continue Tournament
 
 The tournament continues with the new court configuration. Remaining rounds still use the same redistribution logic.
@@ -123,7 +136,15 @@ If the retirement happens between rounds (before final round starts), normal red
 
 ### Replacements
 
-- Replacements are only allowed before the tournament starts. Once the tournament is active, no mid-tournament replacements. Retired players are out for the rest of the tournament (though temporary substitutes may be used for physical play).
+**Before tournament starts:** Normal roster editing (add/remove players freely).
+
+**During active tournament (proposed):** Optional **replacement** when retiring a player between rounds or when reporting a mid-round injury:
+
+- Replacement joins the roster and inherits the retiree's **group slot**
+- Player count stays the same → court sizes unchanged → shrink/cascade **not** applied
+- Distinct from mid-round **substitute** (temporary stand-in, not on roster — see [092](./092_mid-round-injury-forward-retirement.md))
+
+See [091 — Optional Replacement](./091_preseed-retirement-bracket-policy.md#optional-replacement-for-the-retiree).
 
 ## Mid-Round Injury Handling
 
@@ -210,7 +231,7 @@ When the organizer closes the round:
 2. The standings for the court are calculated:
    - If Option A (Substitute) was used: normal standings calculation. The injured player gets 0 points for matches they missed.
    - If Option B (Cancel & Average) was used: standings are calculated using averages of completed matches.
-3. For subsequent rounds, the retired player is excluded from court assignment generation, and the court configuration is recalculated for the remaining players (applying the standard retirement rules).
+3. For subsequent rounds, the retired player is excluded from court assignment generation, and the court configuration is recalculated for the remaining players — applying the **forward retirement policy** (shrink / cascade / replacement). See [091](./091_preseed-retirement-bracket-policy.md) and [092](./092_mid-round-injury-forward-retirement.md).
 
 ## Final Round Exception
 
@@ -413,8 +434,12 @@ function calculateRetiredStanding(
 // New columns:
 retiredAt: timestamp('retired_at'); // null = active
 retiredRound: integer('retired_round'); // which round they retired after
+retiredCourt: integer('retired_court');
 retirementReason: text('retirement_reason'); // optional
 finalStanding: integer('final_standing'); // set when tournament completes
+injuredAt: timestamp('injured_at'); // null = between-round retire only
+replacesPlayerId: integer('replaces_player_id'); // replacement → retiree (proposed)
+replacedByPlayerId: integer('replaced_by_player_id'); // retiree → replacement (proposed)
 ```
 
 ### Match Tables
@@ -433,7 +458,7 @@ No changes needed. The existing court rotation system handles variable court siz
 
 ## Decisions (Previously Open Questions)
 
-1. **Forfeited/Injured matches**: Two options: substitute (Option A) or cancel & average (Option B). Restructure (Option C) is out of scope — changing court sizes mid-round with existing scores is not viable. The old "Play Solo (2v1)" option is removed.
-2. **Replacement timing**: Only before the tournament starts. No mid-tournament replacements.
+1. **Forfeited/Injured matches**: Current round — substitute (A) or cancel & average (B). Forward on closeRound — [092](./092_mid-round-injury-forward-retirement.md).
+2. **Replacement timing**: Optional mid-tournament replacement per [091](./091_preseed-retirement-bracket-policy.md#optional-replacement-for-the-retiree). Physical substitute remains non-roster.
 3. **Final round elimination**: The org should see which players are eliminated from the final round before it starts.
 4. **Tiebreaker for elimination**: Compare by average points per round first (normalizes across court sizes), then total points, then diff, then playerId.
