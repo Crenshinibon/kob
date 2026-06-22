@@ -89,6 +89,15 @@ Use the standard redistribution logic (ladder or preseed) with the new player co
 
 **Key rule**: The incomplete court is always the BOTTOM court (lowest ranked players). This is consistent with the one non-standard bottom court approach.
 
+**Preseed format:** Two org-selectable policies apply when the next round's groups are already calculated. See **[091_preseed-retirement-bracket-policy.md](./091_preseed-retirement-bracket-policy.md)**:
+
+| Policy | Behaviour |
+| ------ | --------- |
+| **Cascade** (recommended default) | Remove retiree; backfill from the next lower bracket level; cascade downward. Keeps 4p courts at higher levels. Analogous to random-seed ladder cascade. |
+| **Shrink** | Remove retiree only. The affected court may become 3p mid-bracket. No promotion from lower brackets. |
+
+Random-seed format always uses cascade (ladder backfill). See [089_random-example-17p-retirement.md](./089_random-example-17p-retirement.md).
+
 ### Step 3: Continue Tournament
 
 The tournament continues with the new court configuration. Remaining rounds still use the same redistribution logic.

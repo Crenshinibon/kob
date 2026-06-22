@@ -249,6 +249,8 @@ Frozen courts can optionally play exhibition rounds, but:
 
 5. **Retirement reducing an active bracket to 1 court mid-tournament**: The bracket's remaining court becomes frozen at that point. Triggered by `recalculateCourtConfigAfterRetirement`.
 
+6. **Preseed retirement policy**: When Round N assignments are already calculated, the organizer chooses **Shrink** or **Cascade** (see [091](./091_preseed-retirement-bracket-policy.md)). Cascade is recommended to avoid 3p courts mid-bracket.
+
 ## Files to Change
 
 1. **`src/lib/tournament-logic.ts`**: Add `getFrozenCourts()` function and `FrozenCourt` type
