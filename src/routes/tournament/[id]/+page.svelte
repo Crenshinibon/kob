@@ -615,9 +615,7 @@
 										playerId: retirePlayerId,
 										reason: retireReason || undefined,
 										useReplacement: retireUseReplacement,
-										replacementName: retireUseReplacement
-											? replacementName.trim()
-											: undefined,
+										replacementName: retireUseReplacement ? replacementName.trim() : undefined,
 										replacementSeedPoints:
 											retireUseReplacement && tournament?.formatType === 'preseed'
 												? replacementSeedPoints
@@ -943,7 +941,7 @@
 	}
 
 	.player {
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-xl);
 		color: var(--text-secondary);
 		background-color: var(--bg-secondary);
 		padding: 2px 8px;
