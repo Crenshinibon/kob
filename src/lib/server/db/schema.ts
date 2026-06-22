@@ -23,6 +23,7 @@ export const tournament = pgTable('tournament', {
 	schedulingMode: text('scheduling_mode').notNull().default('batch'),
 	physicalCourtCount: integer('physical_court_count').notNull().default(4),
 	playerCount: integer('player_count').notNull().default(16),
+	preseedRetirementPolicy: text('preseed_retirement_policy').notNull().default('cascade'),
 	courtSizes: text('court_sizes'),
 	setupTimeMinutes: integer('setup_time_minutes').notNull().default(15),
 	transitionTimeMinutes: integer('transition_time_minutes').notNull().default(10),
@@ -44,7 +45,9 @@ export const player = pgTable('player', {
 	retiredCourt: integer('retired_court'),
 	retirementReason: text('retirement_reason'),
 	finalStanding: integer('final_standing'),
-	injuredAt: timestamp('injured_at')
+	injuredAt: timestamp('injured_at'),
+	replacesPlayerId: integer('replaces_player_id'),
+	replacedByPlayerId: integer('replaced_by_player_id')
 });
 
 export const court = pgTable('court', {

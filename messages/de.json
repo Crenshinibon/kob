@@ -255,5 +255,16 @@
 	"physical_court_label": "Physisch:",
 	"physical_court_placeholder": "z. B. Platz A",
 	"retire_player_option": "{name} (Gruppe {group})",
-	"shift_active": "▶ Aktiv"
+	"shift_active": "▶ Aktiv",
+	"preseed_retirement_policy_label": "Ausscheidungsrichtlinie",
+	"preseed_retirement_cascade": "Kaskade — Aufstieg aus niedrigerem Bracket (empfohlen)",
+	"preseed_retirement_shrink": "Schrumpfen — nur Spieler entfernen, Gruppe kann 3 Spieler haben",
+	"preseed_retirement_policy_help": "Kaskade hält 4er-Gruppen in höheren Ebenen. Schrumpfen entfernt nur den Spieler und kann eine 3er-Gruppe mitten im Bracket erzeugen.",
+	"retire_use_replacement": "Ersatzspieler hinzufügen (Gruppengröße bleibt, keine Umverteilung)",
+	"retire_replacement_name": "Name des Ersatzspielers",
+	"retire_replacement_seed": "Seed-Punkte",
+	"err_replace_frozen_court": "Ersatz auf eingefrorener Gruppe nicht möglich",
+	"err_replace_name_required": "Name des Ersatzspielers erforderlich",
+	"err_replace_duplicate_name": "Ein Spieler mit diesem Namen ist bereits im Kader",
+	"injury_use_replacement": "Ersatzspieler für die nächste Runde hinzufügen (Kadergröße bleibt)"
 }

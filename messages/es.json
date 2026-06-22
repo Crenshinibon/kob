@@ -255,5 +255,16 @@
 	"physical_court_label": "Física:",
 	"physical_court_placeholder": "ej. Cancha A",
 	"retire_player_option": "{name} (Grupo {group})",
-	"shift_active": "▶ Activo"
+	"shift_active": "▶ Activo",
+	"preseed_retirement_policy_label": "Política de baja",
+	"preseed_retirement_cascade": "Cascada — ascenso desde bracket inferior (recomendado)",
+	"preseed_retirement_shrink": "Reducir — solo quitar jugador, el grupo puede quedar de 3",
+	"preseed_retirement_policy_help": "La cascada mantiene grupos de 4 en niveles superiores. Reducir solo quita al jugador y puede crear un grupo de 3 en medio del bracket.",
+	"retire_use_replacement": "Añadir sustituto (mismo tamaño de grupo, sin redistribución)",
+	"retire_replacement_name": "Nombre del sustituto",
+	"retire_replacement_seed": "Puntos de seed",
+	"err_replace_frozen_court": "No se puede sustituir en un grupo congelado",
+	"err_replace_name_required": "El nombre del sustituto es obligatorio",
+	"err_replace_duplicate_name": "Ya hay un jugador con ese nombre en la lista",
+	"injury_use_replacement": "Añadir sustituto para la próxima ronda (mismo tamaño de plantilla)"
 }

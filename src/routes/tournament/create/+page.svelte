@@ -25,6 +25,7 @@
 	let winBy = $state('2');
 	let decidingSetPoints = $state(15);
 	let numRounds = $state(3);
+	let preseedRetirementPolicy = $state<'cascade' | 'shrink'>('cascade');
 	let textareaEl: HTMLTextAreaElement | undefined = $state();
 
 	const minPlayers = 8;
@@ -257,6 +258,41 @@
 				</label>
 			</div>
 		</div>
+
+		{#if formatType === 'preseed'}
+			<div class="field">
+				<span class="label">{m.preseed_retirement_policy_label()}</span>
+				<div class="radio-group">
+					<label class="radio-label">
+						<div class="radio-wrapper">
+							<input
+								type="radio"
+								name="preseedRetirementPolicy"
+								value="cascade"
+								bind:group={preseedRetirementPolicy}
+							/>
+						</div>
+						<span class="radio-content">
+							<strong>{m.preseed_retirement_cascade()}</strong>
+						</span>
+					</label>
+					<label class="radio-label">
+						<div class="radio-wrapper">
+							<input
+								type="radio"
+								name="preseedRetirementPolicy"
+								value="shrink"
+								bind:group={preseedRetirementPolicy}
+							/>
+						</div>
+						<span class="radio-content">
+							<strong>{m.preseed_retirement_shrink()}</strong>
+						</span>
+					</label>
+				</div>
+				<p class="info-text">{m.preseed_retirement_policy_help()}</p>
+			</div>
+		{/if}
 
 		<div class="field">
 			<span class="label">{m.create_scoring_mode()}</span>

@@ -40,6 +40,12 @@ import {
 	getFinalRoundCourtConfig,
 	isValidFinalScore,
 	getFrozenCourts,
+	applyPreseedShrink,
+	applyPreseedCascade,
+	applyReplacementSlot,
+	resolvePreseedRetirement,
+	resolveForwardRetirement,
+	getActiveBracketLevels,
 	type FormatType,
 	type TournamentState,
 	type CourtResult,
@@ -3601,6 +3607,263 @@ describe('retirement integration (17p random seed)', () => {
 		expect(resolved).toEqual(redistributed);
 		expect(resolved.flatMap((a) => a.playerIds)).not.toContain(retiredId);
 		expect(new Set(resolved.flatMap((a) => a.playerIds)).size).toBe(16);
+	});
+});
+
+// ============================================================================
+// Preseed retirement (shrink / cascade / replacement)
+// ============================================================================
+
+describe('preseed retirement policies', () => {
+	const frozenNone = new Set<number>();
+
+	function r3Assignments16p(): CourtAssignment[] {
+		return [
+			{ courtNumber: 1, playerIds: [1, 6, 4, 2] },
+			{ courtNumber: 2, playerIds: [5, 9, 3, 7] },
+			{ courtNumber: 3, playerIds: [11, 8, 16, 14] },
+			{ courtNumber: 4, playerIds: [12, 10, 15, 13] }
+		];
+	}
+
+	function r2Results16p(): CourtResult[] {
+		return [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 5, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 7, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 4, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 3, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 11, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 12, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 15, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 16, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 10, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 13, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			])
+		];
+	}
+
+	it('A1 cascade: retire from court 2 promotes up and bottom becomes 3p', () => {
+		const assignments = r3Assignments16p();
+		const retiredId = 7;
+		const result = resolvePreseedRetirement({
+			assignments,
+			prevResults: r2Results16p(),
+			retiredPlayerId: retiredId,
+			policy: 'cascade',
+			newCourtSizes: [4, 4, 4, 3],
+			frozenCourtNumbers: frozenNone
+		});
+
+		expect(result[0].playerIds).toEqual(assignments[0].playerIds);
+		expect(result[1].playerIds).toEqual([5, 9, 3, 11]);
+		expect(result[2].playerIds).toEqual([8, 16, 14, 10]);
+		expect(result[3].playerIds).toEqual([12, 15, 13]);
+		expect(result.flatMap((a) => a.playerIds)).not.toContain(retiredId);
+	});
+
+	it('A2 shrink: retire from court 2 only shrinks that court', () => {
+		const assignments = r3Assignments16p();
+		const retiredId = 7;
+		const result = applyPreseedShrink(assignments, retiredId, [4, 4, 4, 3], frozenNone);
+
+		expect(result[0].playerIds).toEqual(assignments[0].playerIds);
+		expect(result[1].playerIds).toEqual([5, 9, 3]);
+		expect(result[2].playerIds).toEqual(assignments[2].playerIds);
+		expect(result[3].playerIds).toEqual(assignments[3].playerIds);
+	});
+
+	it('A3 cascade on bottom court matches shrink', () => {
+		const assignments = r3Assignments16p();
+		const retiredId = 13;
+		const cascade = applyPreseedCascade(
+			assignments,
+			r2Results16p(),
+			retiredId,
+			[4, 4, 4, 3],
+			frozenNone
+		);
+		const shrink = applyPreseedShrink(assignments, retiredId, [4, 4, 4, 3], frozenNone);
+		expect(cascade[3].playerIds).toEqual(shrink[3].playerIds);
+		expect(cascade[0].playerIds).toEqual(shrink[0].playerIds);
+	});
+
+	it('A7 replacement: only affected court changes', () => {
+		const assignments = r3Assignments16p();
+		const result = applyReplacementSlot(assignments, 7, 99);
+		expect(result[0].playerIds).toEqual(assignments[0].playerIds);
+		expect(result[1].playerIds).toEqual([5, 9, 3, 99]);
+		expect(result[2].playerIds).toEqual(assignments[2].playerIds);
+		expect(result[3].playerIds).toEqual(assignments[3].playerIds);
+	});
+
+	it('C3 frozen court: no assignment change', () => {
+		const assignments = [{ courtNumber: 5, playerIds: [17, 18, 19, 20] }];
+		const frozen = new Set([5]);
+		const result = resolvePreseedRetirement({
+			assignments,
+			prevResults: [],
+			retiredPlayerId: 18,
+			policy: 'cascade',
+			newCourtSizes: [4, 4, 4, 4, 3],
+			frozenCourtNumbers: frozen
+		});
+		expect(result).toEqual(assignments);
+	});
+
+	it('getActiveBracketLevels orders courts by court number', () => {
+		const levels = getActiveBracketLevels(
+			[
+				{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
+				{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
+				{ courtNumber: 5, playerIds: [17, 18, 19, 20] }
+			],
+			new Set([5])
+		);
+		expect(levels).toEqual([
+			{ courtNumber: 1, level: 1 },
+			{ courtNumber: 2, level: 2 }
+		]);
+	});
+});
+
+describe('resolveForwardRetirement (injury forward on closeRound)', () => {
+	const frozenNone = new Set<number>();
+
+	function r2Results16p(): CourtResult[] {
+		return [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 5, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 7, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 4, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 3, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 11, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 12, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 15, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 16, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 10, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 13, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			])
+		];
+	}
+
+	it('E1 RS: ladder cascade from R2 results excluding injured player', () => {
+		const r2: CourtResult[] = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 20, diff: 0, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 12, diff: 0, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: -4, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: -28, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 16, diff: 0, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 8, diff: 0, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: -2, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: -22, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 11, rank: 1, points: 6, diff: 0, matchCount: 3 },
+				{ playerId: 7, rank: 2, points: 2, diff: 0, matchCount: 3 },
+				{ playerId: 12, rank: 3, points: -6, diff: 0, matchCount: 3 },
+				{ playerId: 10, rank: 4, points: -2, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 16, rank: 1, points: 4, diff: 0, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 2, diff: 0, matchCount: 3 },
+				{ playerId: 15, rank: 3, points: -6, diff: 0, matchCount: 3 },
+				{ playerId: 13, rank: 4, points: -10, diff: 0, matchCount: 3 }
+			])
+		];
+		const expected = buildRedistributionFromResults(
+			'random-seed',
+			r2,
+			[4, 4, 4, 3],
+			1,
+			4,
+			new Set([4])
+		);
+		const result = resolveForwardRetirement({
+			formatType: 'random-seed',
+			policy: 'cascade',
+			templateAssignments: [],
+			previousRoundResults: r2,
+			retiredPlayerIds: new Set([4]),
+			replacements: [],
+			newCourtSizes: [4, 4, 4, 3],
+			originalCourtCount: 4,
+			roundsCompleted: 1,
+			frozenCourtNumbers: frozenNone
+		});
+		expect(result).toEqual(expected);
+	});
+
+	it('E2 PS: cascade on closeRound R3 template matches between-round retire', () => {
+		const r2 = r2Results16p();
+		const r3Template = processPreseedTransition(r2, [4, 4, 4, 4], 1);
+		expect(r3Template[1].playerIds).toContain(7);
+
+		const result = resolveForwardRetirement({
+			formatType: 'preseed',
+			policy: 'cascade',
+			templateAssignments: r3Template,
+			previousRoundResults: r2,
+			retiredPlayerIds: new Set([7]),
+			replacements: [],
+			newCourtSizes: [4, 4, 4, 3],
+			originalCourtCount: 4,
+			roundsCompleted: 1,
+			frozenCourtNumbers: frozenNone
+		});
+
+		expect(result[0].playerIds).toEqual(r3Template[0].playerIds);
+		expect(result[1].playerIds).toEqual([5, 9, 3, 11]);
+		expect([...result[2].playerIds].sort((a, b) => a - b)).toEqual([8, 10, 14, 16]);
+		expect([...result[3].playerIds].sort((a, b) => a - b)).toEqual([12, 13, 15]);
+	});
+
+	it('E5 PS: replacement on injury forward swaps slot only', () => {
+		const r2 = r2Results16p();
+		const r3Template = processPreseedTransition(r2, [4, 4, 4, 4], 1);
+		const result = resolveForwardRetirement({
+			formatType: 'preseed',
+			policy: 'cascade',
+			templateAssignments: r3Template,
+			previousRoundResults: r2,
+			retiredPlayerIds: new Set([7]),
+			replacements: [{ retiredPlayerId: 7, replacementPlayerId: 99 }],
+			newCourtSizes: [4, 4, 4, 4],
+			originalCourtCount: 4,
+			roundsCompleted: 1,
+			frozenCourtNumbers: frozenNone
+		});
+		expect(result[1].playerIds).toContain(99);
+		expect(result[1].playerIds).not.toContain(7);
+		expect(result[0].playerIds).toEqual(r3Template[0].playerIds);
+		expect(result[2].playerIds).toEqual(r3Template[2].playerIds);
 	});
 });
 

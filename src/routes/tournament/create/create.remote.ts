@@ -30,7 +30,8 @@ export const createTournamentForm = form(
 		winBy: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(10))),
 		setsToWin: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(5))),
 		decidingSetPoints: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(50))),
-		numRounds: v.pipe(v.number(), v.minValue(1), v.maxValue(10))
+		numRounds: v.pipe(v.number(), v.minValue(1), v.maxValue(10)),
+		preseedRetirementPolicy: v.optional(v.picklist(['shrink', 'cascade']))
 	}),
 	async ({
 		name,
@@ -42,7 +43,8 @@ export const createTournamentForm = form(
 		winBy: winByRaw,
 		setsToWin: setsToWinRaw,
 		decidingSetPoints: decidingSetPointsRaw,
-		numRounds: submittedNumRounds
+		numRounds: submittedNumRounds,
+		preseedRetirementPolicy
 	}) => {
 		const event = getRequestEvent();
 		const user = event.locals.user;
@@ -118,6 +120,8 @@ export const createTournamentForm = form(
 				decidingSetPoints,
 				schedulingMode: 'batch',
 				playerCount,
+				preseedRetirementPolicy:
+					formatType === 'preseed' ? (preseedRetirementPolicy ?? 'cascade') : 'cascade',
 				physicalCourtCount,
 				courtSizes: JSON.stringify(courtSizes),
 				status: 'active',

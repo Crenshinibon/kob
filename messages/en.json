@@ -255,5 +255,16 @@
 	"physical_court_label": "Physical:",
 	"physical_court_placeholder": "e.g. Court A",
 	"retire_player_option": "{name} (Group {group})",
-	"shift_active": "▶ Active"
+	"shift_active": "▶ Active",
+	"preseed_retirement_policy_label": "Retirement policy",
+	"preseed_retirement_cascade": "Cascade — promote from lower bracket (recommended)",
+	"preseed_retirement_shrink": "Shrink — remove player only, court may become 3-player",
+	"preseed_retirement_policy_help": "Cascade keeps standard 4-player courts at higher levels. Shrink simply removes the player, which may create a 3-player court mid-bracket.",
+	"retire_use_replacement": "Add a replacement (keep group size, no redistribution)",
+	"retire_replacement_name": "Replacement name",
+	"retire_replacement_seed": "Seed points",
+	"err_replace_frozen_court": "Cannot add a replacement on a frozen court",
+	"err_replace_name_required": "Replacement name is required",
+	"err_replace_duplicate_name": "A player with that name is already on the roster",
+	"injury_use_replacement": "Add a replacement for next round (keep roster size)"
 }
