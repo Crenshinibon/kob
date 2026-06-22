@@ -22,7 +22,8 @@
   - **[085_random-example-16p.md](./085_random-example-16p.md)**: 16 players (4 courts, 4 rounds) — perfect tier separation in vertical seeding, balanced 4-court ladder.
   - **[086_random-example-20p.md](./086_random-example-20p.md)**: 20 players (5 courts, 4 rounds) — cross-tier mixing in vertical seeding, 5-court ladder with slow climb from Court 5.
   - **[089_random-example-17p-retirement.md](./089_random-example-17p-retirement.md)**: 17 players — Round 3 retirement walkthrough. Ladder cascade: top court unchanged, empty slots backfilled from relegation pool.
-  - **[091_preseed-retirement-bracket-policy.md](./091_preseed-retirement-bracket-policy.md)**: Preseed between-round retirement — org-selectable **Shrink** vs **Cascade** policies with worked examples.
+  - **[091_preseed-retirement-bracket-policy.md](./091_preseed-retirement-bracket-policy.md)**: Preseed retirement — Shrink vs Cascade, optional replacement, test matrix — **PROPOSED**
+  - **[092_mid-round-injury-forward-retirement.md](./092_mid-round-injury-forward-retirement.md)**: Mid-round injury + forward retirement on closeRound — **PROPOSED**
 - **[087_preseed-frozen-courts.md](./087_preseed-frozen-courts.md)**: Preseed frozen courts — single-court bracket leaves freeze after their round-robin is complete. Covers all court counts 3–16 with cascade freeze points (e.g. 7 courts: C7 after R3, C1–C6 after R4). Implementation: `getFrozenCourts()` simulates bracket tree, returns freeze round per court.
 
 - **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export] Sorted by court position (not total points), per spec 070.
@@ -52,6 +53,7 @@
   - **[660_virtual-court-scheduling.md](./660_virtual-court-scheduling.md)**: Shift scheduling, wait time forecasting, rolling physical court reassignment.
   - **[670_player-retirement.md](./670_player-retirement.md)**: Player bailout handling, redistribution after retirement, final round elimination rule.
   - **[091_preseed-retirement-bracket-policy.md](./091_preseed-retirement-bracket-policy.md)**: Preseed retirement policies (Shrink vs Cascade) — **PROPOSED**
+  - **[092_mid-round-injury-forward-retirement.md](./092_mid-round-injury-forward-retirement.md)**: Injury → closeRound forward retirement — **PROPOSED**
 
 - **Archived specs** (completed or superseded, no longer active references):
   - **[084_preseed-example-20p-injury-retirement.md](./archive/084_preseed-example-20p-injury-retirement.md)**: [SUPERSEDED by 083 + 670] Used old flat-redistribution algorithm.

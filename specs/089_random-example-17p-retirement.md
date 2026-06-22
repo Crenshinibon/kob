@@ -131,6 +131,12 @@ This case is covered by unit tests in `tournament-logic.test.ts`.
 
 ---
 
+## Optional replacement (no cascade)
+
+If the organizer adds replacement **R** instead of removing D with no replacement, **R** takes D's slot on Court 2 and court sizes stay `[4, 4, 4, 5]`. No ladder cascade. See [091](./091_preseed-retirement-bracket-policy.md#optional-replacement-for-the-retiree).
+
+---
+
 ## Implementation
 
 See `ladderRedistribute()` in `src/lib/tournament-logic.ts`:

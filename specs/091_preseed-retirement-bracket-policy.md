@@ -41,10 +41,11 @@ When one player disappears, two reasonable approaches exist — and they have di
 
 | In scope | Out of scope |
 | -------- | ------------ |
-| Between-round retirement in **preseed** format | Random-seed retirement (see [089](./089_random-example-17p-retirement.md)) |
-| Retirement **before scores** in the current round | Mid-round injury (substitute / cancel & average) |
+| Between-round retirement in **preseed** format | Random-seed policy details (see [089](./089_random-example-17p-retirement.md); same replacement rules apply) |
+| **Optional replacement** for the retiree (roster slot preserved) | Pre-tournament roster editing (unchanged) |
+| Retirement **before scores** in the current round | Physical mid-round substitute (see [092](./092_mid-round-injury-forward-retirement.md)) |
 | Active (non-frozen) courts only | Re-running completed rounds |
-| Single or multiple retirements between same rounds | Pre-tournament player removal |
+| Single or multiple retirements between same rounds | |
 
 ### Preconditions
 
@@ -116,7 +117,91 @@ If the tournament policy is `shrink` but the preview shows a mid-bracket 3p cour
 
 ### Relationship to random seed
 
-Random-seed tournaments **always** use cascade (ladder backfill). There is no separate setting — cascade is the only correct ladder behaviour. The preseed setting exists because bracket trees introduce the shrink alternative.
+Random-seed tournaments **always** use cascade (ladder backfill). There is no separate shrink/cascade setting — cascade is the only correct ladder behaviour. The preseed setting exists because bracket trees introduce the shrink alternative.
+
+**Optional replacement** (below) applies to **both** formats and bypasses shrink/cascade when the roster count is preserved.
+
+---
+
+## Optional Replacement for the Retiree
+
+### Motivation
+
+Sometimes a player leaves but another player is available to take their spot **immediately** (friend on standby, alternate from the waitlist). If the organizer adds a replacement:
+
+- **Player count stays the same** → court sizes unchanged
+- **No shrink/cascade** redistribution is needed
+- The replacement inherits the retiree's **current-round court assignment** slot
+
+This is distinct from mid-round **substitute** play (temporary, not in standings — see [092](./092_mid-round-injury-forward-retirement.md)).
+
+### When replacement is allowed
+
+| Timing | Replacement allowed? | Notes |
+| ------ | -------------------- | ----- |
+| Between-round retirement (no scores on current round) | ✅ Yes | Primary use case |
+| Mid-round injury report | ✅ Optional (proposed) | Replacement starts **next round**; current round uses substitute/cancel |
+| Frozen court | ❌ No | Bracket finished — no future assignments |
+| Tournament completed | ❌ No | |
+
+### Replacement rules
+
+1. **Roster entry**: Organizer enters replacement name (+ seed points for preseed) at retirement time.
+2. **Slot inheritance**: Replacement takes the retiree's exact position on the retiree's current court for the **current round** (between-round) or **next round** (injury forward — see 092).
+3. **Retiree**: Marked retired with `finalStanding` per format rules. Linked to replacement via `replacedByPlayerId` / `replacesPlayerId`.
+4. **Matches**: Regenerate unscored matches on the affected court only (between-round). Completed history unchanged.
+5. **Redistribution policies**: **Not applied** — player count unchanged, all other courts untouched.
+6. **Validation**:
+   - Replacement name must be unique on the roster
+   - Cannot be an already-active player in the tournament
+   - Cannot replace on a frozen court
+
+### UI: Retirement with optional replacement
+
+```
+Retire J from Court 2 (Silver bracket)
+
+( ) Remove only — apply retirement policy (Cascade / Shrink)
+(•) Add replacement — keep group size, no redistribution
+
+Replacement name: [________________]
+Seed points (preseed): [____]  (optional)
+
+[Retire Player]  [Cancel]
+```
+
+When replacement is selected, hide shrink/cascade preview and show:
+
+```
+Court 2 stays: D, E, F, [New Player]
+All other courts unchanged. Player count remains 16.
+```
+
+### Example: 16p — Replace J on Court 2 (instead of cascade/shrink)
+
+**Before:** Court 2 = D, E, F, J
+
+**After replacement with player R:**
+
+| Court 1 | Court 2 | Court 3 | Court 4 |
+| ------- | ------- | ------- | ------- |
+| unchanged | D, E, F, **R** | unchanged | unchanged |
+
+- J → retired, final standing per bracket rules
+- R → new player, seed points assigned if preseed, plays Round 3 on Court 2
+- **No cascade**, **no 3p court**, **no promotion** from lower brackets
+
+### Example: 17p bottom court — Replace Q on 5p Court 4
+
+Replacing Q on the bottom 5p court keeps `[4, 4, 4, 5]`. Without replacement, cascade would shrink bottom to 4p and redistribute.
+
+### Database (proposed)
+
+```typescript
+// player table
+replacesPlayerId: integer('replaces_player_id').references(() => player.id); // set on replacement
+replacedByPlayerId: integer('replaced_by_player_id').references(() => player.id); // set on retiree
+```
 
 ---
 
@@ -530,21 +615,156 @@ Today, preseed retirement calls `processPreseedTransition()` with filtered playe
 
 ---
 
+---
+
+## Comprehensive Test Matrix
+
+This section defines **required test coverage** before the retirement/replacement/injury-forward features ship. Each row is an independent test case with explicit expected outcomes.
+
+### Legend
+
+| Symbol | Meaning |
+| ------ | ------- |
+| RS | Random seed format |
+| PS | Preseed format |
+| BR | Between-round retirement (no scores) |
+| REP | Replacement instead of removal |
+| INJ | Mid-round injury → closeRound forward |
+| FC | Frozen court involved |
+| NS | Non-standard bottom court |
+
+### A. Between-round retirement — standard 4p courts (16 players)
+
+| ID | Format | Action | Policy | Expected |
+| -- | ------ | ------ | ------ | -------- |
+| A1 | PS | Retire J from C2 R3 | Cascade | Per Example 1; C1 unchanged; C4 → 3p |
+| A2 | PS | Retire J from C2 R3 | Shrink | Per Example 1; C2 → 3p mid-bracket |
+| A3 | PS | Retire P from C4 R3 | Cascade | Same as shrink (bottom court) |
+| A4 | PS | Retire H from C1 R3 | Cascade | C1 stays 4p; cascade to bottom |
+| A5 | PS | Retire H from C1 R3 | Shrink | **Reject or warn** — C1 would be 3p |
+| A6 | RS | Retire from C2 R3 | Cascade | Ladder cascade per [089](./089_random-example-17p-retirement.md) |
+| A7 | RS/PS | Retire J from C2 R3 | **Replace** | Only C2 changes (J→R); all else identical |
+
+### B. Non-standard bottom courts (player count % 4 ≠ 0)
+
+Court configs from `calculateCourtSizes()`:
+
+| Players | Court sizes | NS type |
+| ------- | ----------- | ------- |
+| 17 | `[4,4,4,5]` | 5p bottom |
+| 21 | `[4,4,4,4,5]` | 5p bottom |
+| 22 | `[4,4,4,4,6]` | 6p bottom |
+| 23 | `[4,4,4,4,4,3]` | 3p bottom |
+| 25 | `[4,4,4,4,4,5]` | 5p bottom |
+
+| ID | Format | Players | Retire from | Policy | Expected |
+| -- | ------ | ------- | ----------- | ------ | -------- |
+| B1 | RS | 17 | C2 (4p) R3 | Cascade | C1 unchanged; bottom 5p→4p; cascade fills |
+| B2 | RS | 17 | C4 (5p) R3 | Cascade | ≡ Shrink (bottom); C4 → 4p; 16 players all 4p |
+| B3 | RS | 17 | C4 (5p) R3 | Shrink | C4 → 4p only; upper courts unchanged |
+| B4 | RS | 21 | C3 R3 | Cascade | Only bottom may become 3p/5p per new count (20→5×4) |
+| B5 | RS | 22 | C2 R4 | Cascade | 21 players → `[4,4,4,4,5]`; cascade not mid-bracket 3p |
+| B6 | RS | 23 | C5 (3p) R3 | Cascade | ≡ Shrink; bottom already 3p, loses 1 → 22p `[4,4,4,4,6]` |
+| B7 | RS | 25 | C1 R3 | Cascade | Top 4p preserved; deficit at bottom |
+| B8 | PS | 21 | C2 R3 | Cascade | Bracket cascade; verify single NS at lowest active court |
+| B9 | RS/PS | 17 | C2 R3 | **Replace** | Sizes stay `[4,4,4,5]`; only slot swap on C2 |
+
+### C. Preseed asymmetric + frozen courts (20 players)
+
+| ID | Round | Retire from | Policy | Frozen | Expected |
+| -- | ----- | ----------- | ------ | ------ | -------- |
+| C1 | R3 pre-scores | C2 | Cascade | C5 | Per Example 2; C5 untouched |
+| C2 | R3 pre-scores | C2 | Shrink | C5 | C2 → 3p; C5 frozen |
+| C3 | R3 pre-scores | C5 | Any | C5 | **No assignment change**; final standing only |
+| C4 | R4 pre-scores | C2 | Cascade | C5 | Only active courts 1–2; levels from R4 tree |
+| C5 | R3 | C2 | **Replace** | C5 | C2 slot swap; C5 frozen unchanged |
+
+### D. Multiple retirements (sequential)
+
+| ID | Scenario | Expected |
+| -- | -------- | -------- |
+| D1 | PS 16p: retire J then F from C2, Shrink | **Block** second — C2 would be 2p |
+| D2 | PS 16p: retire J then F from C2, Cascade | After J: cascade; after F: cascade again from new state |
+| D3 | RS 17p: retire 2 from bottom 5p court, Cascade | End state: 15 players, valid court sizes, no duplicate players |
+| D4 | 16p: retire J with Replace R, then undo J | R removed, J restored on C2 |
+
+### E. Mid-round injury → closeRound forward (see [092](./092_mid-round-injury-forward-retirement.md))
+
+| ID | Format | Injury option | Close round | Next-round policy | Expected |
+| -- | ------ | ------------- | ----------- | ----------------- | -------- |
+| E1 | RS | Cancel | R2→R3 | Cascade | Next assignments = cascade from R2 standings w/o injured |
+| E2 | PS | Cancel | R2→R3 | Cascade | Bracket cascade on closeRound; not global reshuffle |
+| E3 | PS | Substitute | R2→R3 | Shrink | Same shrink rules as between-round |
+| E4 | RS | Cancel | R3→R4 (17p NS) | Cascade | Bottom court sizing correct for 16 active |
+| E5 | PS | Cancel | R2→R3 | **Replace** at injury | Injured plays 0 for remaining; replacement on R3 only |
+| E6 | PS | Cancel | R2→R3 | FC on C5 | Injured on C1–C4 only; C5 frozen unaffected |
+
+### F. Injury current round (no forward redistribution yet)
+
+| ID | Scenario | Expected |
+| -- | -------- | -------- |
+| F1 | 4p cancel injury, 1 match scored | Unscored matches canceled; averages for standings |
+| F2 | 4p substitute, score substitute match | Injured 0 pts; partners/opponents normal |
+| F3 | 5p cancel injury | Average ranking on 5p court |
+| F4 | Undo injury within 5 min, no post-injury scores | Retirement cleared; matches restored |
+| F5 | Undo blocked after post-injury score entered | |
+
+### G. Replacement edge cases
+
+| ID | Scenario | Expected |
+| -- | -------- | -------- |
+| G1 | Replace on frozen court | Rejected |
+| G2 | Replace with duplicate name | Rejected |
+| G3 | Replace with existing active player ID | Rejected |
+| G4 | Replace then retire replacement same round | Replacement retired; original already has standing |
+| G5 | Preseed replace includes seed points | Snake order uses seed for future rounds only |
+
+### H. Integration / E2E flows
+
+| ID | Flow |
+| -- | ---- |
+| H1 | Create PS tournament → cascade policy → R1→R2 → retire R3 pre-scores → verify preview = result |
+| H2 | Create RS 17p → R1→R2 → R3 → retire C2 → cascade → score R3 → complete |
+| H3 | RS 17p → injury C2 mid-R2 cancel → closeRound → verify R3 cascade |
+| H4 | PS 20p → R1→R2 → injury C2 → replace for R3 → closeRound → R3 has replacement on C2 |
+| H5 | Undo between-round retirement within 5 min |
+
+### I. Unit test functions (implementation checklist)
+
+| Function / module | Tests from |
+| ----------------- | ---------- |
+| `applyPreseedShrink` | A2, A3, C2 |
+| `applyPreseedCascade` | A1, A4, C1, C4 |
+| `applyReplacementSlot` | A7, B9, C5, G1–G5 |
+| `ladderRedistribute` + exclude | A6, B1–B7 |
+| `resolvePreseedRetirement` | Policy routing |
+| `resolveForwardRetirementOnClose` | E1–E6 |
+| `getFrozenCourts` + retirement | C3, C5, E6 |
+| `recalculateCourtConfigAfterRetirement` | B1–B8 |
+| `computeRetirementFinalStanding` | All formats |
+
+---
+
 ## Open Questions
 
 1. **Per-retirement override:** Should the organizer override the tournament policy for a single retirement, or only at creation time?
 2. **Cascade across bracket group boundaries:** When the winner bracket has an odd split (20p R4), does cascade cross from TL into Final, or only within the same R3 bracket pair?
 3. **Undo retirement:** Re-apply the inverse of whichever policy was used (store `retirementPolicyApplied` on player row?).
 4. **Preseed + random hybrid:** Out of scope — preseed only.
+5. **Injury-time replacement:** Can organizer add replacement at injury report (starts next round) vs only at between-round retirement?
+6. **Replacement seed for random seed:** Ignore seed points; only name required?
 
 ---
 
 ## Acceptance Criteria (when implemented)
 
 - [ ] Organizer can select `shrink` or `cascade` at preseed tournament creation
+- [ ] Organizer can optionally add a **replacement** at between-round retirement (both formats)
 - [ ] Example 1 (16p / retire J) produces exact tables above for each policy
 - [ ] Example 2 (20p / retire M) produces exact tables above for each policy
+- [ ] Replacement bypasses shrink/cascade; player count unchanged
 - [ ] Frozen courts never change on retirement
 - [ ] Shrink blocks retirement that would create a <3p court
-- [ ] Unit tests for both policies + frozen + bottom-court equivalence
+- [ ] **All test matrix rows A1–H5** have passing unit or E2E tests
+- [ ] Mid-round injury applies forward retirement policy on `closeRound` ([092](./092_mid-round-injury-forward-retirement.md))
 - [ ] E2E: retire player in preseed R3 before scores, verify preview matches result
