@@ -1,5 +1,4 @@
 {
-	"buildCommand": "bun scripts/vercel-build.ts",
 	"crons": [
 		{
 			"path": "/api/cron/cleanup",
