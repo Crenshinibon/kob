@@ -7,16 +7,5 @@ export default defineConfig({
 	dialect: 'postgresql',
 	dbCredentials: { url: process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL! },
 	verbose: true,
-	strict: false,
-	tablesFilter: [
-		'tournament',
-		'player',
-		'court',
-		'court_rotation',
-		'match',
-		'user',
-		'session',
-		'account',
-		'verification'
-	]
+	strict: false
 });
