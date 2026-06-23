@@ -3867,6 +3867,442 @@ describe('resolveForwardRetirement (injury forward on closeRound)', () => {
 	});
 });
 
+// ============================================================================
+// Retirement edge cases (dual retire, NS bottom courts, injury + retire)
+// ============================================================================
+
+describe('retirement edge cases', () => {
+	const frozenNone = new Set<number>();
+
+	function r3Assignments16p(): CourtAssignment[] {
+		return [
+			{ courtNumber: 1, playerIds: [1, 6, 4, 2] },
+			{ courtNumber: 2, playerIds: [5, 9, 3, 7] },
+			{ courtNumber: 3, playerIds: [11, 8, 16, 14] },
+			{ courtNumber: 4, playerIds: [12, 10, 15, 13] }
+		];
+	}
+
+	function r2Results16p(): CourtResult[] {
+		return [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 5, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 7, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 4, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 9, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 3, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 11, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 12, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 15, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 16, rank: 1, points: 63, diff: 0, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 50, diff: 0, matchCount: 3 },
+				{ playerId: 10, rank: 3, points: 40, diff: 0, matchCount: 3 },
+				{ playerId: 13, rank: 4, points: 30, diff: 0, matchCount: 3 }
+			])
+		];
+	}
+
+	function advanceToRound(state: TournamentState, targetRound: number): TournamentState {
+		let s = state;
+		while (s.currentRound < targetRound && !s.isComplete) {
+			s = {
+				...s,
+				currentMatches: scoreAllMatches(s, { winner: 'A', scoreA: 21, scoreB: 15 })
+			};
+			s = closeRound(s);
+			if (!s.isComplete) s = startRound(s);
+		}
+		return s;
+	}
+
+	function assertRetirementInvariants(
+		assignments: readonly CourtAssignment[],
+		expectedCount: number,
+		retiredIds: readonly number[]
+	): void {
+		const all = assignments.flatMap((a) => a.playerIds);
+		expect(all).toHaveLength(expectedCount);
+		expect(new Set(all).size).toBe(expectedCount);
+		for (const id of retiredIds) {
+			expect(all).not.toContain(id);
+		}
+	}
+
+	describe('dual retirements', () => {
+		it('D2 PS cascade: retire J then F from court 2 cascades twice', () => {
+			const prevResults = r2Results16p();
+			let assignments = r3Assignments16p();
+
+			assignments = resolvePreseedRetirement({
+				assignments,
+				prevResults,
+				retiredPlayerId: 7,
+				policy: 'cascade',
+				newCourtSizes: recalculateCourtConfigAfterRetirement(15).courtSizes,
+				frozenCourtNumbers: frozenNone
+			});
+			expect(assignments[0].playerIds).toEqual([1, 6, 4, 2]);
+			expect(assignments[1].playerIds).toEqual([5, 9, 3, 11]);
+			expect(assignments[3].playerIds).toEqual([12, 15, 13]);
+
+			assignments = resolvePreseedRetirement({
+				assignments,
+				prevResults,
+				retiredPlayerId: 3,
+				policy: 'cascade',
+				newCourtSizes: recalculateCourtConfigAfterRetirement(14).courtSizes,
+				frozenCourtNumbers: frozenNone
+			});
+			assertRetirementInvariants(assignments, 14, [7, 3]);
+			expect(assignments[0].playerIds).toEqual([1, 6, 4, 2]);
+			expect(assignments[1].playerIds).toEqual([5, 9, 11, 8]);
+		});
+
+		it('D1 PS shrink: second retirement from court 2 leaves a 2p court', () => {
+			let assignments = r3Assignments16p();
+			assignments = applyPreseedShrink(
+				assignments,
+				7,
+				recalculateCourtConfigAfterRetirement(15).courtSizes,
+				frozenNone
+			);
+			expect(assignments[1].playerIds).toEqual([5, 9, 3]);
+
+			assignments = applyPreseedShrink(
+				assignments,
+				3,
+				recalculateCourtConfigAfterRetirement(14).courtSizes,
+				frozenNone
+			);
+			expect(assignments[1].playerIds).toEqual([5, 9]);
+			expect(assignments[1].playerIds).toHaveLength(2);
+			assertRetirementInvariants(assignments, 14, [7, 3]);
+		});
+
+		it('D3 RS 17p: two retirements from bottom 5p court', () => {
+			vi.spyOn(global.Math, 'random').mockReturnValue(0.5);
+			let s = createInitialState({
+				tournamentId: 1,
+				formatType: 'random-seed',
+				playerCount: 17,
+				numRounds: 3
+			});
+			const players = Array.from({ length: 17 }, (_, i) => mockPlayer(i + 1));
+			s = addPlayers(s, players);
+			s = startRound(s);
+			s = advanceToRound(s, 3);
+			vi.restoreAllMocks();
+
+			const prevResults: CourtResult[] = s.completedRounds[s.completedRounds.length - 1];
+			const bottomCourt = s.currentAssignments[s.currentAssignments.length - 1];
+			expect(bottomCourt.playerIds).toHaveLength(5);
+
+			const [firstRetiree, secondRetiree] = bottomCourt.playerIds.slice(0, 2);
+			const afterBoth = buildRedistributionFromResults(
+				'random-seed',
+				prevResults,
+				recalculateCourtConfigAfterRetirement(15).courtSizes,
+				1,
+				4,
+				new Set([firstRetiree, secondRetiree])
+			);
+
+			assertRetirementInvariants(afterBoth, 15, [firstRetiree, secondRetiree]);
+			expect(recalculateCourtConfigAfterRetirement(15).courtSizes).toEqual([4, 4, 4, 3]);
+			expect(afterBoth[3].playerIds).toHaveLength(3);
+			expect(afterBoth.every((a) => a.playerIds.length <= 4)).toBe(true);
+		});
+
+		it('PS cascade: retire J then P from different courts', () => {
+			const prevResults = r2Results16p();
+			let assignments = r3Assignments16p();
+
+			assignments = resolvePreseedRetirement({
+				assignments,
+				prevResults,
+				retiredPlayerId: 7,
+				policy: 'cascade',
+				newCourtSizes: recalculateCourtConfigAfterRetirement(15).courtSizes,
+				frozenCourtNumbers: frozenNone
+			});
+			assignments = resolvePreseedRetirement({
+				assignments,
+				prevResults,
+				retiredPlayerId: 13,
+				policy: 'cascade',
+				newCourtSizes: recalculateCourtConfigAfterRetirement(14).courtSizes,
+				frozenCourtNumbers: frozenNone
+			});
+
+			assertRetirementInvariants(assignments, 14, [7, 13]);
+			expect(assignments[0].playerIds).toEqual([1, 6, 4, 2]);
+			expect(assignments[1].playerIds).toEqual([5, 9, 3, 11]);
+			expect(assignments[2].playerIds).toEqual([8, 16, 14, 10]);
+			expect(assignments[3].playerIds).toEqual([12, 15]);
+		});
+	});
+
+	describe('non-standard bottom courts', () => {
+		it.each([
+			[17, [4, 4, 4, 5], 16, [4, 4, 4, 4]],
+			[21, [4, 4, 4, 4, 5], 20, [4, 4, 4, 4, 4]],
+			[22, [4, 4, 4, 4, 6], 21, [4, 4, 4, 4, 5]],
+			[23, [4, 4, 4, 4, 4, 3], 22, [4, 4, 4, 4, 6]],
+			[15, [4, 4, 4, 3], 14, [4, 4, 6]]
+		])(
+			'B: %d players (%j) retire 1 → %d players (%j)',
+			(startCount, startSizes, endCount, endSizes) => {
+				expect(calculateCourtSizes(startCount)).toEqual(startSizes);
+				expect(recalculateCourtConfigAfterRetirement(endCount).courtSizes).toEqual(endSizes);
+			}
+		);
+
+		it('B2 RS 17p: retire from 5p bottom court becomes all 4p courts', () => {
+			vi.spyOn(global.Math, 'random').mockReturnValue(0.5);
+			let s = createInitialState({
+				tournamentId: 1,
+				formatType: 'random-seed',
+				playerCount: 17,
+				numRounds: 3
+			});
+			s = addPlayers(s, Array.from({ length: 17 }, (_, i) => mockPlayer(i + 1)));
+			s = startRound(s);
+			s = advanceToRound(s, 3);
+			vi.restoreAllMocks();
+
+			const bottomCourt = s.currentAssignments[s.currentAssignments.length - 1];
+			expect(bottomCourt.playerIds).toHaveLength(5);
+			const retiredId = bottomCourt.playerIds[4];
+			const prevResults: CourtResult[] = s.completedRounds[s.completedRounds.length - 1];
+			const newSizes = recalculateCourtConfigAfterRetirement(16).courtSizes;
+
+			const redistributed = buildRedistributionFromResults(
+				'random-seed',
+				prevResults,
+				newSizes,
+				1,
+				4,
+				new Set([retiredId])
+			);
+
+			assertRetirementInvariants(redistributed, 16, [retiredId]);
+			expect(newSizes).toEqual([4, 4, 4, 4]);
+			expect(redistributed.every((a) => a.playerIds.length === 4)).toBe(true);
+		});
+
+		it('B6 RS 23p: retire from 3p bottom court uses 6p bottom config (shrink-equivalent)', () => {
+			let s = createInitialState({
+				tournamentId: 1,
+				formatType: 'random-seed',
+				playerCount: 23,
+				numRounds: 4
+			});
+			s = addPlayers(s, Array.from({ length: 23 }, (_, i) => mockPlayer(i + 1)));
+			s = startRound(s);
+			s = advanceToRound(s, 3);
+
+			const bottomCourt = s.currentAssignments[s.currentAssignments.length - 1];
+			expect(bottomCourt.playerIds).toHaveLength(3);
+			const retiredId = bottomCourt.playerIds[0];
+			const newSizes = recalculateCourtConfigAfterRetirement(22).courtSizes;
+			expect(newSizes).toEqual([4, 4, 4, 4, 6]);
+
+			// Spec B6: cascade from bottom 3p ≡ shrink — only bottom court loses the retiree
+			const afterShrink = s.currentAssignments.map((a) => ({
+				courtNumber: a.courtNumber,
+				playerIds: a.playerIds.filter((id) => id !== retiredId)
+			}));
+			assertRetirementInvariants(afterShrink, 22, [retiredId]);
+			expect(afterShrink[0].playerIds).toEqual(s.currentAssignments[0].playerIds);
+			expect(afterShrink[bottomCourt.courtNumber - 1].playerIds).toHaveLength(2);
+		});
+
+		it('B8 PS 21p: cascade from court 2 keeps NS only at bottom', () => {
+			const courtCount = 5;
+			const assignments: CourtAssignment[] = [
+				{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
+				{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
+				{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
+				{ courtNumber: 4, playerIds: [13, 14, 15, 16] },
+				{ courtNumber: 5, playerIds: [17, 18, 19, 20, 21] }
+			];
+			const prevResults: CourtResult[] = [
+				...Array.from({ length: courtCount - 1 }, (_, i) =>
+					mockCourtResult(i + 1, [
+						{ playerId: i * 4 + 1, rank: 1, points: 60, diff: 0, matchCount: 3 },
+						{ playerId: i * 4 + 2, rank: 2, points: 50, diff: 0, matchCount: 3 },
+						{ playerId: i * 4 + 3, rank: 3, points: 40, diff: 0, matchCount: 3 },
+						{ playerId: i * 4 + 4, rank: 4, points: 30, diff: 0, matchCount: 3 }
+					])
+				),
+				mockCourtResult(5, [
+					{ playerId: 17, rank: 1, points: 60, diff: 0, matchCount: 4 },
+					{ playerId: 18, rank: 2, points: 50, diff: 0, matchCount: 4 },
+					{ playerId: 19, rank: 3, points: 40, diff: 0, matchCount: 4 },
+					{ playerId: 20, rank: 4, points: 30, diff: 0, matchCount: 4 },
+					{ playerId: 21, rank: 5, points: 20, diff: 0, matchCount: 4 }
+				])
+			];
+
+			const result = resolvePreseedRetirement({
+				assignments,
+				prevResults,
+				retiredPlayerId: 8,
+				policy: 'cascade',
+				newCourtSizes: recalculateCourtConfigAfterRetirement(20).courtSizes,
+				frozenCourtNumbers: frozenNone
+			});
+
+			assertRetirementInvariants(result, 20, [8]);
+			expect(recalculateCourtConfigAfterRetirement(20).courtSizes).toEqual([4, 4, 4, 4, 4]);
+			expect(result[0].playerIds).toEqual(assignments[0].playerIds);
+			expect(result.every((a) => a.playerIds.length === 4)).toBe(true);
+		});
+
+		it('A3 PS: cascade on 3p bottom court matches shrink', () => {
+			const assignments = r3Assignments16p();
+			const sizes = recalculateCourtConfigAfterRetirement(15).courtSizes;
+			const cascade = applyPreseedCascade(
+				assignments,
+				r2Results16p(),
+				13,
+				sizes,
+				frozenNone
+			);
+			const shrink = applyPreseedShrink(assignments, 13, sizes, frozenNone);
+			expect(cascade[3].playerIds).toEqual(shrink[3].playerIds);
+			expect(cascade[0].playerIds).toEqual(shrink[0].playerIds);
+		});
+	});
+
+	describe('injury forward + between-round retirement', () => {
+		it('PS: injury on R2 closeRound then retire from bottom 3p on R3', () => {
+			const r3Template = r3Assignments16p();
+			const prevResults = r2Results16p();
+
+			const afterInjury = resolveForwardRetirement({
+				formatType: 'preseed',
+				policy: 'cascade',
+				templateAssignments: r3Template,
+				previousRoundResults: prevResults,
+				retiredPlayerIds: new Set([7]),
+				replacements: [],
+				newCourtSizes: recalculateCourtConfigAfterRetirement(15).courtSizes,
+				originalCourtCount: 4,
+				roundsCompleted: 1,
+				frozenCourtNumbers: frozenNone
+			});
+			expect(afterInjury[3].playerIds).toEqual([12, 15, 13]);
+			expect(afterInjury[3].playerIds).toHaveLength(3);
+
+			const afterRetire = resolvePreseedRetirement({
+				assignments: afterInjury,
+				prevResults,
+				retiredPlayerId: 13,
+				policy: 'cascade',
+				newCourtSizes: recalculateCourtConfigAfterRetirement(14).courtSizes,
+				frozenCourtNumbers: frozenNone
+			});
+
+			assertRetirementInvariants(afterRetire, 14, [7, 13]);
+			expect(afterRetire[0].playerIds).toEqual([1, 6, 4, 2]);
+			expect(afterRetire[1].playerIds).toEqual([5, 9, 3, 11]);
+			expect(afterRetire[2].playerIds).toEqual([8, 16, 14, 10]);
+			expect(afterRetire[3].playerIds).toEqual([12, 15]);
+		});
+
+		it('RS 17p: injury R2 forward then between-round retire on R3', () => {
+			vi.spyOn(global.Math, 'random').mockReturnValue(0.5);
+			let s = createInitialState({
+				tournamentId: 1,
+				formatType: 'random-seed',
+				playerCount: 17,
+				numRounds: 4
+			});
+			s = addPlayers(s, Array.from({ length: 17 }, (_, i) => mockPlayer(i + 1)));
+			s = startRound(s);
+			s = advanceToRound(s, 3);
+			vi.restoreAllMocks();
+
+			const r2Results: CourtResult[] = s.completedRounds[1];
+			const injuredId = s.currentAssignments[1].playerIds[0];
+			const r3AfterInjury = resolveForwardRetirement({
+				formatType: 'random-seed',
+				policy: 'cascade',
+				templateAssignments: [],
+				previousRoundResults: r2Results,
+				retiredPlayerIds: new Set([injuredId]),
+				replacements: [],
+				newCourtSizes: recalculateCourtConfigAfterRetirement(16).courtSizes,
+				originalCourtCount: 4,
+				roundsCompleted: 1,
+				frozenCourtNumbers: frozenNone
+			});
+
+			assertRetirementInvariants(r3AfterInjury, 16, [injuredId]);
+			expect(recalculateCourtConfigAfterRetirement(16).courtSizes).toEqual([4, 4, 4, 4]);
+
+			const retireId = r3AfterInjury[3].playerIds[0];
+			const r3AfterBoth = buildRedistributionFromResults(
+				'random-seed',
+				r2Results,
+				recalculateCourtConfigAfterRetirement(15).courtSizes,
+				1,
+				4,
+				new Set([injuredId, retireId])
+			);
+
+			assertRetirementInvariants(r3AfterBoth, 15, [injuredId, retireId]);
+			expect(recalculateCourtConfigAfterRetirement(15).courtSizes).toEqual([4, 4, 4, 3]);
+			expect(r3AfterBoth[3].playerIds).toHaveLength(3);
+		});
+
+		it('E4 RS 17p: injury forward at R3→R4 uses 16p all-4p court sizing', () => {
+			vi.spyOn(global.Math, 'random').mockReturnValue(0.5);
+			let s = createInitialState({
+				tournamentId: 1,
+				formatType: 'random-seed',
+				playerCount: 17,
+				numRounds: 4
+			});
+			s = addPlayers(s, Array.from({ length: 17 }, (_, i) => mockPlayer(i + 1)));
+			s = startRound(s);
+			s = advanceToRound(s, 4);
+			vi.restoreAllMocks();
+
+			expect(calculateCourtSizes(17)).toEqual([4, 4, 4, 5]);
+			const r3Results: CourtResult[] = s.completedRounds[2];
+			const injuredId = s.currentAssignments[1].playerIds[2];
+			const r4AfterInjury = resolveForwardRetirement({
+				formatType: 'random-seed',
+				policy: 'cascade',
+				templateAssignments: [],
+				previousRoundResults: r3Results,
+				retiredPlayerIds: new Set([injuredId]),
+				replacements: [],
+				newCourtSizes: recalculateCourtConfigAfterRetirement(16).courtSizes,
+				originalCourtCount: 4,
+				roundsCompleted: 2,
+				frozenCourtNumbers: frozenNone
+			});
+
+			assertRetirementInvariants(r4AfterInjury, 16, [injuredId]);
+			expect(recalculateCourtConfigAfterRetirement(16).courtSizes).toEqual([4, 4, 4, 4]);
+			expect(r4AfterInjury.every((a) => a.playerIds.length === 4)).toBe(true);
+		});
+	});
+});
+
 describe('getFinalRoundCourtConfig', () => {
 	it('5 players: eliminate 1, top 4 play', () => {
 		const result = getFinalRoundCourtConfig(
