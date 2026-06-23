@@ -8,20 +8,25 @@ if (!url) throw new Error('DATABASE_URL is not set');
 const MIGRATIONS_TABLE = '__kob_sql_migrations';
 const drizzleDir = join(import.meta.dir, '../drizzle');
 
+/** Deploy-time SQL only — historical 0000–0010 files are handled by drizzle-kit push. */
+const MIN_DEPLOY_MIGRATION = '0011_';
+
 /**
  * db:push prompts in CI when adding NOT NULL/UNIQUE columns to populated tables.
  * Apply idempotent drizzle/*.sql migrations first (backfills, etc.), then push --force
  * to sync schema without an interactive TTY.
  *
- * SQL files are discovered automatically (####_*.sql) and tracked in __kob_sql_migrations
- * so each file runs once. Existing production DBs (pre-journal) skip migrations that
- * were already applied via drizzle-kit migrate/push before tracking existed.
+ * SQL files are discovered automatically (####_*.sql >= 0011) and tracked in
+ * __kob_sql_migrations so each file runs once. Fresh databases push schema first;
+ * existing DBs bootstrap legacy files as already applied.
  */
 const sql = postgres(url, { max: 1 });
 
 async function listMigrationFiles(): Promise<string[]> {
 	const entries = await readdir(drizzleDir);
-	return entries.filter((f) => /^\d{4}_.*\.sql$/.test(f)).sort();
+	return entries
+		.filter((f) => /^\d{4}_.*\.sql$/.test(f) && f >= MIN_DEPLOY_MIGRATION)
+		.sort();
 }
 
 async function ensureMigrationsTable(): Promise<void> {
@@ -41,10 +46,11 @@ async function getAppliedMigrations(): Promise<Set<string>> {
 }
 
 async function markApplied(filename: string): Promise<void> {
-	await sql.unsafe(
-		`INSERT INTO "${MIGRATIONS_TABLE}" (filename) VALUES ($1) ON CONFLICT DO NOTHING`,
-		[filename]
-	);
+	await sql`
+		INSERT INTO ${sql(MIGRATIONS_TABLE)} (filename)
+		VALUES (${filename})
+		ON CONFLICT DO NOTHING
+	`;
 }
 
 async function isExistingDatabase(): Promise<boolean> {
@@ -59,23 +65,48 @@ async function isExistingDatabase(): Promise<boolean> {
 
 /**
  * Production DBs that predated __kob_sql_migrations already have schema through
- * drizzle-kit migrate/push. Mark older SQL files as applied without re-running them.
+ * drizzle-kit migrate/push. Mark older deploy SQL files as applied without re-running.
  */
-async function bootstrapLegacyMigrations(files: string[], applied: Set<string>): Promise<void> {
+async function bootstrapLegacyMigrations(
+	files: readonly string[],
+	applied: ReadonlySet<string>
+): Promise<void> {
 	if (applied.size > 0) return;
 	if (!(await isExistingDatabase())) return;
 
 	for (const file of files) {
-		if (file.localeCompare('0013_preseed_retirement.sql') < 0) {
-			await markApplied(file);
-			console.log(`Bootstrap: marked ${file} as already applied`);
-		}
+		if (file === '0013_preseed_retirement.sql') continue;
+		await markApplied(file);
+		console.log(`Bootstrap: marked ${file} as already applied`);
 	}
 }
 
+function runDrizzlePush(): number {
+	const push = Bun.spawnSync(['bunx', 'drizzle-kit', 'push', '--force'], {
+		stdio: ['inherit', 'inherit', 'inherit'],
+		env: process.env
+	});
+	return push.exitCode ?? 1;
+}
+
 try {
-	await ensureMigrationsTable();
 	const files = await listMigrationFiles();
+	const dbExists = await isExistingDatabase();
+
+	if (!dbExists) {
+		console.log('Fresh database — pushing schema via drizzle-kit...');
+		const code = runDrizzlePush();
+		if (code !== 0) process.exit(code);
+
+		await ensureMigrationsTable();
+		for (const file of files) {
+			await markApplied(file);
+			console.log(`Journal: marked ${file} (schema from drizzle-kit push)`);
+		}
+		process.exit(0);
+	}
+
+	await ensureMigrationsTable();
 	let applied = await getAppliedMigrations();
 	await bootstrapLegacyMigrations(files, applied);
 	applied = await getAppliedMigrations();
@@ -91,9 +122,4 @@ try {
 	await sql.end();
 }
 
-const push = Bun.spawnSync(['bunx', 'drizzle-kit', 'push', '--force'], {
-	stdio: ['inherit', 'inherit', 'inherit'],
-	env: process.env
-});
-
-process.exit(push.exitCode ?? 1);
+process.exit(runDrizzlePush());
