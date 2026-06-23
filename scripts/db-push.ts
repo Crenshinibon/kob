@@ -2,7 +2,10 @@ import { join } from 'node:path';
 import postgres from 'postgres';
 
 const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
-if (!url) throw new Error('DATABASE_URL is not set');
+if (!url) {
+	console.warn('DATABASE_URL not set — skipping db:push');
+	process.exit(0);
+}
 
 /**
  * db:push prompts in CI when adding NOT NULL/UNIQUE columns to populated tables.
