@@ -1,0 +1,30 @@
+name: Cleanup stale Neon preview branches
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'List branches to delete without deleting'
+        type: boolean
+        default: true
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: file
+
+      - name: Delete stale preview branches
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+        run: |
+          FLAGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            FLAGS="--dry-run"
+          fi
+          bun scripts/cleanup-neon-branches.ts $FLAGS
