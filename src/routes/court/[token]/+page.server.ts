@@ -76,6 +76,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			matches: [],
 			standings: [],
 			isActive: false,
+			isEditable: false,
+			currentRound,
 			isAuthenticated: !!locals.user
 		};
 	}
@@ -151,6 +153,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const minPoints = getMinPointsForSet(1, courtSize, config, overrides);
 	const scoringLabel = getScoringLabel(config, courtSize, overrides);
 
+	const isEditable =
+		tourney.status === 'active' &&
+		rotation.roundNumber === currentRound &&
+		(courtRecord.isActive ?? true);
+
 	return {
 		court: {
 			tournamentName: tourney.name,
@@ -170,6 +177,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		matches,
 		standings,
 		isActive: courtRecord.isActive && tourney.status === 'active',
+		isEditable,
+		currentRound,
 		isAuthenticated: !!locals.user
 	};
 };

@@ -69,6 +69,8 @@
 			matches: MatchRow[];
 			standings: StandingRow[];
 			isActive: boolean;
+			isEditable: boolean;
+			currentRound: number;
 			isAuthenticated: boolean;
 		};
 	}>();
@@ -464,6 +466,11 @@
 			<p>{msg.court_closed_message()}</p>
 		</div>
 	{:else}
+		{#if !data.isEditable}
+			<div class="read-only-banner" transition:slide>
+				<p>{msg.scores_read_only()}</p>
+			</div>
+		{/if}
 		<section class="players-section">
 			<h3>{msg.court_players_heading({ size: data.court.courtSize })}</h3>
 			{#if formatExplanation}
@@ -573,7 +580,7 @@
 													<span class="saved" data-testid="saved-{setMatch.id}"
 														>{msg.court_saved()}</span
 													>
-													{#if data.isAuthenticated}
+													{#if data.isAuthenticated && data.isEditable}
 														<button
 															class="btn-edit"
 															onclick={() =>
@@ -583,7 +590,7 @@
 														</button>
 													{/if}
 												</div>
-											{:else}
+											{:else if data.isEditable}
 												{#if currentErrors.length > 0 && !isSaving}
 													<div class="error">
 														{#each currentErrors as msg, ei (ei)}
@@ -644,7 +651,7 @@
 												</p>
 												<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span
 												>
-												{#if data.isAuthenticated}
+												{#if data.isAuthenticated && data.isEditable}
 													<button
 														class="btn-edit"
 														onclick={() =>
@@ -654,7 +661,7 @@
 													</button>
 												{/if}
 											</div>
-										{:else}
+										{:else if data.isEditable}
 											{@render scoreFormFields(
 												render.scoreForm.preflight(dynamicScoreSchema),
 												match,
@@ -708,7 +715,7 @@
 										<strong>{match.teamBScore}</strong>
 									</p>
 									<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span>
-									{#if data.isAuthenticated}
+									{#if data.isAuthenticated && data.isEditable}
 										<button
 											class="btn-edit"
 											onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
@@ -717,7 +724,7 @@
 										</button>
 									{/if}
 								</div>
-							{:else}
+							{:else if data.isEditable}
 								{@render scoreFormFields(
 									render.scoreForm.preflight(dynamicScoreSchema),
 									match,
@@ -866,6 +873,16 @@
 		color: var(--accent-error);
 		background-color: rgba(255, 51, 51, 0.1);
 		border-color: var(--accent-error);
+	}
+
+	.read-only-banner {
+		background-color: color-mix(in srgb, var(--accent-info) 12%, var(--bg-secondary));
+		border: 1px solid var(--accent-info);
+		padding: var(--spacing-sm) var(--spacing-md);
+		border-radius: var(--radius-sm);
+		margin-bottom: var(--spacing-md);
+		text-align: center;
+		font-size: var(--font-size-sm);
 	}
 
 	.closed {

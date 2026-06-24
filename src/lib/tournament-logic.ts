@@ -21,6 +21,57 @@ export type FormatType = 'preseed' | 'random-seed';
 
 export type ScoringMode = 'single-21' | 'best-of-3' | 'custom';
 
+export type TieBreakFactorId =
+	| 'round_points'
+	| 'round_diff'
+	| 'total_points'
+	| 'total_diff'
+	| 'initial_order'
+	| 'dice'
+	| 'manual';
+
+export type TieBreakFactorConfig = {
+	readonly id: TieBreakFactorId;
+	readonly enabled: boolean;
+};
+
+export type TieBreakConfig = {
+	readonly factors: readonly TieBreakFactorConfig[];
+};
+
+export const DEFAULT_TIE_BREAK_CONFIG: TieBreakConfig = {
+	factors: [
+		{ id: 'round_points', enabled: true },
+		{ id: 'round_diff', enabled: true },
+		{ id: 'total_points', enabled: true },
+		{ id: 'total_diff', enabled: true },
+		{ id: 'initial_order', enabled: true },
+		{ id: 'dice', enabled: false },
+		{ id: 'manual', enabled: false }
+	]
+};
+
+export type TieBreakContext = {
+	readonly completedRounds?: readonly CourtResult[][];
+	readonly currentRoundResults?: readonly CourtResult[];
+	readonly courtSizes?: readonly number[];
+	readonly players?: readonly Player[];
+	readonly manualRankOrder?: readonly number[];
+	readonly rng?: () => number;
+};
+
+export type TieBreakSortOptions = {
+	readonly tieBreakConfig?: TieBreakConfig;
+	readonly completedRounds?: readonly CourtResult[][];
+	readonly courtSizes?: readonly number[];
+	readonly players?: readonly Player[];
+	readonly rng?: () => number;
+};
+
+export type CourtStandingsOptions = TieBreakContext & {
+	readonly tieBreakConfig?: TieBreakConfig;
+};
+
 export type TournamentConfig = {
 	readonly tournamentId: TournamentId;
 	readonly formatType: FormatType;
@@ -32,6 +83,7 @@ export type TournamentConfig = {
 	readonly winBy: number;
 	readonly setsToWin: number;
 	readonly decidingSetPoints: number;
+	readonly tieBreakConfig?: TieBreakConfig;
 };
 
 export type Player = {
@@ -47,6 +99,8 @@ export type CourtStandings = {
 	readonly points: number;
 	readonly diff: number;
 	readonly matchCount: number;
+	readonly rawPoints?: number;
+	readonly rawDiff?: number;
 };
 
 export type CourtResult = {
@@ -156,6 +210,7 @@ export type CreateTournamentOpts = {
 	winBy?: number;
 	setsToWin?: number;
 	decidingSetPoints?: number;
+	tieBreakConfig?: TieBreakConfig;
 };
 
 export function createInitialState(opts: CreateTournamentOpts): TournamentState {
@@ -169,7 +224,8 @@ export function createInitialState(opts: CreateTournamentOpts): TournamentState 
 		pointsToWin = 21,
 		winBy = 2,
 		setsToWin = 1,
-		decidingSetPoints = 15
+		decidingSetPoints = 15,
+		tieBreakConfig
 	} = opts;
 	if (playerCount < 8 || playerCount > 64)
 		throw new Error(`Player count must be 8-64, got ${playerCount}`);
@@ -185,7 +241,8 @@ export function createInitialState(opts: CreateTournamentOpts): TournamentState 
 			pointsToWin,
 			winBy,
 			setsToWin,
-			decidingSetPoints
+			decidingSetPoints,
+			tieBreakConfig
 		},
 		players: [],
 		roundsCompleted: 0,
@@ -406,7 +463,8 @@ type PlayerWithOrigin = {
  */
 export function redistributePreseedRecursive(
 	courtResults: readonly CourtResult[],
-	courtSizes?: readonly number[]
+	courtSizes?: readonly number[],
+	tieBreak?: TieBreakSortOptions
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
 	const N = sorted.length;
@@ -433,8 +491,13 @@ export function redistributePreseedRecursive(
 				});
 			}
 		}
-		tier.sort((a, b) => b.points - a.points || b.diff - a.diff || a.playerId - b.playerId);
-		tiers.push(tier);
+		const sortedTier = sortTierByTieBreak(tier, tieBreak?.tieBreakConfig, {
+			completedRounds: tieBreak?.completedRounds,
+			courtSizes: tieBreak?.courtSizes ?? courtSizes,
+			players: tieBreak?.players,
+			rng: tieBreak?.rng
+		}, courtResults);
+		tiers.push(sortedTier);
 	}
 
 	// Flatten by finish tier: all 1sts, then all 2nds, then all 3rds, then all 4ths
@@ -559,11 +622,12 @@ function getSubdivisionPlan(totalCourts: number, roundsCompleted: number): numbe
 function subdivideBracketGroup(
 	courtNumbers: readonly number[],
 	resultMap: ReadonlyMap<number, CourtResult>,
-	sizes: readonly number[]
+	sizes: readonly number[],
+	tieBreak?: TieBreakSortOptions
 ): readonly { playerIds: readonly number[] }[] {
 	const courtResults = courtNumbers.map((n) => resultMap.get(n)!);
 	const groupSizes = courtNumbers.map((n) => sizes[n - 1] ?? 4);
-	return redistributePreseedRecursive(courtResults, groupSizes).map((a) => ({
+	return redistributePreseedRecursive(courtResults, groupSizes, tieBreak).map((a) => ({
 		playerIds: a.playerIds
 	}));
 }
@@ -572,7 +636,8 @@ function processSubsequentPreseedSplit(
 	courtResults: readonly CourtResult[],
 	courtSizes: readonly number[],
 	totalCourts: number,
-	roundsCompleted: number
+	roundsCompleted: number,
+	tieBreak?: TieBreakSortOptions
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
 	const resultMap = new Map(sorted.map((c) => [c.courtNumber, c]));
@@ -583,7 +648,7 @@ function processSubsequentPreseedSplit(
 	let courtNumber = 1;
 
 	for (const group of plan) {
-		const groupAssignments = subdivideBracketGroup(group, resultMap, courtSizes);
+		const groupAssignments = subdivideBracketGroup(group, resultMap, courtSizes, tieBreak);
 		for (const a of groupAssignments) {
 			assignments.push({ courtNumber: courtNumber++, playerIds: [...a.playerIds] });
 		}
@@ -613,7 +678,8 @@ export function processPreseedTransition(
 	courtResults: readonly CourtResult[],
 	courtSizes: readonly number[],
 	roundsCompleted: number,
-	totalCourts: number = courtSizes.length
+	totalCourts: number = courtSizes.length,
+	tieBreak?: TieBreakSortOptions
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
 	if (sorted.length === 0) return [];
@@ -621,10 +687,10 @@ export function processPreseedTransition(
 		return [{ courtNumber: 1, playerIds: sorted[0].standings.map((s) => s.playerId) }];
 
 	if (roundsCompleted === 0) {
-		return redistributePreseedRecursive(sorted, courtSizes);
+		return redistributePreseedRecursive(sorted, courtSizes, tieBreak);
 	}
 
-	return processSubsequentPreseedSplit(sorted, courtSizes, totalCourts, roundsCompleted);
+	return processSubsequentPreseedSplit(sorted, courtSizes, totalCourts, roundsCompleted, tieBreak);
 }
 
 // ============================================================================
@@ -635,7 +701,8 @@ export function verticalSeeding(
 	courtResults: readonly CourtResult[],
 	targetCourtCount: number,
 	courtSizes?: readonly number[],
-	excludedPlayerIds?: ReadonlySet<number>
+	excludedPlayerIds?: ReadonlySet<number>,
+	tieBreak?: TieBreakSortOptions
 ): CourtAssignment[] {
 	const sorted = [...courtResults].sort((a, b) => a.courtNumber - b.courtNumber);
 	const maxRank = sorted.reduce((m, c) => Math.max(m, c.standings.length), 0);
@@ -650,8 +717,13 @@ export function verticalSeeding(
 			if (s && !exclude.has(s.playerId))
 				tier.push({ playerId: s.playerId, points: s.points, diff: s.diff });
 		}
-		tier.sort((a, b) => b.points - a.points || b.diff - a.diff || a.playerId - b.playerId);
-		for (const t of tier) flattened.push(t.playerId);
+		const sortedTier = sortTierByTieBreak(tier, tieBreak?.tieBreakConfig, {
+			completedRounds: tieBreak?.completedRounds,
+			courtSizes: tieBreak?.courtSizes ?? courtSizes,
+			players: tieBreak?.players,
+			rng: tieBreak?.rng
+		}, courtResults);
+		for (const t of sortedTier) flattened.push(t.playerId);
 	}
 
 	const assignments: CourtAssignment[] = [];
@@ -742,21 +814,279 @@ export function redistributeLadder(
 	courtResults: readonly CourtResult[],
 	isFirstRound: boolean,
 	courtCount: number,
-	courtSizes?: readonly number[]
+	courtSizes?: readonly number[],
+	tieBreak?: TieBreakSortOptions
 ): CourtAssignment[] {
-	if (isFirstRound) return verticalSeeding(courtResults, courtCount, courtSizes);
+	if (isFirstRound) return verticalSeeding(courtResults, courtCount, courtSizes, undefined, tieBreak);
 	return ladderRedistribute(courtResults, courtCount, courtSizes);
 }
 
 // ============================================================================
-// Standings Calculation
+// Tie-Break Ranking
+// ============================================================================
+
+const STANDARD_GAMES_PER_ROUND = 3;
+
+export function normalizeTieBreakConfig(config: TieBreakConfig | null | undefined): TieBreakConfig {
+	if (!config?.factors?.length) return DEFAULT_TIE_BREAK_CONFIG;
+	return config;
+}
+
+export function getEnabledTieBreakFactors(config: TieBreakConfig | null | undefined): TieBreakFactorId[] {
+	return normalizeTieBreakConfig(config)
+		.factors.filter((f) => f.enabled)
+		.map((f) => f.id);
+}
+
+export type PlayerRoundStats = {
+	readonly playerId: number;
+	readonly rawPoints: number;
+	readonly rawDiff: number;
+	readonly gamesPlayed: number;
+	readonly roundPoints: number;
+	readonly roundDiff: number;
+};
+
+export function buildPlayerRoundStats(
+	matches: readonly MatchData[],
+	playerIds: readonly number[]
+): Map<number, PlayerRoundStats> {
+	const stats: Record<
+		number,
+		{ rawPoints: number; for: number; against: number; gamesPlayed: number }
+	> = {};
+	playerIds.forEach((id) => {
+		stats[id] = { rawPoints: 0, for: 0, against: 0, gamesPlayed: 0 };
+	});
+
+	const hasCanceled = matches.some((m) => m.isCanceled);
+	const useAverages = hasCanceled || playerIds.length >= 5;
+
+	matches.forEach((m) => {
+		if (m.isCanceled) return;
+		if (m.teamAScore === null || m.teamBScore === null) return;
+
+		const injured = new Set(m.injuredPlayerIds ?? []);
+
+		for (const pid of [m.teamAPlayer1Id, m.teamAPlayer2Id]) {
+			if (!stats[pid]) continue;
+			const points = injured.has(pid) ? 0 : m.teamAScore;
+			stats[pid].rawPoints += points;
+			stats[pid].for += m.teamAScore;
+			stats[pid].against += m.teamBScore;
+			stats[pid].gamesPlayed += 1;
+		}
+
+		for (const pid of [m.teamBPlayer1Id, m.teamBPlayer2Id]) {
+			if (!stats[pid]) continue;
+			const points = injured.has(pid) ? 0 : m.teamBScore;
+			stats[pid].rawPoints += points;
+			stats[pid].for += m.teamBScore;
+			stats[pid].against += m.teamAScore;
+			stats[pid].gamesPlayed += 1;
+		}
+	});
+
+	const result = new Map<number, PlayerRoundStats>();
+	for (const id of playerIds) {
+		const s = stats[id];
+		const rawDiff = s.for - s.against;
+		if (useAverages && s.gamesPlayed > 0) {
+			result.set(id, {
+				playerId: id,
+				rawPoints: s.rawPoints,
+				rawDiff,
+				gamesPlayed: s.gamesPlayed,
+				roundPoints: Math.round((s.rawPoints / s.gamesPlayed) * 100) / 100,
+				roundDiff: Math.round((rawDiff / s.gamesPlayed) * 100) / 100
+			});
+		} else {
+			result.set(id, {
+				playerId: id,
+				rawPoints: s.rawPoints,
+				rawDiff,
+				gamesPlayed: s.gamesPlayed,
+				roundPoints: s.rawPoints,
+				roundDiff: rawDiff
+			});
+		}
+	}
+	return result;
+}
+
+function roundPointsContribution(
+	standing: CourtStandings,
+	courtSize: number
+): number {
+	if (courtSize >= 5) {
+		const raw = standing.rawPoints ?? standing.points * (standing.matchCount || 1);
+		return raw / STANDARD_GAMES_PER_ROUND;
+	}
+	return standing.rawPoints ?? standing.points;
+}
+
+export function buildPlayerTotalStats(
+	completedRounds: readonly CourtResult[][],
+	currentRoundResults: readonly CourtResult[] | undefined,
+	courtSizes: readonly number[]
+): Map<number, { totalPoints: number; totalDiff: number }> {
+	const totals = new Map<number, { totalPoints: number; totalDiff: number }>();
+
+	const addRound = (results: readonly CourtResult[]) => {
+		for (const court of results) {
+			const courtSize = courtSizes[court.courtNumber - 1] ?? court.standings.length;
+			for (const s of court.standings) {
+				const existing = totals.get(s.playerId) ?? { totalPoints: 0, totalDiff: 0 };
+				const rawDiff = s.rawDiff ?? s.diff;
+				totals.set(s.playerId, {
+					totalPoints: existing.totalPoints + roundPointsContribution(s, courtSize),
+					totalDiff: existing.totalDiff + rawDiff
+				});
+			}
+		}
+	};
+
+	for (const round of completedRounds) addRound(round);
+	if (currentRoundResults) addRound(currentRoundResults);
+
+	return totals;
+}
+
+function getInitialOrderValue(playerId: number, players?: readonly Player[]): number {
+	if (!players) return playerId;
+	const p = players.find((pl) => pl.id === playerId);
+	if (p?.seedRank != null) return p.seedRank;
+	return playerId;
+}
+
+function manualRankIndex(playerId: number, order?: readonly number[]): number {
+	if (!order?.length) return Number.MAX_SAFE_INTEGER;
+	const idx = order.indexOf(playerId);
+	return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+}
+
+export function comparePlayersForTieBreak(
+	playerA: number,
+	playerB: number,
+	config: TieBreakConfig | null | undefined,
+	context: TieBreakContext & {
+		roundStats?: Map<number, PlayerRoundStats>;
+		totalStats?: Map<number, { totalPoints: number; totalDiff: number }>;
+	}
+): number {
+	const factors = getEnabledTieBreakFactors(config);
+	const roundStats = context.roundStats ?? new Map();
+	const totalStats = context.totalStats ?? new Map();
+
+	for (const factor of factors) {
+		if (factor === 'dice') {
+			const rng = context.rng ?? Math.random;
+			const roll = rng();
+			return roll < 0.5 ? -1 : roll > 0.5 ? 1 : 0;
+		}
+
+		if (factor === 'manual') {
+			const ma = manualRankIndex(playerA, context.manualRankOrder);
+			const mb = manualRankIndex(playerB, context.manualRankOrder);
+			if (ma !== mb) return ma - mb;
+			continue;
+		}
+
+		if (factor === 'round_points') {
+			const a = roundStats.get(playerA)?.roundPoints ?? 0;
+			const b = roundStats.get(playerB)?.roundPoints ?? 0;
+			if (b !== a) return b - a;
+			continue;
+		}
+
+		if (factor === 'round_diff') {
+			const a = roundStats.get(playerA)?.roundDiff ?? 0;
+			const b = roundStats.get(playerB)?.roundDiff ?? 0;
+			if (b !== a) return b - a;
+			continue;
+		}
+
+		if (factor === 'total_points') {
+			const a = totalStats.get(playerA)?.totalPoints ?? 0;
+			const b = totalStats.get(playerB)?.totalPoints ?? 0;
+			if (b !== a) return b - a;
+			continue;
+		}
+
+		if (factor === 'total_diff') {
+			const a = totalStats.get(playerA)?.totalDiff ?? 0;
+			const b = totalStats.get(playerB)?.totalDiff ?? 0;
+			if (b !== a) return b - a;
+			continue;
+		}
+
+		if (factor === 'initial_order') {
+			const a = getInitialOrderValue(playerA, context.players);
+			const b = getInitialOrderValue(playerB, context.players);
+			if (a !== b) return a - b;
+		}
+	}
+
+	return 0;
+}
+
+export function sortPlayersByTieBreak(
+	playerIds: readonly number[],
+	config: TieBreakConfig | null | undefined,
+	context: TieBreakContext & {
+		roundStats?: Map<number, PlayerRoundStats>;
+		totalStats?: Map<number, { totalPoints: number; totalDiff: number }>;
+	}
+): number[] {
+	const sorted = [...playerIds];
+	sorted.sort((a, b) => comparePlayersForTieBreak(a, b, config, context));
+	return sorted;
+}
+
+function sortTierByTieBreak<T extends { playerId: number; points: number; diff: number }>(
+	tier: T[],
+	config: TieBreakConfig | null | undefined,
+	context: TieBreakContext,
+	currentRoundResults?: readonly CourtResult[]
+): T[] {
+	const roundStats = new Map<number, PlayerRoundStats>();
+	for (const t of tier) {
+		roundStats.set(t.playerId, {
+			playerId: t.playerId,
+			rawPoints: t.points,
+			rawDiff: t.diff,
+			gamesPlayed: 1,
+			roundPoints: t.points,
+			roundDiff: t.diff
+		});
+	}
+
+	const courtSizes = context.courtSizes ?? [];
+	const totalStats = buildPlayerTotalStats(
+		context.completedRounds ?? [],
+		currentRoundResults,
+		courtSizes
+	);
+
+	const sorted = [...tier];
+	sorted.sort((a, b) =>
+		comparePlayersForTieBreak(a.playerId, b.playerId, config, {
+			...context,
+			roundStats,
+			totalStats
+		})
+	);
+	return sorted;
+}
+
 // ============================================================================
 // Close Round
 // ============================================================================
 
 export function closeRound(
 	state: TournamentState,
-	overrideCourtSizes?: readonly number[]
+	overrideCourtSizes?: readonly number[],
+	manualRankByCourt?: ReadonlyMap<number, readonly number[]>
 ): TournamentState {
 	if (state.currentRound === 0) throw new Error('No active round to close');
 	if (state.currentMatches.length === 0)
@@ -767,6 +1097,13 @@ export function closeRound(
 	if (scoredCount === 0) throw new Error('No scored matches in this round');
 
 	// Calculate standings for each court
+	const tieBreakOpts: CourtStandingsOptions = {
+		tieBreakConfig: state.config.tieBreakConfig,
+		completedRounds: state.completedRounds,
+		courtSizes: state.config.courtSizes,
+		players: state.players
+	};
+
 	const courtResults: CourtResult[] = state.currentAssignments.map((assign) => {
 		const matches = state.currentMatches.filter(
 			(m): m is MatchData =>
@@ -781,9 +1118,19 @@ export function closeRound(
 		);
 		return {
 			courtNumber: assign.courtNumber,
-			standings: calculateCourtStandings(matches, assign.playerIds)
+			standings: calculateCourtStandings(matches, assign.playerIds, {
+				...tieBreakOpts,
+				manualRankOrder: manualRankByCourt?.get(assign.courtNumber)
+			})
 		};
 	});
+
+	const redistributionTieBreak: TieBreakSortOptions = {
+		tieBreakConfig: state.config.tieBreakConfig,
+		completedRounds: state.completedRounds,
+		courtSizes: state.config.courtSizes,
+		players: state.players
+	};
 
 	const updated = [...state.completedRounds, courtResults];
 	const nextRound = state.roundsCompleted + 1;
@@ -809,10 +1156,17 @@ export function closeRound(
 			courtResults,
 			courtSizes,
 			state.roundsCompleted,
-			state.config.courtSizes.length
+			state.config.courtSizes.length,
+			redistributionTieBreak
 		);
 	} else if (state.roundsCompleted === 0) {
-		nextAssignments = verticalSeeding(courtResults, courtCount, courtSizes);
+		nextAssignments = verticalSeeding(
+			courtResults,
+			courtCount,
+			courtSizes,
+			undefined,
+			redistributionTieBreak
+		);
 	} else {
 		nextAssignments = ladderRedistribute(courtResults, courtCount, courtSizes);
 	}
@@ -833,73 +1187,54 @@ export function closeRound(
 
 export function calculateCourtStandings(
 	matches: MatchData[],
-	playerIds: readonly number[]
+	playerIds: readonly number[],
+	options?: CourtStandingsOptions
 ): CourtStandings[] {
-	const stats: Record<
-		number,
-		{ playerId: number; points: number; for: number; against: number; matchCount: number }
-	> = {};
-	playerIds.forEach((id) => {
-		stats[id] = { playerId: id, points: 0, for: 0, against: 0, matchCount: 0 };
-	});
+	const roundStats = buildPlayerRoundStats(matches, playerIds);
+	const config = options?.tieBreakConfig;
 
-	const hasCanceled = matches.some((m) => m.isCanceled);
-	const useAverages = hasCanceled || playerIds.length >= 5;
-
-	const injuredSet = new Set<number>();
-	matches.forEach((m) => {
-		if (m.injuredPlayerIds) {
-			for (const pid of m.injuredPlayerIds) injuredSet.add(pid);
-		}
-	});
-
-	matches.forEach((m) => {
-		if (m.isCanceled) return;
-		if (m.teamAScore === null || m.teamBScore === null) return;
-
-		const injured = new Set(m.injuredPlayerIds ?? []);
-
-		// Team A players
-		for (const pid of [m.teamAPlayer1Id, m.teamAPlayer2Id]) {
-			if (!stats[pid]) continue;
-			const points = injured.has(pid) ? 0 : m.teamAScore;
-			stats[pid].points += points;
-			stats[pid].for += m.teamAScore;
-			stats[pid].against += m.teamBScore;
-			stats[pid].matchCount += 1;
-		}
-
-		// Team B players
-		for (const pid of [m.teamBPlayer1Id, m.teamBPlayer2Id]) {
-			if (!stats[pid]) continue;
-			const points = injured.has(pid) ? 0 : m.teamBScore;
-			stats[pid].points += points;
-			stats[pid].for += m.teamBScore;
-			stats[pid].against += m.teamAScore;
-			stats[pid].matchCount += 1;
-		}
-	});
-
-	return Object.values(stats)
-		.map((s) => {
-			const diff = s.for - s.against;
-			if (useAverages && s.matchCount > 0) {
+	const currentResults: CourtResult[] = [
+		{
+			courtNumber: 1,
+			standings: playerIds.map((id) => {
+				const s = roundStats.get(id)!;
 				return {
-					...s,
-					points: Math.round((s.points / s.matchCount) * 100) / 100,
-					diff: Math.round((diff / s.matchCount) * 100) / 100
+					playerId: id,
+					rank: 0,
+					points: s.roundPoints,
+					diff: s.roundDiff,
+					matchCount: s.gamesPlayed,
+					rawPoints: s.rawPoints,
+					rawDiff: s.rawDiff
 				};
-			}
-			return { ...s, diff };
-		})
-		.sort((a, b) => b.points - a.points || b.diff - a.diff || a.playerId - b.playerId)
-		.map((s, i) => ({
-			playerId: s.playerId,
+			})
+		}
+	];
+
+	const totalStats = buildPlayerTotalStats(
+		options?.completedRounds ?? [],
+		currentResults,
+		options?.courtSizes ?? [playerIds.length]
+	);
+
+	const sortedIds = sortPlayersByTieBreak(playerIds, config, {
+		...options,
+		roundStats,
+		totalStats
+	});
+
+	return sortedIds.map((playerId, i) => {
+		const s = roundStats.get(playerId)!;
+		return {
+			playerId,
 			rank: i + 1,
-			points: s.points,
-			diff: s.diff,
-			matchCount: s.matchCount
-		}));
+			points: s.roundPoints,
+			diff: s.roundDiff,
+			matchCount: s.gamesPlayed,
+			rawPoints: s.rawPoints,
+			rawDiff: s.rawDiff
+		};
+	});
 }
 
 // ============================================================================
@@ -1772,7 +2107,8 @@ export function buildRedistributionFromResults(
 	newCourtSizes: readonly number[],
 	roundsCompleted: number,
 	originalCourtCount: number,
-	excludedPlayerIds?: ReadonlySet<number>
+	excludedPlayerIds?: ReadonlySet<number>,
+	tieBreak?: TieBreakSortOptions
 ): CourtAssignment[] {
 	const courtCount = newCourtSizes.length;
 	if (formatType === 'preseed') {
@@ -1780,11 +2116,12 @@ export function buildRedistributionFromResults(
 			courtResults,
 			newCourtSizes,
 			roundsCompleted,
-			originalCourtCount
+			originalCourtCount,
+			tieBreak
 		);
 	}
 	if (roundsCompleted === 0) {
-		return verticalSeeding(courtResults, courtCount, newCourtSizes, excludedPlayerIds);
+		return verticalSeeding(courtResults, courtCount, newCourtSizes, excludedPlayerIds, tieBreak);
 	}
 	return ladderRedistribute(courtResults, courtCount, newCourtSizes, excludedPlayerIds);
 }

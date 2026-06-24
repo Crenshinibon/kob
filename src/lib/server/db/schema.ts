@@ -1,4 +1,5 @@
 import { pgTable, serial, integer, text, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core';
+import type { TieBreakConfig } from '$lib/tournament-logic';
 
 export const tournament = pgTable('tournament', {
 	id: serial('id').primaryKey(),
@@ -20,6 +21,7 @@ export const tournament = pgTable('tournament', {
 				{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
 			>
 		>(),
+	tieBreakConfig: jsonb('tie_break_config').$type<TieBreakConfig>(),
 	schedulingMode: text('scheduling_mode').notNull().default('batch'),
 	physicalCourtCount: integer('physical_court_count').notNull().default(4),
 	playerCount: integer('player_count').notNull().default(16),
@@ -72,7 +74,8 @@ export const courtRotation = pgTable('court_rotation', {
 	player3Id: integer('player_3_id'),
 	player4Id: integer('player_4_id'),
 	player5Id: integer('player_5_id'),
-	player6Id: integer('player_6_id')
+	player6Id: integer('player_6_id'),
+	manualRankOrder: jsonb('manual_rank_order').$type<number[]>()
 });
 
 export const match = pgTable('match', {

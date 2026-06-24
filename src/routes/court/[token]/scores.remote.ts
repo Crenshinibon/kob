@@ -63,6 +63,13 @@ async function getMatchContext(matchId: number) {
 		.from(tournament)
 		.where(eq(tournament.id, rotation.tournamentId));
 
+	if (!tourney) return { error: m.tournament_not_found() };
+
+	const currentRound = tourney.currentRound || 0;
+	if (rotation.roundNumber !== currentRound || tourney.status !== 'active') {
+		return { error: m.err_court_read_only() };
+	}
+
 	return { matchRecord, rotation, tourney };
 }
 

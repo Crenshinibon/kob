@@ -32,6 +32,8 @@ export interface CourtDisplayData {
 	waitLabel?: string;
 	isComplete: boolean;
 	courtId: number;
+	rotationId: number;
+	manualRankOrder: number[] | null;
 }
 
 export interface TournamentDisplayData {
@@ -42,6 +44,10 @@ export interface TournamentDisplayData {
 	hasScores: boolean;
 	courtSizes: number[];
 	currentRound: number;
+	viewRound: number;
+	isViewingPastRound: boolean;
+	isViewingCurrentRound: boolean;
+	totalRounds: number;
 	physicalCourtCount: number;
 	shifts: number[][];
 	roundDuration: number;
@@ -66,7 +72,10 @@ function parseCourtSizes(tourney: typeof tournament.$inferSelect): number[] {
 		: calculateCourtSizes(tourney.playerCount);
 }
 
-async function fetchTournamentData(tournamentId: number): Promise<TournamentDisplayData> {
+async function fetchTournamentData(
+	tournamentId: number,
+	viewRoundInput?: number
+): Promise<TournamentDisplayData> {
 	const [tourney] = await db.select().from(tournament).where(eq(tournament.id, tournamentId));
 
 	if (!tourney) {
@@ -75,6 +84,15 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 
 	const currentRound = tourney.currentRound || 0;
 	const courtSizes: number[] = parseCourtSizes(tourney);
+	const totalRounds = tourney.numRounds;
+	const maxViewableRound =
+		tourney.status === 'completed' ? totalRounds : Math.max(currentRound, 1);
+	const viewRound = Math.min(
+		Math.max(viewRoundInput ?? (currentRound === 0 ? 1 : currentRound), 1),
+		maxViewableRound
+	);
+	const isViewingPastRound = currentRound > 0 && viewRound < currentRound;
+	const isViewingCurrentRound = viewRound === currentRound && tourney.status === 'active';
 
 	const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
 	const players = dbPlayers.map((p) => ({
@@ -96,7 +114,7 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		}));
 	const activePlayerCount = dbPlayers.filter((p) => !p.retiredAt).length;
 
-	const displayRound = currentRound === 0 ? 1 : currentRound;
+	const displayRound = viewRound;
 	const rotations = await db
 		.select()
 		.from(courtRotation)
@@ -109,7 +127,7 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 	let isFinalRound = false;
 	let hasScores = false;
 
-	if (currentRound > 0) {
+	if (currentRound > 0 && isViewingCurrentRound) {
 		isFinalRound = currentRound >= tourney.numRounds;
 
 		if (rotations.length > 0) {
@@ -196,6 +214,8 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 			token: rotation.token ?? null,
 			label: access[0]?.label ?? null,
 			courtId: access[0]?.id ?? rotation.courtId,
+			rotationId: rotation.id,
+			manualRankOrder: rotation.manualRankOrder ?? null,
 			players: rotationPlayers,
 			isComplete
 		});
@@ -252,6 +272,10 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		hasScores,
 		courtSizes,
 		currentRound,
+		viewRound,
+		isViewingPastRound,
+		isViewingCurrentRound,
+		totalRounds,
 		physicalCourtCount,
 		shifts,
 		roundDuration,
@@ -263,6 +287,11 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 	};
 }
 
-export const getTournamentData = query(v.number(), async (tournamentId) => {
-	return fetchTournamentData(tournamentId);
+const tournamentDataInputSchema = v.object({
+	tournamentId: v.number(),
+	viewRound: v.optional(v.number())
+});
+
+export const getTournamentData = query(tournamentDataInputSchema, async ({ tournamentId, viewRound }) => {
+	return fetchTournamentData(tournamentId, viewRound);
 });
