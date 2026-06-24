@@ -12,6 +12,14 @@ import {
 	verticalSeeding,
 	ladderRedistribute,
 	calculateCourtStandings,
+	buildPlayerRoundStats,
+	buildPlayerTotalStats,
+	comparePlayersForTieBreak,
+	sortPlayersByTieBreak,
+	DEFAULT_TIE_BREAK_CONFIG,
+	explainCourtStandings,
+	type TieBreakConfig,
+	type TieBreakFactorId,
 	generate4pMatches,
 	generate3pMatches,
 	generate5pMatches,
@@ -59,7 +67,15 @@ import {
 
 function mockCourtResult(
 	courtNumber: number,
-	standings: { playerId: number; rank: number; points: number; diff: number; matchCount: number }[]
+	standings: {
+		playerId: number;
+		rank: number;
+		points: number;
+		diff: number;
+		matchCount: number;
+		rawPoints?: number;
+		rawDiff?: number;
+	}[]
 ): CourtResult {
 	return { courtNumber, standings };
 }
@@ -4714,5 +4730,273 @@ describe('Preseed frozen courts: court count per round', () => {
 		expect(frozenR3).toEqual([{ courtNumber: 7, freezeAfterRound: 3 }]);
 		const activeR4 = originalSizes.filter((_, i) => !frozenR3.some((f) => f.courtNumber === i + 1));
 		expect(activeR4).toEqual([4, 4, 4, 4, 4, 4]);
+	});
+});
+
+// ============================================================================
+// Tie-break ranking
+// ============================================================================
+
+describe('tie-break ranking', () => {
+	const only = (id: TieBreakFactorId): TieBreakConfig => ({
+		factors: DEFAULT_TIE_BREAK_CONFIG.factors.map((f) => ({
+			id: f.id,
+			enabled: f.id === id
+		}))
+	});
+
+	function configWith(factors: { id: TieBreakFactorId; enabled: boolean }[]) {
+		return { factors };
+	}
+
+	it('default config matches legacy 4p points → diff → playerId', () => {
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 21),
+			mockMatch([1, 3], [2, 4], 21, 21),
+			mockMatch([1, 4], [2, 3], 21, 21)
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4]);
+		expect(result.map((s) => s.playerId)).toEqual([1, 2, 3, 4]);
+	});
+
+	it('round_points only — higher round points wins', () => {
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 20),
+			mockMatch([1, 3], [2, 4], 21, 20),
+			mockMatch([1, 4], [2, 3], 21, 20)
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4], {
+			tieBreakConfig: only('round_points')
+		});
+		expect(result[0].playerId).toBe(1);
+		expect(result[1].playerId).toBe(2);
+	});
+
+	it('round_diff breaks tie when round points equal', () => {
+		const cfg = configWith([
+			{ id: 'round_points', enabled: true },
+			{ id: 'round_diff', enabled: true },
+			{ id: 'total_points', enabled: false },
+			{ id: 'total_diff', enabled: false },
+			{ id: 'initial_order', enabled: false },
+			{ id: 'dice', enabled: false },
+			{ id: 'manual', enabled: false }
+		]);
+		const matchesA = [mockMatch([1, 2], [3, 4], 21, 18), mockMatch([1, 3], [2, 4], 21, 18)];
+		const matchesB = [mockMatch([1, 2], [3, 4], 18, 21), mockMatch([1, 3], [2, 4], 18, 21)];
+		const allMatches = [...matchesA, ...matchesB];
+		const result = calculateCourtStandings(allMatches, [1, 2, 3, 4], { tieBreakConfig: cfg });
+		const p2 = result.find((s) => s.playerId === 2)!;
+		const p3 = result.find((s) => s.playerId === 3)!;
+		expect(p2.rank).toBeLessThan(p3.rank);
+	});
+
+	it('factor order — round_diff before round_points changes outcome', () => {
+		const diffFirst = configWith([
+			{ id: 'round_diff', enabled: true },
+			{ id: 'round_points', enabled: true },
+			{ id: 'initial_order', enabled: false }
+		]);
+		const pointsFirst = configWith([
+			{ id: 'round_points', enabled: true },
+			{ id: 'round_diff', enabled: true },
+			{ id: 'initial_order', enabled: false }
+		]);
+		const roundStats = new Map([
+			[2, { playerId: 2, rawPoints: 60, rawDiff: 6, gamesPlayed: 3, roundPoints: 60, roundDiff: 6 }],
+			[3, { playerId: 3, rawPoints: 63, rawDiff: 3, gamesPlayed: 3, roundPoints: 63, roundDiff: 3 }]
+		]);
+		const cmpDiffFirst = comparePlayersForTieBreak(2, 3, diffFirst, { roundStats });
+		const cmpPointsFirst = comparePlayersForTieBreak(2, 3, pointsFirst, { roundStats });
+		expect(cmpDiffFirst).toBeLessThan(0);
+		expect(cmpPointsFirst).toBeGreaterThan(0);
+	});
+
+	it('5p round_points uses average per game', () => {
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			mockMatch([1, 3], [2, 5], 21, 19),
+			mockMatch([1, 4], [2, 5], 21, 19),
+			mockMatch([1, 5], [3, 4], 15, 21)
+		];
+		const stats = buildPlayerRoundStats(matches, [1, 2, 3, 4, 5]);
+		expect(stats.get(1)!.gamesPlayed).toBe(4);
+		expect(stats.get(1)!.rawPoints).toBe(78);
+		expect(stats.get(1)!.roundPoints).toBe(19.5);
+		expect(stats.get(5)!.roundPoints).toBeCloseTo(17.67, 1);
+	});
+
+	it('total_points adds 5p round contribution as raw/3', () => {
+		const round1: CourtResult[] = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 21, diff: 2, matchCount: 4, rawPoints: 84, rawDiff: 8 },
+				{ playerId: 2, rank: 2, points: 20, diff: 0, matchCount: 4, rawPoints: 80, rawDiff: 0 }
+			])
+		];
+		const totals = buildPlayerTotalStats([], round1, [5]);
+		expect(totals.get(1)!.totalPoints).toBeCloseTo(84 / 3, 2);
+		expect(totals.get(2)!.totalPoints).toBeCloseTo(80 / 3, 2);
+	});
+
+	it('total_diff accumulates across rounds', () => {
+		const r1 = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 5, matchCount: 3, rawDiff: 5 },
+				{ playerId: 2, rank: 2, points: 55, diff: -5, matchCount: 3, rawDiff: -5 }
+			])
+		];
+		const r2 = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 2, points: 50, diff: -2, matchCount: 3, rawDiff: -2 },
+				{ playerId: 2, rank: 1, points: 55, diff: 2, matchCount: 3, rawDiff: 2 }
+			])
+		];
+		const totals = buildPlayerTotalStats([r1], r2, [4]);
+		expect(totals.get(1)!.totalDiff).toBe(3);
+		expect(totals.get(2)!.totalDiff).toBe(-3);
+	});
+
+	it('initial_order uses lower playerId', () => {
+		const sorted = sortPlayersByTieBreak([3, 1, 2], only('initial_order'), {});
+		expect(sorted).toEqual([1, 2, 3]);
+	});
+
+	it('dice uses seeded RNG deterministically', () => {
+		let roll = 0;
+		const rng = () => {
+			roll += 1;
+			return roll % 2 === 0 ? 0.9 : 0.1;
+		};
+		const cfg = configWith([
+			{ id: 'round_points', enabled: false },
+			{ id: 'round_diff', enabled: false },
+			{ id: 'total_points', enabled: false },
+			{ id: 'total_diff', enabled: false },
+			{ id: 'initial_order', enabled: false },
+			{ id: 'dice', enabled: true },
+			{ id: 'manual', enabled: false }
+		]);
+		const a = comparePlayersForTieBreak(1, 2, cfg, { rng });
+		const b = comparePlayersForTieBreak(1, 2, cfg, { rng: () => 0.9 });
+		expect(a).not.toBe(0);
+		expect(b).toBe(1);
+	});
+
+	it('manual rank order resolves ties', () => {
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 21),
+			mockMatch([1, 3], [2, 4], 21, 21),
+			mockMatch([1, 4], [2, 3], 21, 21)
+		];
+		const cfg = configWith([
+			{ id: 'round_points', enabled: true },
+			{ id: 'round_diff', enabled: true },
+			{ id: 'total_points', enabled: false },
+			{ id: 'total_diff', enabled: false },
+			{ id: 'initial_order', enabled: false },
+			{ id: 'dice', enabled: false },
+			{ id: 'manual', enabled: true }
+		]);
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4], {
+			tieBreakConfig: cfg,
+			manualRankOrder: [4, 3, 2, 1]
+		});
+		expect(result.map((s) => s.playerId)).toEqual([4, 3, 2, 1]);
+	});
+
+	it('total_points breaks redistribution tier tie', () => {
+		const round1Results: CourtResult[] = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 2, points: 50, diff: 0, matchCount: 3, rawPoints: 50, rawDiff: 0 },
+				{ playerId: 2, rank: 3, points: 45, diff: 0, matchCount: 3, rawPoints: 45, rawDiff: 0 },
+				{ playerId: 3, rank: 4, points: 40, diff: 0, matchCount: 3, rawPoints: 40, rawDiff: 0 },
+				{ playerId: 4, rank: 1, points: 55, diff: 0, matchCount: 3, rawPoints: 55, rawDiff: 0 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 63, diff: 0, matchCount: 3, rawPoints: 63, rawDiff: 0 },
+				{ playerId: 6, rank: 2, points: 60, diff: 0, matchCount: 3, rawPoints: 60, rawDiff: 0 },
+				{ playerId: 7, rank: 3, points: 50, diff: 0, matchCount: 3, rawPoints: 50, rawDiff: 0 },
+				{ playerId: 8, rank: 4, points: 45, diff: 0, matchCount: 3, rawPoints: 45, rawDiff: 0 }
+			])
+		];
+		const round2Results: CourtResult[] = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 21, diff: 0, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 21, diff: 0, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 21, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 21, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 21, diff: 0, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 21, diff: 0, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 21, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 21, diff: 0, matchCount: 3 }
+			])
+		];
+		const initialOnly = verticalSeeding(round2Results, 2, [4, 4], undefined, {
+			tieBreakConfig: only('initial_order')
+		});
+		const withTotal = verticalSeeding(round2Results, 2, [4, 4], undefined, {
+			tieBreakConfig: only('total_points'),
+			completedRounds: [round1Results],
+			courtSizes: [4, 4]
+		});
+		const court1Firsts = initialOnly[0].playerIds.slice(0, 2);
+		const court1FirstsTotal = withTotal[0].playerIds.slice(0, 2);
+		expect(court1Firsts).toEqual([1, 5]);
+		expect(court1FirstsTotal).toEqual([5, 1]);
+	});
+
+	it('combined: equal round stats, total_points decides', () => {
+		const completed: CourtResult[][] = [
+			[
+				mockCourtResult(1, [
+					{ playerId: 1, rank: 1, points: 63, diff: 3, matchCount: 3, rawPoints: 63, rawDiff: 3 },
+					{ playerId: 2, rank: 2, points: 60, diff: 0, matchCount: 3, rawPoints: 60, rawDiff: 0 }
+				])
+			]
+		];
+		const matches = [mockMatch([1, 2], [3, 4], 21, 21), mockMatch([1, 3], [2, 4], 21, 21)];
+		const cfg = configWith([
+			{ id: 'round_points', enabled: true },
+			{ id: 'round_diff', enabled: true },
+			{ id: 'total_points', enabled: true },
+			{ id: 'total_diff', enabled: false },
+			{ id: 'initial_order', enabled: false },
+			{ id: 'dice', enabled: false },
+			{ id: 'manual', enabled: false }
+		]);
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4], {
+			tieBreakConfig: cfg,
+			completedRounds: completed,
+			courtSizes: [4]
+		});
+		expect(result[0].playerId).toBe(1);
+	});
+
+	it('explainCourtStandings marks deciding and winning factors', () => {
+		const roundStats = new Map([
+			[1, { playerId: 1, rawPoints: 63, rawDiff: 3, gamesPlayed: 3, roundPoints: 63, roundDiff: 3 }],
+			[2, { playerId: 2, rawPoints: 60, rawDiff: 0, gamesPlayed: 3, roundPoints: 60, roundDiff: 0 }]
+		]);
+		const cfg = configWith([
+			{ id: 'round_points', enabled: true },
+			{ id: 'round_diff', enabled: true },
+			{ id: 'total_points', enabled: false },
+			{ id: 'total_diff', enabled: false },
+			{ id: 'initial_order', enabled: false },
+			{ id: 'dice', enabled: false },
+			{ id: 'manual', enabled: false }
+		]);
+		const explained = explainCourtStandings(
+			[
+				{ playerId: 1, rank: 1, points: 63, diff: 3, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 60, diff: 0, matchCount: 3 }
+			],
+			cfg,
+			{ roundStats, totalStats: new Map() }
+		);
+		expect(explained.get(1)?.decidingFactor).toBe('round_points');
+		expect(explained.get(1)?.winningFactors).toContain('round_points');
 	});
 });

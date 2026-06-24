@@ -7,7 +7,9 @@
 
 	import { saveScore, saveSetScore } from './scores.remote';
 	import { createScoreSchema, createSetScoreSchema } from './scoreSchema';
-	import { isDecidingSet, getEffectiveScoring } from '$lib/tournament-logic';
+	import { isDecidingSet, getEffectiveScoring, type TieBreakFactorId } from '$lib/tournament-logic';
+	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
+	import { formatDiff, formatPoints } from '$lib/i18n/format';
 
 	interface MatchRow {
 		id: number;
@@ -34,6 +36,9 @@
 		name: string;
 		avgPoints?: number;
 		matchesPlayed: number;
+		decidingFactor: TieBreakFactorId | null;
+		winningFactors: TieBreakFactorId[];
+		enabledFactors: TieBreakFactorId[];
 	}
 
 	interface CourtInfo {
@@ -68,10 +73,26 @@
 			court: CourtInfo;
 			matches: MatchRow[];
 			standings: StandingRow[];
+			enabledTieBreakFactors: TieBreakFactorId[];
 			isActive: boolean;
+			isEditable: boolean;
+			currentRound: number;
 			isAuthenticated: boolean;
 		};
 	}>();
+
+	function tieBreakFactorLabel(id: TieBreakFactorId): string {
+		const labels: Record<TieBreakFactorId, () => string> = {
+			round_points: msg.tie_break_factor_round_points,
+			round_diff: msg.tie_break_factor_round_diff,
+			total_points: msg.tie_break_factor_total_points,
+			total_diff: msg.tie_break_factor_total_diff,
+			initial_order: msg.tie_break_factor_initial_order,
+			dice: msg.tie_break_factor_dice,
+			manual: msg.tie_break_factor_manual
+		};
+		return labels[id]();
+	}
 
 	// Track which matches are being saved
 	let savingMatches = $state<Set<number>>(new Set());
@@ -464,6 +485,11 @@
 			<p>{msg.court_closed_message()}</p>
 		</div>
 	{:else}
+		{#if !data.isEditable}
+			<div class="read-only-banner" transition:slide>
+				<p>{msg.scores_read_only()}</p>
+			</div>
+		{/if}
 		<section class="players-section">
 			<h3>{msg.court_players_heading({ size: data.court.courtSize })}</h3>
 			{#if formatExplanation}
@@ -573,7 +599,7 @@
 													<span class="saved" data-testid="saved-{setMatch.id}"
 														>{msg.court_saved()}</span
 													>
-													{#if data.isAuthenticated}
+													{#if data.isAuthenticated && data.isEditable}
 														<button
 															class="btn-edit"
 															onclick={() =>
@@ -583,7 +609,7 @@
 														</button>
 													{/if}
 												</div>
-											{:else}
+											{:else if data.isEditable}
 												{#if currentErrors.length > 0 && !isSaving}
 													<div class="error">
 														{#each currentErrors as msg, ei (ei)}
@@ -644,7 +670,7 @@
 												</p>
 												<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span
 												>
-												{#if data.isAuthenticated}
+												{#if data.isAuthenticated && data.isEditable}
 													<button
 														class="btn-edit"
 														onclick={() =>
@@ -654,7 +680,7 @@
 													</button>
 												{/if}
 											</div>
-										{:else}
+										{:else if data.isEditable}
 											{@render scoreFormFields(
 												render.scoreForm.preflight(dynamicScoreSchema),
 												match,
@@ -708,7 +734,7 @@
 										<strong>{match.teamBScore}</strong>
 									</p>
 									<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span>
-									{#if data.isAuthenticated}
+									{#if data.isAuthenticated && data.isEditable}
 										<button
 											class="btn-edit"
 											onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
@@ -717,7 +743,7 @@
 										</button>
 									{/if}
 								</div>
-							{:else}
+							{:else if data.isEditable}
 								{@render scoreFormFields(
 									render.scoreForm.preflight(dynamicScoreSchema),
 									match,
@@ -737,6 +763,9 @@
 	{#if data.standings.length > 0}
 		<section class="standings" transition:slide>
 			<h2>{msg.court_standings()}</h2>
+			{#if data.enabledTieBreakFactors.length > 0}
+				<p class="standings-legend">{msg.tie_break_standings_legend()}</p>
+			{/if}
 			{#if data.court.courtSize === 3}
 				<p class="standings-note">
 					{msg.court_3p_desc({ points: data.court.pointsToWin ?? 21 })}
@@ -747,6 +776,9 @@
 					<tr>
 						<th>{msg.court_3p_table_header()}</th>
 						<th>{msg.court_3p_table_player()}</th>
+						{#if data.enabledTieBreakFactors.length > 0}
+							<th>{msg.tie_break_icons_header()}</th>
+						{/if}
 						{#if data.court.courtSize === 5 || data.court.courtSize === 6}
 							<th>{msg.court_3p_table_avg()}</th>
 						{/if}
@@ -759,11 +791,21 @@
 						<tr transition:slide>
 							<td>{s.rank}</td>
 							<td>{s.name}</td>
-							{#if data.court.courtSize === 5 || data.court.courtSize === 6}
-								<td>{s.avgPoints?.toFixed(1) ?? '—'}</td>
+							{#if data.enabledTieBreakFactors.length > 0}
+								<td>
+									<TieBreakFactorIcons
+										enabledFactors={s.enabledFactors}
+										winningFactors={s.winningFactors}
+										decidingFactor={s.decidingFactor}
+										getLabel={tieBreakFactorLabel}
+									/>
+								</td>
 							{/if}
-							<td>{s.points}</td>
-							<td>{s.diff > 0 ? '+' : ''}{s.diff}</td>
+							{#if data.court.courtSize === 5 || data.court.courtSize === 6}
+								<td>{s.avgPoints != null ? formatPoints(s.avgPoints) : '—'}</td>
+							{/if}
+							<td>{formatPoints(s.points)}</td>
+							<td>{formatDiff(s.diff)}</td>
 						</tr>
 					{/each}
 				</tbody>
@@ -866,6 +908,16 @@
 		color: var(--accent-error);
 		background-color: rgba(255, 51, 51, 0.1);
 		border-color: var(--accent-error);
+	}
+
+	.read-only-banner {
+		background-color: color-mix(in srgb, var(--accent-info) 12%, var(--bg-secondary));
+		border: 1px solid var(--accent-info);
+		padding: var(--spacing-sm) var(--spacing-md);
+		border-radius: var(--radius-sm);
+		margin-bottom: var(--spacing-md);
+		text-align: center;
+		font-size: var(--font-size-sm);
 	}
 
 	.closed {
@@ -1048,6 +1100,12 @@
 		color: var(--text-muted);
 		margin-bottom: var(--spacing-sm);
 		font-style: italic;
+	}
+
+	.standings-legend {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+		margin: 0 0 var(--spacing-sm);
 	}
 
 	.error {

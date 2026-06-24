@@ -17,11 +17,15 @@ Example match: Alice & Bob 21 vs Carol & David 19
 
 For each player sum points from all matches.
 
-Tiebreaker order:
+Tiebreaker order (default — see **[094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md)** for full configurability):
 
-1. Total points (higher wins)
-2. Point differential (higher wins)
-3. Player ID (deterministic - ensures consistent results across runs)
+1. Points this round (average per game on 5p/6p / canceled courts)
+2. Diff this round (average on 5p/6p / canceled courts)
+3. Total points (5p/6p rounds contribute `roundRaw/3`)
+4. Total diff (cumulative)
+5. Seeding (player ID / seed rank)
+
+Optional org factors: **dice** (random among tied), **manual** (org-defined order).
 
 ### Non-Standard Courts (5p, 6p)
 

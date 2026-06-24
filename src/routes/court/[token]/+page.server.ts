@@ -5,17 +5,19 @@ import { court, courtRotation, match, tournament, player } from '$lib/server/db/
 import { eq, and } from 'drizzle-orm';
 
 import type { PageServerLoad } from './$types';
-import type { MatchData } from '$lib/server/tournament-logic';
 import {
-	calculateCourtStandings,
 	getMinPointsForSet,
-	getScoringLabel
+	getScoringLabel,
+	type TieBreakFactorId
 } from '$lib/server/tournament-logic';
+import {
+	buildCompletedRoundsBefore,
+	computeExplainedStandings
+} from '$lib/server/court-standings-service';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const token = params.token;
 
-	// Try rotation token first (round-specific link)
 	const [rotationByToken] = await db
 		.select()
 		.from(courtRotation)
@@ -29,14 +31,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		const [foundCourt] = await db.select().from(court).where(eq(court.id, rotationByToken.courtId));
 		courtRecord = foundCourt;
 	} else {
-		// Fallback to stable court token (backward compatibility)
 		const [foundCourt] = await db.select().from(court).where(eq(court.token, token));
 		courtRecord = foundCourt;
 	}
 
 	if (!courtRecord) throw error(404, m.not_found());
 
-	// Get tournament
 	const [tourney] = await db
 		.select()
 		.from(tournament)
@@ -46,7 +46,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const currentRound = tourney.currentRound || 0;
 
-	// If no rotation yet (stable token path), find rotation for current round
 	if (!rotation && currentRound > 0) {
 		const [found] = await db
 			.select()
@@ -75,19 +74,20 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			},
 			matches: [],
 			standings: [],
+			enabledTieBreakFactors: [] as TieBreakFactorId[],
 			isActive: false,
+			isEditable: false,
+			currentRound,
 			isAuthenticated: !!locals.user
 		};
 	}
 
-	// Get matches
 	const matches = await db
 		.select()
 		.from(match)
 		.where(eq(match.courtRotationId, rotation.id))
 		.orderBy(match.matchNumber, match.setNumber);
 
-	// Get player names for all player slots (including player5/6 for non-standard courts)
 	const playerIds: number[] = [
 		rotation.player1Id,
 		rotation.player2Id,
@@ -108,8 +108,26 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		playerNames[id] = playerMap.get(id) || m.err_unknown_player();
 	});
 
-	// Map DB matches to MatchData and calculate standings using shared logic
-	const matchData: MatchData[] = matches.map((m) => ({
+	const courtSizes = tourney.courtSizes
+		? (JSON.parse(tourney.courtSizes) as number[])
+		: [playerIds.length];
+
+	const logicPlayers = players.map((p) => ({
+		id: p.id,
+		name: p.name,
+		seedPoints: p.seedPoints,
+		seedRank: p.seedRank
+	}));
+
+	const completedRounds = await buildCompletedRoundsBefore(
+		rotation.tournamentId,
+		rotation.roundNumber,
+		courtSizes,
+		logicPlayers,
+		tourney.tieBreakConfig ?? null
+	);
+
+	const matchData = matches.map((m) => ({
 		teamAPlayer1Id: m.teamAPlayer1Id,
 		teamAPlayer2Id: m.teamAPlayer2Id,
 		teamBPlayer1Id: m.teamBPlayer1Id,
@@ -120,10 +138,24 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		injuredPlayerIds: m.injuredPlayerIds ?? undefined
 	}));
 
-	const standings = calculateCourtStandings(matchData, playerIds).map((s) => ({
+	const explained =
+		matchData.some((m) => m.teamAScore !== null)
+			? computeExplainedStandings({
+					matchData,
+					playerIds,
+					playerNames: playerMap,
+					tourney,
+					players,
+					completedRounds,
+					courtSizes,
+					courtNumber: rotation.courtNumber,
+					manualRankOrder: rotation.manualRankOrder
+				})
+			: [];
+
+	const standings = explained.map((s) => ({
 		...s,
 		id: s.playerId,
-		name: playerNames[s.playerId] || m.err_unknown_player(),
 		avgPoints: s.matchCount > 0 ? s.points : undefined,
 		matchesPlayed: matchData.filter(
 			(m) =>
@@ -135,6 +167,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 					m.teamBPlayer2Id === s.playerId)
 		).length
 	}));
+
+	const enabledTieBreakFactors =
+		explained[0]?.enabledFactors ??
+		([] as TieBreakFactorId[]);
 
 	const courtSize = rotation.courtSize ?? playerIds.length;
 
@@ -150,6 +186,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	> | null;
 	const minPoints = getMinPointsForSet(1, courtSize, config, overrides);
 	const scoringLabel = getScoringLabel(config, courtSize, overrides);
+
+	const isEditable =
+		tourney.status === 'active' &&
+		rotation.roundNumber === currentRound &&
+		(courtRecord.isActive ?? true);
 
 	return {
 		court: {
@@ -169,7 +210,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		},
 		matches,
 		standings,
+		enabledTieBreakFactors,
 		isActive: courtRecord.isActive && tourney.status === 'active',
+		isEditable,
+		currentRound,
 		isAuthenticated: !!locals.user
 	};
 };

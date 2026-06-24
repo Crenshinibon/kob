@@ -24,6 +24,8 @@
   - **[089_random-example-17p-retirement.md](./089_random-example-17p-retirement.md)**: 17 players — Round 3 retirement walkthrough. Ladder cascade: top court unchanged, empty slots backfilled from relegation pool.
   - **[091_preseed-retirement-bracket-policy.md](./091_preseed-retirement-bracket-policy.md)**: Preseed retirement — Shrink vs Cascade, optional replacement, test matrix — **PROPOSED**
   - **[092_mid-round-injury-forward-retirement.md](./092_mid-round-injury-forward-retirement.md)**: Mid-round injury + forward retirement on closeRound — **PROPOSED**
+  - **[093_round-history-stepper.md](./093_round-history-stepper.md)**: Round stepper on tournament admin view — browse past rounds, read-only historical scores
+  - **[094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md)**: Configurable tie-break factors (round/total points & diff, dice, manual) for standings and redistribution
 - **[087_preseed-frozen-courts.md](./087_preseed-frozen-courts.md)**: Preseed frozen courts — single-court bracket leaves freeze after their round-robin is complete. Covers all court counts 3–16 with cascade freeze points (e.g. 7 courts: C7 after R3, C1–C6 after R4). Implementation: `getFrozenCourts()` simulates bracket tree, returns freeze round per court.
 
 - **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export] Sorted by court position (not total points), per spec 070.

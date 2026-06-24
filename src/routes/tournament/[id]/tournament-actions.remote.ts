@@ -29,6 +29,10 @@ import {
 	resolveForwardRetirement,
 	processPreseedTransition,
 	applyReplacementSlot,
+	DEFAULT_TIE_BREAK_CONFIG,
+	normalizeTieBreakConfig,
+	type TieBreakConfig,
+	type TieBreakFactorId,
 	type FormatType,
 	type MatchData,
 	type CourtAssignment,
@@ -115,7 +119,8 @@ export const closeRoundForm = form(
 			formatType: tourney.formatType as FormatType,
 			playerCount: activePlayerCount,
 			numRounds: tourney.numRounds,
-			physicalCourtCount
+			physicalCourtCount,
+			tieBreakConfig: tourney.tieBreakConfig ?? undefined
 		});
 
 		const stateWithPlayers = addPlayers(initState, players);
@@ -169,6 +174,13 @@ export const closeRoundForm = form(
 
 		const startedState = startRound(stateWithPlayers);
 
+		const manualRankByCourt = new Map<number, number[]>();
+		for (const rotation of currentRotations) {
+			if (rotation.manualRankOrder?.length) {
+				manualRankByCourt.set(rotation.courtNumber, rotation.manualRankOrder);
+			}
+		}
+
 		const closedState = closeRound(
 			{
 				...startedState,
@@ -176,7 +188,8 @@ export const closeRoundForm = form(
 				currentAssignments: currentAssignmentsFromDb,
 				currentMatches: allMatches
 			},
-			activeCourtSizes
+			activeCourtSizes,
+			manualRankByCourt
 		);
 
 		if (closedState.isComplete) {
@@ -216,7 +229,7 @@ export const closeRoundForm = form(
 				})
 				.where(eq(tournament.id, tournamentId));
 
-			getTournamentData(tournamentId).refresh();
+			getTournamentData({ tournamentId }).refresh();
 
 			redirectLocalized(303, `/tournament/${tournamentId}/standings`, getRequestEvent());
 		}
@@ -415,7 +428,7 @@ export const closeRoundForm = form(
 			.set({ lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentData(tournamentId).refresh();
+		getTournamentData({ tournamentId }).refresh();
 
 		return { success: true };
 	}
@@ -445,7 +458,7 @@ export const setCourtLabel = command(
 			.set({ label: label.trim() || null })
 			.where(eq(court.id, courtId));
 
-		getTournamentData(tourney.id).refresh();
+		getTournamentData({ tournamentId: tourney.id }).refresh();
 
 		return { success: true };
 	}
@@ -515,7 +528,89 @@ export const updateScoringOverrides = command(
 			.set({ scoringOverrides: overrides, lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentData(tournamentId).refresh();
+		getTournamentData({ tournamentId }).refresh();
+
+		return { success: true };
+	}
+);
+
+const tieBreakFactorSchema = v.picklist([
+	'round_points',
+	'round_diff',
+	'total_points',
+	'total_diff',
+	'initial_order',
+	'dice',
+	'manual'
+]);
+
+export const updateTieBreakConfig = command(
+	v.object({
+		tournamentId: v.pipe(v.number(), v.minValue(1)),
+		factors: v.array(
+			v.object({
+				id: tieBreakFactorSchema,
+				enabled: v.boolean()
+			})
+		)
+	}),
+	async ({ tournamentId, factors }) => {
+		const event = getRequestEvent();
+		const user = event.locals.user;
+		if (!user) error(401, m.unauthorized());
+
+		const [tourney] = await db
+			.select()
+			.from(tournament)
+			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
+
+		if (!tourney) error(404, m.tournament_not_found());
+
+		const config: TieBreakConfig = { factors };
+		await db
+			.update(tournament)
+			.set({ tieBreakConfig: config, lastActivityAt: new Date() })
+			.where(eq(tournament.id, tournamentId));
+
+		getTournamentData({ tournamentId }).refresh();
+
+		return { success: true };
+	}
+);
+
+export const updateManualRankOrder = command(
+	v.object({
+		rotationId: v.pipe(v.number(), v.minValue(1)),
+		playerIds: v.array(v.pipe(v.number(), v.minValue(1)))
+	}),
+	async ({ rotationId, playerIds }) => {
+		const event = getRequestEvent();
+		const user = event.locals.user;
+		if (!user) error(401, m.unauthorized());
+
+		const [rotation] = await db
+			.select()
+			.from(courtRotation)
+			.where(eq(courtRotation.id, rotationId));
+
+		if (!rotation) error(404, m.not_found());
+
+		const [tourney] = await db
+			.select()
+			.from(tournament)
+			.where(and(eq(tournament.id, rotation.tournamentId), eq(tournament.orgId, user.id)));
+
+		if (!tourney) error(404, m.tournament_not_found());
+		if (tourney.status !== 'active' || rotation.roundNumber !== (tourney.currentRound || 0)) {
+			error(400, m.err_court_read_only());
+		}
+
+		await db
+			.update(courtRotation)
+			.set({ manualRankOrder: playerIds })
+			.where(eq(courtRotation.id, rotationId));
+
+		getTournamentData({ tournamentId: tourney.id }).refresh();
 
 		return { success: true };
 	}
@@ -676,7 +771,7 @@ export const retirePlayer = command(
 			.where(eq(tournament.id, tournamentId));
 
 		if (isFrozenCourt) {
-			getTournamentData(tournamentId).refresh();
+			getTournamentData({ tournamentId }).refresh();
 			return { success: true };
 		}
 
@@ -885,7 +980,7 @@ export const retirePlayer = command(
 			.set({ lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentData(tournamentId).refresh();
+		getTournamentData({ tournamentId }).refresh();
 
 		return { success: true };
 	}
@@ -1055,7 +1150,7 @@ export const reportInjury = command(
 			.set({ lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentData(tournamentId).refresh();
+		getTournamentData({ tournamentId }).refresh();
 
 		return { success: true };
 	}
@@ -1386,7 +1481,7 @@ export const undoRetirement = command(
 			.set({ lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentData(tournamentId).refresh();
+		getTournamentData({ tournamentId }).refresh();
 
 		return { success: true };
 	}
@@ -1529,7 +1624,7 @@ export const undoInjury = command(
 			})
 			.where(eq(player.id, playerId));
 
-		getTournamentData(tournamentId).refresh();
+		getTournamentData({ tournamentId }).refresh();
 
 		return { success: true };
 	}

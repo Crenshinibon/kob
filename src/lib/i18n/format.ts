@@ -14,3 +14,22 @@ export function formatDate(date: Date, locale: string): string {
 export function formatNumber(num: number, locale: string): string {
 	return new Intl.NumberFormat(locale).format(num);
 }
+
+/** Round to at most 2 decimal places, avoiding floating-point noise */
+export function roundToMax2Decimals(value: number): number {
+	return Math.round(value * 100) / 100;
+}
+
+/** Format a point value for display (max 2 decimals, strip trailing zeros) */
+export function formatPoints(value: number): string {
+	const rounded = roundToMax2Decimals(value);
+	if (Number.isInteger(rounded)) return String(rounded);
+	return rounded.toFixed(2).replace(/\.?0+$/, '');
+}
+
+/** Format a differential value with + prefix for positive values */
+export function formatDiff(value: number): string {
+	const formatted = formatPoints(value);
+	if (value > 0) return `+${formatted}`;
+	return formatted;
+}

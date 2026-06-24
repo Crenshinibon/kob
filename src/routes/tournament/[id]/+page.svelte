@@ -6,6 +6,8 @@
 		closeRoundForm,
 		deleteTournamentForm,
 		updateScoringOverrides,
+		updateTieBreakConfig,
+		updateManualRankOrder,
 		retirePlayer,
 		reportInjury,
 		undoRetirement,
@@ -13,8 +15,9 @@
 		setCourtLabel
 	} from './tournament-actions.remote';
 	import { resolve } from '$app/paths';
-	import { getEffectiveScoring, getMinPointsForSet, getScoringLabel } from '$lib/tournament-logic';
+	import { getEffectiveScoring, getMinPointsForSet, getScoringLabel, DEFAULT_TIE_BREAK_CONFIG, normalizeTieBreakConfig, type TieBreakConfig, type TieBreakFactorId } from '$lib/tournament-logic';
 	import CourtQRCode from '$lib/components/CourtQRCode.svelte';
+	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
 
 	let { data } = $props<{
 		data: {
@@ -35,7 +38,14 @@
 		};
 	}>();
 
-	const tournamentQuery = $derived(getTournamentData(data.tournamentId));
+	let viewRound = $state<number | null>(null);
+
+	const tournamentQuery = $derived(
+		getTournamentData({
+			tournamentId: data.tournamentId,
+			viewRound: viewRound ?? undefined
+		})
+	);
 
 	$effect(() => {
 		const interval = setInterval(() => {
@@ -45,6 +55,58 @@
 	});
 
 	let editingScoring = $state(false);
+	let editingTieBreak = $state(false);
+	let localTieBreakFactors = $state<{ id: TieBreakFactorId; enabled: boolean }[]>(
+		DEFAULT_TIE_BREAK_CONFIG.factors.map((f) => ({ id: f.id, enabled: f.enabled }))
+	);
+
+	function tieBreakFactorLabel(id: TieBreakFactorId): string {
+		const labels: Record<TieBreakFactorId, () => string> = {
+			round_points: m.tie_break_factor_round_points,
+			round_diff: m.tie_break_factor_round_diff,
+			total_points: m.tie_break_factor_total_points,
+			total_diff: m.tie_break_factor_total_diff,
+			initial_order: m.tie_break_factor_initial_order,
+			dice: m.tie_break_factor_dice,
+			manual: m.tie_break_factor_manual
+		};
+		return labels[id]();
+	}
+
+	function moveTieBreakFactor(index: number, direction: -1 | 1) {
+		const next = index + direction;
+		if (next < 0 || next >= localTieBreakFactors.length) return;
+		const copy = [...localTieBreakFactors];
+		[copy[index], copy[next]] = [copy[next], copy[index]];
+		localTieBreakFactors = copy;
+	}
+
+	async function saveTieBreakConfig(tournamentId: number) {
+		await updateTieBreakConfig({ tournamentId, factors: localTieBreakFactors });
+		editingTieBreak = false;
+	}
+
+	function moveManualRank(
+		court: CourtDisplayData,
+		playerId: number,
+		direction: -1 | 1
+	) {
+		const order =
+			court.manualRankOrder?.length === court.players.length
+				? [...court.manualRankOrder]
+				: court.players.map((p) => p.id);
+		const idx = order.indexOf(playerId);
+		const next = idx + direction;
+		if (idx === -1 || next < 0 || next >= order.length) return;
+		[order[idx], order[next]] = [order[next], order[idx]];
+		updateManualRankOrder({ rotationId: court.rotationId, playerIds: order });
+	}
+
+	const manualTieBreakEnabled = $derived(
+		normalizeTieBreakConfig(
+			(tournamentQuery.current?.tournament?.tieBreakConfig as TieBreakConfig | null) ?? null
+		).factors.some((f) => f.id === 'manual' && f.enabled)
+	);
 	let localOverrides = $state<
 		Record<
 			string,
@@ -133,6 +195,10 @@
 	{@const tournament = state?.tournament}
 	{@const courts = state?.courts ?? []}
 	{@const currentRound = state?.currentRound ?? 0}
+	{@const viewRoundNum = state?.viewRound ?? currentRound}
+	{@const isViewingPastRound = state?.isViewingPastRound ?? false}
+	{@const isViewingCurrentRound = state?.isViewingCurrentRound ?? true}
+	{@const totalRounds = state?.totalRounds ?? tournament?.numRounds ?? 0}
 	{@const canCloseRound = state?.canCloseRound ?? false}
 	{@const isFinalRound = state?.isFinalRound ?? false}
 	{@const hasScores = state?.hasScores ?? false}
@@ -191,7 +257,44 @@
 				>
 			</header>
 
-			{#if isActive && currentRound > 0}
+			{#if totalRounds > 0}
+				<nav class="round-stepper" aria-label={m.round_stepper_label()}>
+					{#each Array.from({ length: totalRounds }, (_, i) => i + 1) as roundNum (roundNum)}
+						{@const isFuture = isActive && roundNum > currentRound}
+						{@const isSelected = roundNum === viewRoundNum}
+						{@const isComplete = !isActive || roundNum < currentRound}
+						{#if roundNum > 1}
+							<span class="stepper-arrow" aria-hidden="true">→</span>
+						{/if}
+						<button
+							type="button"
+							class="stepper-step"
+							class:selected={isSelected}
+							class:complete={isComplete}
+							class:current={isActive && roundNum === currentRound}
+							disabled={isFuture}
+							onclick={() => {
+								viewRound = roundNum;
+							}}
+						>
+							{m.round_stepper_round({ n: roundNum })}
+						</button>
+					{/each}
+				</nav>
+			{/if}
+
+			{#if isViewingPastRound}
+				<div class="past-round-banner">
+					<p>{m.viewing_past_round({ round: viewRoundNum })}</p>
+					{#if isActive}
+						<button type="button" class="btn-link" onclick={() => (viewRound = currentRound)}>
+							{m.back_to_current_round()}
+						</button>
+					{/if}
+				</div>
+			{/if}
+
+			{#if isActive && currentRound > 0 && isViewingCurrentRound}
 				<div class="scheduling-info">
 					<h3>{m.court_scheduling({ round: currentRound })}</h3>
 					<p>
@@ -278,14 +381,33 @@
 						{/if}
 
 						<div class="players">
-							{#each court.players as p, i (p.id)}
-								<span class="player" class:retired={p.retired}>
-									{String.fromCharCode(65 + i)}: {p.name}
-									{#if p.retired}
-										<span class="retired-badge">{m.retired_badge()}</span>
-									{/if}
-								</span>
-							{/each}
+							{#if court.standings.length > 0}
+								<h4 class="court-standings-heading">{m.court_standings_heading()}</h4>
+								{#each court.standings as s (s.playerId)}
+									<span class="player standing-entry" class:retired={court.players.find((p) => p.id === s.playerId)?.retired}>
+										<span class="standing-rank">{s.rank}.</span>
+										<span class="standing-name">{s.name}</span>
+										{#if court.players.find((p) => p.id === s.playerId)?.retired}
+											<span class="retired-badge">{m.retired_badge()}</span>
+										{/if}
+										<TieBreakFactorIcons
+											enabledFactors={s.enabledFactors}
+											winningFactors={s.winningFactors}
+											decidingFactor={s.decidingFactor}
+											getLabel={tieBreakFactorLabel}
+										/>
+									</span>
+								{/each}
+							{:else}
+								{#each court.players as p, i (p.id)}
+									<span class="player" class:retired={p.retired}>
+										{String.fromCharCode(65 + i)}: {p.name}
+										{#if p.retired}
+											<span class="retired-badge">{m.retired_badge()}</span>
+										{/if}
+									</span>
+								{/each}
+							{/if}
 						</div>
 
 						{#if court.token}
@@ -293,6 +415,34 @@
 								<a href={resolve('/court/[token]', { token: String(court.token) })} target="_blank"
 									>{m.open_court_page()}</a
 								>
+							</div>
+						{/if}
+
+						{#if manualTieBreakEnabled && isViewingCurrentRound && court.players.length > 1}
+							<div class="manual-rank">
+								<h4>{m.manual_rank_heading()}</h4>
+								<ul>
+									{#each (court.manualRankOrder?.length === court.players.length ? court.manualRankOrder : court.players.map((p) => p.id)) as pid, mi (pid)}
+										{@const pname = court.players.find((p) => p.id === pid)?.name ?? ''}
+										<li>
+											<span>{mi + 1}. {pname}</span>
+											<button
+												type="button"
+												class="btn-small"
+												disabled={mi === 0}
+												onclick={() => moveManualRank(court, pid, -1)}
+												>{m.manual_rank_move_up()}</button
+											>
+											<button
+												type="button"
+												class="btn-small"
+												disabled={mi === court.players.length - 1}
+												onclick={() => moveManualRank(court, pid, 1)}
+												>{m.manual_rank_move_down()}</button
+											>
+										</li>
+									{/each}
+								</ul>
 							</div>
 						{/if}
 					</div>
@@ -317,15 +467,17 @@
 			{/if}
 
 			<section class="actions">
-				{#if canCloseRound}
-					<form {...closeRoundForm}>
-						<input {...closeRoundForm.fields.tournamentId.as('hidden', tournament.id)} />
-						<button type="submit" class="btn-primary">
-							{isFinalRound ? m.finalize_tournament() : m.close_round()}
-						</button>
-					</form>
-				{:else if isActive}
-					<button disabled class="btn-primary btn-disabled">{m.waiting_scores()}</button>
+				{#if isViewingCurrentRound}
+					{#if canCloseRound}
+						<form {...closeRoundForm}>
+							<input {...closeRoundForm.fields.tournamentId.as('hidden', tournament.id)} />
+							<button type="submit" class="btn-primary">
+								{isFinalRound ? m.finalize_tournament() : m.close_round()}
+							</button>
+						</form>
+					{:else if isActive}
+						<button disabled class="btn-primary btn-disabled">{m.waiting_scores()}</button>
+					{/if}
 				{/if}
 
 				{#if tournament.status !== 'completed'}
@@ -347,7 +499,7 @@
 				{/if}
 			</section>
 
-			{#if isActive && courtSizes.length > 0}
+			{#if isActive && isViewingCurrentRound && courtSizes.length > 0}
 				<section class="scoring-section">
 					<details>
 						<summary class="scoring-header">{m.scoring_heading()}</summary>
@@ -543,7 +695,62 @@
 				</section>
 			{/if}
 
-			{#if isActive && currentRound > 0 && !hasScores}
+			{#if isActive && isViewingCurrentRound}
+				<section class="tie-break-section">
+					<details>
+						<summary class="scoring-header">{m.tie_break_heading()}</summary>
+						<p class="scoring-note">{m.tie_break_hint()}</p>
+						<ul class="tie-break-list">
+							{#each localTieBreakFactors as factor, fi (factor.id)}
+								<li class="tie-break-item">
+									<label>
+										<input
+											type="checkbox"
+											checked={factor.enabled}
+											onchange={(e) => {
+												localTieBreakFactors = localTieBreakFactors.map((f, i) =>
+													i === fi ? { ...f, enabled: e.currentTarget.checked } : f
+												);
+												editingTieBreak = true;
+											}}
+										/>
+										{tieBreakFactorLabel(factor.id)}
+									</label>
+									<div class="tie-break-actions">
+										<button
+											type="button"
+											class="btn-small"
+											disabled={fi === 0}
+											onclick={() => {
+												moveTieBreakFactor(fi, -1);
+												editingTieBreak = true;
+											}}>{m.tie_break_move_up()}</button
+										>
+										<button
+											type="button"
+											class="btn-small"
+											disabled={fi === localTieBreakFactors.length - 1}
+											onclick={() => {
+												moveTieBreakFactor(fi, 1);
+												editingTieBreak = true;
+											}}>{m.tie_break_move_down()}</button
+										>
+									</div>
+								</li>
+							{/each}
+						</ul>
+						{#if editingTieBreak}
+							<button
+								type="button"
+								class="btn-primary"
+								onclick={() => saveTieBreakConfig(tournament.id)}>{m.tie_break_save()}</button
+							>
+						{/if}
+					</details>
+				</section>
+			{/if}
+
+			{#if isActive && isViewingCurrentRound && currentRound > 0 && !hasScores}
 				<section class="retire-section">
 					<details>
 						<summary class="btn-retire-header">{m.retire_player()}</summary>
@@ -662,7 +869,7 @@
 				</section>
 			{/if}
 
-			{#if isActive && currentRound > 0 && hasScores && !allCourtsComplete}
+			{#if isActive && isViewingCurrentRound && currentRound > 0 && hasScores && !allCourtsComplete}
 				<section class="injury-section">
 					<details>
 						<summary class="btn-injury-header">{m.report_injury()}</summary>
@@ -782,7 +989,7 @@
 				</section>
 			{/if}
 
-			{#if isActive && currentRound > 0 && hasScores && allCourtsComplete}
+			{#if isActive && isViewingCurrentRound && currentRound > 0 && hasScores && allCourtsComplete}
 				<section class="injury-section">
 					<details>
 						<summary class="btn-injury-header">{m.report_injury()}</summary>
@@ -948,6 +1155,32 @@
 		border-radius: 4px;
 		align-self: flex-start;
 		line-height: 1.4;
+	}
+
+	.court-standings-heading {
+		width: 100%;
+		margin: 0 0 var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		font-weight: 600;
+	}
+
+	.standing-entry {
+		display: inline-flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--spacing-xs);
+		font-size: var(--font-size-base);
+	}
+
+	.standing-rank {
+		font-weight: 700;
+		color: var(--accent-info);
+		min-width: 1.25rem;
+	}
+
+	.standing-name {
+		font-weight: 600;
 	}
 
 	.qr-link a {
@@ -1507,5 +1740,136 @@
 		font-size: var(--font-size-xs);
 		color: var(--text-muted);
 		font-weight: 400;
+	}
+
+	.round-stepper {
+		display: flex;
+		align-items: center;
+		justify-content: stretch;
+		width: 100%;
+		gap: var(--spacing-xs);
+		margin: var(--spacing-md) 0;
+		padding: var(--spacing-sm);
+		background-color: var(--bg-secondary);
+		border-radius: var(--radius-md);
+		overflow-x: auto;
+	}
+
+	.stepper-step {
+		flex: 1;
+		min-width: 4.5rem;
+		padding: var(--spacing-sm) var(--spacing-md);
+		border: 2px solid var(--border-color);
+		border-radius: var(--radius-sm);
+		background-color: var(--bg-primary);
+		color: var(--text-secondary);
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		white-space: nowrap;
+	}
+
+	.stepper-step:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.stepper-step.selected {
+		border-color: var(--accent-info);
+		color: var(--text-primary);
+		background-color: color-mix(in srgb, var(--accent-info) 15%, var(--bg-primary));
+	}
+
+	.stepper-step.current {
+		border-color: var(--accent-success);
+	}
+
+	.stepper-step.complete:not(.selected) {
+		border-color: var(--accent-success);
+		color: var(--accent-success);
+	}
+
+	.stepper-arrow {
+		color: var(--text-muted);
+		font-size: var(--font-size-sm);
+		flex-shrink: 0;
+	}
+
+	.past-round-banner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--spacing-md);
+		padding: var(--spacing-sm) var(--spacing-md);
+		margin-bottom: var(--spacing-md);
+		background-color: color-mix(in srgb, var(--accent-info) 12%, var(--bg-secondary));
+		border: 1px solid var(--accent-info);
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-sm);
+	}
+
+	.btn-link {
+		background: none;
+		border: none;
+		color: var(--accent-info);
+		cursor: pointer;
+		font-weight: 600;
+		text-decoration: underline;
+	}
+
+	.tie-break-list {
+		list-style: none;
+		padding: 0;
+		margin: var(--spacing-md) 0;
+	}
+
+	.tie-break-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-xs) 0;
+		border-bottom: 1px solid var(--border-color);
+	}
+
+	.tie-break-actions {
+		display: flex;
+		gap: var(--spacing-xs);
+	}
+
+	.btn-small {
+		padding: 2px 8px;
+		font-size: var(--font-size-xs);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-sm);
+		background: var(--bg-primary);
+		color: var(--text-primary);
+		cursor: pointer;
+	}
+
+	.btn-small:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.manual-rank {
+		margin-top: var(--spacing-sm);
+		padding-top: var(--spacing-sm);
+		border-top: 1px dashed var(--border-color);
+	}
+
+	.manual-rank ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.manual-rank li {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		margin-bottom: var(--spacing-xs);
 	}
 </style>

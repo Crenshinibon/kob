@@ -17,6 +17,11 @@ import {
 	type MatchSetScore,
 	type FrozenCourt
 } from '$lib/server/tournament-logic';
+import {
+	buildCompletedRoundsBefore,
+	computeExplainedStandings,
+	type ExplainedCourtStanding
+} from '$lib/server/court-standings-service';
 import { formatDuration } from '$lib/i18n/format';
 
 export interface CourtDisplayData {
@@ -32,6 +37,9 @@ export interface CourtDisplayData {
 	waitLabel?: string;
 	isComplete: boolean;
 	courtId: number;
+	rotationId: number;
+	manualRankOrder: number[] | null;
+	standings: ExplainedCourtStanding[];
 }
 
 export interface TournamentDisplayData {
@@ -42,6 +50,10 @@ export interface TournamentDisplayData {
 	hasScores: boolean;
 	courtSizes: number[];
 	currentRound: number;
+	viewRound: number;
+	isViewingPastRound: boolean;
+	isViewingCurrentRound: boolean;
+	totalRounds: number;
 	physicalCourtCount: number;
 	shifts: number[][];
 	roundDuration: number;
@@ -66,7 +78,10 @@ function parseCourtSizes(tourney: typeof tournament.$inferSelect): number[] {
 		: calculateCourtSizes(tourney.playerCount);
 }
 
-async function fetchTournamentData(tournamentId: number): Promise<TournamentDisplayData> {
+async function fetchTournamentData(
+	tournamentId: number,
+	viewRoundInput?: number
+): Promise<TournamentDisplayData> {
 	const [tourney] = await db.select().from(tournament).where(eq(tournament.id, tournamentId));
 
 	if (!tourney) {
@@ -75,6 +90,15 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 
 	const currentRound = tourney.currentRound || 0;
 	const courtSizes: number[] = parseCourtSizes(tourney);
+	const totalRounds = tourney.numRounds;
+	const maxViewableRound =
+		tourney.status === 'completed' ? totalRounds : Math.max(currentRound, 1);
+	const viewRound = Math.min(
+		Math.max(viewRoundInput ?? (currentRound === 0 ? 1 : currentRound), 1),
+		maxViewableRound
+	);
+	const isViewingPastRound = currentRound > 0 && viewRound < currentRound;
+	const isViewingCurrentRound = viewRound === currentRound && tourney.status === 'active';
 
 	const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
 	const players = dbPlayers.map((p) => ({
@@ -96,20 +120,21 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		}));
 	const activePlayerCount = dbPlayers.filter((p) => !p.retiredAt).length;
 
-	const displayRound = currentRound === 0 ? 1 : currentRound;
-	const rotations = await db
+	const displayRound = viewRound;
+	const allRotations = await db
 		.select()
 		.from(courtRotation)
-		.where(
-			and(eq(courtRotation.tournamentId, tournamentId), eq(courtRotation.roundNumber, displayRound))
-		)
-		.orderBy(courtRotation.courtNumber);
+		.where(eq(courtRotation.tournamentId, tournamentId));
+
+	const rotations = allRotations
+		.filter((r) => r.roundNumber === displayRound)
+		.sort((a, b) => a.courtNumber - b.courtNumber);
 
 	let canCloseRound = false;
 	let isFinalRound = false;
 	let hasScores = false;
 
-	if (currentRound > 0) {
+	if (currentRound > 0 && isViewingCurrentRound) {
 		isFinalRound = currentRound >= tourney.numRounds;
 
 		if (rotations.length > 0) {
@@ -141,6 +166,22 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 
 	const playerMap = new Map<number, (typeof dbPlayers)[0]>();
 	for (const p of dbPlayers) playerMap.set(p.id, p);
+
+	const logicPlayers = dbPlayers.map((p) => ({
+		id: p.id,
+		name: p.name,
+		seedPoints: p.seedPoints,
+		seedRank: p.seedRank
+	}));
+
+	const completedRounds = await buildCompletedRoundsBefore(
+		tournamentId,
+		displayRound,
+		courtSizes,
+		logicPlayers,
+		tourney.tieBreakConfig ?? null,
+		allRotations
+	);
 
 	const courts: CourtDisplayData[] = [];
 	for (const rotation of rotations) {
@@ -189,6 +230,33 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 			courtMatchGroups.size >= matchCountForCourtSize(size) &&
 			[...courtMatchGroups.values()].every((group) => isMatchComplete(group));
 
+		const playerNameMap = new Map(playerIds.map((id) => [id, playerMap.get(id)?.name ?? '']));
+		const matchData = matches.map((m) => ({
+			teamAPlayer1Id: m.teamAPlayer1Id,
+			teamAPlayer2Id: m.teamAPlayer2Id,
+			teamBPlayer1Id: m.teamBPlayer1Id,
+			teamBPlayer2Id: m.teamBPlayer2Id,
+			teamAScore: m.teamAScore,
+			teamBScore: m.teamBScore,
+			isCanceled: m.isCanceled ?? false,
+			injuredPlayerIds: m.injuredPlayerIds ?? undefined
+		}));
+
+		const standings =
+			matchData.some((m) => m.teamAScore !== null)
+				? computeExplainedStandings({
+						matchData,
+						playerIds,
+						playerNames: playerNameMap,
+						tourney,
+						players: dbPlayers,
+						completedRounds,
+						courtSizes,
+						courtNumber: rotation.courtNumber,
+						manualRankOrder: rotation.manualRankOrder
+					})
+				: [];
+
 		courts.push({
 			courtNumber: rotation.courtNumber,
 			courtSize: size,
@@ -196,7 +264,10 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 			token: rotation.token ?? null,
 			label: access[0]?.label ?? null,
 			courtId: access[0]?.id ?? rotation.courtId,
+			rotationId: rotation.id,
+			manualRankOrder: rotation.manualRankOrder ?? null,
 			players: rotationPlayers,
+			standings,
 			isComplete
 		});
 	}
@@ -252,6 +323,10 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 		hasScores,
 		courtSizes,
 		currentRound,
+		viewRound,
+		isViewingPastRound,
+		isViewingCurrentRound,
+		totalRounds,
 		physicalCourtCount,
 		shifts,
 		roundDuration,
@@ -263,6 +338,11 @@ async function fetchTournamentData(tournamentId: number): Promise<TournamentDisp
 	};
 }
 
-export const getTournamentData = query(v.number(), async (tournamentId) => {
-	return fetchTournamentData(tournamentId);
+const tournamentDataInputSchema = v.object({
+	tournamentId: v.number(),
+	viewRound: v.optional(v.number())
+});
+
+export const getTournamentData = query(tournamentDataInputSchema, async ({ tournamentId, viewRound }) => {
+	return fetchTournamentData(tournamentId, viewRound);
 });

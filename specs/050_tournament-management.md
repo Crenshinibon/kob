@@ -56,6 +56,7 @@ Combined form with:
 
 ### Tournament View (`/tournament/[id]`)
 
+- **Round stepper** (full width): `Round 1 → Round 2 → …` — browse past rounds; court links work, past scores read-only. See **[093_round-history-stepper.md](./093_round-history-stepper.md)**.
 - Tournament name and status
 - Court cards showing:
   - Court number and size badge (3p/4p/5p/6p)
