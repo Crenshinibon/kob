@@ -279,7 +279,7 @@
 	"tie_break_factor_round_diff": "Diff this round",
 	"tie_break_factor_total_points": "Total points",
 	"tie_break_factor_total_diff": "Total diff",
-	"tie_break_factor_initial_order": "Initial order",
+	"tie_break_factor_initial_order": "Seeding",
 	"tie_break_factor_dice": "Dice (random)",
 	"tie_break_factor_manual": "Manual (organizer)",
 	"tie_break_move_up": "Move up",

@@ -279,7 +279,7 @@
 	"tie_break_factor_round_diff": "Diff esta ronda",
 	"tie_break_factor_total_points": "Puntos totales",
 	"tie_break_factor_total_diff": "Diff total",
-	"tie_break_factor_initial_order": "Orden inicial",
+	"tie_break_factor_initial_order": "Seeding",
 	"tie_break_factor_dice": "Dado (aleatorio)",
 	"tie_break_factor_manual": "Manual (organizador)",
 	"tie_break_move_up": "Subir",

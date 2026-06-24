@@ -54,7 +54,7 @@ This is a special case — when `players_per_tier == court_size`, tiers map 1:1 
 
 The weakest 1st-place player lands on Court 2, not Court 1.
 
-**Tie-breaking for seeding**: Configurable per tournament — default: round points → round diff → total points → total diff → initial order. See **[094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md)**.
+**Tie-breaking for seeding**: Configurable per tournament — default: round points → round diff → total points → total diff → seeding. See **[094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md)**.
 
 ### Random Seed Examples
 

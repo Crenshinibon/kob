@@ -279,7 +279,7 @@
 	"tie_break_factor_round_diff": "Diff ce tour",
 	"tie_break_factor_total_points": "Points totaux",
 	"tie_break_factor_total_diff": "Diff totale",
-	"tie_break_factor_initial_order": "Ordre initial",
+	"tie_break_factor_initial_order": "Seeding",
 	"tie_break_factor_dice": "Dé (aléatoire)",
 	"tie_break_factor_manual": "Manuel (organisateur)",
 	"tie_break_move_up": "Monter",

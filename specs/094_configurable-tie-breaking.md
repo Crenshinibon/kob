@@ -19,7 +19,7 @@ This spec defines **configurable, reorderable tie-break factors** stored per tou
 | `round_diff` | Diff This Round | Point differential this round on this court. Normalized to **average diff per game** on 5p/6p / canceled courts. |
 | `total_points` | Total Points | Sum of per-round point contributions across all completed rounds **plus** the round being ranked. Each 5p/6p round contributes `roundRawPoints / 3` (3 = standard games per round). Standard 4p rounds contribute raw round points. |
 | `total_diff` | Total Diff | Sum of raw point differentials across all rounds (no per-game normalization). |
-| `initial_order` | Initial Order | Lower `playerId` wins (deterministic). For preseed with `seedRank`, lower `seedRank` wins; ties fall back to `playerId`. |
+| `initial_order` | Seeding | Lower `playerId` wins (deterministic). For preseed with `seedRank`, lower `seedRank` wins; ties fall back to `playerId`. |
 | `dice` | Dice | When still tied after all prior **enabled** factors, pick a random ordering among the tied group. Uses injected RNG (tests use seeded RNG). |
 | `manual` | Manual | Organizer-defined order for tied players on a court before closing the round. Stored as `manual_rank_order` on `court_rotation`. Lower index = better rank. |
 
@@ -190,7 +190,7 @@ Dedicated `describe('tie-break ranking')` with cases for:
 4. **5p round_points** — averages vs totals.
 5. **5p total_points** — raw sum/3 contribution to cumulative.
 6. **total_diff** — cumulative diff breaks tie when round stats equal.
-7. **initial_order** — playerId tiebreak.
+7. **Seeding** — playerId / seed rank tiebreak.
 8. **dice** — seeded RNG produces deterministic shuffle among equals.
 9. **manual** — manual_rank_order overrides automatic tie.
 10. **Combined** — realistic multi-factor scenarios (e.g. equal round points, diff differs on total).

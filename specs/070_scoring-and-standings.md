@@ -23,7 +23,7 @@ Tiebreaker order (default — see **[094_configurable-tie-breaking.md](./094_con
 2. Diff this round (average on 5p/6p / canceled courts)
 3. Total points (5p/6p rounds contribute `roundRaw/3`)
 4. Total diff (cumulative)
-5. Initial order (player ID / seed rank)
+5. Seeding (player ID / seed rank)
 
 Optional org factors: **dice** (random among tied), **manual** (org-defined order).
 
