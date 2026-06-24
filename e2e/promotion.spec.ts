@@ -159,14 +159,9 @@ test.describe('Promotion and Relegation', () => {
 
 		for (let i = 0; i < 4; i++) {
 			await page.goto(round2Links[i]);
-			await page.waitForSelector('.standings tbody tr');
-			const rows = await page.locator('.standings tbody tr').all();
-			const playerNames: string[] = [];
-			for (const row of rows) {
-				const name = await row.locator('td:nth-child(2)').textContent();
-				if (name) playerNames.push(name);
-			}
-			round2Courts.push(playerNames);
+			await page.waitForSelector('.player-card');
+			const playerNames = await page.locator('.player-card .player-name').allTextContents();
+			round2Courts.push(playerNames.map((n) => n.trim()).filter((n) => n.length > 0));
 		}
 
 		// Verify we have 4 courts with 4 players each
@@ -430,8 +425,8 @@ test.describe('Promotion and Relegation', () => {
 
 		for (let i = 0; i < 4; i++) {
 			await page.goto(round2Links[i]);
-			await page.waitForSelector('.standings tbody tr');
-			const playerCount = await page.locator('.standings tbody tr').count();
+			await page.waitForSelector('.player-card');
+			const playerCount = await page.locator('.player-card').count();
 			expect(playerCount).toBe(4);
 		}
 	});
@@ -506,8 +501,8 @@ test.describe('Promotion and Relegation', () => {
 			const threePCourtLink = threePCourtCard.locator('.qr-link a').first();
 			const threePCourtUrl = await threePCourtLink.getAttribute('href');
 			await page.goto(threePCourtUrl || '');
-			await page.waitForSelector('.standings tbody tr');
-			const playerCount = await page.locator('.standings tbody tr').count();
+			await page.waitForSelector('.player-card');
+			const playerCount = await page.locator('.player-card').count();
 			expect(playerCount).toBe(3);
 		});
 
@@ -581,8 +576,8 @@ test.describe('Promotion and Relegation', () => {
 			const fivePCourtLink = fivePCourtCard.locator('.qr-link a').first();
 			const fivePCourtUrl = await fivePCourtLink.getAttribute('href');
 			await page.goto(fivePCourtUrl || '');
-			await page.waitForSelector('.standings tbody tr');
-			const playerCount = await page.locator('.standings tbody tr').count();
+			await page.waitForSelector('.player-card');
+			const playerCount = await page.locator('.player-card').count();
 			expect(playerCount).toBe(5);
 		});
 
@@ -654,8 +649,8 @@ test.describe('Promotion and Relegation', () => {
 			const sixPCourtLink = sixPCourtCard.locator('.qr-link a').first();
 			const sixPCourtUrl = await sixPCourtLink.getAttribute('href');
 			await page.goto(sixPCourtUrl || '');
-			await page.waitForSelector('.standings tbody tr');
-			const playerCount = await page.locator('.standings tbody tr').count();
+			await page.waitForSelector('.player-card');
+			const playerCount = await page.locator('.player-card').count();
 			expect(playerCount).toBe(6);
 		});
 	});

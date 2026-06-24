@@ -50,6 +50,18 @@ test.describe('Standings Calculation', () => {
 		testTournamentNames.length = 0;
 	});
 
+	async function enterOneScore(page: import('@playwright/test').Page): Promise<void> {
+		await page.waitForSelector('[data-testid^="match-form-"]');
+		const firstForm = page.locator('[data-testid^="match-form-"]').first();
+		const testId = await firstForm.getAttribute('data-testid');
+		const matchId = testId?.replace('match-form-', '');
+		if (!matchId) throw new Error('No match form found');
+		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
+		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
+		await page.click(`[data-testid="save-score-${matchId}"]`);
+		await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
+	}
+
 	test('calculates correct points for all players in a match', async ({ page }) => {
 		const tournamentName = `Standings Test ${Date.now()}`;
 		testTournamentNames.push(tournamentName);
@@ -118,8 +130,8 @@ test.describe('Standings Calculation', () => {
 
 		expect(rows.length).toBe(4);
 
-		const firstPoints = await rows[0].locator('td:nth-child(3)').textContent();
-		const secondPoints = await rows[1].locator('td:nth-child(3)').textContent();
+		const firstPoints = await rows[0].locator('td:nth-last-child(2)').textContent();
+		const secondPoints = await rows[1].locator('td:nth-last-child(2)').textContent();
 		expect(parseInt(firstPoints || '0')).toBeGreaterThanOrEqual(parseInt(secondPoints || '0'));
 	});
 
@@ -199,7 +211,7 @@ test.describe('Standings Calculation', () => {
 		await page.waitForSelector('.standings tbody tr');
 		const rows = await page.locator('.standings tbody tr').all();
 
-		const topPlayerPoints = await rows[0].locator('td:nth-child(3)').textContent();
+		const topPlayerPoints = await rows[0].locator('td:nth-last-child(2)').textContent();
 		expect(parseInt(topPlayerPoints || '0')).toBeGreaterThan(60);
 	});
 
@@ -276,6 +288,9 @@ test.describe('Standings Calculation', () => {
 			const courtUrl = await courtLink.getAttribute('href');
 			await page.goto(courtUrl || '');
 
+			// Enter one score so standings render
+			await enterOneScore(page);
+
 			// 3p court should have 3 players in standings
 			await page.waitForSelector('.standings tbody tr');
 			const playerCount = await page.locator('.standings tbody tr').count();
@@ -307,6 +322,9 @@ test.describe('Standings Calculation', () => {
 			const courtUrl = await courtLink.getAttribute('href');
 			await page.goto(courtUrl || '');
 
+			// Enter one score so standings render
+			await enterOneScore(page);
+
 			// 5p court should have 5 players in standings
 			await page.waitForSelector('.standings tbody tr');
 			const playerCount = await page.locator('.standings tbody tr').count();
@@ -337,6 +355,9 @@ test.describe('Standings Calculation', () => {
 			const courtLink = page.locator('.qr-link a').last();
 			const courtUrl = await courtLink.getAttribute('href');
 			await page.goto(courtUrl || '');
+
+			// Enter one score so standings render
+			await enterOneScore(page);
 
 			// 6p court should have 6 players in standings
 			await page.waitForSelector('.standings tbody tr');
@@ -396,8 +417,8 @@ test.describe('Standings Calculation', () => {
 			expect(rows.length).toBe(3);
 
 			// First player should have highest points
-			const firstPoints = await rows[0].locator('td:nth-child(3)').textContent();
-			const secondPoints = await rows[1].locator('td:nth-child(3)').textContent();
+			const firstPoints = await rows[0].locator('td:nth-last-child(2)').textContent();
+			const secondPoints = await rows[1].locator('td:nth-last-child(2)').textContent();
 			expect(parseInt(firstPoints || '0')).toBeGreaterThanOrEqual(parseInt(secondPoints || '0'));
 		});
 

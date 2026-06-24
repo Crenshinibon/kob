@@ -181,7 +181,7 @@ test.describe('Preseed Frozen Courts (20 players, 5 courts)', () => {
 		await expect(frozenSection).toBeVisible({ timeout: 10000 });
 
 		const frozenBadge = page.locator('.frozen-badge');
-		await expect(frozenBadge).toContainText('Court 5');
+		await expect(frozenBadge).toContainText('Group 5');
 
 		const r3Links = await getCourtLinks(page, tid);
 		expect(r3Links.length).toBe(4);

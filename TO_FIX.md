@@ -2,6 +2,11 @@
 
 ## ToDo
 
+- [] Make Standings page visible without auth
+- [] For manual tiebreak, enable only when there all previous factors are exhausted and did not yield result.
+- [] The manual tie breaking should only be possible between players who are on "the same level". Meaning all other options didn't yield an order.
+- [] Also for the Org to manually decide it's important which the other factors where.
+
 ## Done
 
 - [x] There is a strange looking flicker when selecting an option in the tournament create page. Like a very short transition. This look irritating, just remove the transition.

@@ -15,7 +15,15 @@
 		setCourtLabel
 	} from './tournament-actions.remote';
 	import { resolve } from '$app/paths';
-	import { getEffectiveScoring, getMinPointsForSet, getScoringLabel, DEFAULT_TIE_BREAK_CONFIG, normalizeTieBreakConfig, type TieBreakConfig, type TieBreakFactorId } from '$lib/tournament-logic';
+	import {
+		getEffectiveScoring,
+		getMinPointsForSet,
+		getScoringLabel,
+		DEFAULT_TIE_BREAK_CONFIG,
+		normalizeTieBreakConfig,
+		type TieBreakConfig,
+		type TieBreakFactorId
+	} from '$lib/tournament-logic';
 	import CourtQRCode from '$lib/components/CourtQRCode.svelte';
 	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
 
@@ -86,11 +94,7 @@
 		editingTieBreak = false;
 	}
 
-	function moveManualRank(
-		court: CourtDisplayData,
-		playerId: number,
-		direction: -1 | 1
-	) {
+	function moveManualRank(court: CourtDisplayData, playerId: number, direction: -1 | 1) {
 		const order =
 			court.manualRankOrder?.length === court.players.length
 				? [...court.manualRankOrder]
@@ -384,7 +388,10 @@
 							{#if court.standings.length > 0}
 								<h4 class="court-standings-heading">{m.court_standings_heading()}</h4>
 								{#each court.standings as s (s.playerId)}
-									<span class="player standing-entry" class:retired={court.players.find((p) => p.id === s.playerId)?.retired}>
+									<span
+										class="player standing-entry"
+										class:retired={court.players.find((p) => p.id === s.playerId)?.retired}
+									>
 										<span class="standing-rank">{s.rank}.</span>
 										<span class="standing-name">{s.name}</span>
 										{#if court.players.find((p) => p.id === s.playerId)?.retired}
@@ -422,7 +429,7 @@
 							<div class="manual-rank">
 								<h4>{m.manual_rank_heading()}</h4>
 								<ul>
-									{#each (court.manualRankOrder?.length === court.players.length ? court.manualRankOrder : court.players.map((p) => p.id)) as pid, mi (pid)}
+									{#each court.manualRankOrder?.length === court.players.length ? court.manualRankOrder : court.players.map((p) => p.id) as pid, mi (pid)}
 										{@const pname = court.players.find((p) => p.id === pid)?.name ?? ''}
 										<li>
 											<span>{mi + 1}. {pname}</span>
@@ -828,6 +835,7 @@
 												? replacementSeedPoints
 												: undefined
 									});
+									await tournamentQuery.refresh();
 									retirePlayerId = 0;
 									retireReason = '';
 									retireUseReplacement = false;

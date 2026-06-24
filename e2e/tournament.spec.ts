@@ -136,7 +136,7 @@ test.describe('Tournament Integration Tests', () => {
 
 			// Verify court page loads with QR code
 			await page.waitForSelector('.qr-section img');
-			await page.waitForSelector('text=Share Court Access');
+			await page.waitForSelector('text=Share Group Access');
 
 			// Get all match IDs on this court
 			await page.waitForSelector('[data-testid^="match-form-"]');
@@ -829,7 +829,7 @@ test.describe('Tournament Integration Tests', () => {
 
 	test.describe('Player Retirement', () => {
 		test('retire a player between rounds and continue tournament', async ({ page }) => {
-			test.setTimeout(60000);
+			test.setTimeout(90000);
 			const tournamentName = `Retire Test ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
@@ -897,8 +897,10 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForTimeout(500);
 			await page.click('.retire-form button', { timeout: 10000 });
 
-			// Wait for retirement to process and live query to refresh fully
+			// Wait for retirement to process and live query to refresh fully.
+			// Reload to guarantee fresh court tokens (retirement regenerates rotations).
 			await page.waitForTimeout(2000);
+			await page.goto(tournamentUrl);
 			await page.waitForSelector('text=Round 2 of 2');
 			await page.waitForSelector('.court-card', { timeout: 10000 });
 			const courtCards = await page.locator('.court-card').count();
@@ -1541,8 +1543,10 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForTimeout(500);
 			await page.click('.retire-form button', { timeout: 10000 });
 
-			// Wait for retirement — should now have 15 players on 3×4p + 1×3p = 4 courts
+			// Wait for retirement — should now have 15 players on 3×4p + 1×3p = 4 courts.
+			// Reload to guarantee fresh court data (retirement regenerates rotations).
 			await page.waitForTimeout(2000);
+			await page.goto(tournamentUrl);
 			await page.waitForSelector('text=Round 2 of 2');
 			const courtCardsAfter = await page.locator('.court-card').count();
 			expect(courtCardsAfter).toBe(4);

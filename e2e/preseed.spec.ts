@@ -98,14 +98,9 @@ test.describe('Preseed Tournament', () => {
 		url: string
 	): Promise<string[]> {
 		await page.goto(url);
-		await page.waitForSelector('.standings tbody tr');
-		const rows = await page.locator('.standings tbody tr').all();
-		const names: string[] = [];
-		for (const row of rows) {
-			const name = await row.locator('td:nth-child(2)').textContent();
-			if (name) names.push(name);
-		}
-		return names;
+		await page.waitForSelector('.player-card');
+		const names = await page.locator('.player-card .player-name').allTextContents();
+		return names.map((n) => n.trim()).filter((n) => n.length > 0);
 	}
 
 	async function getRoundPlayers(

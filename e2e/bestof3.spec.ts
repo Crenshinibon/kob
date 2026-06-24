@@ -11,7 +11,7 @@ async function enterSingleSet(
 	const matchGroup = page.locator('.match-run').nth(matchGroupIndex);
 	const form = matchGroup
 		.locator('[data-testid^="set-form-"]')
-		.filter({ has: matchGroup.locator('[data-testid^="team-a-score-"]') })
+		.filter({ has: page.locator('[data-testid^="team-a-score-"]') })
 		.first();
 
 	await expect(form).toBeVisible({ timeout: 10000 });
