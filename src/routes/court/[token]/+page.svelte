@@ -9,6 +9,7 @@
 	import { createScoreSchema, createSetScoreSchema } from './scoreSchema';
 	import { isDecidingSet, getEffectiveScoring, type TieBreakFactorId } from '$lib/tournament-logic';
 	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
+	import { formatDiff, formatPoints } from '$lib/i18n/format';
 
 	interface MatchRow {
 		id: number;
@@ -801,10 +802,10 @@
 								</td>
 							{/if}
 							{#if data.court.courtSize === 5 || data.court.courtSize === 6}
-								<td>{s.avgPoints?.toFixed(1) ?? '—'}</td>
+								<td>{s.avgPoints != null ? formatPoints(s.avgPoints) : '—'}</td>
 							{/if}
-							<td>{s.points}</td>
-							<td>{s.diff > 0 ? '+' : ''}{s.diff}</td>
+							<td>{formatPoints(s.points)}</td>
+							<td>{formatDiff(s.diff)}</td>
 						</tr>
 					{/each}
 				</tbody>

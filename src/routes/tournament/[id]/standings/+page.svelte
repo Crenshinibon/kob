@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import * as m from '$lib/paraglide/messages';
 	import { localizeHref } from '$lib/paraglide/runtime';
+	import { formatDiff } from '$lib/i18n/format';
 	import { getStandingsData } from './standings-data.remote';
 
 	let { data } = $props<{
@@ -16,8 +17,6 @@
 		}, 5000);
 		return () => clearInterval(interval);
 	});
-
-	const formatNumber = (num: number): string => (num > 0 ? `+${num}` : String(num));
 
 	function getCourtSizeLabel(size: number): string {
 		if (size === 3) return '3p';
@@ -163,7 +162,7 @@
 							<div class="podium-place second">
 								<div class="medal">🥈</div>
 								<div class="player-name">{second.playerName}</div>
-								<div class="diff">{formatNumber(second.totalDiff)}</div>
+								<div class="diff">{formatDiff(second.totalDiff)}</div>
 							</div>
 						{/if}
 
@@ -172,7 +171,7 @@
 								<div class="medal">🥇</div>
 								<div class="crown">👑</div>
 								<div class="player-name">{first.playerName}</div>
-								<div class="diff">{formatNumber(first.totalDiff)}</div>
+								<div class="diff">{formatDiff(first.totalDiff)}</div>
 							</div>
 						{/if}
 
@@ -180,7 +179,7 @@
 							<div class="podium-place third">
 								<div class="medal">🥉</div>
 								<div class="player-name">{third.playerName}</div>
-								<div class="diff">{formatNumber(third.totalDiff)}</div>
+								<div class="diff">{formatDiff(third.totalDiff)}</div>
 							</div>
 						{/if}
 					</div>
@@ -271,7 +270,7 @@
 											? 'negative'
 											: ''}"
 								>
-									{formatNumber(player.totalDiff)}
+									{formatDiff(player.totalDiff)}
 								</td>
 								<td>{player.roundsPlayed}</td>
 								{#if cr > 1}
