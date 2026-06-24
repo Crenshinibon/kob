@@ -7,7 +7,8 @@
 
 	import { saveScore, saveSetScore } from './scores.remote';
 	import { createScoreSchema, createSetScoreSchema } from './scoreSchema';
-	import { isDecidingSet, getEffectiveScoring } from '$lib/tournament-logic';
+	import { isDecidingSet, getEffectiveScoring, type TieBreakFactorId } from '$lib/tournament-logic';
+	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
 
 	interface MatchRow {
 		id: number;
@@ -34,6 +35,9 @@
 		name: string;
 		avgPoints?: number;
 		matchesPlayed: number;
+		decidingFactor: TieBreakFactorId | null;
+		winningFactors: TieBreakFactorId[];
+		enabledFactors: TieBreakFactorId[];
 	}
 
 	interface CourtInfo {
@@ -68,12 +72,26 @@
 			court: CourtInfo;
 			matches: MatchRow[];
 			standings: StandingRow[];
+			enabledTieBreakFactors: TieBreakFactorId[];
 			isActive: boolean;
 			isEditable: boolean;
 			currentRound: number;
 			isAuthenticated: boolean;
 		};
 	}>();
+
+	function tieBreakFactorLabel(id: TieBreakFactorId): string {
+		const labels: Record<TieBreakFactorId, () => string> = {
+			round_points: msg.tie_break_factor_round_points,
+			round_diff: msg.tie_break_factor_round_diff,
+			total_points: msg.tie_break_factor_total_points,
+			total_diff: msg.tie_break_factor_total_diff,
+			initial_order: msg.tie_break_factor_initial_order,
+			dice: msg.tie_break_factor_dice,
+			manual: msg.tie_break_factor_manual
+		};
+		return labels[id]();
+	}
 
 	// Track which matches are being saved
 	let savingMatches = $state<Set<number>>(new Set());
@@ -744,6 +762,9 @@
 	{#if data.standings.length > 0}
 		<section class="standings" transition:slide>
 			<h2>{msg.court_standings()}</h2>
+			{#if data.enabledTieBreakFactors.length > 0}
+				<p class="standings-legend">{msg.tie_break_standings_legend()}</p>
+			{/if}
 			{#if data.court.courtSize === 3}
 				<p class="standings-note">
 					{msg.court_3p_desc({ points: data.court.pointsToWin ?? 21 })}
@@ -754,6 +775,9 @@
 					<tr>
 						<th>{msg.court_3p_table_header()}</th>
 						<th>{msg.court_3p_table_player()}</th>
+						{#if data.enabledTieBreakFactors.length > 0}
+							<th>{msg.tie_break_icons_header()}</th>
+						{/if}
 						{#if data.court.courtSize === 5 || data.court.courtSize === 6}
 							<th>{msg.court_3p_table_avg()}</th>
 						{/if}
@@ -766,6 +790,16 @@
 						<tr transition:slide>
 							<td>{s.rank}</td>
 							<td>{s.name}</td>
+							{#if data.enabledTieBreakFactors.length > 0}
+								<td>
+									<TieBreakFactorIcons
+										enabledFactors={s.enabledFactors}
+										winningFactors={s.winningFactors}
+										decidingFactor={s.decidingFactor}
+										getLabel={tieBreakFactorLabel}
+									/>
+								</td>
+							{/if}
 							{#if data.court.courtSize === 5 || data.court.courtSize === 6}
 								<td>{s.avgPoints?.toFixed(1) ?? '—'}</td>
 							{/if}
@@ -1065,6 +1099,12 @@
 		color: var(--text-muted);
 		margin-bottom: var(--spacing-sm);
 		font-style: italic;
+	}
+
+	.standings-legend {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+		margin: 0 0 var(--spacing-sm);
 	}
 
 	.error {

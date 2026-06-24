@@ -287,5 +287,8 @@
 	"tie_break_save": "Enregistrer les règles",
 	"manual_rank_heading": "Ordre manuel de départage",
 	"manual_rank_move_up": "Monter",
-	"manual_rank_move_down": "Descendre"
+	"manual_rank_move_down": "Descendre",
+	"court_standings_heading": "Classement du groupe",
+	"tie_break_icons_header": "Départage",
+	"tie_break_standings_legend": "Les icônes en surbrillance indiquent les critères favorables ; le bleu est le critère décisif."
 }

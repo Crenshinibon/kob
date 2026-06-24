@@ -17,6 +17,7 @@
 	import { resolve } from '$app/paths';
 	import { getEffectiveScoring, getMinPointsForSet, getScoringLabel, DEFAULT_TIE_BREAK_CONFIG, normalizeTieBreakConfig, type TieBreakConfig, type TieBreakFactorId } from '$lib/tournament-logic';
 	import CourtQRCode from '$lib/components/CourtQRCode.svelte';
+	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
 
 	let { data } = $props<{
 		data: {
@@ -380,14 +381,33 @@
 						{/if}
 
 						<div class="players">
-							{#each court.players as p, i (p.id)}
-								<span class="player" class:retired={p.retired}>
-									{String.fromCharCode(65 + i)}: {p.name}
-									{#if p.retired}
-										<span class="retired-badge">{m.retired_badge()}</span>
-									{/if}
-								</span>
-							{/each}
+							{#if court.standings.length > 0}
+								<h4 class="court-standings-heading">{m.court_standings_heading()}</h4>
+								{#each court.standings as s (s.playerId)}
+									<span class="player standing-entry" class:retired={court.players.find((p) => p.id === s.playerId)?.retired}>
+										<span class="standing-rank">{s.rank}.</span>
+										<span class="standing-name">{s.name}</span>
+										{#if court.players.find((p) => p.id === s.playerId)?.retired}
+											<span class="retired-badge">{m.retired_badge()}</span>
+										{/if}
+										<TieBreakFactorIcons
+											enabledFactors={s.enabledFactors}
+											winningFactors={s.winningFactors}
+											decidingFactor={s.decidingFactor}
+											getLabel={tieBreakFactorLabel}
+										/>
+									</span>
+								{/each}
+							{:else}
+								{#each court.players as p, i (p.id)}
+									<span class="player" class:retired={p.retired}>
+										{String.fromCharCode(65 + i)}: {p.name}
+										{#if p.retired}
+											<span class="retired-badge">{m.retired_badge()}</span>
+										{/if}
+									</span>
+								{/each}
+							{/if}
 						</div>
 
 						{#if court.token}
@@ -1135,6 +1155,32 @@
 		border-radius: 4px;
 		align-self: flex-start;
 		line-height: 1.4;
+	}
+
+	.court-standings-heading {
+		width: 100%;
+		margin: 0 0 var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		font-weight: 600;
+	}
+
+	.standing-entry {
+		display: inline-flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--spacing-xs);
+		font-size: var(--font-size-base);
+	}
+
+	.standing-rank {
+		font-weight: 700;
+		color: var(--accent-info);
+		min-width: 1.25rem;
+	}
+
+	.standing-name {
+		font-weight: 600;
 	}
 
 	.qr-link a {

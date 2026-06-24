@@ -287,5 +287,8 @@
 	"tie_break_save": "Tie-Break-Regeln speichern",
 	"manual_rank_heading": "Manuelle Tie-Break-Reihenfolge",
 	"manual_rank_move_up": "Nach oben",
-	"manual_rank_move_down": "Nach unten"
+	"manual_rank_move_down": "Nach unten",
+	"court_standings_heading": "Gruppen-Rangliste",
+	"tie_break_icons_header": "Tie-Break",
+	"tie_break_standings_legend": "Hervorgehobene Symbole = Faktoren für diesen Rang; blau = entscheidender Faktor."
 }

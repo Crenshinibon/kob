@@ -17,6 +17,7 @@ import {
 	comparePlayersForTieBreak,
 	sortPlayersByTieBreak,
 	DEFAULT_TIE_BREAK_CONFIG,
+	explainCourtStandings,
 	type TieBreakConfig,
 	type TieBreakFactorId,
 	generate4pMatches,
@@ -4971,5 +4972,31 @@ describe('tie-break ranking', () => {
 			courtSizes: [4]
 		});
 		expect(result[0].playerId).toBe(1);
+	});
+
+	it('explainCourtStandings marks deciding and winning factors', () => {
+		const roundStats = new Map([
+			[1, { playerId: 1, rawPoints: 63, rawDiff: 3, gamesPlayed: 3, roundPoints: 63, roundDiff: 3 }],
+			[2, { playerId: 2, rawPoints: 60, rawDiff: 0, gamesPlayed: 3, roundPoints: 60, roundDiff: 0 }]
+		]);
+		const cfg = configWith([
+			{ id: 'round_points', enabled: true },
+			{ id: 'round_diff', enabled: true },
+			{ id: 'total_points', enabled: false },
+			{ id: 'total_diff', enabled: false },
+			{ id: 'initial_order', enabled: false },
+			{ id: 'dice', enabled: false },
+			{ id: 'manual', enabled: false }
+		]);
+		const explained = explainCourtStandings(
+			[
+				{ playerId: 1, rank: 1, points: 63, diff: 3, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 60, diff: 0, matchCount: 3 }
+			],
+			cfg,
+			{ roundStats, totalStats: new Map() }
+		);
+		expect(explained.get(1)?.decidingFactor).toBe('round_points');
+		expect(explained.get(1)?.winningFactors).toContain('round_points');
 	});
 });

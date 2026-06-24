@@ -287,5 +287,8 @@
 	"tie_break_save": "Save tie-break rules",
 	"manual_rank_heading": "Manual tie-break order",
 	"manual_rank_move_up": "Move up",
-	"manual_rank_move_down": "Move down"
+	"manual_rank_move_down": "Move down",
+	"court_standings_heading": "Court standings",
+	"tie_break_icons_header": "Tie-break",
+	"tie_break_standings_legend": "Highlighted icons show factors favoring this rank; the blue icon is the deciding factor."
 }

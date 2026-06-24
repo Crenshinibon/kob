@@ -17,6 +17,11 @@ import {
 	type MatchSetScore,
 	type FrozenCourt
 } from '$lib/server/tournament-logic';
+import {
+	buildCompletedRoundsBefore,
+	computeExplainedStandings,
+	type ExplainedCourtStanding
+} from '$lib/server/court-standings-service';
 import { formatDuration } from '$lib/i18n/format';
 
 export interface CourtDisplayData {
@@ -34,6 +39,7 @@ export interface CourtDisplayData {
 	courtId: number;
 	rotationId: number;
 	manualRankOrder: number[] | null;
+	standings: ExplainedCourtStanding[];
 }
 
 export interface TournamentDisplayData {
@@ -115,13 +121,14 @@ async function fetchTournamentData(
 	const activePlayerCount = dbPlayers.filter((p) => !p.retiredAt).length;
 
 	const displayRound = viewRound;
-	const rotations = await db
+	const allRotations = await db
 		.select()
 		.from(courtRotation)
-		.where(
-			and(eq(courtRotation.tournamentId, tournamentId), eq(courtRotation.roundNumber, displayRound))
-		)
-		.orderBy(courtRotation.courtNumber);
+		.where(eq(courtRotation.tournamentId, tournamentId));
+
+	const rotations = allRotations
+		.filter((r) => r.roundNumber === displayRound)
+		.sort((a, b) => a.courtNumber - b.courtNumber);
 
 	let canCloseRound = false;
 	let isFinalRound = false;
@@ -159,6 +166,22 @@ async function fetchTournamentData(
 
 	const playerMap = new Map<number, (typeof dbPlayers)[0]>();
 	for (const p of dbPlayers) playerMap.set(p.id, p);
+
+	const logicPlayers = dbPlayers.map((p) => ({
+		id: p.id,
+		name: p.name,
+		seedPoints: p.seedPoints,
+		seedRank: p.seedRank
+	}));
+
+	const completedRounds = await buildCompletedRoundsBefore(
+		tournamentId,
+		displayRound,
+		courtSizes,
+		logicPlayers,
+		tourney.tieBreakConfig ?? null,
+		allRotations
+	);
 
 	const courts: CourtDisplayData[] = [];
 	for (const rotation of rotations) {
@@ -207,6 +230,33 @@ async function fetchTournamentData(
 			courtMatchGroups.size >= matchCountForCourtSize(size) &&
 			[...courtMatchGroups.values()].every((group) => isMatchComplete(group));
 
+		const playerNameMap = new Map(playerIds.map((id) => [id, playerMap.get(id)?.name ?? '']));
+		const matchData = matches.map((m) => ({
+			teamAPlayer1Id: m.teamAPlayer1Id,
+			teamAPlayer2Id: m.teamAPlayer2Id,
+			teamBPlayer1Id: m.teamBPlayer1Id,
+			teamBPlayer2Id: m.teamBPlayer2Id,
+			teamAScore: m.teamAScore,
+			teamBScore: m.teamBScore,
+			isCanceled: m.isCanceled ?? false,
+			injuredPlayerIds: m.injuredPlayerIds ?? undefined
+		}));
+
+		const standings =
+			matchData.some((m) => m.teamAScore !== null)
+				? computeExplainedStandings({
+						matchData,
+						playerIds,
+						playerNames: playerNameMap,
+						tourney,
+						players: dbPlayers,
+						completedRounds,
+						courtSizes,
+						courtNumber: rotation.courtNumber,
+						manualRankOrder: rotation.manualRankOrder
+					})
+				: [];
+
 		courts.push({
 			courtNumber: rotation.courtNumber,
 			courtSize: size,
@@ -217,6 +267,7 @@ async function fetchTournamentData(
 			rotationId: rotation.id,
 			manualRankOrder: rotation.manualRankOrder ?? null,
 			players: rotationPlayers,
+			standings,
 			isComplete
 		});
 	}

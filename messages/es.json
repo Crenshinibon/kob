@@ -287,5 +287,8 @@
 	"tie_break_save": "Guardar reglas de desempate",
 	"manual_rank_heading": "Orden manual de desempate",
 	"manual_rank_move_up": "Subir",
-	"manual_rank_move_down": "Bajar"
+	"manual_rank_move_down": "Bajar",
+	"court_standings_heading": "Clasificación del grupo",
+	"tie_break_icons_header": "Desempate",
+	"tie_break_standings_legend": "Los iconos resaltados muestran factores a favor; el azul es el factor decisivo."
 }

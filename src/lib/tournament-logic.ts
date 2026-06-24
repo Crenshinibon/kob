@@ -1030,6 +1030,193 @@ export function comparePlayersForTieBreak(
 	return 0;
 }
 
+/** Positive = playerA ranks above playerB on this single factor. */
+export function compareSingleTieBreakFactor(
+	factor: TieBreakFactorId,
+	playerA: number,
+	playerB: number,
+	context: TieBreakContext & {
+		roundStats?: Map<number, PlayerRoundStats>;
+		totalStats?: Map<number, { totalPoints: number; totalDiff: number }>;
+	}
+): number {
+	const roundStats = context.roundStats ?? new Map();
+	const totalStats = context.totalStats ?? new Map();
+
+	if (factor === 'dice' || factor === 'manual') {
+		if (factor === 'manual') {
+			const ma = manualRankIndex(playerA, context.manualRankOrder);
+			const mb = manualRankIndex(playerB, context.manualRankOrder);
+			if (ma !== mb) return mb - ma;
+		}
+		return 0;
+	}
+
+	if (factor === 'round_points') {
+		const a = roundStats.get(playerA)?.roundPoints ?? 0;
+		const b = roundStats.get(playerB)?.roundPoints ?? 0;
+		if (b !== a) return a - b;
+		return 0;
+	}
+
+	if (factor === 'round_diff') {
+		const a = roundStats.get(playerA)?.roundDiff ?? 0;
+		const b = roundStats.get(playerB)?.roundDiff ?? 0;
+		if (b !== a) return a - b;
+		return 0;
+	}
+
+	if (factor === 'total_points') {
+		const a = totalStats.get(playerA)?.totalPoints ?? 0;
+		const b = totalStats.get(playerB)?.totalPoints ?? 0;
+		if (b !== a) return a - b;
+		return 0;
+	}
+
+	if (factor === 'total_diff') {
+		const a = totalStats.get(playerA)?.totalDiff ?? 0;
+		const b = totalStats.get(playerB)?.totalDiff ?? 0;
+		if (b !== a) return a - b;
+		return 0;
+	}
+
+	if (factor === 'initial_order') {
+		const a = getInitialOrderValue(playerA, context.players);
+		const b = getInitialOrderValue(playerB, context.players);
+		if (a !== b) return b - a;
+	}
+
+	return 0;
+}
+
+export function getDecidingTieBreakFactor(
+	higherRankedId: number,
+	lowerRankedId: number,
+	config: TieBreakConfig | null | undefined,
+	context: TieBreakContext & {
+		roundStats?: Map<number, PlayerRoundStats>;
+		totalStats?: Map<number, { totalPoints: number; totalDiff: number }>;
+	}
+): TieBreakFactorId | null {
+	const factors = getEnabledTieBreakFactors(config);
+	for (const factor of factors) {
+		if (factor === 'dice') {
+			return 'dice';
+		}
+		const cmp = compareSingleTieBreakFactor(factor, higherRankedId, lowerRankedId, context);
+		if (cmp !== 0) return factor;
+	}
+	return null;
+}
+
+export type CourtStandingExplanation = {
+	readonly decidingFactor: TieBreakFactorId | null;
+	readonly winningFactors: readonly TieBreakFactorId[];
+};
+
+export function explainCourtStandings(
+	standings: readonly CourtStandings[],
+	config: TieBreakConfig | null | undefined,
+	context: TieBreakContext & {
+		roundStats?: Map<number, PlayerRoundStats>;
+		totalStats?: Map<number, { totalPoints: number; totalDiff: number }>;
+	}
+): Map<number, CourtStandingExplanation> {
+	const result = new Map<number, CourtStandingExplanation>();
+	const enabled = getEnabledTieBreakFactors(config);
+	if (standings.length === 0) return result;
+
+	const sorted = [...standings].sort((a, b) => a.rank - b.rank);
+
+	for (let i = 0; i < sorted.length; i++) {
+		const current = sorted[i];
+		let higherId: number;
+		let lowerId: number;
+
+		if (i < sorted.length - 1) {
+			higherId = current.playerId;
+			lowerId = sorted[i + 1].playerId;
+		} else if (sorted.length > 1) {
+			higherId = sorted[i - 1].playerId;
+			lowerId = current.playerId;
+		} else {
+			result.set(current.playerId, { decidingFactor: null, winningFactors: [] });
+			continue;
+		}
+
+		const winningFactors = enabled.filter(
+			(f) => compareSingleTieBreakFactor(f, higherId, lowerId, context) > 0
+		);
+
+		let decidingFactor: TieBreakFactorId | null = null;
+		if (i < sorted.length - 1) {
+			decidingFactor = getDecidingTieBreakFactor(higherId, lowerId, config, context);
+		} else {
+			decidingFactor = getDecidingTieBreakFactor(higherId, lowerId, config, context);
+		}
+
+		result.set(current.playerId, { decidingFactor, winningFactors });
+	}
+
+	return result;
+}
+
+export const TIE_BREAK_FACTOR_GLYPHS: Record<TieBreakFactorId, string> = {
+	round_points: 'P',
+	round_diff: '±',
+	total_points: 'Σ',
+	total_diff: 'Δ',
+	initial_order: '#',
+	dice: '🎲',
+	manual: '✋'
+};
+
+export function buildStandingsTieBreakContext(
+	matches: readonly MatchData[],
+	playerIds: readonly number[],
+	options?: CourtStandingsOptions
+): {
+	roundStats: Map<number, PlayerRoundStats>;
+	totalStats: Map<number, { totalPoints: number; totalDiff: number }>;
+	config: TieBreakConfig | null | undefined;
+	context: TieBreakContext & {
+		roundStats: Map<number, PlayerRoundStats>;
+		totalStats: Map<number, { totalPoints: number; totalDiff: number }>;
+	};
+} {
+	const roundStats = buildPlayerRoundStats(matches, playerIds);
+	const currentResults: CourtResult[] = [
+		{
+			courtNumber: 1,
+			standings: playerIds.map((id) => {
+				const s = roundStats.get(id)!;
+				return {
+					playerId: id,
+					rank: 0,
+					points: s.roundPoints,
+					diff: s.roundDiff,
+					matchCount: s.gamesPlayed,
+					rawPoints: s.rawPoints,
+					rawDiff: s.rawDiff
+				};
+			})
+		}
+	];
+	const courtSizes = options?.courtSizes ?? [playerIds.length];
+	const totalStats = buildPlayerTotalStats(
+		options?.completedRounds ?? [],
+		currentResults,
+		courtSizes
+	);
+	const context = { ...options, roundStats, totalStats };
+	return {
+		roundStats,
+		totalStats,
+		config: options?.tieBreakConfig,
+		context
+	};
+}
+
 export function sortPlayersByTieBreak(
 	playerIds: readonly number[],
 	config: TieBreakConfig | null | undefined,
