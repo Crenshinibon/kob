@@ -1,5 +1,11 @@
 import { db } from '$lib/server/db';
-import { courtRotation, match, type tournament, type player } from '$lib/server/db/schema';
+import {
+	courtRotation,
+	match,
+	type CourtStandingSnapshot,
+	type tournament,
+	type player
+} from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import {
 	calculateCourtStandings,
@@ -19,6 +25,13 @@ export type ExplainedCourtStanding = CourtStandings & {
 	name: string;
 	tiedFactors: TieBreakFactorId[];
 	decidingFactor: TieBreakFactorId | null;
+};
+
+export type ResolveRotationStandingsResult = {
+	standings: ExplainedCourtStanding[];
+	diceRolls: Record<string, number>;
+	tieBreakConfig: TieBreakConfig;
+	fromSnapshot: boolean;
 };
 
 function rotationPlayerIds(rotation: typeof courtRotation.$inferSelect): number[] {
@@ -45,6 +58,56 @@ function toMatchData(rows: (typeof match.$inferSelect)[]): MatchData[] {
 	}));
 }
 
+export function snapshotToExplainedStandings(
+	snapshot: readonly CourtStandingSnapshot[],
+	playerNames: Map<number, string>
+): ExplainedCourtStanding[] {
+	return snapshot.map((s) => ({
+		playerId: s.playerId,
+		rank: s.rank,
+		points: s.points,
+		diff: s.diff,
+		matchCount: s.matchCount,
+		rawPoints: s.rawPoints,
+		rawDiff: s.rawDiff,
+		name: playerNames.get(s.playerId) ?? String(s.playerId),
+		tiedFactors: [...s.tiedFactors],
+		decidingFactor: s.decidingFactor
+	}));
+}
+
+export function explainedToSnapshot(standings: readonly ExplainedCourtStanding[]): CourtStandingSnapshot[] {
+	return standings.map((s) => ({
+		playerId: s.playerId,
+		rank: s.rank,
+		points: s.points,
+		diff: s.diff,
+		matchCount: s.matchCount,
+		rawPoints: s.rawPoints,
+		rawDiff: s.rawDiff,
+		tiedFactors: [...s.tiedFactors],
+		decidingFactor: s.decidingFactor
+	}));
+}
+
+export function snapshotToCourtStandings(
+	snapshot: readonly CourtStandingSnapshot[]
+): CourtStandings[] {
+	return snapshot.map((s) => ({
+		playerId: s.playerId,
+		rank: s.rank,
+		points: s.points,
+		diff: s.diff,
+		matchCount: s.matchCount,
+		rawPoints: s.rawPoints,
+		rawDiff: s.rawDiff
+	}));
+}
+
+export function hasStandingsSnapshot(rotation: typeof courtRotation.$inferSelect): boolean {
+	return (rotation.standingsSnapshot?.length ?? 0) > 0 && rotation.roundClosedAt != null;
+}
+
 export async function buildCompletedRoundsBefore(
 	tournamentId: number,
 	beforeRound: number,
@@ -69,16 +132,28 @@ export async function buildCompletedRoundsBefore(
 		const courtResults: CourtResult[] = [];
 
 		for (const rotation of roundRotations) {
+			if (hasStandingsSnapshot(rotation) && rotation.standingsSnapshot) {
+				courtResults.push({
+					courtNumber: rotation.courtNumber,
+					standings: snapshotToCourtStandings(rotation.standingsSnapshot)
+				});
+				continue;
+			}
+
 			const rows = await db.select().from(match).where(eq(match.courtRotationId, rotation.id));
 			const playerIds = rotationPlayerIds(rotation);
 			const matchData = toMatchData(rows);
-			const config = normalizeTieBreakConfig(tieBreakConfig ?? null);
+			const config = normalizeTieBreakConfig(
+				rotation.tieBreakConfigSnapshot ?? tieBreakConfig ?? null
+			);
+			const diceRolls = { ...(rotation.diceRolls ?? {}) };
 			const standings = calculateCourtStandings(matchData, playerIds, {
 				tieBreakConfig: config,
 				completedRounds: completed,
 				courtSizes,
 				players,
-				manualRankOrder: rotation.manualRankOrder ?? undefined
+				manualRankOrder: rotation.manualRankOrder ?? undefined,
+				mutableDiceRolls: diceRolls
 			});
 			courtResults.push({ courtNumber: rotation.courtNumber, standings });
 		}
@@ -97,9 +172,10 @@ export function computeExplainedStandings(opts: {
 	players: readonly (typeof player.$inferSelect)[];
 	completedRounds: readonly CourtResult[][];
 	courtSizes: readonly number[];
-	courtNumber: number;
 	manualRankOrder?: readonly number[] | null;
-}): ExplainedCourtStanding[] {
+	diceRolls?: Record<string, number> | null;
+	tieBreakConfigOverride?: TieBreakConfig | null;
+}): ResolveRotationStandingsResult {
 	const {
 		matchData,
 		playerIds,
@@ -108,8 +184,9 @@ export function computeExplainedStandings(opts: {
 		players,
 		completedRounds,
 		courtSizes,
-		courtNumber,
-		manualRankOrder
+		manualRankOrder,
+		diceRolls: initialDiceRolls,
+		tieBreakConfigOverride
 	} = opts;
 
 	const logicPlayers: Player[] = players.map((p) => ({
@@ -119,20 +196,24 @@ export function computeExplainedStandings(opts: {
 		seedRank: p.seedRank
 	}));
 
-	const tieBreakConfig = normalizeTieBreakConfig(tourney.tieBreakConfig ?? null);
+	const tieBreakConfig = normalizeTieBreakConfig(
+		tieBreakConfigOverride ?? tourney.tieBreakConfig ?? null
+	);
+	const mutableDiceRolls = { ...(initialDiceRolls ?? {}) };
 	const standingsOptions = {
 		tieBreakConfig,
 		completedRounds,
 		courtSizes,
 		players: logicPlayers,
-		manualRankOrder: manualRankOrder ?? undefined
+		manualRankOrder: manualRankOrder ?? undefined,
+		mutableDiceRolls
 	};
 
 	const standings = calculateCourtStandings(matchData, playerIds, standingsOptions);
 	const tbContext = buildStandingsTieBreakContext(matchData, playerIds, standingsOptions);
 	const explanations = explainCourtStandings(standings, tieBreakConfig, tbContext.context);
 
-	return standings.map((s) => {
+	const explained = standings.map((s) => {
 		const exp: CourtStandingExplanation = explanations.get(s.playerId) ?? {
 			tiedFactors: [],
 			decidingFactor: null
@@ -144,4 +225,165 @@ export function computeExplainedStandings(opts: {
 			decidingFactor: exp.decidingFactor
 		};
 	});
+
+	return {
+		standings: explained,
+		diceRolls: mutableDiceRolls,
+		tieBreakConfig,
+		fromSnapshot: false
+	};
+}
+
+export function resolveRotationStandings(opts: {
+	rotation: typeof courtRotation.$inferSelect;
+	matchData: MatchData[];
+	playerIds: readonly number[];
+	playerNames: Map<number, string>;
+	players: readonly (typeof player.$inferSelect)[];
+	completedRounds: readonly CourtResult[][];
+	courtSizes: readonly number[];
+	tourney: typeof tournament.$inferSelect;
+	useSnapshot: boolean;
+}): ResolveRotationStandingsResult {
+	const {
+		rotation,
+		matchData,
+		playerIds,
+		playerNames,
+		players,
+		completedRounds,
+		courtSizes,
+		tourney,
+		useSnapshot
+	} = opts;
+
+	if (useSnapshot && hasStandingsSnapshot(rotation) && rotation.standingsSnapshot) {
+		return {
+			standings: snapshotToExplainedStandings(rotation.standingsSnapshot, playerNames),
+			diceRolls: { ...(rotation.diceRolls ?? {}) },
+			tieBreakConfig: normalizeTieBreakConfig(
+				rotation.tieBreakConfigSnapshot ?? tourney.tieBreakConfig ?? null
+			),
+			fromSnapshot: true
+		};
+	}
+
+	if (!matchData.some((m) => m.teamAScore !== null)) {
+		return {
+			standings: [],
+			diceRolls: { ...(rotation.diceRolls ?? {}) },
+			tieBreakConfig: normalizeTieBreakConfig(tourney.tieBreakConfig ?? null),
+			fromSnapshot: false
+		};
+	}
+
+	return computeExplainedStandings({
+		matchData,
+		playerIds,
+		playerNames,
+		tourney,
+		players,
+		completedRounds,
+		courtSizes,
+		manualRankOrder: rotation.manualRankOrder,
+		diceRolls: rotation.diceRolls,
+		tieBreakConfigOverride: useSnapshot ? rotation.tieBreakConfigSnapshot : undefined
+	});
+}
+
+export async function persistRotationStandingsSnapshot(
+	rotationId: number,
+	snapshot: {
+		standings: readonly ExplainedCourtStanding[];
+		tieBreakConfig: TieBreakConfig;
+		diceRolls: Record<string, number>;
+	}
+): Promise<void> {
+	await db
+		.update(courtRotation)
+		.set({
+			standingsSnapshot: explainedToSnapshot(snapshot.standings),
+			tieBreakConfigSnapshot: snapshot.tieBreakConfig,
+			diceRolls: snapshot.diceRolls,
+			roundClosedAt: new Date()
+		})
+		.where(eq(courtRotation.id, rotationId));
+}
+
+export async function persistRotationDiceRolls(
+	rotationId: number,
+	diceRolls: Record<string, number>
+): Promise<void> {
+	await db.update(courtRotation).set({ diceRolls }).where(eq(courtRotation.id, rotationId));
+}
+
+export async function snapshotClosedRoundRotations(opts: {
+	rotations: readonly (typeof courtRotation.$inferSelect)[];
+	closedRoundResults: readonly CourtResult[];
+	completedRoundsBefore: readonly CourtResult[][];
+	tourney: typeof tournament.$inferSelect;
+	players: readonly (typeof player.$inferSelect)[];
+	courtSizes: readonly number[];
+	tieBreakConfig: TieBreakConfig;
+	diceRollsByCourt: ReadonlyMap<number, Record<string, number>>;
+	matchesByRotationId: ReadonlyMap<number, MatchData[]>;
+}): Promise<void> {
+	const {
+		rotations,
+		closedRoundResults,
+		completedRoundsBefore,
+		tourney,
+		players,
+		courtSizes,
+		tieBreakConfig,
+		diceRollsByCourt,
+		matchesByRotationId
+	} = opts;
+
+	const logicPlayers: Player[] = players.map((p) => ({
+		id: p.id,
+		name: p.name,
+		seedPoints: p.seedPoints,
+		seedRank: p.seedRank
+	}));
+	const playerNames = new Map(players.map((p) => [p.id, p.name]));
+
+	for (const rotation of rotations) {
+		const courtResult = closedRoundResults.find((c) => c.courtNumber === rotation.courtNumber);
+		if (!courtResult) continue;
+
+		const playerIds = rotationPlayerIds(rotation);
+		const matchData = matchesByRotationId.get(rotation.id) ?? [];
+		const diceRolls = { ...(diceRollsByCourt.get(rotation.courtNumber) ?? {}) };
+		const standingsOptions = {
+			tieBreakConfig,
+			completedRounds: completedRoundsBefore,
+			courtSizes,
+			players: logicPlayers,
+			manualRankOrder: rotation.manualRankOrder ?? undefined,
+			mutableDiceRolls: diceRolls
+		};
+		const tbContext = buildStandingsTieBreakContext(matchData, playerIds, standingsOptions);
+		const explanations = explainCourtStandings(
+			courtResult.standings,
+			tieBreakConfig,
+			tbContext.context
+		);
+
+		const explained: ExplainedCourtStanding[] = courtResult.standings.map((s) => {
+			const exp = explanations.get(s.playerId) ?? { tiedFactors: [], decidingFactor: null };
+			return {
+				...s,
+				name: playerNames.get(s.playerId) ?? String(s.playerId),
+				tiedFactors: [...exp.tiedFactors],
+				decidingFactor: exp.decidingFactor
+			};
+		});
+
+		await persistRotationStandingsSnapshot(rotation.id, {
+			standings: explained,
+			tieBreakConfig,
+			diceRolls
+		});
+	}
 }

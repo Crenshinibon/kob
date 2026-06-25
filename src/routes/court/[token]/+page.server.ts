@@ -11,7 +11,8 @@ import {
 } from '$lib/server/tournament-logic';
 import {
 	buildCompletedRoundsBefore,
-	computeExplainedStandings
+	persistRotationDiceRolls,
+	resolveRotationStandings
 } from '$lib/server/court-standings-service';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -136,22 +137,32 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		injuredPlayerIds: m.injuredPlayerIds ?? undefined
 	}));
 
-	const explained =
-		matchData.some((m) => m.teamAScore !== null)
-			? computeExplainedStandings({
-					matchData,
-					playerIds,
-					playerNames: playerMap,
-					tourney,
-					players,
-					completedRounds,
-					courtSizes,
-					courtNumber: rotation.courtNumber,
-					manualRankOrder: rotation.manualRankOrder
-				})
-			: [];
+	const isCurrentRound =
+		tourney.status === 'active' && rotation.roundNumber === currentRound;
+	const useSnapshot = !isCurrentRound || tourney.status === 'completed';
 
-	const standings = explained.map((s) => ({
+	const standingsResult = resolveRotationStandings({
+		rotation,
+		matchData,
+		playerIds,
+		playerNames: playerMap,
+		players,
+		completedRounds,
+		courtSizes,
+		tourney,
+		useSnapshot
+	});
+
+	if (
+		isCurrentRound &&
+		!standingsResult.fromSnapshot &&
+		standingsResult.standings.length > 0 &&
+		JSON.stringify(standingsResult.diceRolls) !== JSON.stringify(rotation.diceRolls ?? {})
+	) {
+		await persistRotationDiceRolls(rotation.id, standingsResult.diceRolls);
+	}
+
+	const standings = standingsResult.standings.map((s) => ({
 		...s,
 		id: s.playerId,
 		avgPoints: s.matchCount > 0 ? s.points : undefined,
@@ -182,9 +193,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const scoringLabel = getScoringLabel(config, courtSize, overrides);
 
 	const isEditable =
-		tourney.status === 'active' &&
-		rotation.roundNumber === currentRound &&
-		(courtRecord.isActive ?? true);
+		isCurrentRound && (courtRecord.isActive ?? true);
 
 	return {
 		court: {

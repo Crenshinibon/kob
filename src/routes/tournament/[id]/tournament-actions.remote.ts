@@ -41,7 +41,7 @@ import {
 	type PreseedRetirementPolicy
 } from '$lib/server/tournament-logic';
 import { getTournamentData } from './tournament-data.remote';
-import { buildCompletedRoundsBefore } from '$lib/server/court-standings-service';
+import { buildCompletedRoundsBefore, snapshotClosedRoundRotations } from '$lib/server/court-standings-service';
 
 function parseCourtSizes(tourney: typeof tournament.$inferSelect): number[] {
 	return tourney.courtSizes
@@ -178,11 +178,33 @@ export const closeRoundForm = form(
 		const startedState = startRound(stateWithPlayers);
 
 		const manualRankByCourt = new Map<number, number[]>();
+		const diceRollsByCourt = new Map<number, Record<string, number>>();
+		const matchesByRotationId = new Map<number, MatchData[]>();
 		for (const rotation of currentRotations) {
 			if (rotation.manualRankOrder?.length) {
 				manualRankByCourt.set(rotation.courtNumber, rotation.manualRankOrder);
 			}
+			diceRollsByCourt.set(rotation.courtNumber, { ...(rotation.diceRolls ?? {}) });
+			const rotationMatches = await db
+				.select()
+				.from(match)
+				.where(eq(match.courtRotationId, rotation.id));
+			matchesByRotationId.set(
+				rotation.id,
+				rotationMatches.map((m) => ({
+					teamAPlayer1Id: m.teamAPlayer1Id,
+					teamAPlayer2Id: m.teamAPlayer2Id,
+					teamBPlayer1Id: m.teamBPlayer1Id,
+					teamBPlayer2Id: m.teamBPlayer2Id,
+					teamAScore: m.teamAScore,
+					teamBScore: m.teamBScore,
+					isCanceled: m.isCanceled ?? false,
+					injuredPlayerIds: m.injuredPlayerIds ?? undefined
+				}))
+			);
 		}
+
+		const tieBreakConfig = normalizeTieBreakConfig(tourney.tieBreakConfig ?? null);
 
 		const closedState = closeRound(
 			{
@@ -192,8 +214,25 @@ export const closeRoundForm = form(
 				currentMatches: allMatches
 			},
 			activeCourtSizes,
-			manualRankByCourt
+			manualRankByCourt,
+			diceRollsByCourt
 		);
+
+		const justClosedResults =
+			closedState.completedRounds[closedState.completedRounds.length - 1] ?? [];
+		const completedRoundsBefore = closedState.completedRounds.slice(0, -1);
+
+		await snapshotClosedRoundRotations({
+			rotations: currentRotations,
+			closedRoundResults: justClosedResults,
+			completedRoundsBefore,
+			tourney,
+			players: dbPlayers,
+			courtSizes,
+			tieBreakConfig,
+			diceRollsByCourt,
+			matchesByRotationId
+		});
 
 		if (closedState.isComplete) {
 			const finalRoundResults = closedState.completedRounds[closedState.completedRounds.length - 1];
@@ -241,8 +280,6 @@ export const closeRoundForm = form(
 		let nextCourtSizes = courtSizes;
 		const nextRoundNumber = closedState.roundsCompleted + 1;
 
-		const justClosedResults =
-			closedState.completedRounds[closedState.completedRounds.length - 1] ?? [];
 		const formatType = tourney.formatType as FormatType;
 		const forwardFrozenCourts =
 			formatType === 'preseed'

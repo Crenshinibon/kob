@@ -134,7 +134,18 @@ type TieBreakConfig = {
 
 `number[]` — player IDs in desired rank order (index 0 = best).
 
-Migration: `drizzle/0014_tie_break_config.sql`
+### Round-close snapshots (`court_rotation`, migration `0015`)
+
+When a round is closed, each rotation stores:
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `tie_break_config_snapshot` | JSONB | Tie-break rules in effect when the round closed |
+| `standings_snapshot` | JSONB | Final per-player ranks, points, diff, tie-break explanations |
+| `dice_rolls` | JSONB | Stable pair-wise dice rolls (`"minId:maxId"` → `0..1`) |
+| `round_closed_at` | timestamp | Marks the rotation as finalized |
+
+Past-round views (stepper, court pages) read snapshots instead of recomputing. Dice rolls are also persisted during the active round so standings do not shuffle on reload.
 
 ## API / UI
 

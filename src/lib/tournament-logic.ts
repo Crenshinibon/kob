@@ -58,6 +58,8 @@ export type TieBreakContext = {
 	readonly players?: readonly Player[];
 	readonly manualRankOrder?: readonly number[];
 	readonly rng?: () => number;
+	/** Mutable store for stable pair-wise dice rolls (key: "minId:maxId"). */
+	readonly mutableDiceRolls?: Record<string, number>;
 };
 
 export type TieBreakSortOptions = {
@@ -965,6 +967,26 @@ function manualRankIndex(playerId: number, order?: readonly number[]): number {
 	return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
 }
 
+export function dicePairKey(playerA: number, playerB: number): string {
+	return playerA < playerB ? `${playerA}:${playerB}` : `${playerB}:${playerA}`;
+}
+
+/** Stable pair-wise dice comparison; mutates `rolls` when a new pair is rolled. */
+export function compareDicePairStable(
+	playerA: number,
+	playerB: number,
+	rolls: Record<string, number>,
+	rng: () => number = Math.random
+): number {
+	const key = dicePairKey(playerA, playerB);
+	if (!(key in rolls)) {
+		rolls[key] = rng();
+	}
+	const roll = rolls[key]!;
+	const cmp = roll < 0.5 ? -1 : roll > 0.5 ? 1 : 0;
+	return playerA < playerB ? cmp : -cmp;
+}
+
 export function comparePlayersForTieBreak(
 	playerA: number,
 	playerB: number,
@@ -980,6 +1002,14 @@ export function comparePlayersForTieBreak(
 
 	for (const factor of factors) {
 		if (factor === 'dice') {
+			if (context.mutableDiceRolls) {
+				return compareDicePairStable(
+					playerA,
+					playerB,
+					context.mutableDiceRolls,
+					context.rng ?? Math.random
+				);
+			}
 			const rng = context.rng ?? Math.random;
 			const roll = rng();
 			return roll < 0.5 ? -1 : roll > 0.5 ? 1 : 0;
@@ -1449,7 +1479,8 @@ function sortTierByTieBreak<T extends { playerId: number; points: number; diff: 
 export function closeRound(
 	state: TournamentState,
 	overrideCourtSizes?: readonly number[],
-	manualRankByCourt?: ReadonlyMap<number, readonly number[]>
+	manualRankByCourt?: ReadonlyMap<number, readonly number[]>,
+	diceRollsByCourt?: ReadonlyMap<number, Record<string, number>>
 ): TournamentState {
 	if (state.currentRound === 0) throw new Error('No active round to close');
 	if (state.currentMatches.length === 0)
@@ -1483,7 +1514,8 @@ export function closeRound(
 			courtNumber: assign.courtNumber,
 			standings: calculateCourtStandings(matches, assign.playerIds, {
 				...tieBreakOpts,
-				manualRankOrder: manualRankByCourt?.get(assign.courtNumber)
+				manualRankOrder: manualRankByCourt?.get(assign.courtNumber),
+				mutableDiceRolls: diceRollsByCourt?.get(assign.courtNumber)
 			})
 		};
 	});
