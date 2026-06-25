@@ -292,6 +292,6 @@
 	"manual_rank_move_down": "Descendre",
 	"court_standings_heading": "Classement du groupe",
 	"tie_break_icons_header": "Départage",
-	"tie_break_standings_legend": "Les icônes en pointillés ont été vérifiées sans séparer les joueurs ; le bleu est le critère décisif.",
+	"tie_break_standings_legend": "Les icônes en pointillés ont été vérifiées sans séparer les joueurs. Les icônes colorées indiquent le critère décisif : or = gagné, vert = milieu, bleu = perdu.",
 	"err_manual_rank_invalid": "Ordre manuel invalide — ne réordonnez que les joueurs du même groupe à égalité."
 }

@@ -292,6 +292,6 @@
 	"manual_rank_move_down": "Nach unten",
 	"court_standings_heading": "Gruppen-Rangliste",
 	"tie_break_icons_header": "Tie-Break",
-	"tie_break_standings_legend": "Gestrichelte Symbole wurden geprüft, trennten aber nicht; blau = entscheidender Faktor.",
+	"tie_break_standings_legend": "Gestrichelte Symbole wurden geprüft, trennten aber nicht. Farbige Symbole zeigen den entscheidenden Faktor: Gold = Tie-Break gewonnen, Grün = Mitte, Blau = verloren.",
 	"err_manual_rank_invalid": "Ungültige manuelle Reihenfolge — nur Spieler innerhalb derselben Gleichstandsgruppe umsortieren."
 }

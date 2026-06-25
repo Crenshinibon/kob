@@ -7,7 +7,7 @@
 
 	import { saveScore, saveSetScore } from './scores.remote';
 	import { createScoreSchema, createSetScoreSchema } from './scoreSchema';
-	import { isDecidingSet, getEffectiveScoring, type TieBreakFactorId } from '$lib/tournament-logic';
+	import { isDecidingSet, getEffectiveScoring, type TieBreakFactorId, type TieBreakDecidingOutcome } from '$lib/tournament-logic';
 	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
 	import { formatDiff, formatPoints } from '$lib/i18n/format';
 
@@ -38,6 +38,7 @@
 		matchesPlayed: number;
 		tiedFactors: TieBreakFactorId[];
 		decidingFactor: TieBreakFactorId | null;
+		decidingOutcome: TieBreakDecidingOutcome;
 	}
 
 	interface CourtInfo {
@@ -798,6 +799,7 @@
 									<TieBreakFactorIcons
 										tiedFactors={s.tiedFactors}
 										decidingFactor={s.decidingFactor}
+										decidingOutcome={s.decidingOutcome}
 										getLabel={tieBreakFactorLabel}
 									/>
 								</td>

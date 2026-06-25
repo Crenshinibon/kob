@@ -1321,10 +1321,37 @@ export function isValidManualRankOrder(
 	return true;
 }
 
+export type TieBreakDecidingOutcome = 'won' | 'middle' | 'lost' | null;
+
 export type CourtStandingExplanation = {
 	readonly tiedFactors: readonly TieBreakFactorId[];
 	readonly decidingFactor: TieBreakFactorId | null;
+	readonly decidingOutcome: TieBreakDecidingOutcome;
 };
+
+function arePlayersStatisticallyTied(
+	playerA: number,
+	playerB: number,
+	config: TieBreakConfig | null | undefined,
+	context: TieBreakContext & {
+		roundStats?: Map<number, PlayerRoundStats>;
+		totalStats?: Map<number, { totalPoints: number; totalDiff: number }>;
+	}
+): boolean {
+	let statsOnlyConfig = configExcludingFactor(config, 'dice');
+	statsOnlyConfig = configExcludingFactor(statsOnlyConfig, 'manual');
+	return explainPairTieBreak(playerA, playerB, statsOnlyConfig, context).decidingFactor === null;
+}
+
+function decidingOutcomeForGroupIndex(
+	index: number,
+	groupSize: number
+): TieBreakDecidingOutcome {
+	if (groupSize < 2) return null;
+	if (index === 0) return 'won';
+	if (groupSize >= 3 && index === 1) return 'middle';
+	return 'lost';
+}
 
 export function explainCourtStandings(
 	standings: readonly CourtStandings[],
@@ -1338,30 +1365,67 @@ export function explainCourtStandings(
 	if (standings.length === 0) return result;
 
 	const sorted = [...standings].sort((a, b) => a.rank - b.rank);
+	const tieGroups: number[][] = [];
+	let currentGroup = [sorted[0].playerId];
 
-	for (let i = 0; i < sorted.length; i++) {
-		const current = sorted[i];
-		let higherId: number;
-		let lowerId: number;
-
-		if (i < sorted.length - 1) {
-			higherId = current.playerId;
-			lowerId = sorted[i + 1].playerId;
-		} else if (sorted.length > 1) {
-			higherId = sorted[i - 1].playerId;
-			lowerId = current.playerId;
+	for (let i = 1; i < sorted.length; i++) {
+		const prevId = sorted[i - 1].playerId;
+		const currId = sorted[i].playerId;
+		if (arePlayersStatisticallyTied(prevId, currId, config, context)) {
+			currentGroup.push(currId);
 		} else {
-			result.set(current.playerId, { tiedFactors: [], decidingFactor: null });
-			continue;
+			tieGroups.push(currentGroup);
+			currentGroup = [currId];
 		}
+	}
+	tieGroups.push(currentGroup);
 
-		const { tiedFactors, decidingFactor } = explainPairTieBreak(
-			higherId,
-			lowerId,
-			config,
-			context
-		);
-		result.set(current.playerId, { tiedFactors, decidingFactor });
+	let sortedIndex = 0;
+	for (const group of tieGroups) {
+		if (group.length >= 2) {
+			const { tiedFactors, decidingFactor } = explainPairTieBreak(
+				group[0],
+				group[group.length - 1],
+				config,
+				context
+			);
+			for (let i = 0; i < group.length; i++) {
+				result.set(group[i], {
+					tiedFactors,
+					decidingFactor,
+					decidingOutcome: decidingOutcomeForGroupIndex(i, group.length)
+				});
+			}
+		} else {
+			const current = sorted[sortedIndex];
+			if (sorted.length === 1) {
+				result.set(current.playerId, {
+					tiedFactors: [],
+					decidingFactor: null,
+					decidingOutcome: null
+				});
+			} else {
+				let higherId: number;
+				let lowerId: number;
+
+				if (sortedIndex < sorted.length - 1) {
+					higherId = current.playerId;
+					lowerId = sorted[sortedIndex + 1].playerId;
+				} else {
+					higherId = sorted[sortedIndex - 1].playerId;
+					lowerId = current.playerId;
+				}
+
+				const { tiedFactors, decidingFactor } = explainPairTieBreak(
+					higherId,
+					lowerId,
+					config,
+					context
+				);
+				result.set(current.playerId, { tiedFactors, decidingFactor, decidingOutcome: null });
+			}
+		}
+		sortedIndex += group.length;
 	}
 
 	return result;

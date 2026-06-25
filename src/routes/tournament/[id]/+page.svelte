@@ -431,6 +431,7 @@
 										<TieBreakFactorIcons
 											tiedFactors={s.tiedFactors}
 											decidingFactor={s.decidingFactor}
+											decidingOutcome={s.decidingOutcome}
 											getLabel={tieBreakFactorLabel}
 										/>
 									</span>

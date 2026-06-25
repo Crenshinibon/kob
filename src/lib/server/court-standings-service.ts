@@ -18,6 +18,7 @@ import {
 	type MatchData,
 	type Player,
 	type TieBreakConfig,
+	type TieBreakDecidingOutcome,
 	type TieBreakFactorId
 } from '$lib/tournament-logic';
 
@@ -25,6 +26,7 @@ export type ExplainedCourtStanding = CourtStandings & {
 	name: string;
 	tiedFactors: TieBreakFactorId[];
 	decidingFactor: TieBreakFactorId | null;
+	decidingOutcome: TieBreakDecidingOutcome;
 };
 
 export type ResolveRotationStandingsResult = {
@@ -72,7 +74,8 @@ export function snapshotToExplainedStandings(
 		rawDiff: s.rawDiff,
 		name: playerNames.get(s.playerId) ?? String(s.playerId),
 		tiedFactors: [...s.tiedFactors],
-		decidingFactor: s.decidingFactor
+		decidingFactor: s.decidingFactor,
+		decidingOutcome: s.decidingOutcome ?? null
 	}));
 }
 
@@ -86,7 +89,8 @@ export function explainedToSnapshot(standings: readonly ExplainedCourtStanding[]
 		rawPoints: s.rawPoints,
 		rawDiff: s.rawDiff,
 		tiedFactors: [...s.tiedFactors],
-		decidingFactor: s.decidingFactor
+		decidingFactor: s.decidingFactor,
+		decidingOutcome: s.decidingOutcome ?? null
 	}));
 }
 
@@ -216,13 +220,15 @@ export function computeExplainedStandings(opts: {
 	const explained = standings.map((s) => {
 		const exp: CourtStandingExplanation = explanations.get(s.playerId) ?? {
 			tiedFactors: [],
-			decidingFactor: null
+			decidingFactor: null,
+			decidingOutcome: null
 		};
 		return {
 			...s,
 			name: playerNames.get(s.playerId) ?? String(s.playerId),
 			tiedFactors: [...exp.tiedFactors],
-			decidingFactor: exp.decidingFactor
+			decidingFactor: exp.decidingFactor,
+			decidingOutcome: exp.decidingOutcome
 		};
 	});
 
@@ -371,12 +377,17 @@ export async function snapshotClosedRoundRotations(opts: {
 		);
 
 		const explained: ExplainedCourtStanding[] = courtResult.standings.map((s) => {
-			const exp = explanations.get(s.playerId) ?? { tiedFactors: [], decidingFactor: null };
+			const exp = explanations.get(s.playerId) ?? {
+				tiedFactors: [],
+				decidingFactor: null,
+				decidingOutcome: null
+			};
 			return {
 				...s,
 				name: playerNames.get(s.playerId) ?? String(s.playerId),
 				tiedFactors: [...exp.tiedFactors],
-				decidingFactor: exp.decidingFactor
+				decidingFactor: exp.decidingFactor,
+				decidingOutcome: exp.decidingOutcome
 			};
 		});
 
