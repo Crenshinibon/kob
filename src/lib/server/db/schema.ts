@@ -1,5 +1,17 @@
 import { pgTable, serial, integer, text, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core';
-import type { TieBreakConfig } from '$lib/tournament-logic';
+import type { TieBreakConfig, TieBreakFactorId } from '$lib/tournament-logic';
+
+export type CourtStandingSnapshot = {
+	playerId: number;
+	rank: number;
+	points: number;
+	diff: number;
+	matchCount: number;
+	rawPoints?: number;
+	rawDiff?: number;
+	tiedFactors: TieBreakFactorId[];
+	decidingFactor: TieBreakFactorId | null;
+};
 
 export const tournament = pgTable('tournament', {
 	id: serial('id').primaryKey(),
@@ -75,7 +87,11 @@ export const courtRotation = pgTable('court_rotation', {
 	player4Id: integer('player_4_id'),
 	player5Id: integer('player_5_id'),
 	player6Id: integer('player_6_id'),
-	manualRankOrder: jsonb('manual_rank_order').$type<number[]>()
+	manualRankOrder: jsonb('manual_rank_order').$type<number[]>(),
+	tieBreakConfigSnapshot: jsonb('tie_break_config_snapshot').$type<TieBreakConfig>(),
+	standingsSnapshot: jsonb('standings_snapshot').$type<CourtStandingSnapshot[]>(),
+	diceRolls: jsonb('dice_rolls').$type<Record<string, number>>(),
+	roundClosedAt: timestamp('round_closed_at')
 });
 
 export const match = pgTable('match', {

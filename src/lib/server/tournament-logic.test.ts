@@ -20,6 +20,8 @@ import {
 	explainCourtStandings,
 	getManualTieGroups,
 	isValidManualRankOrder,
+	compareDicePairStable,
+	dicePairKey,
 	type TieBreakConfig,
 	type TieBreakFactorId,
 	generate4pMatches,
@@ -4882,6 +4884,29 @@ describe('tie-break ranking', () => {
 		const b = comparePlayersForTieBreak(1, 2, cfg, { rng: () => 0.9 });
 		expect(a).not.toBe(0);
 		expect(b).toBe(1);
+	});
+
+	it('dice pair rolls are stable via mutableDiceRolls', () => {
+		const rolls: Record<string, number> = {};
+		const cfg = configWith([
+			{ id: 'round_points', enabled: false },
+			{ id: 'round_diff', enabled: false },
+			{ id: 'total_points', enabled: false },
+			{ id: 'total_diff', enabled: false },
+			{ id: 'initial_order', enabled: false },
+			{ id: 'dice', enabled: true },
+			{ id: 'manual', enabled: false }
+		]);
+		const first = comparePlayersForTieBreak(1, 2, cfg, { mutableDiceRolls: rolls });
+		const second = comparePlayersForTieBreak(1, 2, cfg, { mutableDiceRolls: rolls });
+		expect(first).toBe(second);
+		expect(dicePairKey(1, 2) in rolls).toBe(true);
+	});
+
+	it('compareDicePairStable inverts for reversed player order', () => {
+		const rolls = { '1:2': 0.1 };
+		expect(compareDicePairStable(1, 2, rolls)).toBe(-1);
+		expect(compareDicePairStable(2, 1, rolls)).toBe(1);
 	});
 
 	it('manual rank order resolves ties', () => {

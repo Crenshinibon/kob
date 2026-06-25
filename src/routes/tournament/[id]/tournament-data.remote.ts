@@ -19,13 +19,13 @@ import {
 } from '$lib/server/tournament-logic';
 import {
 	buildCompletedRoundsBefore,
-	computeExplainedStandings,
+	persistRotationDiceRolls,
+	resolveRotationStandings,
 	type ExplainedCourtStanding
 } from '$lib/server/court-standings-service';
 import {
 	buildStandingsTieBreakContext,
 	getManualTieGroups,
-	normalizeTieBreakConfig,
 	type ManualTieGroupDisplay
 } from '$lib/tournament-logic';
 import { formatDuration } from '$lib/i18n/format';
@@ -249,22 +249,29 @@ async function fetchTournamentData(
 			injuredPlayerIds: m.injuredPlayerIds ?? undefined
 		}));
 
-		const standings =
-			matchData.some((m) => m.teamAScore !== null)
-				? computeExplainedStandings({
-						matchData,
-						playerIds,
-						playerNames: playerNameMap,
-						tourney,
-						players: dbPlayers,
-						completedRounds,
-						courtSizes,
-						courtNumber: rotation.courtNumber,
-						manualRankOrder: rotation.manualRankOrder
-					})
-				: [];
+		const standingsResult = resolveRotationStandings({
+			rotation,
+			matchData,
+			playerIds,
+			playerNames: playerNameMap,
+			players: dbPlayers,
+			completedRounds,
+			courtSizes,
+			tourney,
+			useSnapshot: isViewingPastRound || tourney.status === 'completed'
+		});
+		const standings = standingsResult.standings;
 
-		const tieBreakConfig = normalizeTieBreakConfig(tourney.tieBreakConfig ?? null);
+		if (
+			isViewingCurrentRound &&
+			!standingsResult.fromSnapshot &&
+			standings.length > 0 &&
+			JSON.stringify(standingsResult.diceRolls) !== JSON.stringify(rotation.diceRolls ?? {})
+		) {
+			await persistRotationDiceRolls(rotation.id, standingsResult.diceRolls);
+		}
+
+		const tieBreakConfig = standingsResult.tieBreakConfig;
 		const tbContext = buildStandingsTieBreakContext(matchData, playerIds, {
 			tieBreakConfig,
 			completedRounds,
@@ -275,7 +282,8 @@ async function fetchTournamentData(
 				seedPoints: p.seedPoints,
 				seedRank: p.seedRank
 			})),
-			manualRankOrder: rotation.manualRankOrder ?? undefined
+			manualRankOrder: rotation.manualRankOrder ?? undefined,
+			mutableDiceRolls: standingsResult.diceRolls
 		});
 		const manualTieGroups =
 			matchData.some((m) => m.teamAScore !== null)
