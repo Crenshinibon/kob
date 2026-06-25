@@ -168,6 +168,30 @@ export async function buildCompletedRoundsBefore(
 	return completed;
 }
 
+function applyStandingsExplanations(
+	standings: readonly CourtStandings[],
+	playerNames: Map<number, string>,
+	tieBreakConfig: TieBreakConfig,
+	tbContext: ReturnType<typeof buildStandingsTieBreakContext>
+): ExplainedCourtStanding[] {
+	const explanations = explainCourtStandings(standings, tieBreakConfig, tbContext.context);
+
+	return standings.map((s) => {
+		const exp: CourtStandingExplanation = explanations.get(s.playerId) ?? {
+			tiedFactors: [],
+			decidingFactor: null,
+			decidingOutcome: null
+		};
+		return {
+			...s,
+			name: playerNames.get(s.playerId) ?? String(s.playerId),
+			tiedFactors: [...exp.tiedFactors],
+			decidingFactor: exp.decidingFactor,
+			decidingOutcome: exp.decidingOutcome
+		};
+	});
+}
+
 export function computeExplainedStandings(opts: {
 	matchData: MatchData[];
 	playerIds: readonly number[];
@@ -215,25 +239,9 @@ export function computeExplainedStandings(opts: {
 
 	const standings = calculateCourtStandings(matchData, playerIds, standingsOptions);
 	const tbContext = buildStandingsTieBreakContext(matchData, playerIds, standingsOptions);
-	const explanations = explainCourtStandings(standings, tieBreakConfig, tbContext.context);
-
-	const explained = standings.map((s) => {
-		const exp: CourtStandingExplanation = explanations.get(s.playerId) ?? {
-			tiedFactors: [],
-			decidingFactor: null,
-			decidingOutcome: null
-		};
-		return {
-			...s,
-			name: playerNames.get(s.playerId) ?? String(s.playerId),
-			tiedFactors: [...exp.tiedFactors],
-			decidingFactor: exp.decidingFactor,
-			decidingOutcome: exp.decidingOutcome
-		};
-	});
 
 	return {
-		standings: explained,
+		standings: applyStandingsExplanations(standings, playerNames, tieBreakConfig, tbContext),
 		diceRolls: mutableDiceRolls,
 		tieBreakConfig,
 		fromSnapshot: false
@@ -264,12 +272,36 @@ export function resolveRotationStandings(opts: {
 	} = opts;
 
 	if (useSnapshot && hasStandingsSnapshot(rotation) && rotation.standingsSnapshot) {
+		const tieBreakConfig = normalizeTieBreakConfig(
+			rotation.tieBreakConfigSnapshot ?? tourney.tieBreakConfig ?? null
+		);
+		const logicPlayers: Player[] = players.map((p) => ({
+			id: p.id,
+			name: p.name,
+			seedPoints: p.seedPoints,
+			seedRank: p.seedRank
+		}));
+		const mutableDiceRolls = { ...(rotation.diceRolls ?? {}) };
+		const standingsOptions = {
+			tieBreakConfig,
+			completedRounds,
+			courtSizes,
+			players: logicPlayers,
+			manualRankOrder: rotation.manualRankOrder ?? undefined,
+			mutableDiceRolls
+		};
+		const baseStandings = snapshotToCourtStandings(rotation.standingsSnapshot);
+		const tbContext = buildStandingsTieBreakContext(matchData, playerIds, standingsOptions);
+
 		return {
-			standings: snapshotToExplainedStandings(rotation.standingsSnapshot, playerNames),
-			diceRolls: { ...(rotation.diceRolls ?? {}) },
-			tieBreakConfig: normalizeTieBreakConfig(
-				rotation.tieBreakConfigSnapshot ?? tourney.tieBreakConfig ?? null
+			standings: applyStandingsExplanations(
+				baseStandings,
+				playerNames,
+				tieBreakConfig,
+				tbContext
 			),
+			diceRolls: mutableDiceRolls,
+			tieBreakConfig,
 			fromSnapshot: true
 		};
 	}
