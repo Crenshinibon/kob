@@ -769,19 +769,26 @@
 						<ul class="tie-break-list">
 							{#each localTieBreakFactors as factor, fi (factor.id)}
 								<li class="tie-break-item">
-									<label>
-										<input
-											type="checkbox"
-											checked={factor.enabled}
-											onchange={(e) => {
-												localTieBreakFactors = localTieBreakFactors.map((f, i) =>
-													i === fi ? { ...f, enabled: e.currentTarget.checked } : f
-												);
-												editingTieBreak = true;
-											}}
+									<div class="tie-break-factor">
+										<TieBreakFactorIcons
+											factor={factor.id}
+											size="large"
+											getLabel={tieBreakFactorLabel}
 										/>
-										{tieBreakFactorLabel(factor.id)}
-									</label>
+										<label>
+											<input
+												type="checkbox"
+												checked={factor.enabled}
+												onchange={(e) => {
+													localTieBreakFactors = localTieBreakFactors.map((f, i) =>
+														i === fi ? { ...f, enabled: e.currentTarget.checked } : f
+													);
+													editingTieBreak = true;
+												}}
+											/>
+											<span class="tie-break-label">{tieBreakFactorLabel(factor.id)}</span>
+										</label>
+									</div>
 									<div class="tie-break-actions">
 										<button
 											type="button"
@@ -1896,8 +1903,29 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--spacing-sm);
-		padding: var(--spacing-xs) 0;
+		padding: var(--spacing-sm) 0;
 		border-bottom: 1px solid var(--border-color);
+	}
+
+	.tie-break-factor {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-md);
+		flex: 1;
+		min-width: 0;
+	}
+
+	.tie-break-factor label {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		cursor: pointer;
+		min-width: 0;
+	}
+
+	.tie-break-label {
+		font-size: var(--font-size-sm);
+		line-height: 1.3;
 	}
 
 	.tie-break-actions {

@@ -3,32 +3,39 @@
 	import { TIE_BREAK_FACTOR_GLYPHS } from '$lib/tournament-logic';
 
 	let {
-		tiedFactors,
-		decidingFactor,
+		tiedFactors = [],
+		decidingFactor = null,
+		factor = null,
+		size = 'inline',
 		getLabel
 	}: {
-		tiedFactors: readonly TieBreakFactorId[];
-		decidingFactor: TieBreakFactorId | null;
+		tiedFactors?: readonly TieBreakFactorId[];
+		decidingFactor?: TieBreakFactorId | null;
+		/** When set, shows a single factor icon (e.g. tie-break config list). */
+		factor?: TieBreakFactorId | null;
+		size?: 'inline' | 'large';
 		getLabel: (id: TieBreakFactorId) => string;
 	} = $props();
 
 	const consideredFactors = $derived(
-		decidingFactor ? [...tiedFactors, decidingFactor] : [...tiedFactors]
+		factor ? [factor] : decidingFactor ? [...tiedFactors, decidingFactor] : [...tiedFactors]
 	);
 </script>
 
 {#if consideredFactors.length > 0}
-	<span class="tie-break-icons" aria-label="Tie-break factors">
-		{#each consideredFactors as factor (factor)}
+	<span class="tie-break-icons" class:large={size === 'large'} aria-label="Tie-break factors">
+		{#each consideredFactors as item (item)}
 			<span
 				class="factor-icon"
-				class:tied={tiedFactors.includes(factor)}
-				class:deciding={decidingFactor === factor}
-				title={decidingFactor === factor
-					? getLabel(factor)
-					: `${getLabel(factor)} (=)`}
-				aria-label={getLabel(factor)}
-			>{TIE_BREAK_FACTOR_GLYPHS[factor]}</span>
+				class:tied={!factor && tiedFactors.includes(item)}
+				class:deciding={!factor && decidingFactor === item}
+				title={factor
+					? getLabel(item)
+					: decidingFactor === item
+						? getLabel(item)
+						: `${getLabel(item)} (=)`}
+				aria-label={getLabel(item)}
+			>{TIE_BREAK_FACTOR_GLYPHS[item]}</span>
 		{/each}
 	</span>
 {/if}
@@ -40,6 +47,11 @@
 		gap: 2px;
 		margin-left: var(--spacing-xs);
 		vertical-align: middle;
+		flex-shrink: 0;
+	}
+
+	.tie-break-icons.large {
+		margin-left: 0;
 	}
 
 	.factor-icon {
@@ -57,6 +69,16 @@
 		line-height: 1;
 	}
 
+	.tie-break-icons.large .factor-icon {
+		min-width: 2.75rem;
+		height: 2.75rem;
+		font-size: 1.35rem;
+		border-radius: var(--radius-sm);
+		border-width: 2px;
+		color: var(--text-primary);
+		background: var(--bg-primary);
+	}
+
 	.factor-icon.tied {
 		opacity: 0.65;
 		border-style: dashed;
@@ -69,5 +91,9 @@
 		border-style: solid;
 		background: color-mix(in srgb, var(--accent-info) 18%, var(--bg-secondary));
 		box-shadow: 0 0 0 1px var(--accent-info);
+	}
+
+	.tie-break-icons.large .factor-icon.deciding {
+		background: color-mix(in srgb, var(--accent-info) 18%, var(--bg-primary));
 	}
 </style>
