@@ -23,6 +23,11 @@ jobs:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
           NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
         run: |
+          if [ -z "$NEON_API_KEY" ] || [ -z "$NEON_PROJECT_ID" ]; then
+            echo "::warning::NEON_API_KEY (secret) and/or NEON_PROJECT_ID (variable) are not set — skipping cleanup."
+            echo "::warning::See https://neon.tech/docs/guides/branching-github-actions"
+            exit 0
+          fi
           FLAGS=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             FLAGS="--dry-run"
