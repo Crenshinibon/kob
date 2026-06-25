@@ -17,6 +17,9 @@ import {
 	comparePlayersForTieBreak,
 	sortPlayersByTieBreak,
 	DEFAULT_TIE_BREAK_CONFIG,
+	normalizeTieBreakConfig,
+	isFinalTieBreakFactor,
+	isStatisticalTieBreakFactor,
 	explainCourtStandings,
 	getManualTieGroups,
 	isValidManualRankOrder,
@@ -4742,15 +4745,16 @@ describe('Preseed frozen courts: court count per round', () => {
 // ============================================================================
 
 describe('tie-break ranking', () => {
-	const only = (id: TieBreakFactorId): TieBreakConfig => ({
-		factors: DEFAULT_TIE_BREAK_CONFIG.factors.map((f) => ({
-			id: f.id,
-			enabled: f.id === id
-		}))
-	});
+	const only = (id: TieBreakFactorId): TieBreakConfig =>
+		normalizeTieBreakConfig({
+			factors: DEFAULT_TIE_BREAK_CONFIG.factors.map((f) => ({
+				id: f.id,
+				enabled: f.id === id
+			}))
+		});
 
 	function configWith(factors: { id: TieBreakFactorId; enabled: boolean }[]) {
-		return { factors };
+		return normalizeTieBreakConfig({ factors });
 	}
 
 	it('default config matches legacy 4p points → diff → playerId', () => {
@@ -5203,5 +5207,51 @@ describe('tie-break ranking', () => {
 		const context = { roundStats, totalStats: new Map() };
 		expect(isValidManualRankOrder([1, 2, 3], [2, 1, 3], cfg, context)).toBe(true);
 		expect(isValidManualRankOrder([1, 2, 3], [3, 1, 2], cfg, context)).toBe(false);
+	});
+
+	it('normalizeTieBreakConfig keeps only one enabled final factor', () => {
+		const cfg = normalizeTieBreakConfig({
+			factors: [
+				{ id: 'round_points', enabled: true },
+				{ id: 'round_diff', enabled: true },
+				{ id: 'total_points', enabled: true },
+				{ id: 'total_diff', enabled: true },
+				{ id: 'initial_order', enabled: true },
+				{ id: 'dice', enabled: true },
+				{ id: 'manual', enabled: false }
+			]
+		});
+
+		const enabledFinals = cfg.factors.filter((f) => f.enabled && isFinalTieBreakFactor(f.id));
+		expect(enabledFinals).toHaveLength(1);
+		expect(enabledFinals[0]?.id).toBe('dice');
+	});
+
+	it('normalizeTieBreakConfig defaults to seeding when no final is enabled', () => {
+		const cfg = normalizeTieBreakConfig({
+			factors: DEFAULT_TIE_BREAK_CONFIG.factors.map((f) => ({
+				id: f.id,
+				enabled: isStatisticalTieBreakFactor(f.id)
+			}))
+		});
+
+		expect(cfg.factors.find((f) => f.id === 'initial_order')?.enabled).toBe(true);
+		expect(cfg.factors.find((f) => f.id === 'dice')?.enabled).toBe(false);
+		expect(cfg.factors.find((f) => f.id === 'manual')?.enabled).toBe(false);
+	});
+
+	it('normalizeTieBreakConfig places final factors after statistical factors', () => {
+		const cfg = normalizeTieBreakConfig({
+			factors: [
+				{ id: 'dice', enabled: true },
+				{ id: 'round_points', enabled: true },
+				{ id: 'manual', enabled: false },
+				{ id: 'initial_order', enabled: false }
+			]
+		});
+
+		const ids = cfg.factors.map((f) => f.id);
+		expect(ids.indexOf('round_points')).toBeLessThan(ids.indexOf('dice'));
+		expect(ids.indexOf('dice')).toBeLessThan(ids.indexOf('manual'));
 	});
 });

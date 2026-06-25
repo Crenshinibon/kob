@@ -606,7 +606,7 @@ export const updateTieBreakConfig = command(
 
 		if (!tourney) error(404, m.tournament_not_found());
 
-		const config: TieBreakConfig = { factors };
+		const config = normalizeTieBreakConfig({ factors });
 		await db
 			.update(tournament)
 			.set({ tieBreakConfig: config, lastActivityAt: new Date() })

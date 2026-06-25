@@ -274,7 +274,7 @@
 	"scores_read_only": "Los resultados de esta ronda son de solo lectura.",
 	"err_court_read_only": "Esta ronda está cerrada — no se pueden editar resultados.",
 	"tie_break_heading": "Reglas de desempate",
-	"tie_break_hint": "Reordene los factores. Los desactivados se omiten.",
+	"tie_break_hint": "Reordena los factores por prioridad. Los factores estadísticos pueden empatar; exactamente un factor final (seeding, dado o manual) debe estar activo al final.",
 	"tie_break_factor_round_points": "Puntos esta ronda",
 	"tie_break_factor_round_diff": "Diff esta ronda",
 	"tie_break_factor_total_points": "Puntos totales",

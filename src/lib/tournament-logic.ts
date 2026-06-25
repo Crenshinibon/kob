@@ -39,6 +39,32 @@ export type TieBreakConfig = {
 	readonly factors: readonly TieBreakFactorConfig[];
 };
 
+export const TIE_BREAK_CANONICAL_FACTOR_ORDER: readonly TieBreakFactorId[] = [
+	'round_points',
+	'round_diff',
+	'total_points',
+	'total_diff',
+	'initial_order',
+	'dice',
+	'manual'
+];
+
+export const TIE_BREAK_FINAL_FACTOR_IDS: readonly TieBreakFactorId[] = [
+	'initial_order',
+	'dice',
+	'manual'
+];
+
+export const DEFAULT_TIE_BREAK_FINAL_FACTOR: TieBreakFactorId = 'initial_order';
+
+export function isFinalTieBreakFactor(id: TieBreakFactorId): boolean {
+	return (TIE_BREAK_FINAL_FACTOR_IDS as readonly string[]).includes(id);
+}
+
+export function isStatisticalTieBreakFactor(id: TieBreakFactorId): boolean {
+	return !isFinalTieBreakFactor(id);
+}
+
 export const DEFAULT_TIE_BREAK_CONFIG: TieBreakConfig = {
 	factors: [
 		{ id: 'round_points', enabled: true },
@@ -831,7 +857,49 @@ const STANDARD_GAMES_PER_ROUND = 3;
 
 export function normalizeTieBreakConfig(config: TieBreakConfig | null | undefined): TieBreakConfig {
 	if (!config?.factors?.length) return DEFAULT_TIE_BREAK_CONFIG;
-	return config;
+
+	const storedById = new Map(config.factors.map((f) => [f.id, f]));
+	const orderedIds: TieBreakFactorId[] = [];
+
+	for (const factor of config.factors) {
+		if (
+			(TIE_BREAK_CANONICAL_FACTOR_ORDER as readonly string[]).includes(factor.id) &&
+			!orderedIds.includes(factor.id)
+		) {
+			orderedIds.push(factor.id);
+		}
+	}
+	for (const id of TIE_BREAK_CANONICAL_FACTOR_ORDER) {
+		if (!orderedIds.includes(id)) orderedIds.push(id);
+	}
+
+	const mergedFactors: TieBreakFactorConfig[] = orderedIds.map((id) => ({
+		id,
+		enabled: storedById.get(id)?.enabled ?? false
+	}));
+
+	return enforceFinalTieBreakFactorRules({ factors: mergedFactors });
+}
+
+function enforceFinalTieBreakFactorRules(config: TieBreakConfig): TieBreakConfig {
+	const statsInOrder = config.factors.filter((f) => isStatisticalTieBreakFactor(f.id));
+	const enabledFinalsInUserOrder = config.factors.filter(
+		(f) => f.enabled && isFinalTieBreakFactor(f.id)
+	);
+
+	const activeFinal: TieBreakFactorId =
+		enabledFinalsInUserOrder.length > 0
+			? enabledFinalsInUserOrder[enabledFinalsInUserOrder.length - 1]!.id
+			: DEFAULT_TIE_BREAK_FINAL_FACTOR;
+
+	const normalizedFinals: TieBreakFactorConfig[] = TIE_BREAK_FINAL_FACTOR_IDS.map((id) => ({
+		id,
+		enabled: id === activeFinal
+	}));
+
+	return {
+		factors: [...statsInOrder, ...normalizedFinals]
+	};
 }
 
 export function getEnabledTieBreakFactors(config: TieBreakConfig | null | undefined): TieBreakFactorId[] {
@@ -1060,6 +1128,7 @@ export function comparePlayersForTieBreak(
 			const a = getInitialOrderValue(playerA, context.players);
 			const b = getInitialOrderValue(playerB, context.players);
 			if (a !== b) return a - b;
+			return playerA - playerB;
 		}
 	}
 
@@ -1138,8 +1207,8 @@ export function explainPairTieBreak(
 	const tiedFactors: TieBreakFactorId[] = [];
 
 	for (const factor of factors) {
-		if (factor === 'dice') {
-			return { tiedFactors, decidingFactor: 'dice' };
+		if (isFinalTieBreakFactor(factor)) {
+			return { tiedFactors, decidingFactor: factor };
 		}
 		const cmp = compareSingleTieBreakFactor(factor, higherRankedId, lowerRankedId, context);
 		if (cmp !== 0) {
