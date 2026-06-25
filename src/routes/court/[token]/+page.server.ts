@@ -7,8 +7,7 @@ import { eq, and } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 import {
 	getMinPointsForSet,
-	getScoringLabel,
-	type TieBreakFactorId
+	getScoringLabel
 } from '$lib/server/tournament-logic';
 import {
 	buildCompletedRoundsBefore,
@@ -74,7 +73,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			},
 			matches: [],
 			standings: [],
-			enabledTieBreakFactors: [] as TieBreakFactorId[],
 			isActive: false,
 			isEditable: false,
 			currentRound,
@@ -168,10 +166,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		).length
 	}));
 
-	const enabledTieBreakFactors =
-		explained[0]?.enabledFactors ??
-		([] as TieBreakFactorId[]);
-
 	const courtSize = rotation.courtSize ?? playerIds.length;
 
 	const pointsToWin = tourney.pointsToWin ?? 21;
@@ -210,7 +204,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		},
 		matches,
 		standings,
-		enabledTieBreakFactors,
 		isActive: courtRecord.isActive && tourney.status === 'active',
 		isEditable,
 		currentRound,

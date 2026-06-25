@@ -36,9 +36,8 @@
 		name: string;
 		avgPoints?: number;
 		matchesPlayed: number;
+		tiedFactors: TieBreakFactorId[];
 		decidingFactor: TieBreakFactorId | null;
-		winningFactors: TieBreakFactorId[];
-		enabledFactors: TieBreakFactorId[];
 	}
 
 	interface CourtInfo {
@@ -73,13 +72,16 @@
 			court: CourtInfo;
 			matches: MatchRow[];
 			standings: StandingRow[];
-			enabledTieBreakFactors: TieBreakFactorId[];
 			isActive: boolean;
 			isEditable: boolean;
 			currentRound: number;
 			isAuthenticated: boolean;
 		};
 	}>();
+
+	const showTieBreakIcons = $derived(
+		data.standings.some((s: StandingRow) => s.tiedFactors.length > 0 || s.decidingFactor)
+	);
 
 	function tieBreakFactorLabel(id: TieBreakFactorId): string {
 		const labels: Record<TieBreakFactorId, () => string> = {
@@ -763,7 +765,7 @@
 	{#if data.standings.length > 0}
 		<section class="standings" transition:slide>
 			<h2>{msg.court_standings()}</h2>
-			{#if data.enabledTieBreakFactors.length > 0}
+			{#if showTieBreakIcons}
 				<p class="standings-legend">{msg.tie_break_standings_legend()}</p>
 			{/if}
 			{#if data.court.courtSize === 3}
@@ -776,7 +778,7 @@
 					<tr>
 						<th>{msg.court_3p_table_header()}</th>
 						<th>{msg.court_3p_table_player()}</th>
-						{#if data.enabledTieBreakFactors.length > 0}
+						{#if showTieBreakIcons}
 							<th>{msg.tie_break_icons_header()}</th>
 						{/if}
 						{#if data.court.courtSize === 5 || data.court.courtSize === 6}
@@ -791,11 +793,10 @@
 						<tr transition:slide>
 							<td>{s.rank}</td>
 							<td>{s.name}</td>
-							{#if data.enabledTieBreakFactors.length > 0}
+							{#if showTieBreakIcons}
 								<td>
 									<TieBreakFactorIcons
-										enabledFactors={s.enabledFactors}
-										winningFactors={s.winningFactors}
+										tiedFactors={s.tiedFactors}
 										decidingFactor={s.decidingFactor}
 										getLabel={tieBreakFactorLabel}
 									/>

@@ -22,6 +22,12 @@ import {
 	computeExplainedStandings,
 	type ExplainedCourtStanding
 } from '$lib/server/court-standings-service';
+import {
+	buildStandingsTieBreakContext,
+	getManualTieGroups,
+	normalizeTieBreakConfig,
+	type ManualTieGroupDisplay
+} from '$lib/tournament-logic';
 import { formatDuration } from '$lib/i18n/format';
 
 export interface CourtDisplayData {
@@ -39,6 +45,7 @@ export interface CourtDisplayData {
 	courtId: number;
 	rotationId: number;
 	manualRankOrder: number[] | null;
+	manualTieGroups: ManualTieGroupDisplay[];
 	standings: ExplainedCourtStanding[];
 }
 
@@ -257,6 +264,24 @@ async function fetchTournamentData(
 					})
 				: [];
 
+		const tieBreakConfig = normalizeTieBreakConfig(tourney.tieBreakConfig ?? null);
+		const tbContext = buildStandingsTieBreakContext(matchData, playerIds, {
+			tieBreakConfig,
+			completedRounds,
+			courtSizes,
+			players: dbPlayers.map((p) => ({
+				id: p.id,
+				name: p.name,
+				seedPoints: p.seedPoints,
+				seedRank: p.seedRank
+			})),
+			manualRankOrder: rotation.manualRankOrder ?? undefined
+		});
+		const manualTieGroups =
+			matchData.some((m) => m.teamAScore !== null)
+				? getManualTieGroups(playerIds, tieBreakConfig, tbContext.context)
+				: [];
+
 		courts.push({
 			courtNumber: rotation.courtNumber,
 			courtSize: size,
@@ -266,6 +291,7 @@ async function fetchTournamentData(
 			courtId: access[0]?.id ?? rotation.courtId,
 			rotationId: rotation.id,
 			manualRankOrder: rotation.manualRankOrder ?? null,
+			manualTieGroups,
 			players: rotationPlayers,
 			standings,
 			isComplete
