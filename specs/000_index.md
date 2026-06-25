@@ -12,7 +12,7 @@
 
 - **[060_court-operations.md](./060_court-operations.md)**: Mobile-optimized score entry. Supports 3p/4p/5p/6p courts. Best-of-3 set-by-set scoring. No live query on court page.
 
-- **[070_scoring-and-standings.md](./070_scoring-and-standings.md)**: Points = your score each match. Tiebreakers: points → differential → playerId (deterministic). 5p/6p use average points per game. Canceled matches use averages. Scoring modes: single-21, best-of-3, custom. Per-court-type overrides.
+- **[070_scoring-and-standings.md](./070_scoring-and-standings.md)**: Points = your score each match. Configurable tie-breakers (see 094): round/total points & diff, seeding, dice, manual. Tie-break factor icons with outcome colors on standings. 5p/6p use average points per game. Canceled matches use averages. Scoring modes: single-21, best-of-3, custom. Per-court-type overrides.
 
 - **[080_promotion-relegation.md](./080_promotion-relegation.md)**: Random Seed: R1→R2 vertical seeding (flatten by rank, sort by points, fill courts top-to-bottom), R2+ ladder (2 up, 2 down). Preseed: recursive tiered redistribution with origin mixing. All work for 8-64 players (2-16 courts). Non-standard bottom court for leftovers.
   - **[081_preseed-example-12p.md](./081_preseed-example-12p.md)**: 12 players (3 courts, 3 rounds) — bracket tree: 3→2W+1L→1F+1L(W)+1L. Shows origin mixing on first split, recursive halving on second.
@@ -24,8 +24,8 @@
   - **[089_random-example-17p-retirement.md](./089_random-example-17p-retirement.md)**: 17 players — Round 3 retirement walkthrough. Ladder cascade: top court unchanged, empty slots backfilled from relegation pool.
   - **[091_preseed-retirement-bracket-policy.md](./091_preseed-retirement-bracket-policy.md)**: Preseed retirement — Shrink vs Cascade, optional replacement, test matrix — **PROPOSED**
   - **[092_mid-round-injury-forward-retirement.md](./092_mid-round-injury-forward-retirement.md)**: Mid-round injury + forward retirement on closeRound — **PROPOSED**
-  - **[093_round-history-stepper.md](./093_round-history-stepper.md)**: Round stepper on tournament admin view — browse past rounds, read-only historical scores
-  - **[094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md)**: Configurable tie-break factors (round/total points & diff, dice, manual) for standings and redistribution
+  - **[093_round-history-stepper.md](./093_round-history-stepper.md)**: [IMPLEMENTED] Round stepper on tournament admin view — browse past rounds, read-only historical scores on court pages
+  - **[094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md)**: [IMPLEMENTED] Configurable tie-break factors (round/total points & diff, dice, manual) for standings and redistribution; final-factor radio group; manual dialog; outcome-colored icons; round-close snapshots
 - **[087_preseed-frozen-courts.md](./087_preseed-frozen-courts.md)**: Preseed frozen courts — single-court bracket leaves freeze after their round-robin is complete. Covers all court counts 3–16 with cascade freeze points (e.g. 7 courts: C7 after R3, C1–C6 after R4). Implementation: `getFrozenCourts()` simulates bracket tree, returns freeze round per court.
 
 - **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export] Sorted by court position (not total points), per spec 070.

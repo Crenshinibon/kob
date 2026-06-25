@@ -144,4 +144,16 @@ Court view shows standings table:
 
 For 5p/6p courts, shows average points per game instead of total.
 
+### Tie-Break Visualization
+
+When players are separated by configurable tie-break factors (see [094](./094_configurable-tie-breaking.md)):
+
+- Standings rows show **factor icons** beside player names (`TieBreakFactorIcons`).
+- Dashed icons = tied on that factor; solid icon with color = deciding factor.
+- Outcome colors: **gold** (won break), **green** (middle of group), **blue** (lost break).
+- A legend appears when any standings row has tie-break icons.
+- Tournament admin page also colors rank numbers with the deciding outcome.
+
+Past-round and closed-round views use **snapshotted** standings; explanations are recomputed from stored config + dice rolls on load.
+
 No statistics tracking, no detailed analytics, no export.

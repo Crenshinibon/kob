@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { closeRound, deleteTournamentByName } from './helpers';
 
 async function findPlayerCourt(page: Page, playerName: string): Promise<number> {
 	const courtCards = await page.locator('.court-card').all();
@@ -54,34 +55,13 @@ test.describe('Tournament Integration Tests', () => {
 	});
 
 	test.afterEach(async ({ page }) => {
-		// Clean up test tournaments
 		for (const tournamentName of testTournamentNames) {
 			try {
-				await page.goto('/');
-
-				// Find and click on the tournament card to go to its detail page
-				const tournamentCard = page
-					.locator(`.tournament-card:has-text("${tournamentName}")`)
-					.first();
-				if (await tournamentCard.isVisible().catch(() => false)) {
-					await tournamentCard.click();
-
-					// Try to find and click a delete button if it exists
-					const deleteButton = page.locator('button:has-text("Delete")');
-					if (await deleteButton.isVisible().catch(() => false)) {
-						await deleteButton.click();
-						// Confirm deletion if there's a confirmation dialog
-						const confirmButton = page.locator('button:has-text("Confirm")');
-						if (await confirmButton.isVisible().catch(() => false)) {
-							await confirmButton.click();
-						}
-					}
-				}
+				await deleteTournamentByName(page, tournamentName);
 			} catch {
 				// Ignore cleanup errors
 			}
 		}
-		// Clear the array for next test
 		testTournamentNames.length = 0;
 	});
 
@@ -1037,29 +1017,9 @@ test.describe('Tournament Integration Tests', () => {
 			await page.goto(tournamentUrl);
 			await expect(page).toHaveURL(/\/tournament\/\d+/);
 			await page.waitForTimeout(5000);
-			const btnCount = await page.locator('button:has-text("Close Round & Advance")').count();
-			if (btnCount > 0) {
-				await page.click('button:has-text("Close Round & Advance")');
-			} else {
-				// canCloseRound is sometimes false for canceled matches.
-				// Submit closeRoundForm via fetch (n: prefix needed for number coercion).
-				await page.evaluate(async () => {
-					const tdId = location.pathname.split('/').pop();
-					const fd = new URLSearchParams();
-					fd.append('n:tournamentId', tdId || '');
-					await fetch('/_app/remote/1vtu491/closeRoundForm', {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/x-www-form-urlencoded',
-							'x-sveltekit-pathname': location.pathname,
-							'x-sveltekit-search': location.search
-						},
-						body: fd.toString()
-					});
-				});
-				await page.goto(tournamentUrl);
-				await page.waitForTimeout(2000);
-			}
+			await closeRound(page);
+			await page.goto(tournamentUrl);
+			await page.waitForTimeout(2000);
 			await page.waitForSelector('text=Round 2 of 2');
 		});
 
@@ -1162,27 +1122,9 @@ test.describe('Tournament Integration Tests', () => {
 			await page.goto(tournamentUrl);
 			await expect(page).toHaveURL(/\/tournament\/\d+/);
 			await page.waitForTimeout(5000);
-			const sBtnCount = await page.locator('button:has-text("Close Round & Advance")').count();
-			if (sBtnCount > 0) {
-				await page.click('button:has-text("Close Round & Advance")');
-			} else {
-				await page.evaluate(async () => {
-					const tdId = location.pathname.split('/').pop();
-					const fd = new URLSearchParams();
-					fd.append('n:tournamentId', tdId || '');
-					await fetch('/_app/remote/1vtu491/closeRoundForm', {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/x-www-form-urlencoded',
-							'x-sveltekit-pathname': location.pathname,
-							'x-sveltekit-search': location.search
-						},
-						body: fd.toString()
-					});
-				});
-				await page.goto(tournamentUrl);
-				await page.waitForTimeout(2000);
-			}
+			await closeRound(page);
+			await page.goto(tournamentUrl);
+			await page.waitForTimeout(2000);
 			await page.waitForSelector('text=Round 2 of 2');
 		});
 

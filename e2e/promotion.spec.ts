@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { deleteTournamentByName } from './helpers';
 
 /**
  * Tests for promotion and relegation logic
@@ -35,34 +36,13 @@ test.describe('Promotion and Relegation', () => {
 	});
 
 	test.afterEach(async ({ page }) => {
-		// Clean up test tournaments
 		for (const tournamentName of testTournamentNames) {
 			try {
-				await page.goto('/');
-
-				// Find and click on the tournament card to go to its detail page
-				const tournamentCard = page
-					.locator(`.tournament-card:has-text("${tournamentName}")`)
-					.first();
-				if (await tournamentCard.isVisible().catch(() => false)) {
-					await tournamentCard.click();
-
-					// Try to find and click a delete button if it exists
-					const deleteButton = page.locator('button:has-text("Delete")');
-					if (await deleteButton.isVisible().catch(() => false)) {
-						await deleteButton.click();
-						// Confirm deletion if there's a confirmation dialog
-						const confirmButton = page.locator('button:has-text("Confirm")');
-						if (await confirmButton.isVisible().catch(() => false)) {
-							await confirmButton.click();
-						}
-					}
-				}
+				await deleteTournamentByName(page, tournamentName);
 			} catch {
 				// Ignore cleanup errors
 			}
 		}
-		// Clear the array for next test
 		testTournamentNames.length = 0;
 	});
 
