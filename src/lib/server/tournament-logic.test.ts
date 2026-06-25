@@ -5098,6 +5098,72 @@ describe('tie-break ranking', () => {
 		expect(explained.get(2)?.decidingOutcome).toBe('lost');
 	});
 
+	it('explainCourtStandings groups players separated by round diff', () => {
+		const roundStats = new Map([
+			[
+				3,
+				{
+					playerId: 3,
+					rawPoints: 12.67,
+					rawDiff: -1,
+					gamesPlayed: 3,
+					roundPoints: 12.67,
+					roundDiff: -1
+				}
+			],
+			[
+				4,
+				{
+					playerId: 4,
+					rawPoints: 12.67,
+					rawDiff: -1.33,
+					gamesPlayed: 3,
+					roundPoints: 12.67,
+					roundDiff: -1.33
+				}
+			],
+			[
+				5,
+				{
+					playerId: 5,
+					rawPoints: 12.5,
+					rawDiff: -1.5,
+					gamesPlayed: 3,
+					roundPoints: 12.5,
+					roundDiff: -1.5
+				}
+			]
+		]);
+		const cfg = configWith([
+			{ id: 'round_points', enabled: true },
+			{ id: 'round_diff', enabled: true },
+			{ id: 'total_points', enabled: false },
+			{ id: 'total_diff', enabled: false },
+			{ id: 'initial_order', enabled: false },
+			{ id: 'dice', enabled: false },
+			{ id: 'manual', enabled: false }
+		]);
+		const explained = explainCourtStandings(
+			[
+				{ playerId: 3, rank: 3, points: 12.67, diff: -1, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 12.67, diff: -1.33, matchCount: 3 },
+				{ playerId: 5, rank: 5, points: 12.5, diff: -1.5, matchCount: 3 }
+			],
+			cfg,
+			{ roundStats, totalStats: new Map() }
+		);
+
+		expect(explained.get(3)?.tiedFactors).toEqual(['round_points']);
+		expect(explained.get(3)?.decidingFactor).toBe('round_diff');
+		expect(explained.get(3)?.decidingOutcome).toBe('won');
+		expect(explained.get(4)?.tiedFactors).toEqual(['round_points']);
+		expect(explained.get(4)?.decidingFactor).toBe('round_diff');
+		expect(explained.get(4)?.decidingOutcome).toBe('lost');
+		expect(explained.get(5)?.decidingFactor).toBe('round_points');
+		expect(explained.get(5)?.tiedFactors).toEqual([]);
+		expect(explained.get(5)?.decidingOutcome).toBe(null);
+	});
+
 	it('getManualTieGroups finds players tied on automatic factors', () => {
 		const roundStats = new Map([
 			[1, { playerId: 1, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }],

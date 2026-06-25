@@ -28,6 +28,7 @@
 	} from '$lib/tournament-logic';
 	import CourtQRCode from '$lib/components/CourtQRCode.svelte';
 	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
+	import { TIE_BREAK_OUTCOME_COLORS } from '$lib/court-colors';
 	import { formatDiff, formatPoints } from '$lib/i18n/format';
 
 	let { data } = $props<{
@@ -82,6 +83,14 @@
 			manual: m.tie_break_factor_manual
 		};
 		return labels[id]();
+	}
+
+	function courtHasTieBreakIcons(court: CourtDisplayData): boolean {
+		return court.standings.some((s) => s.tiedFactors.length > 0 || s.decidingFactor);
+	}
+
+	function outcomeRankColor(outcome: CourtDisplayData['standings'][number]['decidingOutcome']): string | null {
+		return outcome ? TIE_BREAK_OUTCOME_COLORS[outcome] : null;
 	}
 
 	function moveTieBreakFactor(index: number, direction: -1 | 1) {
@@ -418,12 +427,20 @@
 						<div class="players">
 							{#if court.standings.length > 0}
 								<h4 class="court-standings-heading">{m.court_standings_heading()}</h4>
+								{#if courtHasTieBreakIcons(court)}
+									<p class="standings-legend">{m.tie_break_standings_legend()}</p>
+								{/if}
 								{#each court.standings as s (s.playerId)}
 									<span
 										class="player standing-entry"
 										class:retired={court.players.find((p) => p.id === s.playerId)?.retired}
 									>
-										<span class="standing-rank">{s.rank}.</span>
+										<span
+											class="standing-rank"
+											style={outcomeRankColor(s.decidingOutcome)
+												? `color: ${outcomeRankColor(s.decidingOutcome)}`
+												: undefined}
+										>{s.rank}.</span>
 										<span class="standing-name">{s.name}</span>
 										{#if court.players.find((p) => p.id === s.playerId)?.retired}
 											<span class="retired-badge">{m.retired_badge()}</span>
@@ -1231,6 +1248,14 @@
 		font-size: var(--font-size-sm);
 		color: var(--text-muted);
 		font-weight: 600;
+	}
+
+	.standings-legend {
+		width: 100%;
+		margin: 0 0 var(--spacing-sm);
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+		line-height: 1.4;
 	}
 
 	.standing-entry {

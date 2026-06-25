@@ -1329,18 +1329,29 @@ export type CourtStandingExplanation = {
 	readonly decidingOutcome: TieBreakDecidingOutcome;
 };
 
-function arePlayersStatisticallyTied(
-	playerA: number,
-	playerB: number,
+function areAdjacentInTieBreakGroup(
+	higherId: number,
+	lowerId: number,
 	config: TieBreakConfig | null | undefined,
 	context: TieBreakContext & {
 		roundStats?: Map<number, PlayerRoundStats>;
 		totalStats?: Map<number, { totalPoints: number; totalDiff: number }>;
+	},
+	groupDecidingFactor: TieBreakFactorId | null
+): { inGroup: boolean; decidingFactor: TieBreakFactorId | null } {
+	const { tiedFactors, decidingFactor } = explainPairTieBreak(
+		higherId,
+		lowerId,
+		config,
+		context
+	);
+	if (tiedFactors.length === 0) {
+		return { inGroup: false, decidingFactor };
 	}
-): boolean {
-	let statsOnlyConfig = configExcludingFactor(config, 'dice');
-	statsOnlyConfig = configExcludingFactor(statsOnlyConfig, 'manual');
-	return explainPairTieBreak(playerA, playerB, statsOnlyConfig, context).decidingFactor === null;
+	if (groupDecidingFactor !== null && decidingFactor !== groupDecidingFactor) {
+		return { inGroup: false, decidingFactor };
+	}
+	return { inGroup: true, decidingFactor };
 }
 
 function decidingOutcomeForGroupIndex(
@@ -1367,15 +1378,28 @@ export function explainCourtStandings(
 	const sorted = [...standings].sort((a, b) => a.rank - b.rank);
 	const tieGroups: number[][] = [];
 	let currentGroup = [sorted[0].playerId];
+	let groupDecidingFactor: TieBreakFactorId | null = null;
 
 	for (let i = 1; i < sorted.length; i++) {
 		const prevId = sorted[i - 1].playerId;
 		const currId = sorted[i].playerId;
-		if (arePlayersStatisticallyTied(prevId, currId, config, context)) {
+		const { inGroup, decidingFactor } = areAdjacentInTieBreakGroup(
+			prevId,
+			currId,
+			config,
+			context,
+			groupDecidingFactor
+		);
+
+		if (inGroup) {
+			if (groupDecidingFactor === null) {
+				groupDecidingFactor = decidingFactor;
+			}
 			currentGroup.push(currId);
 		} else {
 			tieGroups.push(currentGroup);
 			currentGroup = [currId];
+			groupDecidingFactor = null;
 		}
 	}
 	tieGroups.push(currentGroup);
