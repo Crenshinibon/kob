@@ -292,6 +292,6 @@
 	"manual_rank_move_down": "Bajar",
 	"court_standings_heading": "Clasificación del grupo",
 	"tie_break_icons_header": "Desempate",
-	"tie_break_standings_legend": "Los iconos discontinuos se comprobaron pero no separaron jugadores; el azul es el factor decisivo.",
+	"tie_break_standings_legend": "Los iconos discontinuos se comprobaron pero no separaron jugadores. Los iconos de color muestran el factor decisivo: oro = ganó, verde = medio, azul = perdió.",
 	"err_manual_rank_invalid": "Orden manual inválido — solo reordene jugadores dentro del mismo grupo empatado."
 }

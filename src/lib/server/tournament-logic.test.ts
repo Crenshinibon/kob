@@ -5025,7 +5025,77 @@ describe('tie-break ranking', () => {
 		);
 		expect(explained.get(1)?.decidingFactor).toBe('round_points');
 		expect(explained.get(1)?.tiedFactors).not.toContain('round_points');
+		expect(explained.get(1)?.decidingOutcome).toBe(null);
 		expect(explained.get(2)?.decidingFactor).toBe('round_points');
+		expect(explained.get(2)?.decidingOutcome).toBe(null);
+	});
+
+	it('explainCourtStandings assigns shared dice explanation to multi-player tie groups', () => {
+		const roundStats = new Map([
+			[1, { playerId: 1, rawPoints: 61, rawDiff: 2, gamesPlayed: 3, roundPoints: 61, roundDiff: 2 }],
+			[2, { playerId: 2, rawPoints: 61, rawDiff: 2, gamesPlayed: 3, roundPoints: 61, roundDiff: 2 }],
+			[3, { playerId: 3, rawPoints: 61, rawDiff: 2, gamesPlayed: 3, roundPoints: 61, roundDiff: 2 }],
+			[4, { playerId: 4, rawPoints: 57, rawDiff: -6, gamesPlayed: 3, roundPoints: 57, roundDiff: -6 }]
+		]);
+		const cfg = configWith([
+			{ id: 'round_points', enabled: true },
+			{ id: 'round_diff', enabled: true },
+			{ id: 'total_points', enabled: false },
+			{ id: 'total_diff', enabled: false },
+			{ id: 'initial_order', enabled: false },
+			{ id: 'dice', enabled: true },
+			{ id: 'manual', enabled: false }
+		]);
+		const explained = explainCourtStandings(
+			[
+				{ playerId: 1, rank: 1, points: 61, diff: 2, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 61, diff: 2, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 61, diff: 2, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 57, diff: -6, matchCount: 3 }
+			],
+			cfg,
+			{ roundStats, totalStats: new Map() }
+		);
+
+		for (const id of [1, 2, 3]) {
+			expect(explained.get(id)?.decidingFactor).toBe('dice');
+			expect(explained.get(id)?.tiedFactors).toEqual(['round_points', 'round_diff']);
+		}
+		expect(explained.get(1)?.decidingOutcome).toBe('won');
+		expect(explained.get(2)?.decidingOutcome).toBe('middle');
+		expect(explained.get(3)?.decidingOutcome).toBe('lost');
+
+		expect(explained.get(4)?.decidingFactor).toBe('round_points');
+		expect(explained.get(4)?.decidingOutcome).toBe(null);
+	});
+
+	it('explainCourtStandings uses won/lost outcomes for two-player dice ties', () => {
+		const roundStats = new Map([
+			[1, { playerId: 1, rawPoints: 53, rawDiff: 6, gamesPlayed: 3, roundPoints: 53, roundDiff: 6 }],
+			[2, { playerId: 2, rawPoints: 53, rawDiff: 6, gamesPlayed: 3, roundPoints: 53, roundDiff: 6 }]
+		]);
+		const cfg = configWith([
+			{ id: 'round_points', enabled: true },
+			{ id: 'round_diff', enabled: true },
+			{ id: 'total_points', enabled: false },
+			{ id: 'total_diff', enabled: false },
+			{ id: 'initial_order', enabled: false },
+			{ id: 'dice', enabled: true },
+			{ id: 'manual', enabled: false }
+		]);
+		const explained = explainCourtStandings(
+			[
+				{ playerId: 1, rank: 1, points: 53, diff: 6, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 53, diff: 6, matchCount: 3 }
+			],
+			cfg,
+			{ roundStats, totalStats: new Map() }
+		);
+
+		expect(explained.get(1)?.decidingFactor).toBe('dice');
+		expect(explained.get(2)?.decidingFactor).toBe('dice');
+		expect(explained.get(1)?.decidingOutcome).toBe('won');
+		expect(explained.get(2)?.decidingOutcome).toBe('lost');
 	});
 
 	it('getManualTieGroups finds players tied on automatic factors', () => {

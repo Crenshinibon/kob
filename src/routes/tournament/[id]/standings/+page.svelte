@@ -25,11 +25,7 @@
 		if (size === 6) return '6p';
 		return `${size}p`;
 	}
-
-	function getCourtColor(courtNum: number): string {
-		const colors = ['#FFD700', '#FFEA00', '#ADFF2F', '#69F0AE', '#00E5FF'];
-		return colors[Math.min(courtNum - 1, colors.length - 1)] ?? '#FF8C00';
-	}
+	import { getCourtPositionColor } from '$lib/court-colors';
 
 	function getCourtBadgeLabel(courtNum: number, courtSizes: number[]): string {
 		const size = courtSizes.length >= courtNum ? courtSizes[courtNum - 1] : 4;
@@ -209,7 +205,7 @@
 						{#each standings as player, i (player.playerId)}
 							{@const currentCourt = getEffectiveCourt(player, cr, assignment)}
 							{@const rankOnCourt = getCurrentRank(player, cr)}
-							{@const courtColor = currentCourt != null ? getCourtColor(currentCourt) : null}
+							{@const courtColor = currentCourt != null ? getCourtPositionColor(currentCourt) : null}
 							{@const prevCourt =
 								i > 0 ? getEffectiveCourt(standings[i - 1], cr, assignment) : undefined}
 							{@const isNewGroup = currentCourt !== prevCourt}
@@ -282,9 +278,9 @@
 											{#if roundData}
 												<span
 													class="court-badge"
-													style="border-color: {getCourtColor(
+													style="border-color: {getCourtPositionColor(
 														roundData.court
-													)}; color: {getCourtColor(roundData.court)}"
+													)}; color: {getCourtPositionColor(roundData.court)}"
 												>
 													{getCourtBadgeLabel(roundData.court, courtSizes)}
 												</span>

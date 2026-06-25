@@ -292,6 +292,6 @@
 	"manual_rank_move_down": "Move down",
 	"court_standings_heading": "Court standings",
 	"tie_break_icons_header": "Tie-break",
-	"tie_break_standings_legend": "Dashed icons were checked but did not separate players; the blue icon is the deciding factor.",
+	"tie_break_standings_legend": "Dashed icons were checked but did not separate players. Colored icons show the deciding factor: gold = won the tie-break, green = middle, blue = lost.",
 	"err_manual_rank_invalid": "Invalid manual order — only reorder players within the same tie group."
 }

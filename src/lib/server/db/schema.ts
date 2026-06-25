@@ -1,5 +1,5 @@
 import { pgTable, serial, integer, text, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core';
-import type { TieBreakConfig, TieBreakFactorId } from '$lib/tournament-logic';
+import type { TieBreakConfig, TieBreakFactorId, TieBreakDecidingOutcome } from '$lib/tournament-logic';
 
 export type CourtStandingSnapshot = {
 	playerId: number;
@@ -11,6 +11,7 @@ export type CourtStandingSnapshot = {
 	rawDiff?: number;
 	tiedFactors: TieBreakFactorId[];
 	decidingFactor: TieBreakFactorId | null;
+	decidingOutcome?: TieBreakDecidingOutcome;
 };
 
 export const tournament = pgTable('tournament', {
