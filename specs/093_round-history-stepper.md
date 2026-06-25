@@ -132,7 +132,11 @@ No new database tables or migrations required.
 
 - [050_tournament-management.md](./050_tournament-management.md) — tournament view
 - [060_court-operations.md](./060_court-operations.md) — court page
-- [094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md) — manual tie-break UI on court cards
+- [094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md) — manual tie-break dialog on court cards (current round only)
+
+## Implementation Status
+
+**Implemented.** Round stepper on `/tournament/[id]` with `viewRound` state, past-round read-only court pages, and close-round/manual UI hidden when browsing history.
 
 ## Implementation Files
 

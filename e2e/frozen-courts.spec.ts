@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { deleteTournamentByName } from './helpers';
 
 test.describe('Preseed Frozen Courts (20 players, 5 courts)', () => {
 	test.setTimeout(240000);
@@ -8,18 +9,7 @@ test.describe('Preseed Frozen Courts (20 players, 5 courts)', () => {
 	test.afterEach(async ({ page }) => {
 		for (const name of testTournamentNames) {
 			try {
-				await page.goto('/');
-				await page.waitForTimeout(500);
-				const card = page.locator(`.tournament-card:has-text("${name}")`).first();
-				if (await card.isVisible().catch(() => false)) {
-					await card.click();
-					const del = page.locator('button:has-text("Delete")');
-					if (await del.isVisible().catch(() => false)) {
-						await del.click();
-						const confirm = page.locator('button:has-text("Confirm")');
-						if (await confirm.isVisible().catch(() => false)) await confirm.click();
-					}
-				}
+				await deleteTournamentByName(page, name);
 			} catch {
 				// ignore cleanup errors
 			}

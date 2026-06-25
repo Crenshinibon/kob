@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { deleteTournamentByName } from './helpers';
 
 test.describe('Standings Calculation', () => {
 	const testTournamentNames: string[] = [];
@@ -24,25 +25,7 @@ test.describe('Standings Calculation', () => {
 	test.afterEach(async ({ page }) => {
 		for (const tournamentName of testTournamentNames) {
 			try {
-				await page.goto('/');
-				await page.waitForLoadState('networkidle');
-
-				const tournamentCard = page
-					.locator(`.tournament-card:has-text("${tournamentName}")`)
-					.first();
-				if (await tournamentCard.isVisible().catch(() => false)) {
-					await tournamentCard.click();
-					await page.waitForLoadState('networkidle');
-
-					const deleteButton = page.locator('button:has-text("Delete")');
-					if (await deleteButton.isVisible().catch(() => false)) {
-						await deleteButton.click();
-						const confirmButton = page.locator('button:has-text("Confirm")');
-						if (await confirmButton.isVisible().catch(() => false)) {
-							await confirmButton.click();
-						}
-					}
-				}
+				await deleteTournamentByName(page, tournamentName);
 			} catch {
 				// Ignore cleanup errors
 			}

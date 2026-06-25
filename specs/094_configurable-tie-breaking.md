@@ -31,7 +31,7 @@ Enabled factors in this order (dice and manual **disabled** by default):
 2. `round_diff`
 3. `total_points`
 4. `total_diff`
-5. `initial_order`
+5. `initial_order` (the **final** tie-breaker — exactly one of seeding/dice/manual must be enabled)
 6. `dice` (disabled)
 7. `manual` (disabled)
 
@@ -48,6 +48,16 @@ export const DEFAULT_TIE_BREAK_CONFIG: TieBreakConfig = {
   ]
 };
 ```
+
+### Config Normalization (`normalizeTieBreakConfig`)
+
+Saved and loaded configs are normalized to enforce:
+
+1. **Canonical order** — statistical factors first (`round_points` → `total_diff`), then final factors (`initial_order`, `dice`, `manual`).
+2. **Exactly one final factor enabled** — seeding, dice, or manual; defaults to `initial_order` if none enabled.
+3. **Statistical factors** — any subset may be enabled/disabled and reordered among themselves.
+
+Normalization runs on read (tournament load, standings resolution) and on save (`updateTieBreakConfig`).
 
 ### Backward Compatibility
 
@@ -99,8 +109,9 @@ The divisor `3` is the **standard games per round** (not games actually played).
 
 ### Manual
 
-- Enabled only when org toggles the factor on.
-- Org reorders players on a court via admin UI (move up/down).
+- Enabled only when org selects **Manual** as the final tie-breaker (radio group).
+- Org reorders players on a court via a **dialog** on the tournament admin page (current round only).
+- Dialog shows a factor comparison table and local draft order with ↑/↓; explicit **Save** persists, **Cancel** discards.
 - Persisted on `court_rotation.manual_rank_order: number[]` (player IDs best-to-worst).
 - At ranking time: among players still tied on prior factors, compare `indexOf(playerId)` in `manual_rank_order` (lower index = better).
 - Players not listed in manual order are treated as tied at the end of the manual block.
@@ -145,30 +156,48 @@ When a round is closed, each rotation stores:
 | `dice_rolls` | JSONB | Stable pair-wise dice rolls (`"minId:maxId"` → `0..1`) |
 | `round_closed_at` | timestamp | Marks the rotation as finalized |
 
-Past-round views (stepper, court pages) read snapshots instead of recomputing. Dice rolls are also persisted during the active round so standings do not shuffle on reload.
+Past-round views (stepper, court pages) read snapshots instead of recomputing live rankings. Dice rolls are also persisted during the active round so standings do not shuffle on reload.
+
+When loading snapshots, `applyStandingsExplanations` recomputes tie-break factor icons and `decidingOutcome` using the snapshotted config and dice rolls so explanations stay consistent with current logic.
 
 ## API / UI
 
 ### Tournament creation (`/tournament/create`)
 
 - Collapsible **Tie-break rules** section.
-- List of factors with enable checkbox and ↑/↓ reorder buttons.
-- Saved to `tie_break_config` on create.
+- Statistical factors: enable checkbox + ↑/↓ reorder.
+- **Final tie-breaker**: radio group at bottom — exactly one of Seeding, Dice, or Manual.
+- Saved to `tie_break_config` on create (normalized on save).
 
 ### Tournament admin (`/tournament/[id]`)
 
 - Same editor as creation (collapsible, near scoring overrides).
-- `updateTieBreakConfig` remote command.
+- Config syncs from server via `$effect` when tournament data loads.
+- `updateTieBreakConfig` remote command (normalizes before persist).
 
 ### Manual rank (current round only)
 
-- When `manual` factor is enabled and viewing current round:
-  - Each court card shows standings with ↑/↓ buttons when players are tied on all automatic factors.
-  - `updateManualRankOrder({ rotationId, playerIds })` remote command.
+- When **Manual** is the selected final tie-breaker and viewing the current round:
+  - Each court card with unresolved manual ties shows a **Set order** button.
+  - Opens `<dialog>` with factor table, local draft reorder (↑/↓), Save/Cancel.
+  - `updateManualRankOrder({ rotationId, playerIds })` remote command on Save.
+
+### Tie-break visualization
+
+- `TieBreakFactorIcons.svelte` shows factor glyphs beside player names in standings.
+- **Tied factors** (dashed border, muted): stats that were equal for that player group.
+- **Deciding factor** (solid border, outcome color): factor that separated ranks.
+- **Outcome colors** (`src/lib/court-colors.ts`): gold = won break (`won`), green = middle (`middle`), blue = lost (`lost`).
+- Legend shown on tournament admin court standings and court page when any tie-break icons present.
+- Rank numbers on tournament page use the same outcome color when a deciding factor exists.
 
 ## Core Functions (`src/lib/tournament-logic.ts`)
 
 ```typescript
+normalizeTieBreakConfig(config): TieBreakConfig
+
+explainCourtStandings(standings, config, context): CourtStandingExplanation[]
+
 buildPlayerRoundStats(matches, playerIds): Map<playerId, { points, diff, rawPoints, rawDiff, gamesPlayed }>
 
 buildPlayerTotalStats(completedRounds, currentRoundMatches, courtSizes, players): Map<playerId, { totalPoints, totalDiff }>
@@ -188,6 +217,12 @@ calculateCourtStandings(matches, playerIds, options?: {
 ```
 
 Redistribution functions accept optional `tieBreakOptions` passed through to tier sorts.
+
+### Court standings service (`src/lib/server/court-standings-service.ts`)
+
+- `resolveRotationStandings` — live or snapshot standings for a rotation.
+- `snapshotClosedRoundRotations` — persist config, standings, dice rolls on round close.
+- `applyStandingsExplanations` — attach tie-break icons/outcomes to standing rows.
 
 ## Testing Requirements
 
@@ -217,11 +252,15 @@ Minimum **30+** new assertions across factor combinations.
 
 ## Implementation Files
 
-- `src/lib/tournament-logic.ts` — core ranking engine
+- `src/lib/tournament-logic.ts` — core ranking engine, normalization, explanations
+- `src/lib/court-colors.ts` — tie-break outcome colors
+- `src/lib/components/TieBreakFactorIcons.svelte` — standings factor icons
+- `src/lib/server/court-standings-service.ts` — snapshots and explanation recompute
 - `src/lib/server/db/schema.ts` — columns
 - `drizzle/0014_tie_break_config.sql` — migration
+- `drizzle/0015_round_close_snapshots.sql` — snapshot columns
 - `src/routes/tournament/create/*` — creation UI
 - `src/routes/tournament/[id]/tournament-actions.remote.ts` — config + manual rank commands, closeRound wiring
-- `src/routes/tournament/[id]/+page.svelte` — tie-break + manual UI
-- `src/routes/court/[token]/+page.server.ts` — pass tieBreakConfig to standings
+- `src/routes/tournament/[id]/+page.svelte` — tie-break settings, manual dialog, court standings display
+- `src/routes/court/[token]/+page.svelte` — tie-break icons on court standings
 - `src/lib/server/tournament-logic.test.ts` — comprehensive tests

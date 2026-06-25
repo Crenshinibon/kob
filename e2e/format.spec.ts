@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { deleteTournamentByName } from './helpers';
 
 test.describe('Tournament Format Selection', () => {
 	const testTournamentNames: string[] = [];
@@ -24,23 +25,7 @@ test.describe('Tournament Format Selection', () => {
 	test.afterEach(async ({ page }) => {
 		for (const tournamentName of testTournamentNames) {
 			try {
-				await page.goto('/');
-
-				const tournamentCard = page
-					.locator(`.tournament-card:has-text("${tournamentName}")`)
-					.first();
-				if (await tournamentCard.isVisible().catch(() => false)) {
-					await tournamentCard.click();
-
-					const deleteButton = page.locator('button:has-text("Delete")');
-					if (await deleteButton.isVisible().catch(() => false)) {
-						await deleteButton.click();
-						const confirmButton = page.locator('button:has-text("Confirm")');
-						if (await confirmButton.isVisible().catch(() => false)) {
-							await confirmButton.click();
-						}
-					}
-				}
+				await deleteTournamentByName(page, tournamentName);
 			} catch {
 				// Ignore cleanup errors
 			}
