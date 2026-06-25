@@ -20,8 +20,9 @@
 		getMinPointsForSet,
 		getScoringLabel,
 		DEFAULT_TIE_BREAK_CONFIG,
+		DEFAULT_TIE_BREAK_FINAL_FACTOR,
+		TIE_BREAK_FINAL_FACTOR_IDS,
 		normalizeTieBreakConfig,
-		isFinalTieBreakFactor,
 		isStatisticalTieBreakFactor,
 		type TieBreakConfig,
 		type TieBreakFactorId,
@@ -70,23 +71,29 @@
 
 	let editingScoring = $state(false);
 	let editingTieBreak = $state(false);
-	let localTieBreakFactors = $state<{ id: TieBreakFactorId; enabled: boolean }[]>(
-		DEFAULT_TIE_BREAK_CONFIG.factors.map((f) => ({ id: f.id, enabled: f.enabled }))
+	let localStatFactors = $state<{ id: TieBreakFactorId; enabled: boolean }[]>(
+		DEFAULT_TIE_BREAK_CONFIG.factors
+			.filter((f) => isStatisticalTieBreakFactor(f.id))
+			.map((f) => ({ id: f.id, enabled: f.enabled }))
 	);
+	let selectedFinalFactor = $state<TieBreakFactorId>(DEFAULT_TIE_BREAK_FINAL_FACTOR);
+
+	function applyTieBreakConfig(cfg: TieBreakConfig | null | undefined) {
+		const normalized = normalizeTieBreakConfig(cfg);
+		localStatFactors = normalized.factors
+			.filter((f) => isStatisticalTieBreakFactor(f.id))
+			.map((f) => ({ id: f.id, enabled: f.enabled }));
+		selectedFinalFactor =
+			normalized.factors.find((f) => f.enabled && !isStatisticalTieBreakFactor(f.id))?.id ??
+			DEFAULT_TIE_BREAK_FINAL_FACTOR;
+	}
 
 	$effect(() => {
 		const cfg = tournamentQuery.current?.tournament?.tieBreakConfig as TieBreakConfig | null | undefined;
 		if (!editingTieBreak) {
-			localTieBreakFactors = normalizeTieBreakConfig(cfg).factors.map((f) => ({
-				id: f.id,
-				enabled: f.enabled
-			}));
+			applyTieBreakConfig(cfg);
 		}
 	});
-
-	function firstFinalFactorIndex(factors: readonly { id: TieBreakFactorId }[]): number {
-		return factors.findIndex((f) => isFinalTieBreakFactor(f.id));
-	}
 
 	function tieBreakFactorLabel(id: TieBreakFactorId): string {
 		const labels: Record<TieBreakFactorId, () => string> = {
@@ -109,58 +116,34 @@
 		return outcome ? TIE_BREAK_OUTCOME_COLORS[outcome] : null;
 	}
 
-	function moveTieBreakFactor(index: number, direction: -1 | 1) {
+	function moveStatFactor(index: number, direction: -1 | 1) {
 		const next = index + direction;
-		if (next < 0 || next >= localTieBreakFactors.length) return;
+		if (next < 0 || next >= localStatFactors.length) return;
 
-		const current = localTieBreakFactors[index];
-		const target = localTieBreakFactors[next];
-		const finalStart = firstFinalFactorIndex(localTieBreakFactors);
-
-		if (
-			isStatisticalTieBreakFactor(current.id) &&
-			isFinalTieBreakFactor(target.id) &&
-			direction === 1
-		) {
-			return;
-		}
-		if (
-			isFinalTieBreakFactor(current.id) &&
-			isStatisticalTieBreakFactor(target.id) &&
-			direction === -1
-		) {
-			return;
-		}
-		if (finalStart !== -1 && isStatisticalTieBreakFactor(current.id) && next >= finalStart) {
-			return;
-		}
-
-		const copy = [...localTieBreakFactors];
+		const copy = [...localStatFactors];
 		[copy[index], copy[next]] = [copy[next], copy[index]];
-		localTieBreakFactors = copy;
+		localStatFactors = copy;
 	}
 
-	function setTieBreakFactorEnabled(index: number, enabled: boolean) {
-		const factor = localTieBreakFactors[index];
-
-		if (isFinalTieBreakFactor(factor.id)) {
-			if (!enabled) return;
-			localTieBreakFactors = localTieBreakFactors.map((f, i) => ({
-				...f,
-				enabled: isFinalTieBreakFactor(f.id) ? i === index : f.enabled
-			}));
-			return;
-		}
-
-		localTieBreakFactors = localTieBreakFactors.map((f, i) =>
-			i === index ? { ...f, enabled } : f
-		);
+	function buildTieBreakConfigFromLocal(): TieBreakConfig {
+		return {
+			factors: [
+				...localStatFactors,
+				...TIE_BREAK_FINAL_FACTOR_IDS.map((id) => ({
+					id,
+					enabled: id === selectedFinalFactor
+				}))
+			]
+		};
 	}
 
 	async function saveTieBreakConfig(tournamentId: number) {
-		const normalized = normalizeTieBreakConfig({ factors: localTieBreakFactors });
-		localTieBreakFactors = normalized.factors.map((f) => ({ id: f.id, enabled: f.enabled }));
-		await updateTieBreakConfig({ tournamentId, factors: localTieBreakFactors });
+		const normalized = normalizeTieBreakConfig(buildTieBreakConfigFromLocal());
+		applyTieBreakConfig(normalized);
+		await updateTieBreakConfig({
+			tournamentId,
+			factors: normalized.factors.map((f) => ({ id: f.id, enabled: f.enabled }))
+		});
 		editingTieBreak = false;
 	}
 
@@ -843,46 +826,37 @@
 						<summary class="scoring-header">{m.tie_break_heading()}</summary>
 						<p class="scoring-note">{m.tie_break_hint()}</p>
 						<ul class="tie-break-list">
-							{#each localTieBreakFactors as factor, fi (factor.id)}
+							{#each localStatFactors as factor, fi (factor.id)}
 								<li class="tie-break-item">
 									<label>
 										<input
 											type="checkbox"
 											checked={factor.enabled}
-											disabled={isFinalTieBreakFactor(factor.id) &&
-												factor.enabled &&
-												localTieBreakFactors.filter(
-													(f) => isFinalTieBreakFactor(f.id) && f.enabled
-												).length === 1}
 											onchange={(e) => {
-												setTieBreakFactorEnabled(fi, e.currentTarget.checked);
+												localStatFactors = localStatFactors.map((f, i) =>
+													i === fi ? { ...f, enabled: e.currentTarget.checked } : f
+												);
 												editingTieBreak = true;
 											}}
 										/>
-										<span class:final-factor={isFinalTieBreakFactor(factor.id)}>
-											{tieBreakFactorLabel(factor.id)}
-										</span>
+										{tieBreakFactorLabel(factor.id)}
 									</label>
 									<div class="tie-break-actions">
 										<button
 											type="button"
 											class="btn-small"
-											disabled={fi === 0 ||
-												(isFinalTieBreakFactor(factor.id) &&
-													isStatisticalTieBreakFactor(localTieBreakFactors[fi - 1]!.id))}
+											disabled={fi === 0}
 											onclick={() => {
-												moveTieBreakFactor(fi, -1);
+												moveStatFactor(fi, -1);
 												editingTieBreak = true;
 											}}>{m.tie_break_move_up()}</button
 										>
 										<button
 											type="button"
 											class="btn-small"
-											disabled={fi === localTieBreakFactors.length - 1 ||
-												(isStatisticalTieBreakFactor(factor.id) &&
-													isFinalTieBreakFactor(localTieBreakFactors[fi + 1]!.id))}
+											disabled={fi === localStatFactors.length - 1}
 											onclick={() => {
-												moveTieBreakFactor(fi, 1);
+												moveStatFactor(fi, 1);
 												editingTieBreak = true;
 											}}>{m.tie_break_move_down()}</button
 										>
@@ -890,6 +864,25 @@
 								</li>
 							{/each}
 						</ul>
+						<fieldset class="tie-break-finals">
+							<legend>{m.tie_break_final_heading()}</legend>
+							<p class="tie-break-finals-note">{m.tie_break_final_hint()}</p>
+							{#each TIE_BREAK_FINAL_FACTOR_IDS as finalId (finalId)}
+								<label class="tie-break-final-option">
+									<input
+										type="radio"
+										name="tie-break-final"
+										value={finalId}
+										checked={selectedFinalFactor === finalId}
+										onchange={() => {
+											selectedFinalFactor = finalId;
+											editingTieBreak = true;
+										}}
+									/>
+									{tieBreakFactorLabel(finalId)}
+								</label>
+							{/each}
+						</fieldset>
 						{#if editingTieBreak}
 							<button
 								type="button"
@@ -1993,9 +1986,33 @@
 		border-bottom: 1px solid var(--border-color);
 	}
 
-	.final-factor {
-		font-style: italic;
+	.tie-break-finals {
+		margin: var(--spacing-md) 0 0;
+		padding: var(--spacing-sm);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-sm);
+	}
+
+	.tie-break-finals legend {
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		color: var(--text-primary);
+		padding: 0 var(--spacing-xs);
+	}
+
+	.tie-break-finals-note {
+		margin: 0 0 var(--spacing-sm);
+		font-size: var(--font-size-xs);
 		color: var(--text-muted);
+		line-height: 1.4;
+	}
+
+	.tie-break-final-option {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-xs) 0;
+		cursor: pointer;
 	}
 
 	.tie-break-actions {
