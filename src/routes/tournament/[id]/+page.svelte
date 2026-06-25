@@ -160,10 +160,14 @@
 		return '—';
 	}
 
-	function getManualRankOrder(court: CourtDisplayData): number[] {
+	function getServerManualRankOrder(court: CourtDisplayData): number[] {
 		if (court.manualRankOrder?.length === court.players.length) return [...court.manualRankOrder];
 		if (court.standings.length > 0) return court.standings.map((s) => s.playerId);
 		return court.players.map((p) => p.id);
+	}
+
+	function getDraftManualRankOrder(court: CourtDisplayData): number[] {
+		return draftManualRankOrders.get(court.rotationId) ?? getServerManualRankOrder(court);
 	}
 
 	function findManualTieGroup(
@@ -173,18 +177,79 @@
 		return court.manualTieGroups.find((g) => g.playerIds.includes(playerId));
 	}
 
-	function moveManualRank(court: CourtDisplayData, playerId: number, direction: -1 | 1) {
+	let manualTieDialogCourt = $state<CourtDisplayData | null>(null);
+	let manualTieDialogEl = $state<HTMLDialogElement | null>(null);
+	let draftManualRankOrders = $state(new Map<number, number[]>());
+	let savingManualRankRotationId = $state<number | null>(null);
+	let manualRankError = $state<string | null>(null);
+
+	function openManualTieDialog(court: CourtDisplayData) {
+		manualRankError = null;
+		manualTieDialogCourt = court;
+		draftManualRankOrders = new Map(draftManualRankOrders).set(
+			court.rotationId,
+			getServerManualRankOrder(court)
+		);
+		manualTieDialogEl?.showModal();
+	}
+
+	function closeManualTieDialog() {
+		if (manualTieDialogCourt) {
+			const next = new Map(draftManualRankOrders);
+			next.delete(manualTieDialogCourt.rotationId);
+			draftManualRankOrders = next;
+		}
+		manualTieDialogCourt = null;
+		manualRankError = null;
+		manualTieDialogEl?.close();
+	}
+
+	function moveManualRankDraft(playerId: number, direction: -1 | 1) {
+		const court = manualTieDialogCourt;
+		if (!court || savingManualRankRotationId === court.rotationId) return;
+
 		const group = findManualTieGroup(court, playerId);
 		if (!group) return;
 
-		const order = getManualRankOrder(court);
+		const order = [...getDraftManualRankOrder(court)];
 		const idx = order.indexOf(playerId);
 		const next = idx + direction;
 		if (idx === -1 || next < 0 || next >= order.length) return;
 		if (!group.playerIds.includes(order[next])) return;
 
 		[order[idx], order[next]] = [order[next], order[idx]];
-		updateManualRankOrder({ rotationId: court.rotationId, playerIds: order });
+		draftManualRankOrders = new Map(draftManualRankOrders).set(court.rotationId, order);
+	}
+
+	async function saveManualRankDraft() {
+		const court = manualTieDialogCourt;
+		if (!court || savingManualRankRotationId != null) return;
+
+		const order = getDraftManualRankOrder(court);
+		savingManualRankRotationId = court.rotationId;
+		manualRankError = null;
+
+		try {
+			await updateManualRankOrder({ rotationId: court.rotationId, playerIds: order });
+			const next = new Map(draftManualRankOrders);
+			next.delete(court.rotationId);
+			draftManualRankOrders = next;
+			manualTieDialogCourt = null;
+			manualTieDialogEl?.close();
+			await tournamentQuery.refresh();
+		} catch (err) {
+			manualRankError = err instanceof Error ? err.message : m.err_manual_rank_invalid();
+		} finally {
+			savingManualRankRotationId = null;
+		}
+	}
+
+	function manualTieGroupCount(court: CourtDisplayData): number {
+		return court.manualTieGroups.length;
+	}
+
+	function manualTiedPlayerCount(court: CourtDisplayData): number {
+		return court.manualTieGroups.reduce((sum, group) => sum + group.playerIds.length, 0);
 	}
 
 	const manualTieBreakEnabled = $derived(
@@ -515,60 +580,16 @@
 						{/if}
 
 						{#if manualTieBreakEnabled && isViewingCurrentRound && court.manualTieGroups.length > 0}
-							<div class="manual-rank">
-								<h4>{m.manual_rank_heading()}</h4>
-								<p class="manual-rank-hint">{m.manual_rank_hint()}</p>
-								{#each court.manualTieGroups as group, gi (gi)}
-									<div class="manual-tie-group">
-										<h5>{m.manual_rank_tied_group({ count: group.playerIds.length })}</h5>
-										{#if group.factors.length > 0}
-											<table class="manual-factor-table">
-												<thead>
-													<tr>
-														<th>{m.standings_player()}</th>
-														{#each group.factors as factor (factor)}
-															<th>{tieBreakFactorLabel(factor)}</th>
-														{/each}
-													</tr>
-												</thead>
-												<tbody>
-													{#each getManualRankOrder(court).filter((id) => group.playerIds.includes(id)) as pid (pid)}
-														{@const pname = court.players.find((p) => p.id === pid)?.name ?? ''}
-														<tr>
-															<td>{pname}</td>
-															{#each group.factors as factor (factor)}
-																<td>{formatFactorValue(factor, group.values[pid] ?? {})}</td>
-															{/each}
-														</tr>
-													{/each}
-												</tbody>
-											</table>
-										{/if}
-										<ul>
-											{#each getManualRankOrder(court).filter((id) => group.playerIds.includes(id)) as pid, mi (pid)}
-												{@const pname = court.players.find((p) => p.id === pid)?.name ?? ''}
-												<li>
-													<span>{mi + 1}. {pname}</span>
-													<button
-														type="button"
-														class="btn-small"
-														disabled={mi === 0}
-														onclick={() => moveManualRank(court, pid, -1)}
-														>{m.manual_rank_move_up()}</button
-													>
-													<button
-														type="button"
-														class="btn-small"
-														disabled={mi === group.playerIds.length - 1}
-														onclick={() => moveManualRank(court, pid, 1)}
-														>{m.manual_rank_move_down()}</button
-													>
-												</li>
-											{/each}
-										</ul>
-									</div>
-								{/each}
-							</div>
+							<button
+								type="button"
+								class="btn-manual-tie"
+								onclick={() => openManualTieDialog(court)}
+							>
+								{m.manual_rank_open({
+									groups: manualTieGroupCount(court),
+									players: manualTiedPlayerCount(court)
+								})}
+							</button>
 						{/if}
 					</div>
 				{/each}
@@ -1146,6 +1167,113 @@
 					</details>
 				</section>
 			{/if}
+
+			<dialog
+				bind:this={manualTieDialogEl}
+				class="manual-tie-dialog"
+				oncancel={(e) => {
+					e.preventDefault();
+					closeManualTieDialog();
+				}}
+				onclick={(e) => {
+					if (e.target === manualTieDialogEl) closeManualTieDialog();
+				}}
+			>
+				{#if manualTieDialogCourt}
+					{@const court = manualTieDialogCourt}
+					{@const isSaving = savingManualRankRotationId === court.rotationId}
+					<header class="manual-tie-dialog-header">
+						<h3>{m.manual_rank_dialog_title({ court: court.courtNumber })}</h3>
+						<button
+							type="button"
+							class="dialog-close"
+							aria-label={m.manual_rank_cancel()}
+							disabled={isSaving}
+							onclick={closeManualTieDialog}
+						>×</button
+						>
+					</header>
+					<p class="manual-rank-hint">{m.manual_rank_hint()}</p>
+					{#each court.manualTieGroups as group, gi (gi)}
+						<div class="manual-tie-group">
+							<h4>{m.manual_rank_tied_group({ count: group.playerIds.length })}</h4>
+							{#if group.factors.length > 0}
+								<table class="manual-factor-table">
+									<thead>
+										<tr>
+											<th>{m.standings_player()}</th>
+											{#each group.factors as factor (factor)}
+												<th>{tieBreakFactorLabel(factor)}</th>
+											{/each}
+										</tr>
+									</thead>
+									<tbody>
+										{#each getDraftManualRankOrder(court).filter((id) => group.playerIds.includes(id)) as pid (pid)}
+											{@const pname = court.players.find((p) => p.id === pid)?.name ?? ''}
+											<tr>
+												<td>{pname}</td>
+												{#each group.factors as factor (factor)}
+													<td>{formatFactorValue(factor, group.values[pid] ?? {})}</td>
+												{/each}
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							{/if}
+							<ul class="manual-rank-order">
+								{#each getDraftManualRankOrder(court).filter((id) => group.playerIds.includes(id)) as pid, mi (pid)}
+									{@const pname = court.players.find((p) => p.id === pid)?.name ?? ''}
+									<li>
+										<span class="manual-rank-position">{mi + 1}.</span>
+										<span class="manual-rank-name">{pname}</span>
+										<div class="manual-rank-actions">
+											<button
+												type="button"
+												class="btn-small"
+												disabled={isSaving || mi === 0}
+												onclick={() => moveManualRankDraft(pid, -1)}
+												>{m.manual_rank_move_up()}</button
+											>
+											<button
+												type="button"
+												class="btn-small"
+												disabled={isSaving || mi === group.playerIds.length - 1}
+												onclick={() => moveManualRankDraft(pid, 1)}
+												>{m.manual_rank_move_down()}</button
+											>
+										</div>
+									</li>
+								{/each}
+							</ul>
+						</div>
+					{/each}
+					{#if manualRankError}
+						<p class="manual-rank-error">{manualRankError}</p>
+					{/if}
+					<footer class="manual-tie-dialog-footer">
+						<button
+							type="button"
+							class="btn-secondary"
+							disabled={isSaving}
+							onclick={closeManualTieDialog}
+						>
+							{m.manual_rank_cancel()}
+						</button>
+						<button
+							type="button"
+							class="btn-primary"
+							disabled={isSaving}
+							onclick={saveManualRankDraft}
+						>
+							{#if isSaving}
+								{m.court_saving()}
+							{:else}
+								{m.manual_rank_save()}
+							{/if}
+						</button>
+					</footer>
+				{/if}
+			</dialog>
 		</main>
 	{/if}
 {:else if tournamentQuery.error}
@@ -2035,10 +2163,86 @@
 		cursor: not-allowed;
 	}
 
-	.manual-rank {
+	.btn-manual-tie {
+		width: 100%;
 		margin-top: var(--spacing-sm);
+		padding: var(--spacing-sm) var(--spacing-md);
+		border: 1px solid var(--accent-warning);
+		border-radius: var(--radius-sm);
+		background: color-mix(in srgb, var(--accent-warning) 12%, var(--bg-primary));
+		color: var(--text-primary);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		cursor: pointer;
+		text-align: center;
+	}
+
+	.btn-manual-tie:hover {
+		background: color-mix(in srgb, var(--accent-warning) 22%, var(--bg-primary));
+	}
+
+	.manual-tie-dialog {
+		width: min(100%, 28rem);
+		max-height: 90vh;
+		margin: auto;
+		padding: 0;
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		background: var(--bg-primary);
+		color: var(--text-primary);
+		overflow-y: auto;
+	}
+
+	.manual-tie-dialog::backdrop {
+		background: rgb(0 0 0 / 55%);
+	}
+
+	.manual-tie-dialog-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-md);
+		border-bottom: 1px solid var(--border-color);
+	}
+
+	.manual-tie-dialog-header h3 {
+		margin: 0;
+		font-size: var(--font-size-lg);
+	}
+
+	.dialog-close {
+		border: none;
+		background: transparent;
+		color: var(--text-muted);
+		font-size: 1.5rem;
+		line-height: 1;
+		cursor: pointer;
+		padding: 0 var(--spacing-xs);
+	}
+
+	.manual-tie-dialog > :not(header):not(footer) {
+		padding-left: var(--spacing-md);
+		padding-right: var(--spacing-md);
+	}
+
+	.manual-tie-dialog .manual-rank-hint {
 		padding-top: var(--spacing-sm);
-		border-top: 1px dashed var(--border-color);
+	}
+
+	.manual-tie-dialog-footer {
+		display: flex;
+		justify-content: flex-end;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-md);
+		border-top: 1px solid var(--border-color);
+		margin-top: var(--spacing-md);
+	}
+
+	.manual-rank-error {
+		color: var(--accent-danger);
+		font-size: var(--font-size-sm);
+		margin: 0 0 var(--spacing-sm);
 	}
 
 	.manual-rank-hint {
@@ -2051,9 +2255,38 @@
 		margin-bottom: var(--spacing-md);
 	}
 
-	.manual-tie-group h5 {
+	.manual-tie-group h4 {
 		margin: 0 0 var(--spacing-xs);
 		font-size: var(--font-size-sm);
+	}
+
+	.manual-rank-order {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 var(--spacing-md);
+	}
+
+	.manual-rank-order li {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		font-size: var(--font-size-sm);
+		margin-bottom: var(--spacing-xs);
+	}
+
+	.manual-rank-position {
+		font-weight: 700;
+		min-width: 1.5rem;
+		color: var(--accent-info);
+	}
+
+	.manual-rank-name {
+		flex: 1;
+	}
+
+	.manual-rank-actions {
+		display: flex;
+		gap: var(--spacing-xs);
 	}
 
 	.manual-factor-table {
@@ -2073,19 +2306,5 @@
 	.manual-factor-table th {
 		color: var(--text-muted);
 		font-weight: 600;
-	}
-
-	.manual-rank ul {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-
-	.manual-rank li {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-xs);
-		font-size: var(--font-size-sm);
-		margin-bottom: var(--spacing-xs);
 	}
 </style>
