@@ -286,9 +286,12 @@
 	"tie_break_move_down": "Descendre",
 	"tie_break_save": "Enregistrer les règles",
 	"manual_rank_heading": "Ordre manuel de départage",
+	"manual_rank_hint": "Seuls les joueurs à égalité sur tous les critères automatiques peuvent être réordonnés ici. Le tableau compare leurs stats.",
+	"manual_rank_tied_group": "Groupe à égalité ({count} joueurs)",
 	"manual_rank_move_up": "Monter",
 	"manual_rank_move_down": "Descendre",
 	"court_standings_heading": "Classement du groupe",
 	"tie_break_icons_header": "Départage",
-	"tie_break_standings_legend": "Les icônes en surbrillance indiquent les critères favorables ; le bleu est le critère décisif."
+	"tie_break_standings_legend": "Les icônes en pointillés ont été vérifiées sans séparer les joueurs ; le bleu est le critère décisif.",
+	"err_manual_rank_invalid": "Ordre manuel invalide — ne réordonnez que les joueurs du même groupe à égalité."
 }

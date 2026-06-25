@@ -286,9 +286,12 @@
 	"tie_break_move_down": "Move down",
 	"tie_break_save": "Save tie-break rules",
 	"manual_rank_heading": "Manual tie-break order",
+	"manual_rank_hint": "Only players tied on all automatic factors can be reordered here. Use the table to compare their stats.",
+	"manual_rank_tied_group": "Tied group ({count} players)",
 	"manual_rank_move_up": "Move up",
 	"manual_rank_move_down": "Move down",
 	"court_standings_heading": "Court standings",
 	"tie_break_icons_header": "Tie-break",
-	"tie_break_standings_legend": "Highlighted icons show factors favoring this rank; the blue icon is the deciding factor."
+	"tie_break_standings_legend": "Dashed icons were checked but did not separate players; the blue icon is the deciding factor.",
+	"err_manual_rank_invalid": "Invalid manual order — only reorder players within the same tie group."
 }

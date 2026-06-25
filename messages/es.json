@@ -286,9 +286,12 @@
 	"tie_break_move_down": "Bajar",
 	"tie_break_save": "Guardar reglas de desempate",
 	"manual_rank_heading": "Orden manual de desempate",
+	"manual_rank_hint": "Solo se pueden reordenar jugadores empatados en todos los factores automáticos. La tabla muestra sus estadísticas.",
+	"manual_rank_tied_group": "Grupo empatado ({count} jugadores)",
 	"manual_rank_move_up": "Subir",
 	"manual_rank_move_down": "Bajar",
 	"court_standings_heading": "Clasificación del grupo",
 	"tie_break_icons_header": "Desempate",
-	"tie_break_standings_legend": "Los iconos resaltados muestran factores a favor; el azul es el factor decisivo."
+	"tie_break_standings_legend": "Los iconos discontinuos se comprobaron pero no separaron jugadores; el azul es el factor decisivo.",
+	"err_manual_rank_invalid": "Orden manual inválido — solo reordene jugadores dentro del mismo grupo empatado."
 }

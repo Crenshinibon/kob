@@ -3,26 +3,30 @@
 	import { TIE_BREAK_FACTOR_GLYPHS } from '$lib/tournament-logic';
 
 	let {
-		enabledFactors,
-		winningFactors,
+		tiedFactors,
 		decidingFactor,
 		getLabel
 	}: {
-		enabledFactors: readonly TieBreakFactorId[];
-		winningFactors: readonly TieBreakFactorId[];
+		tiedFactors: readonly TieBreakFactorId[];
 		decidingFactor: TieBreakFactorId | null;
 		getLabel: (id: TieBreakFactorId) => string;
 	} = $props();
+
+	const consideredFactors = $derived(
+		decidingFactor ? [...tiedFactors, decidingFactor] : [...tiedFactors]
+	);
 </script>
 
-{#if enabledFactors.length > 0}
+{#if consideredFactors.length > 0}
 	<span class="tie-break-icons" aria-label="Tie-break factors">
-		{#each enabledFactors as factor (factor)}
+		{#each consideredFactors as factor (factor)}
 			<span
 				class="factor-icon"
-				class:active={winningFactors.includes(factor)}
+				class:tied={tiedFactors.includes(factor)}
 				class:deciding={decidingFactor === factor}
-				title={getLabel(factor)}
+				title={decidingFactor === factor
+					? getLabel(factor)
+					: `${getLabel(factor)} (=)`}
 				aria-label={getLabel(factor)}
 			>{TIE_BREAK_FACTOR_GLYPHS[factor]}</span>
 		{/each}
@@ -50,20 +54,19 @@
 		border: 1px solid var(--border-color);
 		color: var(--text-muted);
 		background: var(--bg-secondary);
-		opacity: 0.45;
 		line-height: 1;
 	}
 
-	.factor-icon.active {
-		opacity: 1;
-		color: var(--accent-success);
-		border-color: var(--accent-success);
+	.factor-icon.tied {
+		opacity: 0.65;
+		border-style: dashed;
 	}
 
 	.factor-icon.deciding {
 		opacity: 1;
 		color: var(--accent-info);
 		border-color: var(--accent-info);
+		border-style: solid;
 		background: color-mix(in srgb, var(--accent-info) 18%, var(--bg-secondary));
 		box-shadow: 0 0 0 1px var(--accent-info);
 	}

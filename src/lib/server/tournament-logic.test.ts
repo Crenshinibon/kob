@@ -18,6 +18,8 @@ import {
 	sortPlayersByTieBreak,
 	DEFAULT_TIE_BREAK_CONFIG,
 	explainCourtStandings,
+	getManualTieGroups,
+	isValidManualRankOrder,
 	type TieBreakConfig,
 	type TieBreakFactorId,
 	generate4pMatches,
@@ -4974,7 +4976,7 @@ describe('tie-break ranking', () => {
 		expect(result[0].playerId).toBe(1);
 	});
 
-	it('explainCourtStandings marks deciding and winning factors', () => {
+	it('explainCourtStandings marks tied and deciding factors', () => {
 		const roundStats = new Map([
 			[1, { playerId: 1, rawPoints: 63, rawDiff: 3, gamesPlayed: 3, roundPoints: 63, roundDiff: 3 }],
 			[2, { playerId: 2, rawPoints: 60, rawDiff: 0, gamesPlayed: 3, roundPoints: 60, roundDiff: 0 }]
@@ -4997,6 +4999,48 @@ describe('tie-break ranking', () => {
 			{ roundStats, totalStats: new Map() }
 		);
 		expect(explained.get(1)?.decidingFactor).toBe('round_points');
-		expect(explained.get(1)?.winningFactors).toContain('round_points');
+		expect(explained.get(1)?.tiedFactors).not.toContain('round_points');
+		expect(explained.get(2)?.decidingFactor).toBe('round_points');
+	});
+
+	it('getManualTieGroups finds players tied on automatic factors', () => {
+		const roundStats = new Map([
+			[1, { playerId: 1, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }],
+			[2, { playerId: 2, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }],
+			[3, { playerId: 3, rawPoints: 40, rawDiff: -2, gamesPlayed: 2, roundPoints: 40, roundDiff: -2 }]
+		]);
+		const cfg = configWith([
+			{ id: 'round_points', enabled: true },
+			{ id: 'round_diff', enabled: true },
+			{ id: 'total_points', enabled: false },
+			{ id: 'total_diff', enabled: false },
+			{ id: 'initial_order', enabled: false },
+			{ id: 'dice', enabled: false },
+			{ id: 'manual', enabled: true }
+		]);
+		const groups = getManualTieGroups([1, 2, 3], cfg, { roundStats, totalStats: new Map() });
+		expect(groups).toHaveLength(1);
+		expect(groups[0].playerIds).toEqual(expect.arrayContaining([1, 2]));
+		expect(groups[0].playerIds).toHaveLength(2);
+	});
+
+	it('isValidManualRankOrder rejects cross-group reordering', () => {
+		const roundStats = new Map([
+			[1, { playerId: 1, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }],
+			[2, { playerId: 2, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }],
+			[3, { playerId: 3, rawPoints: 40, rawDiff: -2, gamesPlayed: 2, roundPoints: 40, roundDiff: -2 }]
+		]);
+		const cfg = configWith([
+			{ id: 'round_points', enabled: true },
+			{ id: 'round_diff', enabled: true },
+			{ id: 'total_points', enabled: false },
+			{ id: 'total_diff', enabled: false },
+			{ id: 'initial_order', enabled: false },
+			{ id: 'dice', enabled: false },
+			{ id: 'manual', enabled: true }
+		]);
+		const context = { roundStats, totalStats: new Map() };
+		expect(isValidManualRankOrder([1, 2, 3], [2, 1, 3], cfg, context)).toBe(true);
+		expect(isValidManualRankOrder([1, 2, 3], [3, 1, 2], cfg, context)).toBe(false);
 	});
 });

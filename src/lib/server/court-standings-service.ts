@@ -5,7 +5,6 @@ import {
 	calculateCourtStandings,
 	explainCourtStandings,
 	buildStandingsTieBreakContext,
-	getEnabledTieBreakFactors,
 	normalizeTieBreakConfig,
 	type CourtResult,
 	type CourtStandings,
@@ -18,9 +17,8 @@ import {
 
 export type ExplainedCourtStanding = CourtStandings & {
 	name: string;
+	tiedFactors: TieBreakFactorId[];
 	decidingFactor: TieBreakFactorId | null;
-	winningFactors: TieBreakFactorId[];
-	enabledFactors: TieBreakFactorId[];
 };
 
 function rotationPlayerIds(rotation: typeof courtRotation.$inferSelect): number[] {
@@ -133,19 +131,17 @@ export function computeExplainedStandings(opts: {
 	const standings = calculateCourtStandings(matchData, playerIds, standingsOptions);
 	const tbContext = buildStandingsTieBreakContext(matchData, playerIds, standingsOptions);
 	const explanations = explainCourtStandings(standings, tieBreakConfig, tbContext.context);
-	const enabledFactors = getEnabledTieBreakFactors(tieBreakConfig);
 
 	return standings.map((s) => {
 		const exp: CourtStandingExplanation = explanations.get(s.playerId) ?? {
-			decidingFactor: null,
-			winningFactors: []
+			tiedFactors: [],
+			decidingFactor: null
 		};
 		return {
 			...s,
 			name: playerNames.get(s.playerId) ?? String(s.playerId),
-			decidingFactor: exp.decidingFactor,
-			winningFactors: [...exp.winningFactors],
-			enabledFactors
+			tiedFactors: [...exp.tiedFactors],
+			decidingFactor: exp.decidingFactor
 		};
 	});
 }

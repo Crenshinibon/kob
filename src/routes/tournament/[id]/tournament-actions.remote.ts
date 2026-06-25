@@ -31,6 +31,8 @@ import {
 	applyReplacementSlot,
 	DEFAULT_TIE_BREAK_CONFIG,
 	normalizeTieBreakConfig,
+	buildStandingsTieBreakContext,
+	isValidManualRankOrder,
 	type TieBreakConfig,
 	type TieBreakFactorId,
 	type FormatType,
@@ -39,6 +41,7 @@ import {
 	type PreseedRetirementPolicy
 } from '$lib/server/tournament-logic';
 import { getTournamentData } from './tournament-data.remote';
+import { buildCompletedRoundsBefore } from '$lib/server/court-standings-service';
 
 function parseCourtSizes(tourney: typeof tournament.$inferSelect): number[] {
 	return tourney.courtSizes
@@ -583,7 +586,7 @@ export const updateManualRankOrder = command(
 		rotationId: v.pipe(v.number(), v.minValue(1)),
 		playerIds: v.array(v.pipe(v.number(), v.minValue(1)))
 	}),
-	async ({ rotationId, playerIds }) => {
+	async ({ rotationId, playerIds: submittedOrder }) => {
 		const event = getRequestEvent();
 		const user = event.locals.user;
 		if (!user) error(401, m.unauthorized());
@@ -605,9 +608,62 @@ export const updateManualRankOrder = command(
 			error(400, m.err_court_read_only());
 		}
 
+		const rotationPlayerIdsList = rotationPlayerIds(rotation);
+		const dbPlayers = await db
+			.select()
+			.from(player)
+			.where(eq(player.tournamentId, tourney.id));
+		const courtSizes = parseCourtSizes(tourney);
+		const tieBreakConfig = normalizeTieBreakConfig(tourney.tieBreakConfig ?? null);
+		const completedRounds = await buildCompletedRoundsBefore(
+			tourney.id,
+			rotation.roundNumber,
+			courtSizes,
+			dbPlayers.map((p) => ({
+				id: p.id,
+				name: p.name,
+				seedPoints: p.seedPoints,
+				seedRank: p.seedRank
+			})),
+			tieBreakConfig
+		);
+		const matchRows = await db.select().from(match).where(eq(match.courtRotationId, rotationId));
+		const matchData: MatchData[] = matchRows.map((m) => ({
+			teamAPlayer1Id: m.teamAPlayer1Id,
+			teamAPlayer2Id: m.teamAPlayer2Id,
+			teamBPlayer1Id: m.teamBPlayer1Id,
+			teamBPlayer2Id: m.teamBPlayer2Id,
+			teamAScore: m.teamAScore,
+			teamBScore: m.teamBScore,
+			isCanceled: m.isCanceled ?? false,
+			injuredPlayerIds: m.injuredPlayerIds ?? undefined
+		}));
+		const tbContext = buildStandingsTieBreakContext(matchData, rotationPlayerIdsList, {
+			tieBreakConfig,
+			completedRounds,
+			courtSizes,
+			players: dbPlayers.map((p) => ({
+				id: p.id,
+				name: p.name,
+				seedPoints: p.seedPoints,
+				seedRank: p.seedRank
+			}))
+		});
+
+		if (
+			!isValidManualRankOrder(
+				rotationPlayerIdsList,
+				submittedOrder,
+				tieBreakConfig,
+				tbContext.context
+			)
+		) {
+			error(400, m.err_manual_rank_invalid());
+		}
+
 		await db
 			.update(courtRotation)
-			.set({ manualRankOrder: playerIds })
+			.set({ manualRankOrder: submittedOrder })
 			.where(eq(courtRotation.id, rotationId));
 
 		getTournamentData({ tournamentId: tourney.id }).refresh();
