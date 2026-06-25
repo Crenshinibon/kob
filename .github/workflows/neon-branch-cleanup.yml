@@ -8,7 +8,22 @@ jobs:
   delete-branch:
     runs-on: ubuntu-latest
     steps:
+      - name: Check Neon credentials
+        id: neon
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+        run: |
+          if [ -n "$NEON_API_KEY" ] && [ -n "$NEON_PROJECT_ID" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::NEON_API_KEY (secret) and/or NEON_PROJECT_ID (variable) are not set — skipping Neon preview branch cleanup."
+            echo "::warning::Install the Neon GitHub integration or add credentials manually: https://neon.tech/docs/guides/branching-github-actions"
+          fi
+
       - name: Delete Neon preview branch
+        if: steps.neon.outputs.configured == 'true'
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ vars.NEON_PROJECT_ID }}
