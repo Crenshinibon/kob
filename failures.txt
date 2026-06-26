@@ -1,103 +1,464 @@
 $ playwright test "--workers=1" "--reporter=list"
-[2m[WebServer] [22m[0m[2m[35m$[0m [2m[1mbun scripts/db-push.ts[0m
-[2m[WebServer] [22m[33m[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
-[2m[WebServer] [22m  - vite-plugin-sveltekit-guard (71%)
-[2m[WebServer] [22m  - vite-plugin-sveltekit-remote (13%)
-[2m[WebServer] [22m  - vite-plugin-sveltekit-compile (6%)
-[2m[WebServer] [22mSee https://rolldown.rs/options/checks#plugintimings for more details.
-[2m[WebServer] [22m[39m
+[WebServer] $ bun scripts/db-push.ts
+[WebServer] [PLUGIN_TIMINGS] Your build spent significant time in plugins. Here is a breakdown:
+[WebServer]   - vite-plugin-sveltekit-guard (73%)
+[WebServer]   - vite-plugin-sveltekit-remote (12%)
+[WebServer]   - vite-plugin-sveltekit-compile (5%)
+[WebServer] See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+[WebServer] 
 🧹 Cleaning up old test tournaments...
 ✅ No old tournaments to clean up
 
 Running 85 tests using 1 worker
 
-[2m[WebServer] [22m[2m2026-06-26T20:45:12.527Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting skipped: could not determine client IP address. Ensure your runtime forwards a trusted client IP header and configure `advanced.ipAddress.ipAddressHeaders` if needed.
+[WebServer] 2026-06-26T21:23:30.533Z WARN [Better Auth]: Rate limiting could not determine a client IP and is falling back to a single shared per-path bucket. Ensure your runtime forwards a trusted client IP header, then set `advanced.ipAddress.ipAddressHeaders` or `advanced.ipAddress.trustedProxies` so the address can be resolved.
   ✓   1 e2e/bestof3.spec.ts:102:2 › Best-of-3 Round Transition › round closes when best-of-3 matches end 2-0 (no deciding set) (1.4m)
-  ✓   2 e2e/demo.test.ts:3:1 › home page has expected h1 (123ms)
-  ✓   3 e2e/format.spec.ts:52:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) (560ms)
-  ✓   4 e2e/format.spec.ts:66:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range (544ms)
-  ✓   5 e2e/format.spec.ts:75:3 › Tournament Format Selection › Random Format › rounds input is editable (551ms)
-  ✓   6 e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (3.5s)
-  ✓   7 e2e/format.spec.ts:109:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (2.9s)
-  ✓   8 e2e/format.spec.ts:133:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (4.2s)
-  ✓   9 e2e/format.spec.ts:156:3 › Tournament Format Selection › Pre-Seed Format › switching player count updates fixed rounds (579ms)
-  ✓  10 e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again (602ms)
-  ✓  11 e2e/format.spec.ts:176:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (2.9s)
-  ✓  12 e2e/format.spec.ts:215:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description (691ms)
-  ✓  13 e2e/format.spec.ts:237:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description (689ms)
-  ✓  14 e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description (684ms)
-  ✓  15 e2e/format.spec.ts:273:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) (662ms)
-  ✓  16 e2e/format.spec.ts:288:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (618ms)
-  ✓  17 e2e/format.spec.ts:307:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches (2.7s)
-  ✓  18 e2e/format.spec.ts:343:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games (3.2s)
-  ✓  19 e2e/format.spec.ts:379:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games (3.2s)
-  ✓  20 e2e/format.spec.ts:417:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts (2.3s)
-  ✓  21 e2e/format.spec.ts:440:3 › Tournament Format Selection › Player Count Range (8-64) › below 8 players shows minimum warning and button is disabled (559ms)
-  ✓  22 e2e/format.spec.ts:451:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (5.8s)
-  ✓  23 e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning and button is disabled (562ms)
+  ✓   2 e2e/demo.test.ts:3:1 › home page has expected h1 (132ms)
+  ✓   3 e2e/format.spec.ts:52:3 › Tournament Format Selection › Random Format › shows configurable rounds input (not select) (602ms)
+  ✓   4 e2e/format.spec.ts:66:3 › Tournament Format Selection › Random Format › rounds input has sensible defaults and range (605ms)
+  ✓   5 e2e/format.spec.ts:75:3 › Tournament Format Selection › Random Format › rounds input is editable (576ms)
+  ✘   6 e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts (30.0s)
+  ✓   7 e2e/format.spec.ts:109:3 › Tournament Format Selection › Pre-Seed Format › with 16 players shows 3 fixed rounds (3.6s)
+  ✓   8 e2e/format.spec.ts:133:3 › Tournament Format Selection › Pre-Seed Format › with 32 players shows 4 fixed rounds (4.9s)
+  ✓   9 e2e/format.spec.ts:156:3 › Tournament Format Selection › Pre-Seed Format › switching player count updates fixed rounds (638ms)
+  ✘  10 e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again (30.0s)
+  ✓  11 e2e/format.spec.ts:176:3 › Tournament Format Selection › Pre-Seed Format › accepts flexible name-with-points input (3.7s)
+  ✓  12 e2e/format.spec.ts:215:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 11 players shows 3p court warning with description (757ms)
+  ✓  13 e2e/format.spec.ts:237:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 25 players shows 5p court warning with description (770ms)
+  ✘  14 e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description (30.0s)
+  ✓  15 e2e/format.spec.ts:273:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 24 players shows clean courts message (no leftovers) (998ms)
+  ✓  16 e2e/format.spec.ts:288:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › kick leftovers removes last players to make clean courts (693ms)
+  ✓  17 e2e/format.spec.ts:307:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 3p court tournament creates correct number of matches (3.1s)
+  ✘  18 e2e/format.spec.ts:343:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games (30.0s)
+  ✓  19 e2e/format.spec.ts:379:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 6p court tournament creates 4 games (3.7s)
+  ✓  20 e2e/format.spec.ts:417:3 › Tournament Format Selection › Player Count Range (8-64) › minimum 8 players creates 2 courts (1.7s)
+  ✓  21 e2e/format.spec.ts:440:3 › Tournament Format Selection › Player Count Range (8-64) › below 8 players shows minimum warning and button is disabled (567ms)
+  ✘  22 e2e/format.spec.ts:451:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts (30.0s)
+  ✓  23 e2e/format.spec.ts:474:3 › Tournament Format Selection › Player Count Range (8-64) › above 64 players shows maximum warning and button is disabled (805ms)
   ✓  24 e2e/frozen-courts.spec.ts:129:2 › Preseed Frozen Courts (20 players, 5 courts) › 20-player preseed: complete tournament with frozen court (1.6m)
-  ✓  25 e2e/i18n.test.ts:4:2 › i18n › home page in default locale (English) (120ms)
-  ✓  26 e2e/i18n.test.ts:9:2 › i18n › home page loads in German via /de/ (134ms)
-  ✓  27 e2e/i18n.test.ts:14:2 › i18n › home page loads in French via /fr/ (147ms)
-  ✓  28 e2e/i18n.test.ts:19:2 › i18n › home page loads in Spanish via /es/ (134ms)
-  ✓  29 e2e/i18n.test.ts:24:2 › i18n › login page has German text at /de/login (124ms)
-  ✓  30 e2e/i18n.test.ts:29:2 › i18n › login page has French text at /fr/login (129ms)
-  ✓  31 e2e/i18n.test.ts:34:2 › i18n › login page has Spanish text at /es/login (126ms)
-  ✓  32 e2e/i18n.test.ts:39:2 › i18n › signup page in German (135ms)
-  ✓  33 e2e/i18n.test.ts:44:2 › i18n › signup page in French (132ms)
-  ✓  34 e2e/i18n.test.ts:49:2 › i18n › signup page in Spanish (134ms)
+  ✓  25 e2e/i18n.test.ts:4:2 › i18n › home page in default locale (English) (113ms)
+  ✓  26 e2e/i18n.test.ts:9:2 › i18n › home page loads in German via /de/ (118ms)
+  ✓  27 e2e/i18n.test.ts:14:2 › i18n › home page loads in French via /fr/ (116ms)
+  ✓  28 e2e/i18n.test.ts:19:2 › i18n › home page loads in Spanish via /es/ (122ms)
+  ✓  29 e2e/i18n.test.ts:24:2 › i18n › login page has German text at /de/login (122ms)
+  ✓  30 e2e/i18n.test.ts:29:2 › i18n › login page has French text at /fr/login (134ms)
+  ✓  31 e2e/i18n.test.ts:34:2 › i18n › login page has Spanish text at /es/login (122ms)
+  ✓  32 e2e/i18n.test.ts:39:2 › i18n › signup page in German (133ms)
+  ✓  33 e2e/i18n.test.ts:44:2 › i18n › signup page in French (123ms)
+  ✓  34 e2e/i18n.test.ts:49:2 › i18n › signup page in Spanish (133ms)
   ✓  35 e2e/preseed.spec.ts:159:2 › Preseed Tournament › 16-player preseed: verify snake seeding, origin mixing, and standings (1.2m)
-  ✓  36 e2e/preseed.spec.ts:259:2 › Preseed Tournament › 8-player preseed tournament (33.0s)
-  ✓  37 e2e/promotion.spec.ts:69:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (20.8s)
-  ✓  38 e2e/promotion.spec.ts:178:2 › Promotion and Relegation › close round button is disabled until all matches complete (15.6s)
-  ✓  39 e2e/promotion.spec.ts:272:2 › Promotion and Relegation › final round completion marks tournament as completed (16.1s)
-  ✓  40 e2e/promotion.spec.ts:352:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution (20.7s)
-  ✓  41 e2e/promotion.spec.ts:435:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution (16.2s)
-  ✓  42 e2e/promotion.spec.ts:509:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court redistributes correctly after round (23.6s)
-  ✓  43 e2e/promotion.spec.ts:584:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court redistributes correctly after round (24.1s)
-  ✓  44 e2e/standings.spec.ts:65:2 › Standings Calculation › calculates correct points for all players in a match (4.5s)
-  ✓  45 e2e/standings.spec.ts:101:2 › Standings Calculation › sorts players by total points in descending order (4.3s)
+  ✓  36 e2e/preseed.spec.ts:259:2 › Preseed Tournament › 8-player preseed tournament (33.5s)
+  ✓  37 e2e/promotion.spec.ts:69:2 › Promotion and Relegation › Round 1 to Round 2: seeding redistribution by rank (21.0s)
+  ✓  38 e2e/promotion.spec.ts:178:2 › Promotion and Relegation › close round button is disabled until all matches complete (16.0s)
+  ✓  39 e2e/promotion.spec.ts:272:2 › Promotion and Relegation › final round completion marks tournament as completed (17.0s)
+  ✓  40 e2e/promotion.spec.ts:352:2 › Promotion and Relegation › maintains exactly 4 players per court after redistribution (21.2s)
+  ✓  41 e2e/promotion.spec.ts:435:3 › Promotion and Relegation › Non-Standard Court Redistribution › 3p court maintains 3 players after redistribution (17.5s)
+  ✓  42 e2e/promotion.spec.ts:509:3 › Promotion and Relegation › Non-Standard Court Redistribution › 5p court redistributes correctly after round (24.1s)
+  ✓  43 e2e/promotion.spec.ts:584:3 › Promotion and Relegation › Non-Standard Court Redistribution › 6p court redistributes correctly after round (25.2s)
+  ✓  44 e2e/standings.spec.ts:65:2 › Standings Calculation › calculates correct points for all players in a match (4.7s)
+  ✓  45 e2e/standings.spec.ts:101:2 › Standings Calculation › sorts players by total points in descending order (4.5s)
   ✓  46 e2e/standings.spec.ts:138:2 › Standings Calculation › breaks ties using point differential (4.5s)
-  ✓  47 e2e/standings.spec.ts:170:2 › Standings Calculation › awards points correctly across multiple matches per player (4.8s)
-  ✓  48 e2e/standings.spec.ts:218:2 › Standings Calculation › validates score entry rules (min points, win by 2, no cap) (4.8s)
-  ✓  49 e2e/standings.spec.ts:269:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking (4.0s)
-  ✓  50 e2e/standings.spec.ts:303:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking (4.6s)
-  ✓  51 e2e/standings.spec.ts:337:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking (4.7s)
-  ✓  52 e2e/standings.spec.ts:371:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings rank correctly after score entry (5.9s)
-  ✓  53 e2e/standings.spec.ts:425:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings rank correctly after score entry (4.6s)
-  ✓  54 e2e/standings.spec.ts:469:3 › Standings Calculation › Round 1 Standings Ranking › ranks by court position first after round 1 (15.4s)
-  ✓  55 e2e/standings.spec.ts:553:3 › Standings Calculation › Non-Standard Court Score Validation › 5p court accepts 15-point scores (4.5s)
-  ✓  56 e2e/standings.spec.ts:589:3 › Standings Calculation › Non-Standard Court Score Validation › 3p court accepts 21-point scores (same as 4p) (3.5s)
-  ✓  57 e2e/tournament.spec.ts:88:2 › Tournament Integration Tests › complete 2-round tournament with score entry (33.4s)
-  ✓  58 e2e/tournament.spec.ts:241:2 › Tournament Integration Tests › players can access court via direct URL without login (3.8s)
-  ✓  59 e2e/tournament.spec.ts:295:2 › Tournament Integration Tests › dashboard shows active tournaments (2.0s)
-  ✓  60 e2e/tournament.spec.ts:322:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines (743ms)
-  ✓  61 e2e/tournament.spec.ts:354:3 › Tournament Integration Tests › Scoring Modes › best-of-3 scoring mode is selectable (611ms)
-  ✓  62 e2e/tournament.spec.ts:362:3 › Tournament Integration Tests › Scoring Modes › custom scoring mode reveals advanced options (620ms)
-  ✓  63 e2e/tournament.spec.ts:383:3 › Tournament Integration Tests › Scoring Modes › custom best-of-3 shows deciding set points (632ms)
-  ✓  64 e2e/tournament.spec.ts:394:3 › Tournament Integration Tests › Scoring Modes › duration estimate updates based on scoring mode (651ms)
-  ✓  65 e2e/tournament.spec.ts:406:3 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default (3.2s)
-  ✓  66 e2e/tournament.spec.ts:431:3 › Tournament Integration Tests › Scoring Modes › best-of-3 tournament enforces per-set score entry (6.9s)
+  ✘  47 e2e/standings.spec.ts:170:2 › Standings Calculation › awards points correctly across multiple matches per player (30.0s)
+  ✓  48 e2e/standings.spec.ts:218:2 › Standings Calculation › validates score entry rules (min points, win by 2, no cap) (5.4s)
+  ✓  49 e2e/standings.spec.ts:269:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings show total points ranking (4.4s)
+  ✓  50 e2e/standings.spec.ts:303:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings show average points ranking (4.9s)
+  ✘  51 e2e/standings.spec.ts:337:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking (30.0s)
+  ✓  52 e2e/standings.spec.ts:371:3 › Standings Calculation › Non-Standard Court Standings › 3p court standings rank correctly after score entry (6.1s)
+  ✓  53 e2e/standings.spec.ts:425:3 › Standings Calculation › Non-Standard Court Standings › 5p court standings rank correctly after score entry (4.7s)
+  ✓  54 e2e/standings.spec.ts:469:3 › Standings Calculation › Round 1 Standings Ranking › ranks by court position first after round 1 (15.1s)
+  ✓  55 e2e/standings.spec.ts:553:3 › Standings Calculation › Non-Standard Court Score Validation › 5p court accepts 15-point scores (4.6s)
+  ✓  56 e2e/standings.spec.ts:589:3 › Standings Calculation › Non-Standard Court Score Validation › 3p court accepts 21-point scores (same as 4p) (4.0s)
+  ✓  57 e2e/tournament.spec.ts:88:2 › Tournament Integration Tests › complete 2-round tournament with score entry (33.5s)
+  ✓  58 e2e/tournament.spec.ts:241:2 › Tournament Integration Tests › players can access court via direct URL without login (3.3s)
+  ✓  59 e2e/tournament.spec.ts:295:2 › Tournament Integration Tests › dashboard shows active tournaments (2.1s)
+  ✓  60 e2e/tournament.spec.ts:322:2 › Tournament Integration Tests › smart paste converts comma-separated names to lines (801ms)
+  ✘  61 e2e/tournament.spec.ts:354:3 › Tournament Integration Tests › Scoring Modes › best-of-3 scoring mode is selectable (30.0s)
+  ✓  62 e2e/tournament.spec.ts:362:3 › Tournament Integration Tests › Scoring Modes › custom scoring mode reveals advanced options (910ms)
+  ✓  63 e2e/tournament.spec.ts:383:3 › Tournament Integration Tests › Scoring Modes › custom best-of-3 shows deciding set points (684ms)
+  ✓  64 e2e/tournament.spec.ts:394:3 › Tournament Integration Tests › Scoring Modes › duration estimate updates based on scoring mode (659ms)
+  ✘  65 e2e/tournament.spec.ts:406:3 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default (30.0s)
+  ✓  66 e2e/tournament.spec.ts:431:3 › Tournament Integration Tests › Scoring Modes › best-of-3 tournament enforces per-set score entry (7.1s)
   ✓  67 e2e/tournament.spec.ts:535:3 › Tournament Integration Tests › Scoring Modes › single-set tournament rejects scores below minimum (5.3s)
-  ✓  68 e2e/tournament.spec.ts:576:3 › Tournament Integration Tests › Scoring Modes › 5p court rejects scores below 15-point minimum (5.5s)
-  ✓  69 e2e/tournament.spec.ts:617:2 › Tournament Integration Tests › rejects blowout scores (deuce-aware validation) (7.0s)
-  ✓  70 e2e/tournament.spec.ts:679:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › shows virtual court info when physical courts < virtual courts (617ms)
-  ✓  71 e2e/tournament.spec.ts:694:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › physical courts slider ranges from 1 to 16 (640ms)
-  ✓  72 e2e/tournament.spec.ts:702:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › duration estimate accounts for physical court shifts (622ms)
-  ✓  73 e2e/tournament.spec.ts:718:3 › Tournament Integration Tests › Court Labeling › organizer can set and view physical court labels (5.9s)
-  ✓  74 e2e/tournament.spec.ts:748:3 › Tournament Integration Tests › Court Labeling › court page shows no label when not set (2.8s)
-  ✓  75 e2e/tournament.spec.ts:772:3 › Tournament Integration Tests › Tournament Deletion › deletes tournament from detail page (4.1s)
-  ✓  76 e2e/tournament.spec.ts:802:3 › Tournament Integration Tests › Tournament Deletion › cancelling delete keeps tournament (3.2s)
-  ✓  77 e2e/tournament.spec.ts:831:3 › Tournament Integration Tests › Player Retirement › retire a player between rounds and continue tournament (46.9s)
-  ✓  78 e2e/tournament.spec.ts:953:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Cancel & Average option (21.3s)
-  ✓  79 e2e/tournament.spec.ts:1066:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Substitute option (20.3s)
-  ✓  80 e2e/tournament.spec.ts:1189:3 › Tournament Integration Tests › Player Retirement › undo retirement within 5 min window (34.3s)
-  ✓  81 e2e/tournament.spec.ts:1286:3 › Tournament Integration Tests › Player Retirement › undo injury report with Cancel option (16.5s)
-  ✓  82 e2e/tournament.spec.ts:1384:3 › Tournament Integration Tests › Player Retirement › undo injury report with Substitute option (16.5s)
-  ✓  83 e2e/tournament.spec.ts:1478:3 › Tournament Integration Tests › Player Retirement › retire a player causing non-standard bottom court and complete tournament (45.3s)
-  ✓  84 e2e/tournament.spec.ts:1602:3 › Tournament Integration Tests › Scoring Overrides › override 5p court points-to-win and verify score entry (9.6s)
-  ✓  85 e2e/tournament.spec.ts:1657:3 › Tournament Integration Tests › Scoring Overrides › override 3p court to best-of-3 and verify set entry (9.1s)
+  ✓  68 e2e/tournament.spec.ts:576:3 › Tournament Integration Tests › Scoring Modes › 5p court rejects scores below 15-point minimum (5.7s)
+  ✘  69 e2e/tournament.spec.ts:617:2 › Tournament Integration Tests › rejects blowout scores (deuce-aware validation) (30.0s)
+  ✓  70 e2e/tournament.spec.ts:679:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › shows virtual court info when physical courts < virtual courts (909ms)
+  ✓  71 e2e/tournament.spec.ts:694:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › physical courts slider ranges from 1 to 16 (638ms)
+  ✓  72 e2e/tournament.spec.ts:702:3 › Tournament Integration Tests › Virtual Courts (Physical < Virtual) › duration estimate accounts for physical court shifts (660ms)
+  ✘  73 e2e/tournament.spec.ts:718:3 › Tournament Integration Tests › Court Labeling › organizer can set and view physical court labels (30.0s)
+  ✓  74 e2e/tournament.spec.ts:748:3 › Tournament Integration Tests › Court Labeling › court page shows no label when not set (3.6s)
+  ✓  75 e2e/tournament.spec.ts:772:3 › Tournament Integration Tests › Tournament Deletion › deletes tournament from detail page (4.9s)
+  ✓  76 e2e/tournament.spec.ts:802:3 › Tournament Integration Tests › Tournament Deletion › cancelling delete keeps tournament (3.8s)
+  ✘  77 e2e/tournament.spec.ts:831:3 › Tournament Integration Tests › Player Retirement › retire a player between rounds and continue tournament (30.0s)
+  ✓  78 e2e/tournament.spec.ts:953:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Cancel & Average option (21.4s)
+  ✓  79 e2e/tournament.spec.ts:1066:3 › Tournament Integration Tests › Player Retirement › report mid-round injury with Substitute option (19.6s)
+  ✓  80 e2e/tournament.spec.ts:1189:3 › Tournament Integration Tests › Player Retirement › undo retirement within 5 min window (32.8s)
+  ✓  81 e2e/tournament.spec.ts:1286:3 › Tournament Integration Tests › Player Retirement › undo injury report with Cancel option (16.4s)
+  ✓  82 e2e/tournament.spec.ts:1384:3 › Tournament Integration Tests › Player Retirement › undo injury report with Substitute option (16.8s)
+  ✓  83 e2e/tournament.spec.ts:1478:3 › Tournament Integration Tests › Player Retirement › retire a player causing non-standard bottom court and complete tournament (42.8s)
+  ✓  84 e2e/tournament.spec.ts:1602:3 › Tournament Integration Tests › Scoring Overrides › override 5p court points-to-win and verify score entry (9.3s)
+  ✓  85 e2e/tournament.spec.ts:1657:3 › Tournament Integration Tests › Scoring Overrides › override 3p court to best-of-3 and verify set entry (8.8s)
 
-  Slow test file: e2e/tournament.spec.ts (5.1m)
-  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
-  85 passed (14.2m)
+
+  1) e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      4 | 	const testTournamentNames: string[] = [];
+      5 |
+    > 6 | 	test.beforeEach(async ({ page }) => {
+        | 	     ^
+      7 | 		await page.goto('/login');
+      8 | 		await page.fill('input[type="email"]', 'test@example.com');
+      9 | 		await page.fill('input[type="password"]', 'password123');
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:6:7
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      18 | 			await page.fill('input#confirmPassword', 'password123');
+      19 | 			await page.click('button[type="submit"]');
+    > 20 | 			await page.waitForURL('/');
+         | 			           ^
+      21 | 		}
+      22 | 	});
+      23 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:20:15
+
+    Error Context: test-results/format-Tournament-Format-S-38d0b-32-players-creates-8-courts/error-context.md
+
+  2) e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      4 | 	const testTournamentNames: string[] = [];
+      5 |
+    > 6 | 	test.beforeEach(async ({ page }) => {
+        | 	     ^
+      7 | 		await page.goto('/login');
+      8 | 		await page.fill('input[type="email"]', 'test@example.com');
+      9 | 		await page.fill('input[type="password"]', 'password123');
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:6:7
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      18 | 			await page.fill('input#confirmPassword', 'password123');
+      19 | 			await page.click('button[type="submit"]');
+    > 20 | 			await page.waitForURL('/');
+         | 			           ^
+      21 | 		}
+      22 | 	});
+      23 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:20:15
+
+    Error Context: test-results/format-Tournament-Format-S-e2ae8-om-shows-rounds-input-again/error-context.md
+
+  3) e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      4 | 	const testTournamentNames: string[] = [];
+      5 |
+    > 6 | 	test.beforeEach(async ({ page }) => {
+        | 	     ^
+      7 | 		await page.goto('/login');
+      8 | 		await page.fill('input[type="email"]', 'test@example.com');
+      9 | 		await page.fill('input[type="password"]', 'password123');
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:6:7
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      18 | 			await page.fill('input#confirmPassword', 'password123');
+      19 | 			await page.click('button[type="submit"]');
+    > 20 | 			await page.waitForURL('/');
+         | 			           ^
+      21 | 		}
+      22 | 	});
+      23 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:20:15
+
+    Error Context: test-results/format-Tournament-Format-S-53ad7-rt-warning-with-description/error-context.md
+
+  4) e2e/format.spec.ts:343:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      4 | 	const testTournamentNames: string[] = [];
+      5 |
+    > 6 | 	test.beforeEach(async ({ page }) => {
+        | 	     ^
+      7 | 		await page.goto('/login');
+      8 | 		await page.fill('input[type="email"]', 'test@example.com');
+      9 | 		await page.fill('input[type="password"]', 'password123');
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:6:7
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      18 | 			await page.fill('input#confirmPassword', 'password123');
+      19 | 			await page.click('button[type="submit"]');
+    > 20 | 			await page.waitForURL('/');
+         | 			           ^
+      21 | 		}
+      22 | 	});
+      23 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:20:15
+
+    Error Context: test-results/format-Tournament-Format-S-9ccd5--tournament-creates-4-games/error-context.md
+
+  5) e2e/format.spec.ts:451:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      4 | 	const testTournamentNames: string[] = [];
+      5 |
+    > 6 | 	test.beforeEach(async ({ page }) => {
+        | 	     ^
+      7 | 		await page.goto('/login');
+      8 | 		await page.fill('input[type="email"]', 'test@example.com');
+      9 | 		await page.fill('input[type="password"]', 'password123');
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:6:7
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      18 | 			await page.fill('input#confirmPassword', 'password123');
+      19 | 			await page.click('button[type="submit"]');
+    > 20 | 			await page.waitForURL('/');
+         | 			           ^
+      21 | 		}
+      22 | 	});
+      23 |
+        at /home/dirk/Dev/kob/e2e/format.spec.ts:20:15
+
+    Error Context: test-results/format-Tournament-Format-S-4f48d-4-players-creates-16-courts/error-context.md
+
+  6) e2e/standings.spec.ts:170:2 › Standings Calculation › awards points correctly across multiple matches per player 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      4 | 	const testTournamentNames: string[] = [];
+      5 |
+    > 6 | 	test.beforeEach(async ({ page }) => {
+        | 	     ^
+      7 | 		await page.goto('/login');
+      8 | 		await page.fill('input[type="email"]', 'test@example.com');
+      9 | 		await page.fill('input[type="password"]', 'password123');
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:6:7
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      18 | 			await page.fill('input#confirmPassword', 'password123');
+      19 | 			await page.click('button[type="submit"]');
+    > 20 | 			await page.waitForURL('/');
+         | 			           ^
+      21 | 		}
+      22 | 	});
+      23 |
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:20:15
+
+    Error Context: test-results/standings-Standings-Calcul-1c265-multiple-matches-per-player/error-context.md
+
+  7) e2e/standings.spec.ts:337:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      4 | 	const testTournamentNames: string[] = [];
+      5 |
+    > 6 | 	test.beforeEach(async ({ page }) => {
+        | 	     ^
+      7 | 		await page.goto('/login');
+      8 | 		await page.fill('input[type="email"]', 'test@example.com');
+      9 | 		await page.fill('input[type="password"]', 'password123');
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:6:7
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      18 | 			await page.fill('input#confirmPassword', 'password123');
+      19 | 			await page.click('button[type="submit"]');
+    > 20 | 			await page.waitForURL('/');
+         | 			           ^
+      21 | 		}
+      22 | 	});
+      23 |
+        at /home/dirk/Dev/kob/e2e/standings.spec.ts:20:15
+
+    Error Context: test-results/standings-Standings-Calcul-565f3-show-average-points-ranking/error-context.md
+
+  8) e2e/tournament.spec.ts:354:3 › Tournament Integration Tests › Scoring Modes › best-of-3 scoring mode is selectable 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      24 | 	const testTournamentNames: string[] = [];
+      25 |
+    > 26 | 	test.beforeEach(async ({ page }) => {
+         | 	     ^
+      27 | 		// Try logging in first (most common case)
+      28 | 		await page.goto('/login');
+      29 | 		await page.fill('input[type="email"]', 'test@example.com');
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:26:7
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      40 | 			await page.fill('input#confirmPassword', 'password123');
+      41 | 			await page.click('button[type="submit"]');
+    > 42 | 			await page.waitForURL('/');
+         | 			           ^
+      43 | 		}
+      44 |
+      45 | 		// Dismiss cookie notice if present and persist consent
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:42:15
+
+    Error Context: test-results/tournament-Tournament-Inte-97b5b--scoring-mode-is-selectable/error-context.md
+
+  9) e2e/tournament.spec.ts:406:3 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      24 | 	const testTournamentNames: string[] = [];
+      25 |
+    > 26 | 	test.beforeEach(async ({ page }) => {
+         | 	     ^
+      27 | 		// Try logging in first (most common case)
+      28 | 		await page.goto('/login');
+      29 | 		await page.fill('input[type="email"]', 'test@example.com');
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:26:7
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      40 | 			await page.fill('input#confirmPassword', 'password123');
+      41 | 			await page.click('button[type="submit"]');
+    > 42 | 			await page.waitForURL('/');
+         | 			           ^
+      43 | 		}
+      44 |
+      45 | 		// Dismiss cookie notice if present and persist consent
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:42:15
+
+    Error Context: test-results/tournament-Tournament-Inte-f5590-15-point-scoring-by-default/error-context.md
+
+  10) e2e/tournament.spec.ts:617:2 › Tournament Integration Tests › rejects blowout scores (deuce-aware validation) 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      24 | 	const testTournamentNames: string[] = [];
+      25 |
+    > 26 | 	test.beforeEach(async ({ page }) => {
+         | 	     ^
+      27 | 		// Try logging in first (most common case)
+      28 | 		await page.goto('/login');
+      29 | 		await page.fill('input[type="email"]', 'test@example.com');
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:26:7
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      40 | 			await page.fill('input#confirmPassword', 'password123');
+      41 | 			await page.click('button[type="submit"]');
+    > 42 | 			await page.waitForURL('/');
+         | 			           ^
+      43 | 		}
+      44 |
+      45 | 		// Dismiss cookie notice if present and persist consent
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:42:15
+
+    Error Context: test-results/tournament-Tournament-Inte-0070d-res-deuce-aware-validation-/error-context.md
+
+  11) e2e/tournament.spec.ts:718:3 › Tournament Integration Tests › Court Labeling › organizer can set and view physical court labels 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      24 | 	const testTournamentNames: string[] = [];
+      25 |
+    > 26 | 	test.beforeEach(async ({ page }) => {
+         | 	     ^
+      27 | 		// Try logging in first (most common case)
+      28 | 		await page.goto('/login');
+      29 | 		await page.fill('input[type="email"]', 'test@example.com');
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:26:7
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      40 | 			await page.fill('input#confirmPassword', 'password123');
+      41 | 			await page.click('button[type="submit"]');
+    > 42 | 			await page.waitForURL('/');
+         | 			           ^
+      43 | 		}
+      44 |
+      45 | 		// Dismiss cookie notice if present and persist consent
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:42:15
+
+    Error Context: test-results/tournament-Tournament-Inte-4afbf--view-physical-court-labels/error-context.md
+
+  12) e2e/tournament.spec.ts:831:3 › Tournament Integration Tests › Player Retirement › retire a player between rounds and continue tournament 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      24 | 	const testTournamentNames: string[] = [];
+      25 |
+    > 26 | 	test.beforeEach(async ({ page }) => {
+         | 	     ^
+      27 | 		// Try logging in first (most common case)
+      28 | 		await page.goto('/login');
+      29 | 		await page.fill('input[type="email"]', 'test@example.com');
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:26:7
+
+    Error: page.waitForURL: Test timeout of 30000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      40 | 			await page.fill('input#confirmPassword', 'password123');
+      41 | 			await page.click('button[type="submit"]');
+    > 42 | 			await page.waitForURL('/');
+         | 			           ^
+      43 | 		}
+      44 |
+      45 | 		// Dismiss cookie notice if present and persist consent
+        at /home/dirk/Dev/kob/e2e/tournament.spec.ts:42:15
+
+    Error Context: test-results/tournament-Tournament-Inte-8308a-nds-and-continue-tournament/error-context.md
+
+  12 failed
+    e2e/format.spec.ts:83:3 › Tournament Format Selection › Random Format › Random format with 32 players creates 8 courts 
+    e2e/format.spec.ts:166:3 › Tournament Format Selection › Pre-Seed Format › switching from Pre-Seed to Random shows rounds input again 
+    e2e/format.spec.ts:255:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 26 players shows 6p court warning with description 
+    e2e/format.spec.ts:343:3 › Tournament Format Selection › Leftover Courts (Non-Standard) › 5p court tournament creates 4 games 
+    e2e/format.spec.ts:451:3 › Tournament Format Selection › Player Count Range (8-64) › 64 players creates 16 courts 
+    e2e/standings.spec.ts:170:2 › Standings Calculation › awards points correctly across multiple matches per player 
+    e2e/standings.spec.ts:337:3 › Standings Calculation › Non-Standard Court Standings › 6p court standings show average points ranking 
+    e2e/tournament.spec.ts:354:3 › Tournament Integration Tests › Scoring Modes › best-of-3 scoring mode is selectable 
+    e2e/tournament.spec.ts:406:3 › Tournament Integration Tests › Scoring Modes › 5p/6p courts use 15-point scoring by default 
+    e2e/tournament.spec.ts:617:2 › Tournament Integration Tests › rejects blowout scores (deuce-aware validation) 
+    e2e/tournament.spec.ts:718:3 › Tournament Integration Tests › Court Labeling › organizer can set and view physical court labels 
+    e2e/tournament.spec.ts:831:3 › Tournament Integration Tests › Player Retirement › retire a player between rounds and continue tournament 
+  73 passed (19.1m)
+error: script "playwright" exited with code 1

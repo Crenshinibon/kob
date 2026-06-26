@@ -19,5 +19,6 @@ export const auth = betterAuth({
 			enabled: false
 		}
 	},
+	rateLimit: env.RATE_LIMIT_ENABLED === 'false' ? { enabled: false } : undefined,
 	plugins: [sveltekitCookies(getRequestEvent)]
 });
