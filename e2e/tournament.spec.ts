@@ -939,7 +939,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForTimeout(2000);
 			await page.waitForSelector('button:has-text("Finalize Tournament")', { timeout: 20000 });
 			await page.click('button:has-text("Finalize Tournament")');
-			await page.waitForTimeout(1000);
+			await page.waitForURL(/\/tournament\/\d+\/standings/);
 
 			// Verify tournament completed
 			await page.goto('/');
@@ -1587,7 +1587,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForTimeout(2000);
 			await page.waitForSelector('button:has-text("Finalize Tournament")', { timeout: 20000 });
 			await page.click('button:has-text("Finalize Tournament")');
-			await page.waitForTimeout(1000);
+			await page.waitForURL(/\/tournament\/\d+\/standings/);
 
 			await page.goto('/');
 			await page.waitForSelector(`text=${tournamentName}`);
