@@ -56,6 +56,10 @@
 	{/if}
 
 	<nav class="top-nav">
+		<div class="nav-links">
+			<a href={localizeHref('/docs')} data-sveltekit-preload>{m.nav_docs()}</a>
+			<a href={localizeHref('/faq')} data-sveltekit-preload>{m.nav_faq()}</a>
+		</div>
 		<LanguageSwitcher />
 		{#if data?.user}
 			<span class="user-email">{data.user.email}</span>
@@ -125,6 +129,34 @@
 		padding: 0.75rem 1rem;
 		background-color: var(--bg-nav);
 		border-bottom: 2px solid var(--border-default);
+	}
+
+	.nav-links {
+		margin-right: auto;
+		display: flex;
+		gap: 0.75rem;
+		align-items: center;
+	}
+
+	.nav-links a {
+		padding: 0.25rem 0.5rem;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--text-muted);
+		text-decoration: none;
+		border-radius: 4px;
+		transition:
+			background 0.15s,
+			color 0.15s;
+	}
+
+	.nav-links a:hover {
+		background: var(--bg-hover);
+		color: var(--text-primary);
+	}
+
+	.nav-links a:global(.active) {
+		color: var(--accent-primary);
 	}
 
 	.user-email {
