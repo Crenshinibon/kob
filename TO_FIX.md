@@ -2,6 +2,8 @@
 
 ## ToDo
 
+- [] court links on the tournament page should include the currently selected locale, in contrast to the QRCode encoded URLs which shouldn't include the selected lang, so that the target page can pick up the device language and start with the users native lang.
+
 ## Done 
 
 - [x] Make Standings page visible without auth
