@@ -281,7 +281,7 @@ test.describe('Tournament Format Selection', () => {
 			const players = Array.from({ length: 24 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 
-			await expect(page.locator('.standard-court:has-text("All 4-player courts")')).toBeVisible();
+			await expect(page.locator('.standard-court:has-text("All 4-player groups")')).toBeVisible();
 			await expect(page.locator('.leftover-info')).not.toBeVisible();
 		});
 
@@ -301,7 +301,7 @@ test.describe('Tournament Format Selection', () => {
 
 			// Should now show 16 players (clean)
 			await expect(page.getByText('16 names entered')).toBeVisible();
-			await expect(page.locator('.standard-court:has-text("All 4-player courts")')).toBeVisible();
+			await expect(page.locator('.standard-court:has-text("All 4-player groups")')).toBeVisible();
 		});
 
 		test('3p court tournament creates correct number of matches', async ({ page }) => {

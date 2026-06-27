@@ -687,7 +687,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.locator('input[name="n:physicalCourts"]').fill('4');
 
 			// Should show virtual court info
-			await expect(page.locator('.info:has-text("groups")')).toBeVisible();
+			await expect(page.locator('.info:has-text("scheduled across")')).toBeVisible();
 			await expect(page.locator('.info:has-text("batch shifts")')).toBeVisible();
 		});
 
@@ -1615,7 +1615,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForSelector('text=Round 1 of 2');
 
 			// Override 5p court scoring: change pointsToWin from 15 to 10
-			await page.click('summary:has-text("Court Scoring Configuration")');
+			await page.click('summary:has-text("Group Scoring Configuration")');
 			await page.waitForSelector('.scoring-summary');
 			await page.click('.btn-edit');
 			await page.waitForSelector('.scoring-grid');
@@ -1670,7 +1670,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForSelector('text=Round 1 of 2');
 
 			// Override 3p to best-of-3
-			await page.click('summary:has-text("Court Scoring Configuration")');
+			await page.click('summary:has-text("Group Scoring Configuration")');
 			await page.waitForSelector('.scoring-summary');
 			await page.click('.btn-edit');
 			await page.waitForSelector('.scoring-grid');
