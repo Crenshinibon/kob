@@ -443,13 +443,25 @@
 		box-shadow: 0 0 0 1px var(--accent-info);
 	}
 
-	.factor-icon.deciding-won,
-	.factor-icon.deciding-middle,
+	.factor-icon.deciding-won {
+		color: var(--accent-warning);
+		border-color: var(--accent-warning);
+		background: color-mix(in srgb, var(--accent-warning) 18%, var(--bg-secondary));
+		box-shadow: 0 0 0 1px var(--accent-warning);
+	}
+
+	.factor-icon.deciding-middle {
+		color: var(--accent-success);
+		border-color: var(--accent-success);
+		background: color-mix(in srgb, var(--accent-success) 18%, var(--bg-secondary));
+		box-shadow: 0 0 0 1px var(--accent-success);
+	}
+
 	.factor-icon.deciding-lost {
-		color: var(--deciding-color, var(--accent-success));
-		border-color: var(--deciding-color, var(--accent-success));
-		background: color-mix(in srgb, var(--deciding-color, var(--accent-success)) 18%, var(--bg-secondary));
-		box-shadow: 0 0 0 1px var(--deciding-color, var(--accent-success));
+		color: var(--accent-info);
+		border-color: var(--accent-info);
+		background: color-mix(in srgb, var(--accent-info) 18%, var(--bg-secondary));
+		box-shadow: 0 0 0 1px var(--accent-info);
 	}
 
 	footer {
