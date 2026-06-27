@@ -2460,11 +2460,11 @@ describe('generate5pMatches', () => {
 		expect(m[3].teamAPlayer2Id).toBe(5);
 	});
 
-	it('Run 2 has fixed player B on side Y', () => {
+	it('Run 2 has fixed player C on side Y', () => {
 		const m = generate5pMatches([1, 2, 3, 4, 5]);
-		// Games 3 and 4 should have same player p2 on team B
-		expect(m[2].teamBPlayer1Id).toBe(2);
-		expect(m[3].teamBPlayer1Id).toBe(2);
+		// Games 3 and 4 should have same player p3 on team B
+		expect(m[2].teamBPlayer1Id).toBe(3);
+		expect(m[3].teamBPlayer1Id).toBe(3);
 	});
 });
 
@@ -2528,26 +2528,26 @@ describe('generate6pMatches', () => {
 		expect(m[1].teamAPlayer2Id).toBe(2);
 	});
 
-	it('Run 1 has rotating pairs p3+p5 and p4+p6 on side Y', () => {
+	it('Run 1 has rotating pairs p3+p4 and p5+p6 on side Y', () => {
 		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
 		expect(m[0].teamBPlayer1Id).toBe(3);
-		expect(m[0].teamBPlayer2Id).toBe(5);
-		expect(m[1].teamBPlayer1Id).toBe(4);
+		expect(m[0].teamBPlayer2Id).toBe(4);
+		expect(m[1].teamBPlayer1Id).toBe(5);
 		expect(m[1].teamBPlayer2Id).toBe(6);
 	});
 
-	it('Run 2 has fixed team p3+p4 on side X', () => {
+	it('Run 2 has fixed team p3+p5 on side X', () => {
 		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
 		expect(m[2].teamAPlayer1Id).toBe(3);
-		expect(m[2].teamAPlayer2Id).toBe(4);
+		expect(m[2].teamAPlayer2Id).toBe(5);
 		expect(m[3].teamAPlayer1Id).toBe(3);
-		expect(m[3].teamAPlayer2Id).toBe(4);
+		expect(m[3].teamAPlayer2Id).toBe(5);
 	});
 
-	it('Run 2 has rotating pairs p1+p5 and p2+p6 on side Y', () => {
+	it('Run 2 has rotating pairs p1+p4 and p2+p6 on side Y', () => {
 		const m = generate6pMatches([1, 2, 3, 4, 5, 6]);
 		expect(m[2].teamBPlayer1Id).toBe(1);
-		expect(m[2].teamBPlayer2Id).toBe(5);
+		expect(m[2].teamBPlayer2Id).toBe(4);
 		expect(m[3].teamBPlayer1Id).toBe(2);
 		expect(m[3].teamBPlayer2Id).toBe(6);
 	});
@@ -2893,18 +2893,19 @@ describe('calculateCourtStandings with canceled matches', () => {
 	});
 
 	it('uses averages for 5p courts even without canceled matches', () => {
-		// 5 players, 4 matches (p2 plays 4, others play 3)
+		// 5 players, 4 matches (p3 plays 4, others play 3)
 		const matches = [
 			mockMatch([1, 2], [3, 4], 21, 19),
 			mockMatch([1, 2], [3, 5], 22, 20),
-			mockMatch([4, 5], [2, 1], 18, 25),
-			mockMatch([4, 5], [2, 3], 20, 23)
+			mockMatch([4, 5], [3, 1], 18, 25),
+			mockMatch([4, 5], [3, 2], 20, 23)
 		];
 		const result = calculateCourtStandings(matches, [1, 2, 3, 4, 5]);
 		// p1 played 3 matches: scores 21, 22, 25 = 68 total, avg = 22.67
-		// p2 played 4 matches: scores 21, 22, 25, 23 = 91 total, avg = 22.75
-		expect(result[0].playerId).toBe(2);
-		expect(result[0].points).toBeCloseTo(22.75, 1);
+		// p2 played 3 matches: scores 21, 22, 23 = 66 total, avg = 22.00
+		// p3 played 4 matches: scores 19, 20, 18, 23 = 80 total, avg = 20.00
+		expect(result[0].playerId).toBe(1);
+		expect(result[0].points).toBeCloseTo(22.67, 1);
 	});
 
 	it('injured player gets 0 points in substitute matches', () => {
