@@ -185,12 +185,8 @@ test.describe('Standings Calculation', () => {
 		await page.goto(courtUrl || '');
 
 		await page.waitForSelector('[data-testid^="match-form-"]');
-		const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-		const matchIds = await Promise.all(
-			matchForms.map(async (form) => {
-				const testId = await form.getAttribute('data-testid');
-				return testId?.replace('match-form-', '');
-			})
+		const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+			(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 		);
 		expect(matchIds.length).toBe(3);
 
@@ -505,13 +501,9 @@ test.describe('Standings Calculation', () => {
 				await page.waitForSelector('[data-testid^="match-form-"]');
 
 				// Collect all match IDs first
-				const matchFormElements = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds: string[] = [];
-				for (const form of matchFormElements) {
-					const testId = await form.getAttribute('data-testid');
-					const matchId = testId?.replace('match-form-', '');
-					if (matchId) matchIds.push(matchId);
-				}
+				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+				);
 
 				// Save each match
 				for (const matchId of matchIds) {

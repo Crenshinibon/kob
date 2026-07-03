@@ -84,13 +84,9 @@ test.describe('Preseed Tournament', () => {
 		await page.goto(`/tournament/${tid}`);
 		await page.waitForSelector('.qr-link a');
 		await page.waitForTimeout(1000);
-		const els = await page.locator('.qr-link a').all();
-		const links: string[] = [];
-		for (const el of els) {
-			const href = await el.getAttribute('href');
-			if (href) links.push(href);
-		}
-		return links;
+		return page.locator('.qr-link a').evaluateAll(
+			(els) => els.map((el) => (el as HTMLAnchorElement).href).filter(Boolean)
+		);
 	}
 
 	async function getCourtPlayers(
@@ -123,12 +119,8 @@ test.describe('Preseed Tournament', () => {
 	): Promise<void> {
 		await page.goto(url);
 		await page.waitForSelector('[data-testid^="match-form-"]');
-		const forms = await page.locator('[data-testid^="match-form-"]').all();
-		const ids = await Promise.all(
-			forms.map(async (f) => {
-				const tid = await f.getAttribute('data-testid');
-				return tid?.replace('match-form-', '');
-			})
+		const ids = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+			(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 		);
 		for (const id of ids) {
 			await page.fill(`[data-testid="team-a-score-${id}"]`, String(aScore));

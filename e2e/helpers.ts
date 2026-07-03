@@ -69,7 +69,7 @@ export async function scoreAllMatchesOnCourt(
 	}
 }
 
-async function extractMatchIds(page: Page): Promise<string[]> {
+export async function extractMatchIds(page: Page): Promise<string[]> {
 	await page.waitForSelector('[data-testid^="match-form-"]');
 	return page.locator('[data-testid^="match-form-"]').evaluateAll(
 		(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
@@ -82,19 +82,38 @@ export async function scoreAllCourts(page: Page, links: string[]): Promise<void>
 	}
 }
 
-export async function closeRoundViaFetch(page: Page, tournamentId: string): Promise<Response> {
+export async function closeRoundViaFetch(
+	page: Page,
+	tournamentId: string
+): Promise<{ ok: boolean; status: number; reason?: string; body?: string }> {
 	return page.evaluate(async (tid) => {
 		const fd = new URLSearchParams();
-		fd.append('n:tournamentId', tid);
-		return fetch('/_app/remote/1vtu491/closeRoundForm', {
+		fd.set('n:tournamentId', String(tid));
+		const anyInput = document.querySelector(
+			'input[name="n:tournamentId"]'
+		) as HTMLInputElement | null;
+		if (!anyInput) return { ok: false, status: 0, reason: 'no input on page' };
+		const anyForm = anyInput.closest('form') as HTMLFormElement | null;
+		if (!anyForm) return { ok: false, status: 0, reason: 'no form' };
+		const remoteParam = new URL(anyForm.action).searchParams.get('/remote');
+		if (!remoteParam) return { ok: false, status: 0, reason: 'no remote param' };
+		const hash = remoteParam.split('/')[0];
+		if (!hash) return { ok: false, status: 0, reason: 'no hash' };
+		const remoteUrl = '/_app/remote/' + hash + '/closeRoundForm';
+		const res = await fetch(remoteUrl, {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded',
-				'x-sveltekit-pathname': `/tournament/${tid}`,
-				'x-sveltekit-search': ''
-			},
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 			body: fd.toString()
 		});
+		const text = await res.text();
+		try {
+			const json = JSON.parse(text);
+			// SvelteKit form actions respond 200 even on errors; check body.status
+			const status = json?.status ?? res.status;
+			return { ok: status < 400, status, body: text.slice(0, 200) };
+		} catch {
+			return { ok: res.ok, status: res.status, body: text.slice(0, 200) };
+		}
 	}, tournamentId);
 }
 

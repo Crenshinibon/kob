@@ -105,12 +105,8 @@ test.describe('Promotion and Relegation', () => {
 
 			// Get all match IDs on this court
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-			const matchIds = await Promise.all(
-				matchForms.map(async (form) => {
-					const testId = await form.getAttribute('data-testid');
-					return testId?.replace('match-form-', '');
-				})
+			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 			);
 			expect(matchIds.length).toBe(3);
 
@@ -218,12 +214,8 @@ test.describe('Promotion and Relegation', () => {
 
 		// Get all match IDs on this court
 		await page.waitForSelector('[data-testid^="match-form-"]');
-		const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-		const matchIds = await Promise.all(
-			matchForms.map(async (form) => {
-				const testId = await form.getAttribute('data-testid');
-				return testId?.replace('match-form-', '');
-			})
+		const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+			(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 		);
 		expect(matchIds.length).toBe(3);
 
@@ -245,12 +237,8 @@ test.describe('Promotion and Relegation', () => {
 
 			// Get all match IDs on this court
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const courtMatchForms = await page.locator('[data-testid^="match-form-"]').all();
-			const courtMatchIds = await Promise.all(
-				courtMatchForms.map(async (form) => {
-					const testId = await form.getAttribute('data-testid');
-					return testId?.replace('match-form-', '');
-				})
+			const courtMatchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 			);
 			expect(courtMatchIds.length).toBe(3);
 
@@ -309,12 +297,8 @@ test.describe('Promotion and Relegation', () => {
 
 			// Get all match IDs on this court
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-			const matchIds = await Promise.all(
-				matchForms.map(async (form) => {
-					const testId = await form.getAttribute('data-testid');
-					return testId?.replace('match-form-', '');
-				})
+			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 			);
 			expect(matchIds.length).toBe(3);
 
@@ -389,12 +373,8 @@ test.describe('Promotion and Relegation', () => {
 
 			// Get all match IDs on this court
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-			const matchIds = await Promise.all(
-				matchForms.map(async (form) => {
-					const testId = await form.getAttribute('data-testid');
-					return testId?.replace('match-form-', '');
-				})
+			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 			);
 			expect(matchIds.length).toBe(3);
 
@@ -467,12 +447,8 @@ test.describe('Promotion and Relegation', () => {
 			for (const courtUrl of courtLinks) {
 				await page.goto(courtUrl);
 				await page.waitForSelector('[data-testid^="match-form-"]');
-				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds = await Promise.all(
-					matchForms.map(async (form) => {
-						const testId = await form.getAttribute('data-testid');
-						return testId?.replace('match-form-', '');
-					})
+				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 				);
 
 				for (let i = 0; i < matchIds.length; i++) {
@@ -543,12 +519,8 @@ test.describe('Promotion and Relegation', () => {
 			for (const courtUrl of courtLinks) {
 				await page.goto(courtUrl);
 				await page.waitForSelector('[data-testid^="match-form-"]');
-				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds = await Promise.all(
-					matchForms.map(async (form) => {
-						const testId = await form.getAttribute('data-testid');
-						return testId?.replace('match-form-', '');
-					})
+				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 				);
 
 				for (let i = 0; i < matchIds.length; i++) {
@@ -618,12 +590,8 @@ test.describe('Promotion and Relegation', () => {
 			for (const courtUrl of courtLinks) {
 				await page.goto(courtUrl);
 				await page.waitForSelector('[data-testid^="match-form-"]');
-				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds = await Promise.all(
-					matchForms.map(async (form) => {
-						const testId = await form.getAttribute('data-testid');
-						return testId?.replace('match-form-', '');
-					})
+				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 				);
 
 				for (let i = 0; i < matchIds.length; i++) {

@@ -1246,9 +1246,20 @@ export const reportInjury = command(
 				.where(eq(player.id, playerId));
 		}
 
+		// Count active players and update tournament state
+		const activePlayers = await db
+			.select()
+			.from(player)
+			.where(and(eq(player.tournamentId, tournamentId), isNull(player.retiredAt)));
+		const activePlayerCount = activePlayers.length;
+		const updatedCourtSizes = recalculateCourtConfigAfterRetirement(activePlayerCount);
 		await db
 			.update(tournament)
-			.set({ lastActivityAt: new Date() })
+			.set({
+				playerCount: activePlayerCount,
+				courtSizes: JSON.stringify(updatedCourtSizes.courtSizes),
+				lastActivityAt: new Date()
+			})
 			.where(eq(tournament.id, tournamentId));
 
 		getTournamentData({ tournamentId }).refresh();

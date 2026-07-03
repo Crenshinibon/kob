@@ -140,12 +140,8 @@ test.describe('Tournament Integration Tests', () => {
 
 			// Get all match IDs on this court
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-			const matchIds = await Promise.all(
-				matchForms.map(async (form) => {
-					const testId = await form.getAttribute('data-testid');
-					return testId?.replace('match-form-', '');
-				})
+			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 			);
 			expect(matchIds.length).toBe(3);
 
@@ -203,12 +199,8 @@ test.describe('Tournament Integration Tests', () => {
 
 			// Get all match IDs on this court
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-			const matchIds = await Promise.all(
-				matchForms.map(async (form) => {
-					const testId = await form.getAttribute('data-testid');
-					return testId?.replace('match-form-', '');
-				})
+			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 			);
 			expect(matchIds.length).toBe(3);
 
@@ -267,12 +259,8 @@ test.describe('Tournament Integration Tests', () => {
 
 		// Get all match IDs on this court
 		await publicPage.waitForSelector('[data-testid^="match-form-"]');
-		const matchForms = await publicPage.locator('[data-testid^="match-form-"]').all();
-		const matchIds = await Promise.all(
-			matchForms.map(async (form) => {
-				const testId = await form.getAttribute('data-testid');
-				return testId?.replace('match-form-', '');
-			})
+		const matchIds = await publicPage.locator('[data-testid^="match-form-"]').evaluateAll(
+			(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 		);
 		expect(matchIds.length).toBeGreaterThan(0);
 
@@ -633,14 +621,8 @@ test.describe('Tournament Integration Tests', () => {
 		await page.goto(courtUrl || '');
 		await page.waitForSelector('[data-testid^="match-form-"]');
 
-		const allForms = await page.locator('[data-testid^="match-form-"]').all();
-		expect(allForms.length).toBe(3);
-
-		const matchIds = await Promise.all(
-			allForms.map(async (f) => {
-				const tid = await f.getAttribute('data-testid');
-				return tid?.replace('match-form-', '');
-			})
+		const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+			(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
 		);
 		const [m1, m2, m3] = matchIds;
 
@@ -858,13 +840,9 @@ test.describe('Tournament Integration Tests', () => {
 				await page.goto(url);
 				await page.waitForSelector('[data-testid^="match-form-"]');
 				await page.waitForTimeout(800);
-				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds: string[] = [];
-				for (const form of matchForms) {
-					const testId = await form.getAttribute('data-testid');
-					const matchId = testId?.replace('match-form-', '');
-					if (matchId) matchIds.push(matchId);
-				}
+				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+				);
 				for (const matchId of matchIds) {
 					await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
@@ -918,13 +896,9 @@ test.describe('Tournament Integration Tests', () => {
 				await page.goto(url);
 				await page.waitForSelector('[data-testid^="match-form-"]');
 				await page.waitForTimeout(800);
-				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds: string[] = [];
-				for (const form of matchForms) {
-					const testId = await form.getAttribute('data-testid');
-					const matchId = testId?.replace('match-form-', '');
-					if (matchId) matchIds.push(matchId);
-				}
+				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+				);
 				for (const matchId of matchIds) {
 					await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
@@ -972,12 +946,13 @@ test.describe('Tournament Integration Tests', () => {
 			const courtUrl = await courtCards[player1Court - 1].getAttribute('href');
 			await page.goto(courtUrl || '');
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const forms = await page.locator('[data-testid^="match-form-"]').all();
-			expect(forms.length).toBe(3);
+			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+			);
+			expect(matchIds.length).toBe(3);
 
 			// Score only first match
-			const testId = await forms[0].getAttribute('data-testid');
-			const matchId = testId?.replace('match-form-', '');
+			const matchId = matchIds[0];
 			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 			await page.click(`[data-testid="save-score-${matchId}"]`);
@@ -1036,19 +1011,23 @@ test.describe('Tournament Integration Tests', () => {
 			if (btnCount > 0) {
 				await page.click('button:has-text("Close Round & Advance")');
 			} else {
-				// canCloseRound is sometimes false for canceled matches.
-				// Submit closeRoundForm via fetch (n: prefix needed for number coercion).
 				await page.evaluate(async () => {
-					const tdId = location.pathname.split('/').pop();
+					const input = document.querySelector(
+						'input[name="n:tournamentId"]'
+					) as HTMLInputElement | null;
+					if (!input) return;
+					const form = input.closest('form') as HTMLFormElement | null;
+					if (!form) return;
+					const remoteParam = new URL(form.action).searchParams.get('/remote');
+					if (!remoteParam) return;
+					const remoteUrl = '/_app/remote/' + remoteParam;
 					const fd = new URLSearchParams();
-					fd.append('n:tournamentId', tdId || '');
-					await fetch('/_app/remote/1vtu491/closeRoundForm', {
+					for (const [key, val] of new FormData(form)) {
+						fd.append(key, val as string);
+					}
+					await fetch(remoteUrl, {
 						method: 'POST',
-						headers: {
-							'Content-Type': 'application/x-www-form-urlencoded',
-							'x-sveltekit-pathname': location.pathname,
-							'x-sveltekit-search': location.search
-						},
+						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 						body: fd.toString()
 					});
 				});
@@ -1079,12 +1058,13 @@ test.describe('Tournament Integration Tests', () => {
 			const courtUrl = await courtCards[player1Court - 1].getAttribute('href');
 			await page.goto(courtUrl || '');
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const forms = await page.locator('[data-testid^="match-form-"]').all();
-			expect(forms.length).toBe(3);
+			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+			);
+			expect(matchIds.length).toBe(3);
 
 			// Score only first match so injury option is available
-			const testId = await forms[0].getAttribute('data-testid');
-			const matchId = testId?.replace('match-form-', '');
+			const matchId = matchIds[0];
 			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 			await page.click(`[data-testid="save-score-${matchId}"]`);
@@ -1157,16 +1137,22 @@ test.describe('Tournament Integration Tests', () => {
 				await page.click('button:has-text("Close Round & Advance")');
 			} else {
 				await page.evaluate(async () => {
-					const tdId = location.pathname.split('/').pop();
+					const input = document.querySelector(
+						'input[name="n:tournamentId"]'
+					) as HTMLInputElement | null;
+					if (!input) return;
+					const form = input.closest('form') as HTMLFormElement | null;
+					if (!form) return;
+					const remoteParam = new URL(form.action).searchParams.get('/remote');
+					if (!remoteParam) return;
+					const remoteUrl = '/_app/remote/' + remoteParam;
 					const fd = new URLSearchParams();
-					fd.append('n:tournamentId', tdId || '');
-					await fetch('/_app/remote/1vtu491/closeRoundForm', {
+					for (const [key, val] of new FormData(form)) {
+						fd.append(key, val as string);
+					}
+					await fetch(remoteUrl, {
 						method: 'POST',
-						headers: {
-							'Content-Type': 'application/x-www-form-urlencoded',
-							'x-sveltekit-pathname': location.pathname,
-							'x-sveltekit-search': location.search
-						},
+						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 						body: fd.toString()
 					});
 				});
@@ -1203,13 +1189,9 @@ test.describe('Tournament Integration Tests', () => {
 				await page.goto(url);
 				await page.waitForSelector('[data-testid^="match-form-"]');
 				await page.waitForTimeout(800);
-				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds: string[] = [];
-				for (const form of matchForms) {
-					const testId = await form.getAttribute('data-testid');
-					const matchId = testId?.replace('match-form-', '');
-					if (matchId) matchIds.push(matchId);
-				}
+				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+				);
 				for (const matchId of matchIds) {
 					await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
@@ -1299,9 +1281,10 @@ test.describe('Tournament Integration Tests', () => {
 			const courtUrl = await courtCards[player1Court - 1].getAttribute('href');
 			await page.goto(courtUrl || '');
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const forms = await page.locator('[data-testid^="match-form-"]').all();
-			const testId = await forms[0].getAttribute('data-testid');
-			const matchId = testId?.replace('match-form-', '');
+			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+			);
+			const matchId = matchIds[0];
 			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 			await page.click(`[data-testid="save-score-${matchId}"]`);
@@ -1393,9 +1376,10 @@ test.describe('Tournament Integration Tests', () => {
 			const courtUrl = await courtCards[player1Court - 1].getAttribute('href');
 			await page.goto(courtUrl || '');
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const forms = await page.locator('[data-testid^="match-form-"]').all();
-			const testId = await forms[0].getAttribute('data-testid');
-			const matchId = testId?.replace('match-form-', '');
+			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+			);
+			const matchId = matchIds[0];
 			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 			await page.click(`[data-testid="save-score-${matchId}"]`);
@@ -1495,13 +1479,9 @@ test.describe('Tournament Integration Tests', () => {
 			for (const url of courtLinks) {
 				await page.goto(url);
 				await page.waitForSelector('[data-testid^="match-form-"]');
-				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds: string[] = [];
-				for (const form of matchForms) {
-					const testId = await form.getAttribute('data-testid');
-					const matchId = testId?.replace('match-form-', '');
-					if (matchId) matchIds.push(matchId);
-				}
+				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+				);
 				for (const matchId of matchIds) {
 					await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
@@ -1556,13 +1536,9 @@ test.describe('Tournament Integration Tests', () => {
 			for (const url of round2Links) {
 				await page.goto(url);
 				await page.waitForSelector('[data-testid^="match-form-"]');
-				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds: string[] = [];
-				for (const form of matchForms) {
-					const mTestId = await form.getAttribute('data-testid');
-					const mId = mTestId?.replace('match-form-', '');
-					if (mId) matchIds.push(mId);
-				}
+				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+				);
 				for (const mId of matchIds) {
 					await page.fill(`[data-testid="team-a-score-${mId}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${mId}"]`, '19');
@@ -1701,10 +1677,11 @@ test.describe('Tournament Integration Tests', () => {
 			await expect(formatInfo).toContainText('to 10');
 
 			// Enter a score of 10-8 (would fail with default 15-point min but valid with override)
-			const forms = await page.locator('[data-testid^="match-form-"]').all();
-			expect(forms.length).toBe(4);
-			const firstTestId = await forms[0].getAttribute('data-testid');
-			const firstMatchId = firstTestId?.replace('match-form-', '');
+			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+			);
+			expect(matchIds.length).toBe(4);
+			const firstMatchId = matchIds[0];
 			await page.fill(`[data-testid="team-a-score-${firstMatchId}"]`, '10');
 			await page.fill(`[data-testid="team-b-score-${firstMatchId}"]`, '8');
 			await page.click(`[data-testid="save-score-${firstMatchId}"]`);
