@@ -131,13 +131,14 @@ export const closeRoundForm = form(
 		const virtualCourtCount = allCourts.length;
 
 		// If player count changed due to retirements, recalculate court sizes
+		// Note: playerCount stays as the original tournament size — it's used by
+		// bracketCourtSizes, frozen courts, and retirement standing calculations.
 		if (activePlayerCount !== tourney.playerCount) {
 			const newConfig = recalculateCourtConfigAfterRetirement(activePlayerCount);
 			courtSizes = newConfig.courtSizes;
 			await db
 				.update(tournament)
 				.set({
-					playerCount: activePlayerCount,
 					courtSizes: JSON.stringify(courtSizes),
 					lastActivityAt: new Date()
 				})
@@ -1246,20 +1247,9 @@ export const reportInjury = command(
 				.where(eq(player.id, playerId));
 		}
 
-		// Count active players and update tournament state
-		const activePlayers = await db
-			.select()
-			.from(player)
-			.where(and(eq(player.tournamentId, tournamentId), isNull(player.retiredAt)));
-		const activePlayerCount = activePlayers.length;
-		const updatedCourtSizes = recalculateCourtConfigAfterRetirement(activePlayerCount);
 		await db
 			.update(tournament)
-			.set({
-				playerCount: activePlayerCount,
-				courtSizes: JSON.stringify(updatedCourtSizes.courtSizes),
-				lastActivityAt: new Date()
-			})
+			.set({ lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
 		getTournamentData({ tournamentId }).refresh();
