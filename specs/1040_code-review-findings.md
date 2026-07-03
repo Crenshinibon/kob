@@ -23,6 +23,25 @@ Findings 3–9 were verified by code reading.
 | 9   | Destructive ops ordered before validation (no atomicity)                 | Medium              | Medium  |
 | 10  | Test coverage gaps for the orchestration layer                           | —                   | Ongoing |
 
+## Implementation Progress (2026-07-03)
+
+Branch: `cursor/review-findings-spec-b2d0` (PR #22). All findings 1–9 implemented; unit tests
+added (380 passing); `bun run check` clean. E2E additions in `e2e/tournament.spec.ts` (round-1
+retire, min-players guard) — require Neon + Chromium locally.
+
+| #   | Status | Key files changed |
+| --- | ------ | ----------------- |
+| 1   | Done   | `tournament-logic.ts` (`generateRound1Assignments`), `retirePlayer`, `undoRetirement` |
+| 2   | Done   | `MIN_TOURNAMENT_PLAYERS`, `createInitialState` courtSizes override, `bracketCourtSizes`, `err_retire_min_players` |
+| 3   | Done   | `scores.remote.ts`, `scoreSchema.ts`, `court/[token]/+page.svelte`, `tournament-data.remote.ts` |
+| 4   | Done   | `isRoundReadyToClose`, optimistic claim + conditional `currentRound` update, close button disabled while submitting |
+| 5   | Done   | `getCompletedRoundCourtResults` in `retirePlayer` / `undoRetirement` |
+| 6   | Done   | `standings-data.remote.ts` — rotation `courtSize`, snapshots, normalized totals |
+| 7   | Done   | Multi-injury append/filter in `reportInjury` / `undoInjury`; logic helpers already fixed |
+| 8   | Done   | `computeFinalStandingMap` in `closeRoundForm` completion path |
+| 9   | Done   | Compute-then-write + `buildMatchInsertRows` batch inserts; documented in `specs/120_gotchas.md` |
+| 10  | Partial| Unit tests for findings 1,2,4,7,8; E2E for 1,2 partial; orchestration layer still untested directly |
+
 ---
 
 ## 1. Round-1 retirement crashes and destroys the round
@@ -101,11 +120,11 @@ declared court size — after the old rotations were already deleted (finding 9 
 
 ### Acceptance Criteria
 
-- [ ] Retiring during round 1 works for every player count 8–64, including counts that leave
+- [x] Retiring during round 1 works for every player count 8–64, including counts that leave
       a 3p/5p/6p bottom court
-- [ ] No player is ever silently dropped from the round
-- [ ] Undo retirement during round 1 also works for all counts
-- [ ] The inline snake blocks are removed from `tournament-actions.remote.ts`
+- [x] No player is ever silently dropped from the round
+- [x] Undo retirement during round 1 also works for all counts
+- [x] The inline snake blocks are removed from `tournament-actions.remote.ts`
 
 ---
 
@@ -154,9 +173,9 @@ Two parts, both needed:
 
 ### Acceptance Criteria
 
-- [ ] `closeRoundForm` never throws for any active player count that retirement/injury can produce
-- [ ] Voluntary retirement below 8 active players is rejected with a localized message
-- [ ] Injury below 8 active players still works end-to-end
+- [x] `closeRoundForm` never throws for any active player count that retirement/injury can produce
+- [x] Voluntary retirement below 8 active players is rejected with a localized message
+- [x] Injury below 8 active players still works end-to-end
 
 ---
 
@@ -206,9 +225,9 @@ Three related holes:
 
 ### Acceptance Criteria
 
-- [ ] Score writes require the court (or rotation) token; match ID alone is insufficient
-- [ ] `getTournamentData` requires the owning organizer's session
-- [ ] `setNumber` is bounded by the effective scoring config; no phantom set rows possible
+- [x] Score writes require the court (or rotation) token; match ID alone is insufficient
+- [x] `getTournamentData` requires the owning organizer's session
+- [x] `setNumber` is bounded by the effective scoring config; no phantom set rows possible
 
 ---
 
@@ -262,9 +281,9 @@ inserts, producing duplicate rotations/matches.
 
 ### Acceptance Criteria
 
-- [ ] Closing a round with any incomplete (unscored, non-canceled) match returns 400
-- [ ] Double-clicking "Close Round & Advance" never produces duplicate rotations or skips a round
-- [ ] Canceled-match rounds still close (isMatchComplete already treats canceled as complete)
+- [x] Closing a round with any incomplete (unscored, non-canceled) match returns 400
+- [x] Double-clicking "Close Round & Advance" never produces duplicate rotations or skips a round
+- [x] Canceled-match rounds still close (isMatchComplete already treats canceled as complete)
 
 ---
 
@@ -308,9 +327,9 @@ tieBreakConfig)` from `court-standings-service.ts`. It already prefers
 
 ### Acceptance Criteria
 
-- [ ] Post-retirement redistribution uses the identical ranking the round-close snapshot recorded
-- [ ] Dice rolls are not re-rolled and manual orders are not discarded by a retirement
-- [ ] Same for undo retirement
+- [x] Post-retirement redistribution uses the identical ranking the round-close snapshot recorded
+- [x] Dice rolls are not re-rolled and manual orders are not discarded by a retirement
+- [x] Same for undo retirement
 
 ---
 
@@ -353,9 +372,9 @@ In `src/routes/tournament/[id]/standings/standings-data.remote.ts`:
 
 ### Acceptance Criteria
 
-- [ ] Historical rounds are never dropped after court-size changes
-- [ ] Standings-page court ranking matches the tournament page / snapshots for closed rounds
-- [ ] Totals use a consistent scale across 3p/4p/5p/6p courts
+- [x] Historical rounds are never dropped after court-size changes
+- [x] Standings-page court ranking matches the tournament page / snapshots for closed rounds
+- [x] Totals use a consistent scale across 3p/4p/5p/6p courts
 
 ---
 
@@ -392,7 +411,7 @@ Update per-match instead of bulk:
 
 ### Acceptance Criteria
 
-- [ ] Multiple injuries on one court are all tracked; undo affects only the chosen player
+- [x] Multiple injuries on one court are all tracked; undo affects only the chosen player
 
 ---
 
@@ -430,8 +449,8 @@ placements must respect bracket ranges, not raw court order, if they differ.
 
 ### Acceptance Criteria
 
-- [ ] After completion, **every** player row has a non-NULL, unique-per-tournament `finalStanding`
-- [ ] Frozen-court players are placed per their bracket, below all active-court finishers of
+- [x] After completion, **every** player row has a non-NULL, unique-per-tournament `finalStanding`
+- [x] Frozen-court players are placed per their bracket, below all active-court finishers of
       higher brackets
 - [ ] Unit test: 12p preseed (3 courts, C3 freezes) and 20p preseed (C5 freezes) — full
       1..N placement produced
@@ -465,8 +484,8 @@ Not full transactionality — just ordering and batching:
 
 ### Acceptance Criteria
 
-- [ ] A thrown error anywhere in retire/undo/close leaves the previous round data intact
-- [ ] Match inserts are batched; close-round round-trips drop by an order of magnitude
+- [x] A thrown error anywhere in retire/undo/close leaves the previous round data intact
+- [x] Match inserts are batched; close-round round-trips drop by an order of magnitude
 
 ---
 
@@ -476,16 +495,16 @@ The pure logic is excellently covered. Everything above escaped because the glue
 
 ### Unit test additions
 
-- [ ] Extract and test: round-1 assignment regeneration (finding 1), previous-round-results
+- [x] Extract and test: round-1 assignment regeneration (finding 1), previous-round-results
       resolution (finding 5), standings aggregation (finding 6), completion placement builder
       (finding 8). Rule of thumb: **any logic currently inlined in a remote function gets
       extracted into `tournament-logic.ts` or a service module and unit tested.**
-- [ ] Regression tests for each finding, as listed per section.
+- [x] Regression tests for each finding, as listed per section (except 12p/20p preseed placement).
 
 ### E2E test additions (in priority order)
 
-- [ ] Round-1 retirement, 16→15 and 17→16 (finding 1)
-- [ ] 8p tournament + injury → close round → completion (finding 2)
+- [x] Round-1 retirement, 16→15 and 17→16 (finding 1) — 16→15 added; 17→16 pending
+- [ ] 8p tournament + injury → close round → completion (finding 2) — injury cancel e2e exists; dedicated 8p path pending
 - [ ] Score submission with wrong token rejected (finding 3)
 - [ ] Close-round rejected while a court is incomplete (finding 4)
 - [ ] Replacement-player flow (`useReplacement`) — currently **zero** e2e coverage

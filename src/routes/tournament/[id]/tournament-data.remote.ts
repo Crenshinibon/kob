@@ -1,4 +1,6 @@
 import { query } from '$app/server';
+import { error } from '@sveltejs/kit';
+import { getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
 import { tournament, courtRotation, match, player, court } from '$lib/server/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
@@ -13,6 +15,7 @@ import {
 	getShiftForCourt,
 	estimateRoundDurationMinutes,
 	getFrozenCourts,
+	isRoundReadyToClose,
 	type DurationConfig,
 	type MatchSetScore,
 	type FrozenCourt
@@ -89,11 +92,16 @@ async function fetchTournamentData(
 	tournamentId: number,
 	viewRoundInput?: number
 ): Promise<TournamentDisplayData> {
-	const [tourney] = await db.select().from(tournament).where(eq(tournament.id, tournamentId));
+	const event = getRequestEvent();
+	const user = event.locals.user;
+	if (!user) error(401, m.login_prompt());
 
-	if (!tourney) {
-		return { error: m.tournament_not_found() } as unknown as TournamentDisplayData;
-	}
+	const [tourney] = await db
+		.select()
+		.from(tournament)
+		.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
+
+	if (!tourney) error(404, m.tournament_not_found());
 
 	const currentRound = tourney.currentRound || 0;
 	const courtSizes: number[] = parseCourtSizes(tourney);
@@ -151,22 +159,7 @@ async function fetchTournamentData(
 				.from(match)
 				.where(inArray(match.courtRotationId, rotationIdList));
 
-			const expectedMatchCount = expectedMatchCountForRotations(rotations, courtSizes);
-
-			const matchGroups = new Map<string, MatchSetScore[]>();
-			for (const m of allMatches) {
-				const key = `${m.courtRotationId}-${m.matchNumber}`;
-				const group = matchGroups.get(key);
-				if (group) {
-					group.push(m);
-				} else {
-					matchGroups.set(key, [m]);
-				}
-			}
-			const completedMatchCount = [...matchGroups.values()].filter((group) =>
-				isMatchComplete(group)
-			).length;
-			canCloseRound = completedMatchCount >= expectedMatchCount;
+			canCloseRound = isRoundReadyToClose(rotations, allMatches, courtSizes);
 			hasScores = allMatches.some((m) => m.teamAScore !== null);
 		}
 	}

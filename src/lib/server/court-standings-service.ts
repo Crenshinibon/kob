@@ -168,6 +168,26 @@ export async function buildCompletedRoundsBefore(
 	return completed;
 }
 
+/** Court results for a single completed round (uses snapshots when available). */
+export async function getCompletedRoundCourtResults(
+	tournamentId: number,
+	roundNumber: number,
+	courtSizes: readonly number[],
+	players: readonly Player[],
+	tieBreakConfig: TieBreakConfig | null | undefined,
+	rotationCache?: (typeof courtRotation.$inferSelect)[]
+): Promise<CourtResult[]> {
+	const completed = await buildCompletedRoundsBefore(
+		tournamentId,
+		roundNumber + 1,
+		courtSizes,
+		players,
+		tieBreakConfig,
+		rotationCache
+	);
+	return completed[roundNumber - 1] ?? [];
+}
+
 function applyStandingsExplanations(
 	standings: readonly CourtStandings[],
 	playerNames: Map<number, string>,

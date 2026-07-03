@@ -5,14 +5,55 @@ import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import * as m from '$lib/paraglide/messages';
 import {
-	calculateCourtStandings,
 	calculateCourtSizes,
 	matchCountForCourtSize,
 	isMatchComplete,
 	getFrozenCourts,
+	normalizeTieBreakConfig,
 	type MatchData,
-	type MatchSetScore
+	type MatchSetScore,
+	type CourtStandings
 } from '$lib/server/tournament-logic';
+import {
+	buildCompletedRoundsBefore,
+	hasStandingsSnapshot,
+	resolveRotationStandings,
+	snapshotToCourtStandings
+} from '$lib/server/court-standings-service';
+
+const STANDARD_GAMES_PER_ROUND = 3;
+
+function roundPointsContribution(standing: CourtStandings, courtSize: number): number {
+	if (courtSize >= 5) {
+		const raw = standing.rawPoints ?? standing.points * (standing.matchCount || 1);
+		return raw / STANDARD_GAMES_PER_ROUND;
+	}
+	return standing.rawPoints ?? standing.points;
+}
+
+function rotationPlayerIds(rotation: typeof courtRotation.$inferSelect): number[] {
+	return [
+		rotation.player1Id,
+		rotation.player2Id,
+		...(rotation.player3Id !== null ? [rotation.player3Id] : []),
+		...(rotation.player4Id !== null ? [rotation.player4Id] : []),
+		...(rotation.player5Id !== null ? [rotation.player5Id] : []),
+		...(rotation.player6Id !== null ? [rotation.player6Id] : [])
+	];
+}
+
+function courtSizesForRound(
+	roundRotations: readonly (typeof courtRotation.$inferSelect)[],
+	defaultCourtSizes: readonly number[]
+): number[] {
+	const maxCourt = Math.max(...roundRotations.map((r) => r.courtNumber), defaultCourtSizes.length);
+	const sizes: number[] = [];
+	for (let i = 0; i < maxCourt; i++) {
+		const rotation = roundRotations.find((r) => r.courtNumber === i + 1);
+		sizes.push(rotation?.courtSize ?? defaultCourtSizes[i] ?? 4);
+	}
+	return sizes;
+}
 
 async function fetchStandingsData(tournamentId: number) {
 	const [tourney] = await db.select().from(tournament).where(eq(tournament.id, tournamentId));
@@ -23,9 +64,7 @@ async function fetchStandingsData(tournamentId: number) {
 
 	const courtSizes: number[] = tourney.courtSizes ? JSON.parse(tourney.courtSizes) : [4, 4, 4, 4];
 	const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
-	const matchCountPerCourt = courtSizes.map((s) => matchCountForCourtSize(s));
 
-	// Compute frozen courts for preseed
 	const roundsCompleted = (tourney.currentRound ?? 1) - 1;
 	const frozenCourts =
 		tourney.formatType === 'preseed'
@@ -41,33 +80,18 @@ async function fetchStandingsData(tournamentId: number) {
 	const currentRotations = rotations.filter((r) => r.roundNumber === currentRound);
 	const courtAssignment: Record<number, { court: number; rank: number | null }> = {};
 	for (const cr of currentRotations) {
-		const pIds = [
-			cr.player1Id,
-			cr.player2Id,
-			...(cr.player3Id ? [cr.player3Id] : []),
-			...(cr.player4Id ? [cr.player4Id] : []),
-			...(cr.player5Id ? [cr.player5Id] : []),
-			...(cr.player6Id ? [cr.player6Id] : [])
-		];
+		const pIds = rotationPlayerIds(cr);
 		pIds.forEach((pid) => {
 			courtAssignment[pid] = { court: cr.courtNumber, rank: null };
 		});
 	}
 
-	// For frozen court players not in current round, use their last round's court
 	for (const fc of frozenCourts) {
 		const frozenRotations = rotations.filter(
 			(r) => r.roundNumber === fc.freezeAfterRound && r.courtNumber === fc.courtNumber
 		);
 		for (const fr of frozenRotations) {
-			const pIds = [
-				fr.player1Id,
-				fr.player2Id,
-				...(fr.player3Id ? [fr.player3Id] : []),
-				...(fr.player4Id ? [fr.player4Id] : []),
-				...(fr.player5Id ? [fr.player5Id] : []),
-				...(fr.player6Id ? [fr.player6Id] : [])
-			];
+			const pIds = rotationPlayerIds(fr);
 			for (const pid of pIds) {
 				if (pid != null && courtAssignment[pid] === undefined) {
 					courtAssignment[pid] = { court: fc.courtNumber, rank: null };
@@ -75,6 +99,15 @@ async function fetchStandingsData(tournamentId: number) {
 			}
 		}
 	}
+
+	const logicPlayers = players.map((p) => ({
+		id: p.id,
+		name: p.name,
+		seedPoints: p.seedPoints,
+		seedRank: p.seedRank
+	}));
+	const tieBreakConfig = normalizeTieBreakConfig(tourney.tieBreakConfig ?? null);
+	const playerNames = new Map(players.map((p) => [p.id, p.name]));
 
 	const playerStats: Record<
 		number,
@@ -111,22 +144,35 @@ async function fetchStandingsData(tournamentId: number) {
 		};
 	});
 
-	for (let roundNum = 1; roundNum <= (tourney.currentRound || 1); roundNum++) {
-		const roundRotations = rotations.filter((r) => r.roundNumber === roundNum);
+	for (let roundNum = 1; roundNum <= currentRound; roundNum++) {
+		const roundRotations = rotations
+			.filter((r) => r.roundNumber === roundNum)
+			.sort((a, b) => a.courtNumber - b.courtNumber);
+		const completedBeforeThisRound = await buildCompletedRoundsBefore(
+			tournamentId,
+			roundNum,
+			courtSizes,
+			logicPlayers,
+			tieBreakConfig,
+			rotations
+		);
+		const roundCourtSizes = courtSizesForRound(roundRotations, courtSizes);
 
 		for (const rotation of roundRotations) {
+			const courtSize = rotation.courtSize ?? courtSizes[rotation.courtNumber - 1] ?? 4;
+			const requiredMatches = matchCountForCourtSize(courtSize);
 			const matches = await db.select().from(match).where(eq(match.courtRotationId, rotation.id));
 
-			const courtIdx = rotation.courtNumber - 1;
-			const requiredMatches = matchCountPerCourt[courtIdx] ?? 3;
 			const matchGroups = new Map<number, MatchSetScore[]>();
-			for (const m of matches) {
-				const group = matchGroups.get(m.matchNumber);
-				if (group) {
-					group.push(m);
-				} else {
-					matchGroups.set(m.matchNumber, [m]);
-				}
+			for (const row of matches) {
+				const group = matchGroups.get(row.matchNumber);
+				const scoreRow: MatchSetScore = {
+					teamAScore: row.teamAScore,
+					teamBScore: row.teamBScore,
+					isCanceled: row.isCanceled
+				};
+				if (group) group.push(scoreRow);
+				else matchGroups.set(row.matchNumber, [scoreRow]);
 			}
 			const allMatchesComplete =
 				matches.length > 0 &&
@@ -134,22 +180,41 @@ async function fetchStandingsData(tournamentId: number) {
 				[...matchGroups.values()].every((group) => isMatchComplete(group));
 			if (!allMatchesComplete) continue;
 
-			const playerIds: number[] = [
-				rotation.player1Id,
-				rotation.player2Id,
-				...(rotation.player3Id ? [rotation.player3Id] : []),
-				...(rotation.player4Id ? [rotation.player4Id] : []),
-				...(rotation.player5Id ? [rotation.player5Id] : []),
-				...(rotation.player6Id ? [rotation.player6Id] : [])
-			];
+			const playerIds = rotationPlayerIds(rotation);
+			let courtStandings: CourtStandings[];
 
-			const courtStandings = calculateCourtStandings(matches as MatchData[], playerIds);
+			if (hasStandingsSnapshot(rotation) && rotation.standingsSnapshot) {
+				courtStandings = snapshotToCourtStandings(rotation.standingsSnapshot);
+			} else {
+				const matchData: MatchData[] = matches.map((row) => ({
+					teamAPlayer1Id: row.teamAPlayer1Id,
+					teamAPlayer2Id: row.teamAPlayer2Id,
+					teamBPlayer1Id: row.teamBPlayer1Id,
+					teamBPlayer2Id: row.teamBPlayer2Id,
+					teamAScore: row.teamAScore,
+					teamBScore: row.teamBScore,
+					isCanceled: row.isCanceled ?? false,
+					injuredPlayerIds: row.injuredPlayerIds ?? undefined
+				}));
+				const result = resolveRotationStandings({
+					rotation,
+					matchData,
+					playerIds,
+					playerNames,
+					players,
+					completedRounds: completedBeforeThisRound,
+					courtSizes: roundCourtSizes,
+					tourney,
+					useSnapshot: false
+				});
+				courtStandings = result.standings;
+			}
 
 			courtStandings.forEach((standing) => {
 				const stats = playerStats[standing.playerId];
 				if (stats) {
-					stats.totalPoints += standing.points;
-					stats.totalDiff += standing.diff;
+					stats.totalPoints += roundPointsContribution(standing, courtSize);
+					stats.totalDiff += standing.rawDiff ?? standing.diff;
 					stats.roundsPlayed++;
 					stats.matchesPlayed += requiredMatches;
 					stats.roundHistory.push({
@@ -160,7 +225,7 @@ async function fetchStandingsData(tournamentId: number) {
 						diff: standing.diff
 					});
 
-					if (roundNum === tourney.currentRound) {
+					if (roundNum === currentRound) {
 						stats.currentRoundPoints = standing.points;
 						stats.currentRoundDiff = standing.diff;
 					}

@@ -50,6 +50,13 @@ import {
 	revertInjuryOnMatch,
 	revertInjuryOnGroupMatches,
 	hasFreshScoresAfterInjury,
+	generateRound1Assignments,
+	orderPlayerIdsForRound1,
+	generateAllMatchesForAssignment,
+	isRoundReadyToClose,
+	computeFinalStandingMap,
+	MIN_TOURNAMENT_PLAYERS,
+	validateAssignmentsForMatchGeneration,
 	getPreseedBracketRange,
 	calculateRetiredStanding,
 	getFinalRoundCourtConfig,
@@ -3425,8 +3432,18 @@ describe('injury reporting logic', () => {
 	it('revertInjuryOnMatch clears substitute markers', () => {
 		const injured = applyInjuryToGroupMatches(groupMatches, 2, 'substitute');
 		const reverted = revertInjuryOnGroupMatches(injured, 2);
-		expect(reverted[1].injuredPlayerIds).toEqual([]);
-		expect(reverted[2].injuredPlayerIds).toEqual([]);
+		expect(reverted[1].injuredPlayerIds).toBeUndefined();
+		expect(reverted[2].injuredPlayerIds).toBeUndefined();
+	});
+
+	it('two substitute injuries on same court keep both player IDs', () => {
+		let updated = applyInjuryToGroupMatches(groupMatches, 2, 'substitute');
+		updated = applyInjuryToGroupMatches(updated, 3, 'substitute');
+		expect(updated[1].injuredPlayerIds).toEqual([2, 3]);
+		expect(updated[2].injuredPlayerIds).toEqual([2, 3]);
+		const reverted = revertInjuryOnGroupMatches(updated, 2);
+		expect(reverted[1].injuredPlayerIds).toEqual([3]);
+		expect(reverted[2].injuredPlayerIds).toEqual([3]);
 	});
 
 	it('hasFreshScoresAfterInjury is false before post-injury scoring', () => {
@@ -5254,5 +5271,138 @@ describe('tie-break ranking', () => {
 		const ids = cfg.factors.map((f) => f.id);
 		expect(ids.indexOf('round_points')).toBeLessThan(ids.indexOf('dice'));
 		expect(ids.indexOf('dice')).toBeLessThan(ids.indexOf('manual'));
+	});
+});
+
+describe('generateRound1Assignments (code review finding 1)', () => {
+	const counts = [15, 17, 18, 21, 23];
+
+	for (const count of counts) {
+		it(`assigns all ${count} players with correct court sizes`, () => {
+			const courtSizes = calculateCourtSizes(count);
+			const playerIds = Array.from({ length: count }, (_, i) => i + 1);
+			const assignments = generateRound1Assignments(playerIds, courtSizes);
+			const assigned = new Set(assignments.flatMap((a) => a.playerIds));
+			expect(assigned.size).toBe(count);
+			expect([...assigned].sort((a, b) => a - b)).toEqual(playerIds);
+			for (const a of assignments) {
+				const idx = a.courtNumber - 1;
+				expect(a.playerIds.length).toBe(courtSizes[idx]);
+			}
+			expect(() => validateAssignmentsForMatchGeneration(assignments, courtSizes)).not.toThrow();
+		});
+	}
+});
+
+describe('isRoundReadyToClose (code review finding 4)', () => {
+	it('returns false when a match group is incomplete', () => {
+		const rotations = [{ id: 1, courtNumber: 1, courtSize: 4 }];
+		const matches = [
+			{
+				courtRotationId: 1,
+				matchNumber: 1,
+				setNumber: 1,
+				teamAScore: 21,
+				teamBScore: 15,
+				isCanceled: false
+			},
+			{
+				courtRotationId: 1,
+				matchNumber: 2,
+				setNumber: 1,
+				teamAScore: null,
+				teamBScore: null,
+				isCanceled: false
+			}
+		];
+		expect(isRoundReadyToClose(rotations, matches, [4])).toBe(false);
+	});
+
+	it('returns true when all expected match groups are complete', () => {
+		const rotations = [{ id: 1, courtNumber: 1, courtSize: 4 }];
+		const matches = [
+			{
+				courtRotationId: 1,
+				matchNumber: 1,
+				setNumber: 1,
+				teamAScore: 21,
+				teamBScore: 15,
+				isCanceled: false
+			},
+			{
+				courtRotationId: 1,
+				matchNumber: 2,
+				setNumber: 1,
+				teamAScore: 21,
+				teamBScore: 18,
+				isCanceled: false
+			},
+			{
+				courtRotationId: 1,
+				matchNumber: 3,
+				setNumber: 1,
+				teamAScore: 21,
+				teamBScore: 10,
+				isCanceled: false
+			}
+		];
+		expect(isRoundReadyToClose(rotations, matches, [4])).toBe(true);
+	});
+});
+
+describe('computeFinalStandingMap (code review finding 8)', () => {
+	it('places frozen-court and eliminated players after active final courts', () => {
+		const finalRoundResults: CourtResult[] = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 60, diff: 10, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 50, diff: 0, matchCount: 3 }
+			])
+		];
+		const frozenCourtStandings = [
+			{
+				courtNumber: 3,
+				standings: [
+					{ playerId: 9, rank: 1, points: 55, diff: 5, matchCount: 3 },
+					{ playerId: 10, rank: 2, points: 45, diff: -5, matchCount: 3 }
+				]
+			}
+		];
+		const map = computeFinalStandingMap({
+			finalRoundResults,
+			frozenCourtStandings,
+			eliminatedPlayerIds: [11],
+			activePlayerIds: new Set([1, 2]),
+			retirees: [{ playerId: 12, finalStanding: 8, retiredRound: 1, retiredCourt: 2 }]
+		});
+		expect(map.get(1)).toBe(1);
+		expect(map.get(2)).toBe(2);
+		expect(map.get(9)).toBe(3);
+		expect(map.get(10)).toBe(4);
+		expect(map.get(11)).toBe(5);
+		expect(map.get(12)).toBe(8);
+	});
+});
+
+describe('createInitialState with courtSizes override (code review finding 2)', () => {
+	it('accepts 7 players when courtSizes override sums correctly', () => {
+		const state = createInitialState({
+			tournamentId: 1,
+			formatType: 'random-seed',
+			playerCount: 7,
+			courtSizes: [4, 3]
+		});
+		expect(state.config.playerCount).toBe(7);
+		expect(state.config.courtSizes).toEqual([4, 3]);
+	});
+
+	it('rejects voluntary counts below MIN_TOURNAMENT_PLAYERS without override', () => {
+		expect(() =>
+			createInitialState({
+				tournamentId: 1,
+				formatType: 'random-seed',
+				playerCount: 7
+			})
+		).toThrow(/at least 8/);
+		expect(MIN_TOURNAMENT_PLAYERS).toBe(8);
 	});
 });

@@ -1596,6 +1596,73 @@ test.describe('Tournament Integration Tests', () => {
 				.first();
 			await expect(statusBadge).toBeVisible();
 		});
+
+		test('retire a player in round 1 before any scores (16→15)', async ({ page }) => {
+			test.slow();
+			const tournamentName = `Round1 Retire ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="n:numRounds"]', '2');
+			const players = Array.from({ length: 16 }, (_, i) => `R1P${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button[type="submit"]');
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('text=Round 1 of 2');
+
+			await page.click('summary:has-text("Retire a Player")');
+			await page.waitForSelector('.retire-form');
+			const retireOptions = await page.locator('#retirePlayerId option').allTextContents();
+			const targetOption = retireOptions.find((opt) => opt.match(/\bR1P1\b/));
+			if (!targetOption) throw new Error(`R1P1 not found in retire options`);
+			await page.selectOption('#retirePlayerId', { label: targetOption.trim() });
+			await page.selectOption('#retireReason', { value: 'schedule' });
+			await page.click('.retire-form button', { timeout: 10000 });
+
+			await page.reload();
+			await page.waitForSelector('.court-card');
+			const courtCards = await page.locator('.court-card').count();
+			expect(courtCards).toBe(4);
+
+			const courtLinks = await page.locator('.qr-link a').all();
+			expect(courtLinks.length).toBe(4);
+			for (const link of courtLinks) {
+				const href = await link.getAttribute('href');
+				await page.goto(href || '');
+				await page.waitForSelector('[data-testid^="match-form-"]');
+				const forms = await page.locator('[data-testid^="match-form-"]').all();
+				expect(forms.length).toBeGreaterThan(0);
+				await page.goBack();
+			}
+		});
+
+		test('rejects retirement that would leave fewer than 8 active players', async ({ page }) => {
+			const tournamentName = `Min Players Retire ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			await page.fill('input[name="n:numRounds"]', '2');
+			const players = Array.from({ length: 8 }, (_, i) => `MinP${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button[type="submit"]');
+			await page.waitForURL(/\/tournament\/\d+/);
+			await page.waitForSelector('text=Round 1 of 2');
+
+			await page.click('summary:has-text("Retire a Player")');
+			await page.waitForSelector('.retire-form');
+			const retireOptions = await page.locator('#retirePlayerId option').allTextContents();
+			const targetOption = retireOptions.find((opt) => opt.match(/\bMinP1\b/));
+			if (!targetOption) throw new Error(`MinP1 not found in retire options`);
+			await page.selectOption('#retirePlayerId', { label: targetOption.trim() });
+			await page.selectOption('#retireReason', { value: 'schedule' });
+			await page.click('.retire-form button', { timeout: 10000 });
+
+			await page.waitForSelector('.retire-form', { state: 'visible' });
+			const courtCards = await page.locator('.court-card').count();
+			expect(courtCards).toBe(2);
+		});
 	});
 
 	test.describe('Scoring Overrides', () => {

@@ -2,6 +2,7 @@
 	import { slide } from 'svelte/transition';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { browser } from '$app/environment';
+	import { page } from '$app/state';
 	import QRCode from 'qrcode';
 	import * as msg from '$lib/paraglide/messages';
 
@@ -392,6 +393,7 @@
 			await handleScoreSubmit(fi, matchId, editing, setNum !== undefined);
 		})}
 	>
+		<input type="hidden" name="token" value={page.params.token} />
 		<input type="hidden" name="matchId" value={matchId} />
 		{#if setNum !== undefined}
 			<input type="hidden" name="setNumber" value={setNum} />
