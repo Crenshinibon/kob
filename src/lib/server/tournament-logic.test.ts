@@ -5381,6 +5381,102 @@ describe('computeFinalStandingMap (code review finding 8)', () => {
 		expect(map.get(11)).toBe(5);
 		expect(map.get(12)).toBe(8);
 	});
+
+	it('12p preseed (3 courts, C3 frozen): assigns full 1..12 placement', () => {
+		const finalRoundResults: CourtResult[] = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 63, diff: 9, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 60, diff: 6, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 57, diff: 3, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 54, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 63, diff: 9, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 60, diff: 6, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 57, diff: 3, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 54, diff: 0, matchCount: 3 }
+			])
+		];
+		const frozenCourtStandings = [
+			{
+				courtNumber: 3,
+				standings: [
+					{ playerId: 9, rank: 1, points: 63, diff: 9, matchCount: 3 },
+					{ playerId: 10, rank: 2, points: 60, diff: 6, matchCount: 3 },
+					{ playerId: 11, rank: 3, points: 57, diff: 3, matchCount: 3 },
+					{ playerId: 12, rank: 4, points: 54, diff: 0, matchCount: 3 }
+				]
+			}
+		];
+		const activeIds = new Set(Array.from({ length: 12 }, (_, i) => i + 1));
+		const map = computeFinalStandingMap({
+			finalRoundResults,
+			frozenCourtStandings,
+			eliminatedPlayerIds: [],
+			activePlayerIds: activeIds,
+			retirees: []
+		});
+		expect(map.size).toBe(12);
+		const standings = [...map.entries()].sort((a, b) => a[1] - b[1]).map((e) => e[1]);
+		expect(standings).toEqual(Array.from({ length: 12 }, (_, i) => i + 1));
+		expect(getFrozenCourts([4, 4, 4], 2, 'preseed')).toEqual([
+			{ courtNumber: 3, freezeAfterRound: 2 }
+		]);
+	});
+
+	it('20p preseed (5 courts, C5 frozen): assigns full 1..20 placement', () => {
+		const finalRoundResults: CourtResult[] = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 63, diff: 9, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 60, diff: 6, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: 57, diff: 3, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: 54, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 63, diff: 9, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 60, diff: 6, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: 57, diff: 3, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: 54, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(3, [
+				{ playerId: 9, rank: 1, points: 63, diff: 9, matchCount: 3 },
+				{ playerId: 10, rank: 2, points: 60, diff: 6, matchCount: 3 },
+				{ playerId: 11, rank: 3, points: 57, diff: 3, matchCount: 3 },
+				{ playerId: 12, rank: 4, points: 54, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(4, [
+				{ playerId: 13, rank: 1, points: 63, diff: 9, matchCount: 3 },
+				{ playerId: 14, rank: 2, points: 60, diff: 6, matchCount: 3 },
+				{ playerId: 15, rank: 3, points: 57, diff: 3, matchCount: 3 },
+				{ playerId: 16, rank: 4, points: 54, diff: 0, matchCount: 3 }
+			])
+		];
+		const frozenCourtStandings = [
+			{
+				courtNumber: 5,
+				standings: [
+					{ playerId: 17, rank: 1, points: 63, diff: 9, matchCount: 3 },
+					{ playerId: 18, rank: 2, points: 60, diff: 6, matchCount: 3 },
+					{ playerId: 19, rank: 3, points: 57, diff: 3, matchCount: 3 },
+					{ playerId: 20, rank: 4, points: 54, diff: 0, matchCount: 3 }
+				]
+			}
+		];
+		const activeIds = new Set(Array.from({ length: 20 }, (_, i) => i + 1));
+		const map = computeFinalStandingMap({
+			finalRoundResults,
+			frozenCourtStandings,
+			eliminatedPlayerIds: [],
+			activePlayerIds: activeIds,
+			retirees: []
+		});
+		expect(map.size).toBe(20);
+		const standings = [...map.entries()].sort((a, b) => a[1] - b[1]).map((e) => e[1]);
+		expect(standings).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
+		expect(getFrozenCourts([4, 4, 4, 4, 4], 2, 'preseed')).toEqual([
+			{ courtNumber: 5, freezeAfterRound: 2 }
+		]);
+	});
 });
 
 describe('createInitialState with courtSizes override (code review finding 2)', () => {

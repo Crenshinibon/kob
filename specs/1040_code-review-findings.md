@@ -25,9 +25,9 @@ Findings 3–9 were verified by code reading.
 
 ## Implementation Progress (2026-07-03)
 
-Branch: `cursor/review-findings-spec-b2d0` (PR #22). All findings 1–9 implemented; unit tests
-added (380 passing); `bun run check` clean. E2E additions in `e2e/tournament.spec.ts` (round-1
-retire, min-players guard) — require Neon + Chromium locally.
+Branch: `cursor/review-findings-spec-b2d0` (PR #22). All findings 1–9 implemented; **382 unit tests**
+passing; `bun run check` clean. E2E coverage added in `e2e/code-review-findings.spec.ts` (8 tests) —
+requires Neon + Chromium locally.
 
 | #   | Status | Key files changed |
 | --- | ------ | ----------------- |
@@ -40,7 +40,7 @@ retire, min-players guard) — require Neon + Chromium locally.
 | 7   | Done   | Multi-injury append/filter in `reportInjury` / `undoInjury`; logic helpers already fixed |
 | 8   | Done   | `computeFinalStandingMap` in `closeRoundForm` completion path |
 | 9   | Done   | Compute-then-write + `buildMatchInsertRows` batch inserts; documented in `specs/120_gotchas.md` |
-| 10  | Partial| Unit tests for findings 1,2,4,7,8; E2E for 1,2 partial; orchestration layer still untested directly |
+| 10  | Done   | Unit tests for findings 1,2,4,7,8 (382 total); E2E in `e2e/code-review-findings.spec.ts` |
 
 ---
 
@@ -452,7 +452,7 @@ placements must respect bracket ranges, not raw court order, if they differ.
 - [x] After completion, **every** player row has a non-NULL, unique-per-tournament `finalStanding`
 - [x] Frozen-court players are placed per their bracket, below all active-court finishers of
       higher brackets
-- [ ] Unit test: 12p preseed (3 courts, C3 freezes) and 20p preseed (C5 freezes) — full
+- [x] Unit test: 12p preseed (3 courts, C3 freezes) and 20p preseed (C5 freezes) — full
       1..N placement produced
 
 ---
@@ -503,13 +503,13 @@ The pure logic is excellently covered. Everything above escaped because the glue
 
 ### E2E test additions (in priority order)
 
-- [x] Round-1 retirement, 16→15 and 17→16 (finding 1) — 16→15 added; 17→16 pending
-- [ ] 8p tournament + injury → close round → completion (finding 2) — injury cancel e2e exists; dedicated 8p path pending
-- [ ] Score submission with wrong token rejected (finding 3)
-- [ ] Close-round rejected while a court is incomplete (finding 4)
-- [ ] Replacement-player flow (`useReplacement`) — currently **zero** e2e coverage
-- [ ] Tie-break configuration end-to-end: dice and manual rank flows
-- [ ] Standings page after mid-tournament court-size change (finding 6)
+- [x] Round-1 retirement, 16→15 and 17→16 (finding 1)
+- [x] 8p tournament + injury → close round → completion (finding 2)
+- [x] Score submission with wrong token rejected (finding 3)
+- [x] Close-round rejected while a court is incomplete (finding 4)
+- [x] Replacement-player flow (`useReplacement`)
+- [x] Tie-break configuration end-to-end: dice and manual rank flows
+- [x] Standings page after mid-tournament court-size change (finding 6)
 
 ### Notes
 
