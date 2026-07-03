@@ -178,6 +178,18 @@ const minPoints = getMinPointsForSet(effectiveScoring, setNumber, isDecidingSet)
 
 **Known issue**: The `winBy` validation is hardcoded to 2 in `scoreSchema.ts` and `scores.remote.ts`. If a tournament is configured with `winBy: 1`, the validation still requires win by 2.
 
+## Database Writes (Neon HTTP)
+
+The app uses the Neon HTTP driver, which does **not** support interactive transactions (`SELECT … FOR UPDATE`). Multi-step flows (`closeRoundForm`, `retirePlayer`, `undoRetirement`) therefore run as sequential writes.
+
+Mitigations (spec 1040):
+
+- **Compute-then-write**: validate assignments and pre-generate match rows before deleting rotations.
+- **Optimistic concurrency**: `closeRoundForm` claims the close via a conditional `currentRound` update; concurrent double-submits return 409 instead of duplicating data.
+- **Batch inserts**: match rows are inserted in one statement per rotation.
+
+Residual risk: two concurrent requests can still interleave in the narrow window before the conditional update. Perfect serialization would require a transactional driver or advisory locks.
+
 ## Summary
 
 Key principles learned:

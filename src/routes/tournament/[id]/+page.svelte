@@ -274,6 +274,7 @@
 	let injuryReplacementName = $state('');
 	let injuryReplacementSeedPoints = $state(0);
 	let now = $state(Date.now());
+	let closingRound = $state(false);
 
 	$effect(() => {
 		const id = setInterval(() => {
@@ -615,9 +616,18 @@
 			<section class="actions">
 				{#if isViewingCurrentRound}
 					{#if canCloseRound}
-						<form {...closeRoundForm}>
+						<form
+							{...closeRoundForm.enhance(async ({ submit }) => {
+								closingRound = true;
+								try {
+									await submit();
+								} finally {
+									closingRound = false;
+								}
+							})}
+						>
 							<input {...closeRoundForm.fields.tournamentId.as('hidden', tournament.id)} />
-							<button type="submit" class="btn-primary">
+							<button type="submit" class="btn-primary" disabled={closingRound}>
 								{isFinalRound ? m.finalize_tournament() : m.close_round()}
 							</button>
 						</form>

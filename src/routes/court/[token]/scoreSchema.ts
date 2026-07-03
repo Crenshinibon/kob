@@ -5,6 +5,7 @@ import { isDecidingSet, isValidFinalScore } from '$lib/tournament-logic';
 export function createScoreSchema(minPoints: number, winBy: number = 2) {
 	return v.pipe(
 		v.object({
+			token: v.pipe(v.string(), v.nonEmpty()),
 			matchId: v.pipe(v.string(), v.nonEmpty()),
 			teamAScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number)),
 			teamBScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number))
@@ -34,6 +35,7 @@ export function createSetScoreSchema(
 
 	return v.pipe(
 		v.object({
+			token: v.pipe(v.string(), v.nonEmpty()),
 			matchId: v.pipe(v.string(), v.nonEmpty()),
 			setNumber: v.pipe(v.string(), v.nonEmpty(), v.transform(Number)),
 			teamAScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number)),

@@ -227,6 +227,9 @@ export function calculateRoundCount(courtCount: number, formatType: FormatType):
 // Tournament Initialization
 // ============================================================================
 
+/** Minimum players required to create a tournament or voluntarily retire below this count. */
+export const MIN_TOURNAMENT_PLAYERS = 8;
+
 export type CreateTournamentOpts = {
 	tournamentId: TournamentId;
 	formatType: FormatType;
@@ -239,6 +242,8 @@ export type CreateTournamentOpts = {
 	setsToWin?: number;
 	decidingSetPoints?: number;
 	tieBreakConfig?: TieBreakConfig;
+	/** When set (e.g. after retirement), skips calculateCourtSizes and the 8-player minimum. */
+	courtSizes?: readonly number[];
 };
 
 export function createInitialState(opts: CreateTournamentOpts): TournamentState {
@@ -253,11 +258,18 @@ export function createInitialState(opts: CreateTournamentOpts): TournamentState 
 		winBy = 2,
 		setsToWin = 1,
 		decidingSetPoints = 15,
-		tieBreakConfig
+		tieBreakConfig,
+		courtSizes: courtSizesOverride
 	} = opts;
-	if (playerCount < 8 || playerCount > 64)
+	const courtSizes = courtSizesOverride ?? calculateCourtSizes(playerCount);
+	if (courtSizesOverride) {
+		const sum = courtSizes.reduce((a, b) => a + b, 0);
+		if (sum !== playerCount) {
+			throw new Error(`Court sizes sum to ${sum}, expected ${playerCount}`);
+		}
+	} else if (playerCount < MIN_TOURNAMENT_PLAYERS || playerCount > 64) {
 		throw new Error(`Player count must be 8-64, got ${playerCount}`);
-	const courtSizes = calculateCourtSizes(playerCount);
+	}
 	return {
 		config: {
 			tournamentId,
@@ -383,6 +395,33 @@ function generateRandomRound1(
 		[items[i], items[j]] = [items[j], items[i]];
 	}
 	return snakeDistribute(items, courtSizes);
+}
+
+/** Player IDs in round-1 seeding order (preseed by points, random-seed shuffled). */
+export function orderPlayerIdsForRound1(
+	formatType: FormatType,
+	players: readonly Pick<Player, 'id' | 'seedPoints'>[],
+	rng: () => number = Math.random
+): number[] {
+	if (formatType === 'preseed') {
+		return [...players]
+			.sort((a, b) => (b.seedPoints ?? 0) - (a.seedPoints ?? 0) || a.id - b.id)
+			.map((p) => p.id);
+	}
+	const items = players.map((p) => p.id);
+	for (let i = items.length - 1; i > 0; i--) {
+		const j = Math.floor(rng() * (i + 1));
+		[items[i], items[j]] = [items[j], items[i]];
+	}
+	return items;
+}
+
+/** Round-1 court assignments via capacity-aware snake distribution. */
+export function generateRound1Assignments(
+	playerIds: readonly number[],
+	courtSizes: readonly number[]
+): CourtAssignment[] {
+	return snakeDistribute([...playerIds], courtSizes);
 }
 
 // ============================================================================
@@ -2748,7 +2787,9 @@ export function applyInjuryToUnscoredMatch(
 	if (option === 'cancel') {
 		return { ...match, isCanceled: true };
 	}
-	return { ...match, injuredPlayerIds: [playerId] };
+	const existing = match.injuredPlayerIds ?? [];
+	if (existing.includes(playerId)) return match;
+	return { ...match, injuredPlayerIds: [...existing, playerId] };
 }
 
 export function applyInjuryToGroupMatches(
@@ -2764,7 +2805,8 @@ export function revertInjuryOnMatch(match: MatchData, playerId: number): MatchDa
 		return { ...match, isCanceled: false };
 	}
 	if ((match.injuredPlayerIds ?? []).includes(playerId) && match.teamAScore === null) {
-		return { ...match, injuredPlayerIds: [] };
+		const remaining = (match.injuredPlayerIds ?? []).filter((id) => id !== playerId);
+		return { ...match, injuredPlayerIds: remaining.length > 0 ? remaining : undefined };
 	}
 	return match;
 }
@@ -2884,4 +2926,132 @@ export function getFinalRoundCourtConfig(
 
 	// Otherwise keep existing config
 	return { courtSizes: [...courtSizes], eliminatedPlayerIds: [] };
+}
+
+export type RotationMatchRow = {
+	readonly courtRotationId: number;
+	readonly matchNumber: number;
+	readonly setNumber: number;
+	readonly teamAScore: number | null;
+	readonly teamBScore: number | null;
+	readonly isCanceled: boolean | null;
+};
+
+export type RotationForCompletion = {
+	readonly id: number;
+	readonly courtNumber: number;
+	readonly courtSize?: number | null;
+};
+
+/** True when every expected match group on every rotation is complete (mirrors tournament-data.remote). */
+export function isRoundReadyToClose(
+	rotations: readonly RotationForCompletion[],
+	matches: readonly RotationMatchRow[],
+	defaultCourtSizes: readonly number[]
+): boolean {
+	if (rotations.length === 0) return false;
+
+	const expectedMatchCount = expectedMatchCountForRotations(
+		rotations.map((r) => ({
+			courtNumber: r.courtNumber,
+			courtSize: r.courtSize ?? null
+		})),
+		defaultCourtSizes
+	);
+
+	const matchGroups = new Map<string, MatchSetScore[]>();
+	for (const m of matches) {
+		const key = `${m.courtRotationId}-${m.matchNumber}`;
+		const row: MatchSetScore = {
+			teamAScore: m.teamAScore,
+			teamBScore: m.teamBScore,
+			isCanceled: m.isCanceled
+		};
+		const group = matchGroups.get(key);
+		if (group) group.push(row);
+		else matchGroups.set(key, [row]);
+	}
+
+	const completedMatchCount = [...matchGroups.values()].filter((group) =>
+		isMatchComplete(group)
+	).length;
+	return completedMatchCount >= expectedMatchCount;
+}
+
+export type FrozenCourtStandingInput = {
+	readonly courtNumber: number;
+	readonly standings: readonly CourtStandings[];
+};
+
+export type RetireePlacementInput = {
+	readonly playerId: number;
+	readonly finalStanding: number | null;
+	readonly retiredRound: number | null;
+	readonly retiredCourt: number | null;
+};
+
+/** Assigns 1..N final standings for tournament completion. */
+export function computeFinalStandingMap(opts: {
+	readonly finalRoundResults: readonly CourtResult[];
+	readonly frozenCourtStandings: readonly FrozenCourtStandingInput[];
+	readonly eliminatedPlayerIds: readonly number[];
+	readonly activePlayerIds: ReadonlySet<number>;
+	readonly retirees: readonly RetireePlacementInput[];
+}): Map<number, number> {
+	const standings = new Map<number, number>();
+	let position = 1;
+
+	const sortedFinalCourts = [...opts.finalRoundResults].sort(
+		(a, b) => a.courtNumber - b.courtNumber
+	);
+	for (const court of sortedFinalCourts) {
+		for (const s of [...court.standings].sort((a, b) => a.rank - b.rank)) {
+			if (opts.activePlayerIds.has(s.playerId) && !standings.has(s.playerId)) {
+				standings.set(s.playerId, position++);
+			}
+		}
+	}
+
+	for (const fc of [...opts.frozenCourtStandings].sort((a, b) => a.courtNumber - b.courtNumber)) {
+		for (const s of [...fc.standings].sort((a, b) => a.rank - b.rank)) {
+			if (!standings.has(s.playerId)) {
+				standings.set(s.playerId, position++);
+			}
+		}
+	}
+
+	for (const pid of opts.eliminatedPlayerIds) {
+		if (!standings.has(pid)) standings.set(pid, position++);
+	}
+
+	const retireesWithStanding = opts.retirees
+		.filter((r) => r.finalStanding !== null && !standings.has(r.playerId))
+		.sort((a, b) => (a.finalStanding ?? 0) - (b.finalStanding ?? 0));
+	for (const r of retireesWithStanding) {
+		standings.set(r.playerId, r.finalStanding!);
+	}
+
+	const unplacedRetirees = opts.retirees
+		.filter((r) => !standings.has(r.playerId))
+		.sort(
+			(a, b) =>
+				(a.retiredRound ?? 0) - (b.retiredRound ?? 0) ||
+				(a.retiredCourt ?? 0) - (b.retiredCourt ?? 0) ||
+				a.playerId - b.playerId
+		);
+	for (const r of unplacedRetirees) {
+		standings.set(r.playerId, position++);
+	}
+
+	return standings;
+}
+
+/** Pre-validates that every assignment can generate matches before DB writes. */
+export function validateAssignmentsForMatchGeneration(
+	assignments: readonly CourtAssignment[],
+	courtSizes: readonly number[]
+): void {
+	for (const assignment of assignments) {
+		generateAllMatchesForAssignment(assignment, courtSizes);
+	}
 }

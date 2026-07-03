@@ -13,16 +13,12 @@ import {
 	startRound,
 	closeRound,
 	calculateCourtSizes,
-	calculateCourtStandings,
 	recalculateCourtConfigAfterRetirement,
 	computeRetirementFinalStanding,
 	buildRedistributionFromResults,
 	resolveAssignmentsAfterRetirement,
 	resolveAssignmentsAfterUndoRetirement,
 	hasFreshScoresAfterInjury,
-	generateAllMatchesForAssignment,
-	getMaxSets,
-	getEffectiveScoring,
 	getFinalRoundCourtConfig,
 	getFrozenCourts,
 	resolvePreseedRetirement,
@@ -33,6 +29,9 @@ import {
 	normalizeTieBreakConfig,
 	buildStandingsTieBreakContext,
 	isValidManualRankOrder,
+	isRoundReadyToClose,
+	computeFinalStandingMap,
+	MIN_TOURNAMENT_PLAYERS,
 	type TieBreakConfig,
 	type TieBreakFactorId,
 	type FormatType,
@@ -41,12 +40,37 @@ import {
 	type PreseedRetirementPolicy
 } from '$lib/server/tournament-logic';
 import { getTournamentData } from './tournament-data.remote';
-import { buildCompletedRoundsBefore, snapshotClosedRoundRotations } from '$lib/server/court-standings-service';
+import {
+	buildCompletedRoundsBefore,
+	getCompletedRoundCourtResults,
+	snapshotClosedRoundRotations,
+	snapshotToCourtStandings
+} from '$lib/server/court-standings-service';
+import {
+	buildRound1AssignmentsFromPlayers,
+	assignmentCourtSize,
+	buildMatchInsertRows,
+	prevalidateAssignments
+} from '$lib/server/tournament-orchestration';
 
 function parseCourtSizes(tourney: typeof tournament.$inferSelect): number[] {
 	return tourney.courtSizes
 		? JSON.parse(tourney.courtSizes)
 		: calculateCourtSizes(tourney.playerCount);
+}
+
+/** Bracket/frozen-court sizing: use stored courtSizes when playerCount dropped below 8. */
+function bracketCourtSizes(
+	tourney: typeof tournament.$inferSelect,
+	virtualCourtCount: number
+): number[] {
+	const parsed = parseCourtSizes(tourney);
+	if (parsed.length === virtualCourtCount) return parsed;
+	if (tourney.playerCount >= MIN_TOURNAMENT_PLAYERS) {
+		const fromCount = calculateCourtSizes(tourney.playerCount);
+		if (fromCount.length === virtualCourtCount) return fromCount;
+	}
+	return parsed;
 }
 
 function rotationPlayerIds(rotation: typeof courtRotation.$inferSelect): number[] {
@@ -103,6 +127,9 @@ export const closeRoundForm = form(
 		let courtSizes: number[] = parseCourtSizes(tourney);
 		const physicalCourtCount = tourney.physicalCourtCount ?? 4;
 
+		const allCourts = await db.select().from(court).where(eq(court.tournamentId, tournamentId));
+		const virtualCourtCount = allCourts.length;
+
 		// If player count changed due to retirements, recalculate court sizes
 		if (activePlayerCount !== tourney.playerCount) {
 			const newConfig = recalculateCourtConfigAfterRetirement(activePlayerCount);
@@ -117,17 +144,6 @@ export const closeRoundForm = form(
 				.where(eq(tournament.id, tournamentId));
 		}
 
-		const initState = createInitialState({
-			tournamentId: tourney.id,
-			formatType: tourney.formatType as FormatType,
-			playerCount: activePlayerCount,
-			numRounds: tourney.numRounds,
-			physicalCourtCount,
-			tieBreakConfig: tourney.tieBreakConfig ?? undefined
-		});
-
-		const stateWithPlayers = addPlayers(initState, players);
-
 		const currentRotations = await db
 			.select()
 			.from(courtRotation)
@@ -139,30 +155,56 @@ export const closeRoundForm = form(
 			)
 			.orderBy(asc(courtRotation.courtNumber));
 
-		const currentAssignmentsFromDb = rotationsToAssignments(currentRotations);
+		const currentRotationIds = currentRotations.map((r) => r.id);
+		const allCurrentMatches =
+			currentRotationIds.length > 0
+				? await db.select().from(match).where(inArray(match.courtRotationId, currentRotationIds))
+				: [];
 
-		const allMatches: MatchData[] = [];
-		for (const rotation of currentRotations) {
-			const rotationMatches = await db
-				.select()
-				.from(match)
-				.where(eq(match.courtRotationId, rotation.id));
-			for (const m of rotationMatches) {
-				allMatches.push({
-					teamAPlayer1Id: m.teamAPlayer1Id,
-					teamAPlayer2Id: m.teamAPlayer2Id,
-					teamBPlayer1Id: m.teamBPlayer1Id,
-					teamBPlayer2Id: m.teamBPlayer2Id,
-					teamAScore: m.teamAScore,
-					teamBScore: m.teamBScore,
-					isCanceled: m.isCanceled ?? false,
-					injuredPlayerIds: m.injuredPlayerIds ?? undefined
-				});
-			}
+		if (!isRoundReadyToClose(currentRotations, allCurrentMatches, courtSizes)) {
+			error(400, m.err_round_incomplete());
 		}
 
+		const claimed = await db
+			.update(tournament)
+			.set({ lastActivityAt: new Date() })
+			.where(
+				and(
+					eq(tournament.id, tournamentId),
+					eq(tournament.currentRound, currentRound),
+					eq(tournament.status, 'active')
+				)
+			)
+			.returning({ id: tournament.id });
+		if (claimed.length === 0) error(409, m.err_round_already_closed());
+
+		const initState = createInitialState({
+			tournamentId: tourney.id,
+			formatType: tourney.formatType as FormatType,
+			playerCount: activePlayerCount,
+			numRounds: tourney.numRounds,
+			physicalCourtCount,
+			tieBreakConfig: tourney.tieBreakConfig ?? undefined,
+			courtSizes
+		});
+
+		const stateWithPlayers = addPlayers(initState, players);
+
+		const currentAssignmentsFromDb = rotationsToAssignments(currentRotations);
+
+		const allMatches: MatchData[] = allCurrentMatches.map((m) => ({
+			teamAPlayer1Id: m.teamAPlayer1Id,
+			teamAPlayer2Id: m.teamAPlayer2Id,
+			teamBPlayer1Id: m.teamBPlayer1Id,
+			teamBPlayer2Id: m.teamBPlayer2Id,
+			teamAScore: m.teamAScore,
+			teamBScore: m.teamBScore,
+			isCanceled: m.isCanceled ?? false,
+			injuredPlayerIds: m.injuredPlayerIds ?? undefined
+		}));
+
 		// Compute frozen courts to determine active court sizes for closeRound
-		const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
+		const originalCourtSizes = bracketCourtSizes(tourney, virtualCourtCount);
 		const frozenCourtsForRound =
 			tourney.formatType === 'preseed'
 				? getFrozenCourts(originalCourtSizes, currentRound - 1, 'preseed')
@@ -238,38 +280,61 @@ export const closeRoundForm = form(
 			const finalRoundResults = closedState.completedRounds[closedState.completedRounds.length - 1];
 			const activeIds = new Set(dbPlayers.filter((p) => !p.retiredAt).map((p) => p.id));
 
-			let position = 1;
-			const standingsByPlayer = new Map<number, number>();
-			for (const court of finalRoundResults) {
-				for (const cs of court.standings) {
-					if (activeIds.has(cs.playerId)) {
-						standingsByPlayer.set(cs.playerId, position++);
-					}
-				}
-			}
+			const allRotations = await db
+				.select()
+				.from(courtRotation)
+				.where(eq(courtRotation.tournamentId, tournamentId));
+
+			const forwardFrozen =
+				tourney.formatType === 'preseed'
+					? getFrozenCourts(originalCourtSizes, closedState.roundsCompleted, 'preseed')
+					: [];
+			const frozenCourtStandings = forwardFrozen.map((fc) => {
+				const frozenRotation = allRotations
+					.filter(
+						(r) => r.roundNumber === fc.freezeAfterRound && r.courtNumber === fc.courtNumber
+					)
+					.sort((a, b) => b.roundNumber - a.roundNumber)[0];
+				const standings = frozenRotation?.standingsSnapshot
+					? snapshotToCourtStandings(frozenRotation.standingsSnapshot)
+					: [];
+				return { courtNumber: fc.courtNumber, standings };
+			});
+
+			const playerIdsByCourt = closedState.nextAssignments.map((a) => [...a.playerIds]);
+			const finalConfig = getFinalRoundCourtConfig(courtSizes, playerIdsByCourt);
+
+			const standingsByPlayer = computeFinalStandingMap({
+				finalRoundResults,
+				frozenCourtStandings,
+				eliminatedPlayerIds: finalConfig.eliminatedPlayerIds,
+				activePlayerIds: activeIds,
+				retirees: dbPlayers
+					.filter((p) => p.retiredAt)
+					.map((p) => ({
+						playerId: p.id,
+						finalStanding: p.finalStanding,
+						retiredRound: p.retiredRound,
+						retiredCourt: p.retiredCourt
+					}))
+			});
 
 			for (const [playerId, standing] of standingsByPlayer) {
 				await db.update(player).set({ finalStanding: standing }).where(eq(player.id, playerId));
 			}
 
-			const retiredWithoutStanding = dbPlayers.filter(
-				(p) => p.retiredAt && p.finalStanding === null
-			);
-			for (const rp of retiredWithoutStanding) {
-				await db
-					.update(player)
-					.set({ finalStanding: activePlayerCount })
-					.where(eq(player.id, rp.id));
-			}
-
-			await db
+			const completedUpdate = await db
 				.update(tournament)
 				.set({
 					status: 'completed',
 					currentRound: closedState.roundsCompleted,
 					lastActivityAt: new Date()
 				})
-				.where(eq(tournament.id, tournamentId));
+				.where(
+					and(eq(tournament.id, tournamentId), eq(tournament.currentRound, currentRound))
+				)
+				.returning({ id: tournament.id });
+			if (completedUpdate.length === 0) error(409, m.err_round_already_closed());
 
 			getTournamentData({ tournamentId }).refresh();
 
@@ -284,7 +349,7 @@ export const closeRoundForm = form(
 		const forwardFrozenCourts =
 			formatType === 'preseed'
 				? getFrozenCourts(
-						calculateCourtSizes(tourney.playerCount),
+						bracketCourtSizes(tourney, virtualCourtCount),
 						closedState.roundsCompleted,
 						'preseed'
 					)
@@ -307,7 +372,7 @@ export const closeRoundForm = form(
 				retiredPlayerIds,
 				replacements,
 				newCourtSizes: courtSizes,
-				originalCourtCount: calculateCourtSizes(tourney.playerCount).length,
+				originalCourtCount: bracketCourtSizes(tourney, virtualCourtCount).length,
 				roundsCompleted: closedState.roundsCompleted - 1,
 				frozenCourtNumbers: forwardFrozenNumbers
 			});
@@ -315,7 +380,7 @@ export const closeRoundForm = form(
 
 		// Exclude frozen courts (preseed format only)
 		if (tourney.formatType === 'preseed') {
-			const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
+			const originalCourtSizes = bracketCourtSizes(tourney, virtualCourtCount);
 			const frozenCourts = getFrozenCourts(
 				originalCourtSizes,
 				closedState.roundsCompleted,
@@ -343,6 +408,19 @@ export const closeRoundForm = form(
 			}
 		}
 
+		prevalidateAssignments(nextAssignments, nextCourtSizes);
+
+		const scoringConfig = {
+			pointsToWin: tourney.pointsToWin ?? 21,
+			setsToWin: tourney.setsToWin ?? 1,
+			decidingSetPoints: tourney.decidingSetPoints ?? 15,
+			winBy: tourney.winBy ?? 2
+		};
+		const scoringOverrides = tourney.scoringOverrides as Record<
+			string,
+			{ pointsToWin?: number; setsToWin?: number; decidingSetPoints?: number }
+		>;
+
 		// Delete any existing next round data (in case of partial state from retirement)
 		const existingNextRotations = await db
 			.select()
@@ -367,11 +445,7 @@ export const closeRoundForm = form(
 		}
 
 		for (const assignment of nextAssignments) {
-			const idx = assignment.courtNumber - 1;
-			const size =
-				assignment.playerIds.length > 4
-					? (nextCourtSizes[idx] ?? assignment.playerIds.length)
-					: assignment.playerIds.length;
+			const size = assignmentCourtSize(assignment, nextCourtSizes);
 
 			const [existingCourt] = await db
 				.select()
@@ -399,42 +473,19 @@ export const closeRoundForm = form(
 				})
 				.returning();
 
-			const allMatchesForCourt = generateAllMatchesForAssignment(assignment, nextCourtSizes);
-
-			const effective = getEffectiveScoring(
-				size,
-				{
-					pointsToWin: tourney.pointsToWin ?? 21,
-					setsToWin: tourney.setsToWin ?? 1,
-					decidingSetPoints: tourney.decidingSetPoints ?? 15,
-					winBy: tourney.winBy ?? 2
-				},
-				tourney.scoringOverrides as Record<
-					string,
-					{ pointsToWin?: number; setsToWin?: number; decidingSetPoints?: number }
-				>
+			const matchRows = buildMatchInsertRows(
+				assignment,
+				nextCourtSizes,
+				rotation.id,
+				scoringConfig,
+				scoringOverrides
 			);
-			const maxSets = getMaxSets(effective.setsToWin);
-
-			for (let mi = 0; mi < allMatchesForCourt.length; mi++) {
-				const m = allMatchesForCourt[mi];
-				for (let setNum = 1; setNum <= maxSets; setNum++) {
-					await db.insert(match).values({
-						courtRotationId: rotation.id,
-						matchNumber: mi + 1,
-						setNumber: setNum,
-						teamAPlayer1Id: m.teamAPlayer1Id,
-						teamAPlayer2Id: m.teamAPlayer2Id,
-						teamBPlayer1Id: m.teamBPlayer1Id,
-						teamBPlayer2Id: m.teamBPlayer2Id
-					});
-				}
+			if (matchRows.length > 0) {
+				await db.insert(match).values(matchRows);
 			}
 		}
 
 		// Deactivate all courts for current round, activate for next round
-		const allCourts = await db.select().from(court).where(eq(court.tournamentId, tournamentId));
-
 		for (const c of allCourts) {
 			await db.update(court).set({ isActive: false }).where(eq(court.id, c.id));
 		}
@@ -454,19 +505,16 @@ export const closeRoundForm = form(
 			await db.update(court).set({ isActive: true }).where(eq(court.id, newRotations[i].courtId));
 		}
 
-		await db
+		const advanced = await db
 			.update(tournament)
 			.set({
 				currentRound: nextRoundNumber,
 				courtSizes: JSON.stringify(nextCourtSizes),
 				lastActivityAt: new Date()
 			})
-			.where(eq(tournament.id, tournamentId));
-
-		await db
-			.update(tournament)
-			.set({ lastActivityAt: new Date() })
-			.where(eq(tournament.id, tournamentId));
+			.where(and(eq(tournament.id, tournamentId), eq(tournament.currentRound, currentRound)))
+			.returning({ id: tournament.id });
+		if (advanced.length === 0) error(409, m.err_round_already_closed());
 
 		getTournamentData({ tournamentId }).refresh();
 
@@ -784,7 +832,9 @@ export const retirePlayer = command(
 		const activePlayers = dbPlayers.filter((p) => !p.retiredAt && p.id !== playerId);
 
 		const formatType = tourney.formatType as FormatType;
-		const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
+		const allCourts = await db.select().from(court).where(eq(court.tournamentId, tournamentId));
+		const virtualCourtCount = allCourts.length;
+		const originalCourtSizes = bracketCourtSizes(tourney, virtualCourtCount);
 		const frozenCourts =
 			formatType === 'preseed'
 				? getFrozenCourts(originalCourtSizes, currentRound - 1, 'preseed')
@@ -803,6 +853,10 @@ export const retirePlayer = command(
 		}
 
 		const replacing = Boolean(useReplacement && replacementName?.trim());
+		if (!replacing && activePlayers.length < MIN_TOURNAMENT_PLAYERS) {
+			error(400, m.err_retire_min_players());
+		}
+
 		const activeCount = replacing ? tourney.playerCount - 1 : activePlayers.length;
 		const newConfig = replacing
 			? { courtSizes: parseCourtSizes(tourney), totalCourts: parseCourtSizes(tourney).length }
@@ -823,52 +877,96 @@ export const retirePlayer = command(
 			}))
 		});
 
-		await db
-			.update(player)
-			.set({
-				retiredAt: new Date(),
-				retiredRound: currentRound,
-				retiredCourt: playerRotation.courtNumber,
-				retirementReason: reason ?? null,
-				finalStanding
-			})
-			.where(eq(player.id, playerId));
-
 		let replacementPlayerId: number | undefined;
+		let playersForRound1 = activePlayers;
 		if (replacing) {
 			const [replacement] = await db
 				.insert(player)
 				.values({
 					tournamentId,
 					name: replacementName!.trim(),
-					seedPoints:
-						formatType === 'preseed' ? (replacementSeedPoints ?? 0) : null,
+					seedPoints: formatType === 'preseed' ? (replacementSeedPoints ?? 0) : null,
 					seedRank: null,
 					replacesPlayerId: playerId
 				})
 				.returning();
 			replacementPlayerId = replacement.id;
-			await db
-				.update(player)
-				.set({ replacedByPlayerId: replacement.id })
-				.where(eq(player.id, playerId));
+			playersForRound1 = [...activePlayers, replacement];
 		}
 
-		await db
-			.update(tournament)
-			.set({
-				playerCount: replacing ? tourney.playerCount : activeCount,
-				courtSizes: JSON.stringify(newCourtSizes),
-				lastActivityAt: new Date()
-			})
-			.where(eq(tournament.id, tournamentId));
-
 		if (isFrozenCourt) {
+			await db
+				.update(player)
+				.set({
+					retiredAt: new Date(),
+					retiredRound: currentRound,
+					retiredCourt: playerRotation.courtNumber,
+					retirementReason: reason ?? null,
+					finalStanding,
+					...(replacementPlayerId ? { replacedByPlayerId: replacementPlayerId } : {})
+				})
+				.where(eq(player.id, playerId));
+
 			getTournamentData({ tournamentId }).refresh();
 			return { success: true };
 		}
 
 		const currentAssignments = rotationsToAssignments(currentRotations);
+		const prevRound = currentRound - 1;
+		const tieBreakConfig = normalizeTieBreakConfig(tourney.tieBreakConfig ?? null);
+		const logicPlayers = playersForRound1.map((p) => ({
+			id: p.id,
+			name: p.name,
+			seedPoints: p.seedPoints,
+			seedRank: p.seedRank
+		}));
+
+		let nextAssignments: CourtAssignment[];
+
+		if (prevRound === 0) {
+			nextAssignments = buildRound1AssignmentsFromPlayers(formatType, playersForRound1, newCourtSizes);
+		} else {
+			const results = await getCompletedRoundCourtResults(
+				tournamentId,
+				prevRound,
+				newCourtSizes,
+				logicPlayers,
+				tieBreakConfig
+			);
+
+			if (formatType === 'preseed') {
+				const policy = (tourney.preseedRetirementPolicy as PreseedRetirementPolicy) ?? 'cascade';
+				nextAssignments = resolvePreseedRetirement({
+					assignments: currentAssignments,
+					prevResults: results,
+					retiredPlayerId: playerId,
+					policy,
+					newCourtSizes,
+					frozenCourtNumbers,
+					replacementPlayerId
+				});
+			} else {
+				const retiredIds = new Set([playerId, ...priorRetirees.map((p) => p.id)]);
+				nextAssignments = buildRedistributionFromResults(
+					formatType,
+					results,
+					newCourtSizes,
+					prevRound - 1,
+					originalCourtSizes.length,
+					retiredIds,
+					{ tieBreakConfig, players: logicPlayers }
+				);
+			}
+		}
+
+		const finalAssignments = resolveAssignmentsAfterRetirement({
+			formatType: tourney.formatType as FormatType,
+			redistributedAssignments: nextAssignments,
+			originalPlayerCount: tourney.playerCount,
+			roundsCompleted: prevRound
+		});
+
+		prevalidateAssignments(finalAssignments, newCourtSizes);
 
 		const currentRotationIds = currentRotations
 			.filter((r) => !frozenCourtNumbers.has(r.courtNumber))
@@ -899,112 +997,19 @@ export const retirePlayer = command(
 				);
 		}
 
-		const prevRound = currentRound - 1;
-		let nextAssignments: { courtNumber: number; playerIds: readonly number[] }[];
-
-		if (prevRound === 0) {
-			const formatType = tourney.formatType as FormatType;
-			const allActivePlayerIds = activePlayers.map((p) => p.id);
-			if (formatType === 'random-seed') {
-				for (let i = allActivePlayerIds.length - 1; i > 0; i--) {
-					const j = Math.floor(Math.random() * (i + 1));
-					[allActivePlayerIds[i], allActivePlayerIds[j]] = [
-						allActivePlayerIds[j],
-						allActivePlayerIds[i]
-					];
-				}
-			} else {
-				allActivePlayerIds.sort(
-					(a, b) =>
-						(activePlayers.find((p) => p.id === b)?.seedPoints ?? 0) -
-						(activePlayers.find((p) => p.id === a)?.seedPoints ?? 0)
-				);
-			}
-
-			const courts: { courtNumber: number; playerIds: number[] }[] = [];
-			for (let i = 0; i < newCourtSizes.length; i++) {
-				courts.push({ courtNumber: i + 1, playerIds: [] });
-			}
-			let idx = 0;
-			for (let pos = 0; pos < 4; pos++) {
-				const fwd = pos % 2 === 0;
-				for (let c = 0; c < newCourtSizes.length; c++) {
-					const courtIdx = fwd ? c : newCourtSizes.length - 1 - c;
-					if (idx < allActivePlayerIds.length) {
-						courts[courtIdx].playerIds.push(allActivePlayerIds[idx]);
-						idx++;
-					}
-				}
-			}
-			nextAssignments = courts.filter((c) => c.playerIds.length > 0);
-		} else {
-			const prevRotations = await db
-				.select()
-				.from(courtRotation)
-				.where(
-					and(
-						eq(courtRotation.tournamentId, tournamentId),
-						eq(courtRotation.roundNumber, prevRound)
-					)
-				)
-				.orderBy(asc(courtRotation.courtNumber));
-
-			const resolved = await Promise.all(
-				prevRotations.map(async (rotation) => {
-					const prevMatches = await db
-						.select()
-						.from(match)
-						.where(eq(match.courtRotationId, rotation.id));
-					return { rotation, matchData: prevMatches as MatchData[] };
-				})
-			);
-
-			const retiredIds = new Set([playerId, ...priorRetirees.map((p) => p.id)]);
-
-			const results = resolved.map((cr) => {
-				const pIds = rotationPlayerIds(cr.rotation);
-				return {
-					courtNumber: cr.rotation.courtNumber,
-					standings: calculateCourtStandings(cr.matchData, pIds)
-				};
-			});
-
-			if (formatType === 'preseed') {
-				const policy = (tourney.preseedRetirementPolicy as PreseedRetirementPolicy) ?? 'cascade';
-				nextAssignments = resolvePreseedRetirement({
-					assignments: currentAssignments,
-					prevResults: results,
-					retiredPlayerId: playerId,
-					policy,
-					newCourtSizes,
-					frozenCourtNumbers,
-					replacementPlayerId
-				});
-			} else {
-				nextAssignments = buildRedistributionFromResults(
-					formatType,
-					results,
-					newCourtSizes,
-					prevRound - 1,
-					calculateCourtSizes(tourney.playerCount).length,
-					retiredIds
-				);
-			}
-		}
-
-		const finalAssignments = resolveAssignmentsAfterRetirement({
-			formatType: tourney.formatType as FormatType,
-			redistributedAssignments: nextAssignments,
-			originalPlayerCount: tourney.playerCount,
-			roundsCompleted: prevRound
-		});
+		const scoringConfig = {
+			pointsToWin: tourney.pointsToWin ?? 21,
+			setsToWin: tourney.setsToWin ?? 1,
+			decidingSetPoints: tourney.decidingSetPoints ?? 15,
+			winBy: tourney.winBy ?? 2
+		};
+		const scoringOverrides = tourney.scoringOverrides as Record<
+			string,
+			{ pointsToWin?: number; setsToWin?: number; decidingSetPoints?: number }
+		>;
 
 		for (const assignment of finalAssignments) {
-			const idx = assignment.courtNumber - 1;
-			const size =
-				assignment.playerIds.length > 4
-					? (newCourtSizes[idx] ?? assignment.playerIds.length)
-					: assignment.playerIds.length;
+			const size = assignmentCourtSize(assignment, newCourtSizes);
 
 			const [existingCourt] = await db
 				.select()
@@ -1032,45 +1037,37 @@ export const retirePlayer = command(
 				})
 				.returning();
 
-			const allMatchesForCourt = generateAllMatchesForAssignment(
-				{ courtNumber: assignment.courtNumber, playerIds: assignment.playerIds },
-				newCourtSizes
+			const matchRows = buildMatchInsertRows(
+				assignment,
+				newCourtSizes,
+				newRotation.id,
+				scoringConfig,
+				scoringOverrides
 			);
-
-			const effective = getEffectiveScoring(
-				size,
-				{
-					pointsToWin: tourney.pointsToWin ?? 21,
-					setsToWin: tourney.setsToWin ?? 1,
-					decidingSetPoints: tourney.decidingSetPoints ?? 15,
-					winBy: tourney.winBy ?? 2
-				},
-				tourney.scoringOverrides as Record<
-					string,
-					{ pointsToWin?: number; setsToWin?: number; decidingSetPoints?: number }
-				>
-			);
-			const maxSets = getMaxSets(effective.setsToWin);
-
-			for (let mi = 0; mi < allMatchesForCourt.length; mi++) {
-				const m = allMatchesForCourt[mi];
-				for (let setNum = 1; setNum <= maxSets; setNum++) {
-					await db.insert(match).values({
-						courtRotationId: newRotation.id,
-						matchNumber: mi + 1,
-						setNumber: setNum,
-						teamAPlayer1Id: m.teamAPlayer1Id,
-						teamAPlayer2Id: m.teamAPlayer2Id,
-						teamBPlayer1Id: m.teamBPlayer1Id,
-						teamBPlayer2Id: m.teamBPlayer2Id
-					});
-				}
+			if (matchRows.length > 0) {
+				await db.insert(match).values(matchRows);
 			}
 		}
 
 		await db
+			.update(player)
+			.set({
+				retiredAt: new Date(),
+				retiredRound: currentRound,
+				retiredCourt: playerRotation.courtNumber,
+				retirementReason: reason ?? null,
+				finalStanding,
+				...(replacementPlayerId ? { replacedByPlayerId: replacementPlayerId } : {})
+			})
+			.where(eq(player.id, playerId));
+
+		await db
 			.update(tournament)
-			.set({ lastActivityAt: new Date() })
+			.set({
+				playerCount: replacing ? tourney.playerCount : activeCount,
+				courtSizes: JSON.stringify(newCourtSizes),
+				lastActivityAt: new Date()
+			})
 			.where(eq(tournament.id, tournamentId));
 
 		getTournamentData({ tournamentId }).refresh();
@@ -1152,7 +1149,9 @@ export const reportInjury = command(
 		}
 
 		const formatType = tourney.formatType as FormatType;
-		const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
+		const allCourts = await db.select().from(court).where(eq(court.tournamentId, tournamentId));
+		const virtualCourtCount = allCourts.length;
+		const originalCourtSizes = bracketCourtSizes(tourney, virtualCourtCount);
 		const frozenCourts =
 			formatType === 'preseed'
 				? getFrozenCourts(originalCourtSizes, currentRound - 1, 'preseed')
@@ -1192,9 +1191,9 @@ export const reportInjury = command(
 					)
 				);
 		} else if (option === 'substitute') {
-			await db
-				.update(match)
-				.set({ injuredPlayerIds: [playerId] })
+			const affectedMatches = await db
+				.select()
+				.from(match)
 				.where(
 					and(
 						eq(match.courtRotationId, playerRotation.id),
@@ -1207,6 +1206,14 @@ export const reportInjury = command(
 						)
 					)
 				);
+			for (const affected of affectedMatches) {
+				const existing = affected.injuredPlayerIds ?? [];
+				if (existing.includes(playerId)) continue;
+				await db
+					.update(match)
+					.set({ injuredPlayerIds: [...existing, playerId] })
+					.where(eq(match.id, affected.id));
+			}
 		}
 
 		await db
@@ -1305,7 +1312,9 @@ export const undoRetirement = command(
 		}
 
 		const formatType = tourney.formatType as FormatType;
-		const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
+		const allCourts = await db.select().from(court).where(eq(court.tournamentId, tournamentId));
+		const virtualCourtCount = allCourts.length;
+		const originalCourtSizes = bracketCourtSizes(tourney, virtualCourtCount);
 		const frozenCourts =
 			formatType === 'preseed'
 				? getFrozenCourts(originalCourtSizes, currentRound - 1, 'preseed')
@@ -1314,28 +1323,101 @@ export const undoRetirement = command(
 		const currentAssignmentsBeforeDelete = rotationsToAssignments(currentRotations);
 
 		const replacementId = targetPlayer.replacedByPlayerId;
+		const prevRound = currentRound - 1;
+
+		const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
+		const activePlayers = dbPlayers.filter((p) => !p.retiredAt || p.id === playerId);
+		const restoredCount = activePlayers.length;
+		const restoredConfig = recalculateCourtConfigAfterRetirement(restoredCount);
+		const restoredCourtSizes = replacementId
+			? parseCourtSizes(tourney)
+			: restoredConfig.courtSizes;
+		const assignCourtSizes = restoredCourtSizes;
+
+		const logicPlayers = activePlayers.map((p) => ({
+			id: p.id,
+			name: p.name,
+			seedPoints: p.seedPoints,
+			seedRank: p.seedRank
+		}));
+		const tieBreakConfig = normalizeTieBreakConfig(tourney.tieBreakConfig ?? null);
+		const stillRetiredIds = new Set(
+			dbPlayers.filter((p) => p.retiredAt && p.id !== playerId).map((p) => p.id)
+		);
+
+		let nextAssignments: CourtAssignment[];
+
+		if (replacementId && prevRound > 0) {
+			nextAssignments = applyReplacementSlot(
+				currentAssignmentsBeforeDelete,
+				replacementId,
+				playerId
+			);
+		} else if (prevRound === 0) {
+			nextAssignments = buildRound1AssignmentsFromPlayers(
+				formatType,
+				activePlayers,
+				assignCourtSizes
+			);
+		} else {
+			const results = await getCompletedRoundCourtResults(
+				tournamentId,
+				prevRound,
+				assignCourtSizes,
+				logicPlayers,
+				tieBreakConfig
+			);
+
+			if (formatType === 'preseed') {
+				nextAssignments = processPreseedTransition(
+					results,
+					assignCourtSizes,
+					prevRound - 1,
+					originalCourtSizes.length
+				);
+				if (stillRetiredIds.size > 0) {
+					nextAssignments = nextAssignments.map((a) => ({
+						courtNumber: a.courtNumber,
+						playerIds: a.playerIds.filter((id) => !stillRetiredIds.has(id))
+					}));
+				}
+			} else {
+				nextAssignments = buildRedistributionFromResults(
+					formatType,
+					results,
+					assignCourtSizes,
+					prevRound - 1,
+					originalCourtSizes.length,
+					stillRetiredIds.size > 0 ? stillRetiredIds : undefined,
+					{ tieBreakConfig, players: logicPlayers }
+				);
+			}
+		}
+
+		const finalAssignments = targetPlayer.retiredCourt
+			? resolveAssignmentsAfterUndoRetirement({
+					formatType: tourney.formatType as FormatType,
+					redistributedAssignments: nextAssignments,
+					restoredPlayerCount: restoredCount,
+					roundsCompleted: prevRound
+				})
+			: resolveAssignmentsAfterRetirement({
+					formatType: tourney.formatType as FormatType,
+					redistributedAssignments: nextAssignments,
+					originalPlayerCount: restoredCount,
+					roundsCompleted: prevRound
+				});
+
+		prevalidateAssignments(finalAssignments, assignCourtSizes);
+
 		if (replacementId) {
 			await db.delete(player).where(eq(player.id, replacementId));
 		}
-
-		// Clear retirement fields on player
-		await db
-			.update(player)
-			.set({
-				retiredAt: null,
-				retiredRound: null,
-				retiredCourt: null,
-				retirementReason: null,
-				finalStanding: null,
-				replacedByPlayerId: null
-			})
-			.where(eq(player.id, playerId));
 
 		const activeRotationIds = currentRotations
 			.filter((r) => !frozenCourtNumbers.has(r.courtNumber))
 			.map((r) => r.id);
 
-		// Delete current round data (no scores, safe to delete)
 		if (activeRotationIds.length > 0) {
 			await db.delete(match).where(inArray(match.courtRotationId, activeRotationIds));
 			const activeCourtNumbers = currentRotations
@@ -1362,150 +1444,19 @@ export const undoRetirement = command(
 				);
 		}
 
-		// Re-run redistribution for current round with player included
-		const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
-		const activePlayers = dbPlayers.filter((p) => !p.retiredAt);
-		const activeCount = activePlayers.length;
+		const scoringConfig = {
+			pointsToWin: tourney.pointsToWin ?? 21,
+			setsToWin: tourney.setsToWin ?? 1,
+			decidingSetPoints: tourney.decidingSetPoints ?? 15,
+			winBy: tourney.winBy ?? 2
+		};
+		const scoringOverrides = tourney.scoringOverrides as Record<
+			string,
+			{ pointsToWin?: number; setsToWin?: number; decidingSetPoints?: number }
+		>;
 
-		const prevRound = currentRound - 1;
-		const restoredCount = activeCount;
-		const restoredConfig = recalculateCourtConfigAfterRetirement(restoredCount);
-		const restoredCourtSizes = replacementId
-			? parseCourtSizes(tourney)
-			: restoredConfig.courtSizes;
-
-		await db
-			.update(tournament)
-			.set({
-				playerCount: restoredCount,
-				courtSizes: JSON.stringify(restoredCourtSizes),
-				lastActivityAt: new Date()
-			})
-			.where(eq(tournament.id, tournamentId));
-
-		let assignCourtSizes = restoredCourtSizes;
-		let nextAssignments: { courtNumber: number; playerIds: readonly number[] }[];
-
-		if (replacementId && prevRound > 0) {
-			nextAssignments = applyReplacementSlot(
-				currentAssignmentsBeforeDelete,
-				replacementId,
-				playerId
-			);
-		} else if (prevRound === 0) {
-			const allActivePlayerIds = activePlayers.map((p) => p.id);
-			if (formatType === 'random-seed') {
-				for (let i = allActivePlayerIds.length - 1; i > 0; i--) {
-					const j = Math.floor(Math.random() * (i + 1));
-					[allActivePlayerIds[i], allActivePlayerIds[j]] = [
-						allActivePlayerIds[j],
-						allActivePlayerIds[i]
-					];
-				}
-			} else {
-				allActivePlayerIds.sort(
-					(a, b) =>
-						(activePlayers.find((p) => p.id === b)?.seedPoints ?? 0) -
-						(activePlayers.find((p) => p.id === a)?.seedPoints ?? 0)
-				);
-			}
-
-			const courts: { courtNumber: number; playerIds: number[] }[] = [];
-			for (let i = 0; i < assignCourtSizes.length; i++) {
-				courts.push({ courtNumber: i + 1, playerIds: [] });
-			}
-			let idx = 0;
-			for (let pos = 0; pos < 4; pos++) {
-				const fwd = pos % 2 === 0;
-				for (let c = 0; c < assignCourtSizes.length; c++) {
-					const courtIdx = fwd ? c : assignCourtSizes.length - 1 - c;
-					if (idx < allActivePlayerIds.length) {
-						courts[courtIdx].playerIds.push(allActivePlayerIds[idx]);
-						idx++;
-					}
-				}
-			}
-			nextAssignments = courts.filter((c) => c.playerIds.length > 0);
-		} else {
-			const prevRotations = await db
-				.select()
-				.from(courtRotation)
-				.where(
-					and(
-						eq(courtRotation.tournamentId, tournamentId),
-						eq(courtRotation.roundNumber, prevRound)
-					)
-				)
-				.orderBy(asc(courtRotation.courtNumber));
-
-			const resolved = await Promise.all(
-				prevRotations.map(async (rotation) => {
-					const prevMatches = await db
-						.select()
-						.from(match)
-						.where(eq(match.courtRotationId, rotation.id));
-					return { rotation, matchData: prevMatches as MatchData[] };
-				})
-			);
-
-			const stillRetiredIds = new Set(
-				dbPlayers.filter((p) => p.retiredAt && p.id !== playerId).map((p) => p.id)
-			);
-
-			const results = resolved.map((cr) => {
-				const pIds = rotationPlayerIds(cr.rotation);
-				return {
-					courtNumber: cr.rotation.courtNumber,
-					standings: calculateCourtStandings(cr.matchData, pIds)
-				};
-			});
-
-			if (formatType === 'preseed') {
-				nextAssignments = processPreseedTransition(
-					results,
-					assignCourtSizes,
-					prevRound - 1,
-					calculateCourtSizes(restoredCount).length
-				);
-				if (stillRetiredIds.size > 0) {
-					nextAssignments = nextAssignments.map((a) => ({
-						courtNumber: a.courtNumber,
-						playerIds: a.playerIds.filter((id) => !stillRetiredIds.has(id))
-					}));
-				}
-			} else {
-				nextAssignments = buildRedistributionFromResults(
-					formatType,
-					results,
-					assignCourtSizes,
-					prevRound - 1,
-					calculateCourtSizes(restoredCount).length,
-					stillRetiredIds.size > 0 ? stillRetiredIds : undefined
-				);
-			}
-		}
-
-		const finalAssignments = targetPlayer.retiredCourt
-			? resolveAssignmentsAfterUndoRetirement({
-					formatType: tourney.formatType as FormatType,
-					redistributedAssignments: nextAssignments,
-					restoredPlayerCount: restoredCount,
-					roundsCompleted: prevRound
-				})
-			: resolveAssignmentsAfterRetirement({
-					formatType: tourney.formatType as FormatType,
-					redistributedAssignments: nextAssignments,
-					originalPlayerCount: restoredCount,
-					roundsCompleted: prevRound
-				});
-
-		// Recreate court rotations and matches
 		for (const assignment of finalAssignments) {
-			const idx = assignment.courtNumber - 1;
-			const size =
-				assignment.playerIds.length > 4
-					? (assignCourtSizes[idx] ?? assignment.playerIds.length)
-					: assignment.playerIds.length;
+			const size = assignmentCourtSize(assignment, assignCourtSizes);
 
 			const [existingCourt] = await db
 				.select()
@@ -1533,45 +1484,37 @@ export const undoRetirement = command(
 				})
 				.returning();
 
-			const allMatchesForCourt = generateAllMatchesForAssignment(
-				{ courtNumber: assignment.courtNumber, playerIds: assignment.playerIds },
-				assignCourtSizes
+			const matchRows = buildMatchInsertRows(
+				assignment,
+				assignCourtSizes,
+				newRotation.id,
+				scoringConfig,
+				scoringOverrides
 			);
-
-			const effective = getEffectiveScoring(
-				size,
-				{
-					pointsToWin: tourney.pointsToWin ?? 21,
-					setsToWin: tourney.setsToWin ?? 1,
-					decidingSetPoints: tourney.decidingSetPoints ?? 15,
-					winBy: tourney.winBy ?? 2
-				},
-				tourney.scoringOverrides as Record<
-					string,
-					{ pointsToWin?: number; setsToWin?: number; decidingSetPoints?: number }
-				>
-			);
-			const maxSets = getMaxSets(effective.setsToWin);
-
-			for (let mi = 0; mi < allMatchesForCourt.length; mi++) {
-				const m = allMatchesForCourt[mi];
-				for (let setNum = 1; setNum <= maxSets; setNum++) {
-					await db.insert(match).values({
-						courtRotationId: newRotation.id,
-						matchNumber: mi + 1,
-						setNumber: setNum,
-						teamAPlayer1Id: m.teamAPlayer1Id,
-						teamAPlayer2Id: m.teamAPlayer2Id,
-						teamBPlayer1Id: m.teamBPlayer1Id,
-						teamBPlayer2Id: m.teamBPlayer2Id
-					});
-				}
+			if (matchRows.length > 0) {
+				await db.insert(match).values(matchRows);
 			}
 		}
 
 		await db
+			.update(player)
+			.set({
+				retiredAt: null,
+				retiredRound: null,
+				retiredCourt: null,
+				retirementReason: null,
+				finalStanding: null,
+				replacedByPlayerId: null
+			})
+			.where(eq(player.id, playerId));
+
+		await db
 			.update(tournament)
-			.set({ lastActivityAt: new Date() })
+			.set({
+				playerCount: restoredCount,
+				courtSizes: JSON.stringify(restoredCourtSizes),
+				lastActivityAt: new Date()
+			})
 			.where(eq(tournament.id, tournamentId));
 
 		getTournamentData({ tournamentId }).refresh();
@@ -1686,21 +1629,16 @@ export const undoInjury = command(
 		}
 
 		if (hasInjuredFlag) {
-			// Undo substitute: clear injuredPlayerIds marker
-			await db
-				.update(match)
-				.set({ injuredPlayerIds: [] })
-				.where(
-					and(
-						eq(match.courtRotationId, playerRotation.id),
-						or(
-							eq(match.teamAPlayer1Id, playerId),
-							eq(match.teamAPlayer2Id, playerId),
-							eq(match.teamBPlayer1Id, playerId),
-							eq(match.teamBPlayer2Id, playerId)
-						)
-					)
-				);
+			const injuredMatches = rotationMatches.filter((m) =>
+				(m.injuredPlayerIds ?? []).includes(playerId)
+			);
+			for (const affected of injuredMatches) {
+				const remaining = (affected.injuredPlayerIds ?? []).filter((id) => id !== playerId);
+				await db
+					.update(match)
+					.set({ injuredPlayerIds: remaining.length > 0 ? remaining : null })
+					.where(eq(match.id, affected.id));
+			}
 		}
 
 		// Clear retirement and injury fields on player

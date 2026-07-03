@@ -7,6 +7,8 @@ import {
 	getMinPointsForSet,
 	getEffectiveScoring,
 	isValidFinalScore,
+	getMaxSets,
+	isDecidingSet,
 	type ScoringOverrides
 } from '$lib/server/tournament-logic';
 import * as v from 'valibot';
@@ -14,6 +16,7 @@ import * as m from '$lib/paraglide/messages';
 
 const baseScoreSchema = v.pipe(
 	v.object({
+		token: v.pipe(v.string(), v.nonEmpty()),
 		matchId: v.pipe(v.string(), v.nonEmpty()),
 		teamAScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number)),
 		teamBScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number))
@@ -28,6 +31,7 @@ const baseScoreSchema = v.pipe(
 
 const setScoreSchema = v.pipe(
 	v.object({
+		token: v.pipe(v.string(), v.nonEmpty()),
 		matchId: v.pipe(v.string(), v.nonEmpty()),
 		setNumber: v.pipe(v.string(), v.nonEmpty(), v.transform(Number)),
 		teamAScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number)),
@@ -41,20 +45,52 @@ const setScoreSchema = v.pipe(
 	}, m.err_score_tied())
 );
 
-async function getMatchContext(matchId: number) {
-	const [matchRecord] = await db.select().from(match).where(eq(match.id, matchId));
-	if (!matchRecord) return null;
+async function resolveRotationByToken(token: string) {
+	const [rotationByToken] = await db
+		.select()
+		.from(courtRotation)
+		.where(eq(courtRotation.token, token));
+
+	if (rotationByToken) {
+		const [courtRecord] = await db.select().from(court).where(eq(court.id, rotationByToken.courtId));
+		return { rotation: rotationByToken, courtRecord };
+	}
+
+	const [courtRecord] = await db.select().from(court).where(eq(court.token, token));
+	if (!courtRecord) return null;
+
+	const [tourney] = await db
+		.select()
+		.from(tournament)
+		.where(eq(tournament.id, courtRecord.tournamentId));
+	if (!tourney) return null;
+
+	const currentRound = tourney.currentRound || 0;
+	if (currentRound === 0) return null;
 
 	const [rotation] = await db
 		.select()
 		.from(courtRotation)
-		.where(eq(courtRotation.id, matchRecord.courtRotationId));
+		.where(
+			and(eq(courtRotation.courtId, courtRecord.id), eq(courtRotation.roundNumber, currentRound))
+		);
 
-	if (!rotation) return null;
+	return rotation ? { rotation, courtRecord } : null;
+}
 
-	const [courtRecord] = await db.select().from(court).where(eq(court.id, rotation.courtId));
+async function getMatchContext(matchId: number, token: string) {
+	const resolved = await resolveRotationByToken(token);
+	if (!resolved) return { error: m.err_invalid_match() };
 
+	const { rotation, courtRecord } = resolved;
 	if (!courtRecord || !courtRecord.isActive) return { error: m.err_court_not_active() };
+
+	const [matchRecord] = await db.select().from(match).where(eq(match.id, matchId));
+	if (!matchRecord) return { error: m.err_invalid_match() };
+
+	if (matchRecord.courtRotationId !== rotation.id) {
+		return { error: m.err_invalid_match() };
+	}
 
 	if (matchRecord.isCanceled) return { error: m.err_match_canceled() };
 
@@ -73,13 +109,34 @@ async function getMatchContext(matchId: number) {
 	return { matchRecord, rotation, tourney };
 }
 
+async function validateDecidingSetAllowed(
+	courtRotationId: number,
+	matchNumber: number,
+	setNumber: number,
+	setsToWin: number
+): Promise<boolean> {
+	if (!isDecidingSet(setNumber, setsToWin)) return true;
+
+	const rows = await db
+		.select()
+		.from(match)
+		.where(and(eq(match.courtRotationId, courtRotationId), eq(match.matchNumber, matchNumber)));
+
+	const set1 = rows.find((r) => r.setNumber === 1);
+	const set2 = rows.find((r) => r.setNumber === 2);
+	if (!set1 || !set2 || set1.teamAScore === null || set2.teamAScore === null) return false;
+
+	const teamAWins = (set1.teamAScore > set1.teamBScore! ? 1 : 0) + (set2.teamAScore > set2.teamBScore! ? 1 : 0);
+	const teamBWins = (set1.teamBScore! > set1.teamAScore ? 1 : 0) + (set2.teamBScore! > set2.teamAScore ? 1 : 0);
+	return teamAWins >= 1 && teamBWins >= 1;
+}
+
 export const saveScore = form(baseScoreSchema, async (data, issue) => {
 	const matchId = parseInt(data.matchId);
 	const teamAScore = data.teamAScore;
 	const teamBScore = data.teamBScore;
 
-	const ctx = await getMatchContext(matchId);
-	if (!ctx) return invalid(issue.teamAScore(m.err_invalid_match()));
+	const ctx = await getMatchContext(matchId, data.token);
 	if ('error' in ctx) return invalid(issue.teamAScore(ctx.error ?? m.err_court_error()));
 
 	const { matchRecord, rotation, tourney } = ctx;
@@ -127,8 +184,7 @@ export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 	const teamAScore = data.teamAScore;
 	const teamBScore = data.teamBScore;
 
-	const ctx = await getMatchContext(matchId);
-	if (!ctx) return invalid(issue.teamAScore(m.err_invalid_match()));
+	const ctx = await getMatchContext(matchId, data.token);
 	if ('error' in ctx) return invalid(issue.teamAScore(ctx.error ?? m.err_court_error()));
 
 	const { matchRecord, rotation, tourney } = ctx;
@@ -143,6 +199,16 @@ export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 		config,
 		tourney.scoringOverrides as ScoringOverrides | null
 	);
+	const maxSets = getMaxSets(effective.setsToWin);
+
+	if (setNumber < 1 || setNumber > maxSets) {
+		return invalid(issue.setNumber(m.err_score_invalid({ minPoints: 1, winBy: effective.winBy })));
+	}
+
+	if (!(await validateDecidingSetAllowed(matchRecord.courtRotationId, matchRecord.matchNumber, setNumber, effective.setsToWin))) {
+		return invalid(issue.setNumber(m.err_score_invalid({ minPoints: 1, winBy: effective.winBy })));
+	}
+
 	const minPoints = getMinPointsForSet(
 		setNumber,
 		rotation.courtSize,
