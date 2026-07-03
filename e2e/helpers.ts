@@ -48,13 +48,9 @@ export async function createRandomSeedTournament(
 
 export async function getCourtLinks(page: Page): Promise<string[]> {
 	await page.waitForSelector('.qr-link a');
-	const els = await page.locator('.qr-link a').all();
-	const links: string[] = [];
-	for (const el of els) {
-		const href = await el.getAttribute('href');
-		if (href) links.push(href);
-	}
-	return links;
+	return page.locator('.qr-link a').evaluateAll(
+		(els) => els.map((el) => (el as HTMLAnchorElement).href).filter(Boolean)
+	);
 }
 
 export async function scoreAllMatchesOnCourt(
@@ -64,17 +60,20 @@ export async function scoreAllMatchesOnCourt(
 	bScore = 19
 ): Promise<void> {
 	await page.goto(courtUrl);
-	await page.waitForSelector('[data-testid^="match-form-"]');
-	const forms = await page.locator('[data-testid^="match-form-"]').all();
-	for (const form of forms) {
-		const testId = await form.getAttribute('data-testid');
-		const matchId = testId?.replace('match-form-', '');
-		if (!matchId) continue;
+	const matchIds = await extractMatchIds(page);
+	for (const matchId of matchIds) {
 		await page.fill(`[data-testid="team-a-score-${matchId}"]`, String(aScore));
 		await page.fill(`[data-testid="team-b-score-${matchId}"]`, String(bScore));
 		await page.click(`[data-testid="save-score-${matchId}"]`);
 		await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 	}
+}
+
+async function extractMatchIds(page: Page): Promise<string[]> {
+	await page.waitForSelector('[data-testid^="match-form-"]');
+	return page.locator('[data-testid^="match-form-"]').evaluateAll(
+		(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+	);
 }
 
 export async function scoreAllCourts(page: Page, links: string[]): Promise<void> {

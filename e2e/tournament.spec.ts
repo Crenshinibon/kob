@@ -1013,18 +1013,13 @@ test.describe('Tournament Integration Tests', () => {
 				if (url) courtUrls.push(url);
 			}
 			for (const url of courtUrls) {
-				const hasMatchForms = (await page.locator('[data-testid^="match-form-"]').count()) > 0;
-				if (!hasMatchForms) continue;
 				await page.goto(url);
-				await page.waitForSelector('[data-testid^="match-form-"]');
+				const matchFormCount = await page.locator('[data-testid^="match-form-"]').count();
+				if (matchFormCount === 0) continue;
 				await page.waitForTimeout(800);
-				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds: string[] = [];
-				for (const form of matchForms) {
-					const mTestId = await form.getAttribute('data-testid');
-					const mId = mTestId?.replace('match-form-', '');
-					if (mId) matchIds.push(mId);
-				}
+				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+				);
 				for (const mId of matchIds) {
 					await page.fill(`[data-testid="team-a-score-${mId}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${mId}"]`, '19');
@@ -1138,18 +1133,13 @@ test.describe('Tournament Integration Tests', () => {
 				if (url) courtUrls.push(url);
 			}
 			for (const url of courtUrls) {
-				const hasMatchForms = (await page.locator('[data-testid^="match-form-"]').count()) > 0;
-				if (!hasMatchForms) continue;
 				await page.goto(url);
-				await page.waitForSelector('[data-testid^="match-form-"]');
+				const matchFormCount = await page.locator('[data-testid^="match-form-"]').count();
+				if (matchFormCount === 0) continue;
 				await page.waitForTimeout(800);
-				const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-				const matchIds: string[] = [];
-				for (const form of matchForms) {
-					const mTestId = await form.getAttribute('data-testid');
-					const mId = mTestId?.replace('match-form-', '');
-					if (mId) matchIds.push(mId);
-				}
+				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+				);
 				for (const mId of matchIds) {
 					await page.fill(`[data-testid="team-a-score-${mId}"]`, '21');
 					await page.fill(`[data-testid="team-b-score-${mId}"]`, '19');

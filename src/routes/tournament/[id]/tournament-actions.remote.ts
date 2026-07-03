@@ -379,6 +379,8 @@ export const closeRoundForm = form(
 		}
 
 		// Exclude frozen courts (preseed format only)
+		// NB: nextCourtSizes intentionally NOT filtered — DB stores original sizes.
+		// Frozen court filtering happens at runtime via activeCourtSizes (line 215-218).
 		if (tourney.formatType === 'preseed') {
 			const originalCourtSizes = bracketCourtSizes(tourney, virtualCourtCount);
 			const frozenCourts = getFrozenCourts(
@@ -389,7 +391,6 @@ export const closeRoundForm = form(
 			if (frozenCourts.length > 0) {
 				const frozenNumbers = new Set(frozenCourts.map((f) => f.courtNumber));
 				nextAssignments = nextAssignments.filter((a) => !frozenNumbers.has(a.courtNumber));
-				nextCourtSizes = nextAssignments.map((a) => a.playerIds.length);
 			}
 		}
 

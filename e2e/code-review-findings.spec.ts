@@ -72,7 +72,7 @@ test.describe('Code review findings (spec 1040)', () => {
 			const tokenInput = document.querySelector('input[name="token"]') as HTMLInputElement | null;
 			if (tokenInput) tokenInput.value = '00000000000000000000000000000000';
 			const form = document.querySelector(
-				`[data-testid="match-form-${mid}"] form`
+				`[data-testid="match-form-${mid}"]`
 			) as HTMLFormElement | null;
 			if (!form) return 'no form';
 			form.requestSubmit();
@@ -138,12 +138,11 @@ test.describe('Code review findings (spec 1040)', () => {
 		const allLinks = await getCourtLinks(page);
 		for (const link of allLinks) {
 			await page.goto(link);
-			if ((await page.locator('[data-testid^="match-form-"]').count()) === 0) continue;
-			await page.waitForSelector('[data-testid^="match-form-"]');
-			const matchForms = await page.locator('[data-testid^="match-form-"]').all();
-			for (const form of matchForms) {
-				const mid = (await form.getAttribute('data-testid'))?.replace('match-form-', '');
-				if (!mid) continue;
+			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
+				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
+			);
+			if (matchIds.length === 0) continue;
+			for (const mid of matchIds) {
 				const saved = await page.locator(`[data-testid="saved-${mid}"]`).count();
 				if (saved > 0) continue;
 				await page.fill(`[data-testid="team-a-score-${mid}"]`, '21');
@@ -255,6 +254,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.goto(`/tournament/${tid}`);
 		await page.click('summary:has-text("Tie-break rules")');
 		await page.waitForSelector('.tie-break-list');
+		await page.waitForTimeout(500);
 
 		const statLabels = [
 			'Points this round',
@@ -265,7 +265,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		];
 		for (const label of statLabels) {
 			const cb = page.locator(`.tie-break-item label:has-text("${label}") input[type="checkbox"]`);
-			if (await cb.isChecked()) await cb.uncheck();
+			if (await cb.isChecked().catch(() => false)) await cb.uncheck().catch(() => {});
 		}
 		await page.locator('input[type="radio"][value="manual"]').check();
 		await page.click('button:has-text("Save tie-break rules")');
@@ -296,6 +296,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.goto(`/tournament/${tid}`);
 		await page.click('summary:has-text("Tie-break rules")');
 		await page.waitForSelector('.tie-break-list');
+		await page.waitForTimeout(500);
 
 		const statLabels = [
 			'Points this round',
@@ -306,7 +307,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		];
 		for (const label of statLabels) {
 			const cb = page.locator(`.tie-break-item label:has-text("${label}") input[type="checkbox"]`);
-			if (await cb.isChecked()) await cb.uncheck();
+			if (await cb.isChecked().catch(() => false)) await cb.uncheck().catch(() => {});
 		}
 		await page.locator('input[type="radio"][value="dice"]').check();
 		await page.click('button:has-text("Save tie-break rules")');
