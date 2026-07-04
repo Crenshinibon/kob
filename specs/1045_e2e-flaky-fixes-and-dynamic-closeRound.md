@@ -29,6 +29,10 @@ underlying root causes remain across the test suite:
    skipped after injury → round never closed → timeout on "Round 2 of 2".
    Fix: check match form count AFTER `page.goto(url)`, not before.
 
+### Issue E — rotation token / stable URL mismatch
+
+**Fixed (2026-07-04):** `tournament-data.remote.ts` now exposes stable `court.token` in QR links when viewing the current round. Past-round stepper links still use `rotation.token` per spec 093. All `getTournamentData().refresh()` calls in `tournament-actions.remote.ts` are now awaited.
+
 ## Remaining Issues
 
 ### Issue A: Hardcoded closeRound fetch URL

@@ -193,10 +193,12 @@ async function fetchTournamentData(
 		const matches = await db.select().from(match).where(eq(match.courtRotationId, rotation.id));
 
 		const access = await db
-			.select({ label: court.label, id: court.id })
+			.select({ label: court.label, id: court.id, token: court.token })
 			.from(court)
 			.where(eq(court.id, rotation.courtId))
 			.limit(1);
+
+		const stableCourtToken = access[0]?.token ?? null;
 
 		const playerIds = [
 			rotation.player1Id,
@@ -292,7 +294,8 @@ async function fetchTournamentData(
 			courtNumber: rotation.courtNumber,
 			courtSize: size,
 			matches,
-			token: rotation.token ?? null,
+			// Stable court.token for current-round QR links; rotation.token for past-round history (spec 093)
+			token: isViewingPastRound ? (rotation.token ?? null) : stableCourtToken,
 			label: access[0]?.label ?? null,
 			courtId: access[0]?.id ?? rotation.courtId,
 			rotationId: rotation.id,
