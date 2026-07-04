@@ -304,7 +304,7 @@ test.describe('Code review findings (spec 1040)', () => {
 			const cb = page.locator(`.tie-break-item label:has-text("${label}") input[type="checkbox"]`);
 			if (await cb.isChecked().catch(() => false)) await cb.uncheck().catch(() => {});
 		}
-		await page.locator('input[type="radio"][value="manual"]').check();
+		await page.locator('.tie-break-finals input[type="radio"][value="manual"]').check();
 		await page.click('button:has-text("Save tie-break rules")');
 		await page.waitForTimeout(1500);
 
@@ -346,7 +346,7 @@ test.describe('Code review findings (spec 1040)', () => {
 			const cb = page.locator(`.tie-break-item label:has-text("${label}") input[type="checkbox"]`);
 			if (await cb.isChecked().catch(() => false)) await cb.uncheck().catch(() => {});
 		}
-		await page.locator('input[type="radio"][value="dice"]').check();
+		await page.locator('.tie-break-finals input[type="radio"][value="dice"]').check();
 		await page.click('button:has-text("Save tie-break rules")');
 		await page.waitForTimeout(1500);
 
