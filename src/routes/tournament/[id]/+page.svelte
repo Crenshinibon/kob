@@ -54,6 +54,11 @@
 	}>();
 
 	let viewRound = $state<number | null>(null);
+	let editingScoring = $state(false);
+	let editingTieBreak = $state(false);
+	let closingRound = $state(false);
+	let retireSubmitting = $state(false);
+	let injurySubmitting = $state(false);
 
 	const tournamentQuery = $derived(
 		getTournamentData({
@@ -63,14 +68,15 @@
 	);
 
 	$effect(() => {
+		if (editingTieBreak || editingScoring || closingRound || retireSubmitting || injurySubmitting) {
+			return;
+		}
 		const interval = setInterval(() => {
 			tournamentQuery.refresh().catch(() => {});
 		}, 5000);
 		return () => clearInterval(interval);
 	});
 
-	let editingScoring = $state(false);
-	let editingTieBreak = $state(false);
 	let localStatFactors = $state<{ id: TieBreakFactorId; enabled: boolean }[]>(
 		DEFAULT_TIE_BREAK_CONFIG.factors
 			.filter((f) => isStatisticalTieBreakFactor(f.id))
@@ -89,7 +95,10 @@
 	}
 
 	$effect(() => {
-		const cfg = tournamentQuery.current?.tournament?.tieBreakConfig as TieBreakConfig | null | undefined;
+		const cfg = tournamentQuery.current?.tournament?.tieBreakConfig as
+			| TieBreakConfig
+			| null
+			| undefined;
 		if (!editingTieBreak) {
 			applyTieBreakConfig(cfg);
 		}
@@ -112,7 +121,9 @@
 		return court.standings.some((s) => s.tiedFactors.length > 0 || s.decidingFactor);
 	}
 
-	function outcomeRankColor(outcome: CourtDisplayData['standings'][number]['decidingOutcome']): string | null {
+	function outcomeRankColor(
+		outcome: CourtDisplayData['standings'][number]['decidingOutcome']
+	): string | null {
 		return outcome ? TIE_BREAK_OUTCOME_COLORS[outcome] : null;
 	}
 
@@ -274,7 +285,6 @@
 	let injuryReplacementName = $state('');
 	let injuryReplacementSeedPoints = $state(0);
 	let now = $state(Date.now());
-	let closingRound = $state(false);
 
 	$effect(() => {
 		const id = setInterval(() => {
@@ -546,8 +556,8 @@
 											class="standing-rank"
 											style={outcomeRankColor(s.decidingOutcome)
 												? `color: ${outcomeRankColor(s.decidingOutcome)}`
-												: undefined}
-										>{s.rank}.</span>
+												: undefined}>{s.rank}.</span
+										>
 										<span class="standing-name">{s.name}</span>
 										{#if court.players.find((p) => p.id === s.playerId)?.retired}
 											<span class="retired-badge">{m.retired_badge()}</span>
@@ -993,25 +1003,31 @@
 							{/if}
 							<button
 								class="btn-danger"
+								disabled={retireSubmitting}
 								onclick={async () => {
-									if (!retirePlayerId) return;
-									await retirePlayer({
-										tournamentId: data.tournamentId,
-										playerId: retirePlayerId,
-										reason: retireReason || undefined,
-										useReplacement: retireUseReplacement,
-										replacementName: retireUseReplacement ? replacementName.trim() : undefined,
-										replacementSeedPoints:
-											retireUseReplacement && tournament?.formatType === 'preseed'
-												? replacementSeedPoints
-												: undefined
-									});
-									await tournamentQuery.refresh();
-									retirePlayerId = 0;
-									retireReason = '';
-									retireUseReplacement = false;
-									replacementName = '';
-									replacementSeedPoints = 0;
+									if (!retirePlayerId || retireSubmitting) return;
+									retireSubmitting = true;
+									try {
+										await retirePlayer({
+											tournamentId: data.tournamentId,
+											playerId: retirePlayerId,
+											reason: retireReason || undefined,
+											useReplacement: retireUseReplacement,
+											replacementName: retireUseReplacement ? replacementName.trim() : undefined,
+											replacementSeedPoints:
+												retireUseReplacement && tournament?.formatType === 'preseed'
+													? replacementSeedPoints
+													: undefined
+										});
+										await tournamentQuery.refresh();
+										retirePlayerId = 0;
+										retireReason = '';
+										retireUseReplacement = false;
+										replacementName = '';
+										replacementSeedPoints = 0;
+									} finally {
+										retireSubmitting = false;
+									}
 								}}
 							>
 								{m.retire_confirm()}
@@ -1114,27 +1130,34 @@
 							{/if}
 							<button
 								class="btn-danger"
+								disabled={injurySubmitting}
 								onclick={async () => {
-									if (!injuryPlayerId || !injuryOption) return;
-									await reportInjury({
-										tournamentId: data.tournamentId,
-										playerId: injuryPlayerId,
-										option: injuryOption,
-										reason: 'injury',
-										useReplacement: injuryUseReplacement,
-										replacementName: injuryUseReplacement
-											? injuryReplacementName.trim()
-											: undefined,
-										replacementSeedPoints:
-											injuryUseReplacement && tournament?.formatType === 'preseed'
-												? injuryReplacementSeedPoints
-												: undefined
-									});
-									injuryPlayerId = 0;
-									injuryOption = '';
-									injuryUseReplacement = false;
-									injuryReplacementName = '';
-									injuryReplacementSeedPoints = 0;
+									if (!injuryPlayerId || !injuryOption || injurySubmitting) return;
+									injurySubmitting = true;
+									try {
+										await reportInjury({
+											tournamentId: data.tournamentId,
+											playerId: injuryPlayerId,
+											option: injuryOption,
+											reason: 'injury',
+											useReplacement: injuryUseReplacement,
+											replacementName: injuryUseReplacement
+												? injuryReplacementName.trim()
+												: undefined,
+											replacementSeedPoints:
+												injuryUseReplacement && tournament?.formatType === 'preseed'
+													? injuryReplacementSeedPoints
+													: undefined
+										});
+										await tournamentQuery.refresh();
+										injuryPlayerId = 0;
+										injuryOption = '';
+										injuryUseReplacement = false;
+										injuryReplacementName = '';
+										injuryReplacementSeedPoints = 0;
+									} finally {
+										injurySubmitting = false;
+									}
 								}}
 							>
 								{m.injury_confirm()}
@@ -1202,8 +1225,7 @@
 							class="dialog-close"
 							aria-label={m.manual_rank_cancel()}
 							disabled={isSaving}
-							onclick={closeManualTieDialog}
-						>×</button
+							onclick={closeManualTieDialog}>×</button
 						>
 					</header>
 					<p class="manual-rank-hint">{m.manual_rank_hint()}</p>
@@ -1221,7 +1243,7 @@
 										</tr>
 									</thead>
 									<tbody>
-										{#each getDraftManualRankOrder(court).filter((id) => group.playerIds.includes(id)) as pid (pid)}
+										{#each getDraftManualRankOrder(court).filter( (id) => group.playerIds.includes(id) ) as pid (pid)}
 											{@const pname = court.players.find((p) => p.id === pid)?.name ?? ''}
 											<tr>
 												<td>{pname}</td>
@@ -1234,7 +1256,7 @@
 								</table>
 							{/if}
 							<ul class="manual-rank-order">
-								{#each getDraftManualRankOrder(court).filter((id) => group.playerIds.includes(id)) as pid, mi (pid)}
+								{#each getDraftManualRankOrder(court).filter( (id) => group.playerIds.includes(id) ) as pid, mi (pid)}
 									{@const pname = court.players.find((p) => p.id === pid)?.name ?? ''}
 									<li>
 										<span class="manual-rank-position">{mi + 1}.</span>

@@ -6,6 +6,10 @@ import {
 	scoreAllMatchesOnCourt,
 	scoreAllCourts,
 	closeRoundViaFetch,
+	closeRoundOrFetch,
+	clickRetireSubmit,
+	waitForCourtCardCount,
+	configureTieBreakFinal,
 	deleteTournament
 } from './helpers';
 
@@ -44,10 +48,9 @@ test.describe('Code review findings (spec 1040)', () => {
 		if (!target) throw new Error('Q1 not found in retire options');
 		await page.selectOption('#retirePlayerId', { label: target.trim() });
 		await page.selectOption('#retireReason', { value: 'schedule' });
-		await page.click('.retire-form button');
+		await clickRetireSubmit(page);
+		await waitForCourtCardCount(page, 4);
 
-		await page.reload();
-		await page.waitForSelector('.court-card');
 		expect(await page.locator('.court-card').count()).toBe(4);
 		expect(await page.locator('.qr-link a').count()).toBe(4);
 	});
@@ -146,31 +149,10 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.waitForSelector('.player.retired', { timeout: 15000 }).catch(() => {});
 
 		const allLinks = await getCourtLinks(page);
-		for (const link of allLinks) {
-			await page.goto(link);
-			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
-				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
-			);
-			if (matchIds.length === 0) continue;
-			for (const mid of matchIds) {
-				const saved = await page.locator(`[data-testid="saved-${mid}"]`).count();
-				if (saved > 0) continue;
-				await page.fill(`[data-testid="team-a-score-${mid}"]`, '21');
-				await page.fill(`[data-testid="team-b-score-${mid}"]`, '19');
-				await page.click(`[data-testid="save-score-${mid}"]`);
-				await page.waitForSelector(`[data-testid="saved-${mid}"]`);
-			}
-		}
+		await scoreAllCourts(page, allLinks);
 
 		await page.goto(tournamentUrl);
-		await page.waitForTimeout(3000);
-		const closeBtn = page.locator('button:has-text("Close Round & Advance")');
-		if (await closeBtn.isEnabled().catch(() => false)) {
-			await closeBtn.click();
-		} else {
-			const res = await closeRoundViaFetch(page, tid);
-			expect(res.ok, res.body ?? res.reason).toBe(true);
-		}
+		await closeRoundOrFetch(page, tid);
 		await page.waitForSelector('text=Round 2 of 2', { timeout: 15000 });
 
 		const r2Links = await getCourtLinks(page);
@@ -208,13 +190,15 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.selectOption('#retirePlayerId', { label: target.trim() });
 		await page.locator('.retire-form input[type="checkbox"]').check();
 		await page.fill('#replacementName', 'Replacement Alex');
-		await page.click('.retire-form button.btn-danger');
+		await clickRetireSubmit(page);
 		await expect
-			.poll(async () => {
-				await page.reload();
-				const texts = await page.locator('.court-card .player').allTextContents();
-				return texts.some((t) => /Replacement Alex/i.test(t));
-			})
+			.poll(
+				async () => {
+					const texts = await page.locator('.court-card .player').allTextContents();
+					return texts.some((t) => /Replacement Alex/i.test(t));
+				},
+				{ timeout: 30000 }
+			)
 			.toBe(true);
 
 		const playerTexts = await page.locator('.court-card .player').allTextContents();
@@ -254,7 +238,9 @@ test.describe('Code review findings (spec 1040)', () => {
 
 		await page.goto(`/tournament/${tid}/standings`);
 		await page.waitForSelector('.standings-table tbody tr');
-		const roundDataTexts = await page.locator('.standings-table tbody tr .round-data').allTextContents();
+		const roundDataTexts = await page
+			.locator('.standings-table tbody tr .round-data')
+			.allTextContents();
 		expect(roundDataTexts.some((t) => t.trim() !== '-' && t.length > 0)).toBe(true);
 	});
 
@@ -265,24 +251,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		const tid = await createRandomSeedTournament(page, name, 8);
 
 		await page.goto(`/tournament/${tid}`);
-		await page.click('summary:has-text("Tie-break rules")');
-		await page.waitForSelector('.tie-break-list');
-		await page.waitForTimeout(500);
-
-		const statLabels = [
-			'Points this round',
-			'Diff this round',
-			'Total points',
-			'Total diff',
-			'Seeding'
-		];
-		for (const label of statLabels) {
-			const cb = page.locator(`.tie-break-item label:has-text("${label}") input[type="checkbox"]`);
-			if (await cb.isChecked().catch(() => false)) await cb.uncheck().catch(() => {});
-		}
-		await page.locator('label.tie-break-final-option').filter({ hasText: /Manual/i }).click();
-		await page.click('button:has-text("Save tie-break rules")');
-		await page.waitForTimeout(1500);
+		await configureTieBreakFinal(page, 'manual');
 
 		const links = await getCourtLinks(page);
 		await scoreAllMatchesOnCourt(page, links[0]);
@@ -307,24 +276,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		const tid = await createRandomSeedTournament(page, name, 8);
 
 		await page.goto(`/tournament/${tid}`);
-		await page.click('summary:has-text("Tie-break rules")');
-		await page.waitForSelector('.tie-break-list');
-		await page.waitForTimeout(500);
-
-		const statLabels = [
-			'Points this round',
-			'Diff this round',
-			'Total points',
-			'Total diff',
-			'Seeding'
-		];
-		for (const label of statLabels) {
-			const cb = page.locator(`.tie-break-item label:has-text("${label}") input[type="checkbox"]`);
-			if (await cb.isChecked().catch(() => false)) await cb.uncheck().catch(() => {});
-		}
-		await page.locator('label.tie-break-final-option').filter({ hasText: /Dice/i }).click();
-		await page.click('button:has-text("Save tie-break rules")');
-		await page.waitForTimeout(1500);
+		await configureTieBreakFinal(page, 'dice');
 
 		const links = await getCourtLinks(page);
 		await scoreAllMatchesOnCourt(page, links[0]);

@@ -292,9 +292,7 @@ export const closeRoundForm = form(
 					: [];
 			const frozenCourtStandings = forwardFrozen.map((fc) => {
 				const frozenRotation = allRotations
-					.filter(
-						(r) => r.roundNumber === fc.freezeAfterRound && r.courtNumber === fc.courtNumber
-					)
+					.filter((r) => r.roundNumber === fc.freezeAfterRound && r.courtNumber === fc.courtNumber)
 					.sort((a, b) => b.roundNumber - a.roundNumber)[0];
 				const standings = frozenRotation?.standingsSnapshot
 					? snapshotToCourtStandings(frozenRotation.standingsSnapshot)
@@ -331,9 +329,7 @@ export const closeRoundForm = form(
 					currentRound: closedState.roundsCompleted,
 					lastActivityAt: new Date()
 				})
-				.where(
-					and(eq(tournament.id, tournamentId), eq(tournament.currentRound, currentRound))
-				)
+				.where(and(eq(tournament.id, tournamentId), eq(tournament.currentRound, currentRound)))
 				.returning({ id: tournament.id });
 			if (completedUpdate.length === 0) error(409, m.err_round_already_closed());
 
@@ -457,6 +453,10 @@ export const closeRoundForm = form(
 				.where(
 					and(eq(court.tournamentId, tournamentId), eq(court.courtNumber, assignment.courtNumber))
 				);
+
+			if (!existingCourt) {
+				error(500, `Court ${assignment.courtNumber} is missing for tournament ${tournamentId}`);
+			}
 
 			const roundToken = crypto.randomBytes(16).toString('hex');
 			const [rotation] = await db
@@ -698,10 +698,7 @@ export const updateManualRankOrder = command(
 		}
 
 		const rotationPlayerIdsList = rotationPlayerIds(rotation);
-		const dbPlayers = await db
-			.select()
-			.from(player)
-			.where(eq(player.tournamentId, tourney.id));
+		const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tourney.id));
 		const courtSizes = parseCourtSizes(tourney);
 		const tieBreakConfig = normalizeTieBreakConfig(tourney.tieBreakConfig ?? null);
 		const completedRounds = await buildCompletedRoundsBefore(
@@ -928,7 +925,11 @@ export const retirePlayer = command(
 		let nextAssignments: CourtAssignment[];
 
 		if (prevRound === 0) {
-			nextAssignments = buildRound1AssignmentsFromPlayers(formatType, playersForRound1, newCourtSizes);
+			nextAssignments = buildRound1AssignmentsFromPlayers(
+				formatType,
+				playersForRound1,
+				newCourtSizes
+			);
 		} else {
 			const results = await getCompletedRoundCourtResults(
 				tournamentId,
@@ -950,11 +951,7 @@ export const retirePlayer = command(
 					replacementPlayerId
 				});
 			} else if (replacementPlayerId) {
-				nextAssignments = applyReplacementSlot(
-					currentAssignments,
-					playerId,
-					replacementPlayerId
-				);
+				nextAssignments = applyReplacementSlot(currentAssignments, playerId, replacementPlayerId);
 			} else {
 				const retiredIds = new Set([playerId, ...priorRetirees.map((p) => p.id)]);
 				nextAssignments = buildRedistributionFromResults(
@@ -1027,6 +1024,10 @@ export const retirePlayer = command(
 				.where(
 					and(eq(court.tournamentId, tournamentId), eq(court.courtNumber, assignment.courtNumber))
 				);
+
+			if (!existingCourt) {
+				error(500, `Court ${assignment.courtNumber} is missing for tournament ${tournamentId}`);
+			}
 
 			const roundToken = crypto.randomBytes(16).toString('hex');
 			const [newRotation] = await db
@@ -1172,10 +1173,7 @@ export const reportInjury = command(
 			if (isFrozenCourt) error(400, m.err_replace_frozen_court());
 			const name = replacementName?.trim();
 			if (!name) error(400, m.err_replace_name_required());
-			const dbPlayers = await db
-				.select()
-				.from(player)
-				.where(eq(player.tournamentId, tournamentId));
+			const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
 			const duplicate = dbPlayers.some(
 				(p) => p.name.toLowerCase() === name.toLowerCase() && !p.retiredAt
 			);
@@ -1243,8 +1241,7 @@ export const reportInjury = command(
 				.values({
 					tournamentId,
 					name: replacementName!.trim(),
-					seedPoints:
-						formatType === 'preseed' ? (replacementSeedPoints ?? 0) : null,
+					seedPoints: formatType === 'preseed' ? (replacementSeedPoints ?? 0) : null,
 					seedRank: null,
 					replacesPlayerId: playerId
 				})
@@ -1339,9 +1336,7 @@ export const undoRetirement = command(
 		const activePlayers = dbPlayers.filter((p) => !p.retiredAt || p.id === playerId);
 		const restoredCount = activePlayers.length;
 		const restoredConfig = recalculateCourtConfigAfterRetirement(restoredCount);
-		const restoredCourtSizes = replacementId
-			? parseCourtSizes(tourney)
-			: restoredConfig.courtSizes;
+		const restoredCourtSizes = replacementId ? parseCourtSizes(tourney) : restoredConfig.courtSizes;
 		const assignCourtSizes = restoredCourtSizes;
 
 		const logicPlayers = activePlayers.map((p) => ({
@@ -1474,6 +1469,10 @@ export const undoRetirement = command(
 				.where(
 					and(eq(court.tournamentId, tournamentId), eq(court.courtNumber, assignment.courtNumber))
 				);
+
+			if (!existingCourt) {
+				error(500, `Court ${assignment.courtNumber} is missing for tournament ${tournamentId}`);
+			}
 
 			const roundToken = crypto.randomBytes(16).toString('hex');
 			const [newRotation] = await db

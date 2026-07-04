@@ -1,5 +1,15 @@
 import { expect, type Page } from '@playwright/test';
 
+export async function dismissCookieNotice(page: Page): Promise<void> {
+	const dismissBtn = page.locator('button.cookie-btn, button:has-text("OK")');
+	if (await dismissBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+		await dismissBtn.click({ force: true });
+	}
+	await page.evaluate(() => {
+		localStorage.setItem('cookie-notice-dismissed', 'true');
+	});
+}
+
 export async function login(page: Page): Promise<void> {
 	await page.goto('/login');
 	await page.fill('input[type="email"]', 'test@example.com');
@@ -17,13 +27,7 @@ export async function login(page: Page): Promise<void> {
 		await page.waitForURL('/');
 	}
 
-	const dismissBtn = page.locator('button:has-text("OK")');
-	if (await dismissBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
-		await dismissBtn.click();
-	}
-	await page.evaluate(() => {
-		localStorage.setItem('cookie-notice-dismissed', 'true');
-	});
+	await dismissCookieNotice(page);
 }
 
 export async function createRandomSeedTournament(
@@ -48,9 +52,30 @@ export async function createRandomSeedTournament(
 
 export async function getCourtLinks(page: Page): Promise<string[]> {
 	await page.waitForSelector('.qr-link a');
-	return page.locator('.qr-link a').evaluateAll(
-		(els) => els.map((el) => (el as HTMLAnchorElement).href).filter(Boolean)
-	);
+	return page
+		.locator('.qr-link a')
+		.evaluateAll((els) => els.map((el) => (el as HTMLAnchorElement).href).filter(Boolean));
+}
+
+export async function waitForCourtCardCount(
+	page: Page,
+	count: number,
+	timeout = 30000
+): Promise<void> {
+	await expect
+		.poll(
+			async () => {
+				return page.locator('.court-card').count();
+			},
+			{ timeout }
+		)
+		.toBe(count);
+}
+
+export async function clickRetireSubmit(page: Page): Promise<void> {
+	await dismissCookieNotice(page);
+	const btn = page.locator('.retire-form button.btn-danger');
+	await btn.click({ force: true });
 }
 
 export async function scoreAllMatchesOnCourt(
@@ -62,23 +87,47 @@ export async function scoreAllMatchesOnCourt(
 	await page.goto(courtUrl);
 	const matchIds = await extractMatchIds(page);
 	for (const matchId of matchIds) {
+		const saved = await page.locator(`[data-testid="saved-${matchId}"]`).count();
+		if (saved > 0) continue;
 		await page.fill(`[data-testid="team-a-score-${matchId}"]`, String(aScore));
 		await page.fill(`[data-testid="team-b-score-${matchId}"]`, String(bScore));
 		await page.click(`[data-testid="save-score-${matchId}"]`);
-		await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
+		await page.waitForSelector(`[data-testid="saved-${matchId}"]`, { timeout: 15000 });
 	}
 }
 
 export async function extractMatchIds(page: Page): Promise<string[]> {
 	await page.waitForSelector('[data-testid^="match-form-"]');
-	return page.locator('[data-testid^="match-form-"]').evaluateAll(
-		(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
-	);
+	return page
+		.locator('[data-testid^="match-form-"]')
+		.evaluateAll((els) =>
+			els
+				.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '')
+				.filter(Boolean)
+		);
 }
 
 export async function scoreAllCourts(page: Page, links: string[]): Promise<void> {
 	for (const link of links) {
 		await scoreAllMatchesOnCourt(page, link);
+	}
+}
+
+export async function scoreAllOpenMatches(page: Page): Promise<void> {
+	const links = await getCourtLinks(page);
+	for (const link of links) {
+		await page.goto(link);
+		const formCount = await page.locator('[data-testid^="match-form-"]').count();
+		if (formCount === 0) continue;
+		const matchIds = await extractMatchIds(page);
+		for (const matchId of matchIds) {
+			const saved = await page.locator(`[data-testid="saved-${matchId}"]`).count();
+			if (saved > 0) continue;
+			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
+			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
+			await page.click(`[data-testid="save-score-${matchId}"]`);
+			await page.waitForSelector(`[data-testid="saved-${matchId}"]`, { timeout: 15000 });
+		}
 	}
 }
 
@@ -100,21 +149,84 @@ export async function closeRoundViaFetch(
 		const hash = remoteParam.split('/')[0];
 		if (!hash) return { ok: false, status: 0, reason: 'no hash' };
 		const remoteUrl = '/_app/remote/' + hash + '/closeRoundForm';
-		const res = await fetch(remoteUrl, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: fd.toString()
-		});
-		const text = await res.text();
+		const controller = new AbortController();
+		const timer = setTimeout(() => controller.abort(), 15000);
 		try {
-			const json = JSON.parse(text);
-			// SvelteKit form actions respond 200 even on errors; check body.status
-			const status = json?.status ?? res.status;
-			return { ok: status < 400, status, body: text.slice(0, 200) };
-		} catch {
-			return { ok: res.ok, status: res.status, body: text.slice(0, 200) };
+			const res = await fetch(remoteUrl, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: fd.toString(),
+				signal: controller.signal
+			});
+			const text = await res.text();
+			try {
+				const json = JSON.parse(text);
+				const status = json?.status ?? res.status;
+				return { ok: status < 400, status, body: text.slice(0, 200) };
+			} catch {
+				return { ok: res.ok, status: res.status, body: text.slice(0, 200) };
+			}
+		} catch (err) {
+			return {
+				ok: false,
+				status: 0,
+				reason: err instanceof Error ? err.message : 'fetch failed'
+			};
+		} finally {
+			clearTimeout(timer);
 		}
 	}, tournamentId);
+}
+
+export async function closeRoundOrFetch(
+	page: Page,
+	tournamentId: string,
+	timeout = 30000
+): Promise<void> {
+	await expect
+		.poll(
+			async () => {
+				const closeBtn = page.locator('button:has-text("Close Round & Advance")');
+				if (await closeBtn.isEnabled().catch(() => false)) {
+					await closeBtn.click();
+					return true;
+				}
+				const res = await closeRoundViaFetch(page, tournamentId);
+				return res.ok;
+			},
+			{ timeout }
+		)
+		.toBe(true);
+}
+
+export async function configureTieBreakFinal(
+	page: Page,
+	finalFactor: 'manual' | 'dice'
+): Promise<void> {
+	await page.click('summary:has-text("Tie-break rules")');
+	await page.waitForSelector('.tie-break-list');
+
+	const statLabels = [
+		'Points this round',
+		'Diff this round',
+		'Total points',
+		'Total diff',
+		'Seeding'
+	];
+	for (const label of statLabels) {
+		const cb = page.locator(`.tie-break-item label:has-text("${label}") input[type="checkbox"]`);
+		if (await cb.isChecked().catch(() => false)) {
+			await cb.uncheck({ force: true });
+		}
+	}
+
+	const pattern = finalFactor === 'manual' ? /Manual/i : /Dice/i;
+	await page
+		.locator('label.tie-break-final-option')
+		.filter({ hasText: pattern })
+		.click({ force: true });
+	await page.click('button:has-text("Save tie-break rules")');
+	await page.waitForTimeout(1000);
 }
 
 export async function deleteTournament(page: Page, tournamentName: string): Promise<void> {
