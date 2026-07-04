@@ -2032,12 +2032,22 @@ export function expectedMatchCountForRotations(
 	}, 0);
 }
 
+/** Court size used for match generation — respects actual roster on sub-4p courts. */
+export function assignmentMatchCourtSize(
+	assignment: CourtAssignment,
+	courtSizes: readonly number[]
+): number {
+	const idx = assignment.courtNumber - 1;
+	return assignment.playerIds.length > 4
+		? (courtSizes[idx] ?? assignment.playerIds.length)
+		: assignment.playerIds.length;
+}
+
 export function generateAllMatchesForAssignment(
 	assignment: CourtAssignment,
 	courtSizes: readonly number[]
 ): MatchData[] {
-	const idx = assignment.courtNumber - 1;
-	const size = courtSizes[idx] ?? assignment.playerIds.length;
+	const size = assignmentMatchCourtSize(assignment, courtSizes);
 	switch (size) {
 		case 3:
 			return generate3pMatches(assignment.playerIds);
@@ -2603,14 +2613,26 @@ export function resolveForwardRetirement(opts: {
 	}
 
 	if (opts.formatType === 'random-seed') {
-		return buildRedistributionFromResults(
+		const excluded = new Set(opts.retiredPlayerIds);
+		for (const replacement of opts.replacements) {
+			excluded.delete(replacement.retiredPlayerId);
+		}
+		let result = buildRedistributionFromResults(
 			'random-seed',
 			opts.previousRoundResults,
 			opts.newCourtSizes,
 			opts.roundsCompleted,
 			opts.originalCourtCount,
-			opts.retiredPlayerIds
+			excluded
 		);
+		for (const replacement of opts.replacements) {
+			result = applyReplacementSlot(
+				result,
+				replacement.retiredPlayerId,
+				replacement.replacementPlayerId
+			);
+		}
+		return result;
 	}
 
 	const replacementMap = new Map(

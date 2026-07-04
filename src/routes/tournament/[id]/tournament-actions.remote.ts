@@ -410,6 +410,8 @@ export const closeRoundForm = form(
 			}
 		}
 
+		nextCourtSizes = nextAssignments.map((a) => assignmentCourtSize(a, courtSizes));
+
 		prevalidateAssignments(nextAssignments, nextCourtSizes);
 
 		const scoringConfig = {
@@ -947,6 +949,12 @@ export const retirePlayer = command(
 					frozenCourtNumbers,
 					replacementPlayerId
 				});
+			} else if (replacementPlayerId) {
+				nextAssignments = applyReplacementSlot(
+					currentAssignments,
+					playerId,
+					replacementPlayerId
+				);
 			} else {
 				const retiredIds = new Set([playerId, ...priorRetirees.map((p) => p.id)]);
 				nextAssignments = buildRedistributionFromResults(

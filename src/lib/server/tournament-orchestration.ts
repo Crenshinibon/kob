@@ -1,4 +1,5 @@
 import {
+	assignmentMatchCourtSize,
 	generateAllMatchesForAssignment,
 	generateRound1Assignments,
 	getMaxSets,
@@ -35,10 +36,7 @@ export function assignmentCourtSize(
 	assignment: CourtAssignment,
 	courtSizes: readonly number[]
 ): number {
-	const idx = assignment.courtNumber - 1;
-	return assignment.playerIds.length > 4
-		? (courtSizes[idx] ?? assignment.playerIds.length)
-		: assignment.playerIds.length;
+	return assignmentMatchCourtSize(assignment, courtSizes);
 }
 
 export function buildMatchInsertRows(
