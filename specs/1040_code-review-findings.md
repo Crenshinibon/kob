@@ -42,6 +42,32 @@ requires Neon + Chromium locally.
 | 9   | Done   | Compute-then-write + `buildMatchInsertRows` batch inserts; documented in `specs/120_gotchas.md` |
 | 10  | Done   | Unit tests for findings 1,2,4,7,8 (382 total); E2E in `e2e/code-review-findings.spec.ts` |
 
+### E2E Stabilization Progress (2026-07-04)
+
+Follow-up in PRs #24–#26 and spec [1045](./1045_e2e-flaky-fixes-and-dynamic-closeRound.md).
+
+**Infrastructure fixes (done):**
+
+- Dynamic `closeRoundViaFetch` hash; `closeRoundOrFetch` with Finalize fallback
+- Shared helpers: `extractMatchIds`, `scoreAllCourts`, `configureTieBreakFinal` (evaluate-based)
+- Pause live-query poll during retire/injury/tie-break submit; refresh after injury
+- `await getTournamentData().refresh()` after score saves in `scores.remote.ts`
+
+**E2E status in `e2e/code-review-findings.spec.ts` (8 tests):**
+
+| Test | Status | Notes |
+| ---- | ------ | ----- |
+| Round-1 retirement 17→16 | Pass | Uses `waitForCourtCardCount`; no post-retire court URL navigation |
+| Wrong court token rejected | Pass | |
+| Close round while incomplete rejected | Pass | |
+| 8p mid-round injury → completion | **Fail** | Court page / score-save; see 1045 |
+| Replacement player roster size | **Fail** | R1 close button never appears; likely silent court skip |
+| Standings after mid-tournament retirement | **Fail** | Same close-round / court-link pattern |
+| Manual tie-break flow | Unverified in last partial run | Fix applied (evaluate-based config) |
+| Dice tie-break flow | Unverified in last partial run | Fix applied (evaluate-based config) |
+
+**Blocking issue for remaining E2E:** tournament QR links expose `rotation.token`, but `retirePlayer` regenerates rotation tokens on rebuild. Stale URLs 404 on the court page (`ssr = false`, no match forms). Spec says stable `court.token` URLs (050/060). Server fix: expose `court.token` in `tournament-data.remote.ts` or stop rotating rotation tokens.
+
 ---
 
 ## 1. Round-1 retirement crashes and destroys the round
@@ -503,13 +529,13 @@ The pure logic is excellently covered. Everything above escaped because the glue
 
 ### E2E test additions (in priority order)
 
-- [x] Round-1 retirement, 16→15 and 17→16 (finding 1)
-- [x] 8p tournament + injury → close round → completion (finding 2)
-- [x] Score submission with wrong token rejected (finding 3)
-- [x] Close-round rejected while a court is incomplete (finding 4)
-- [x] Replacement-player flow (`useReplacement`)
-- [x] Tie-break configuration end-to-end: dice and manual rank flows
-- [x] Standings page after mid-tournament court-size change (finding 6)
+- [x] Round-1 retirement, 16→15 and 17→16 (finding 1) — **passing**
+- [ ] 8p tournament + injury → close round → completion (finding 2) — **failing**; see 1045
+- [x] Score submission with wrong token rejected (finding 3) — **passing**
+- [x] Close-round rejected while a court is incomplete (finding 4) — **passing**
+- [ ] Replacement-player flow (`useReplacement`) — **failing**; see 1045
+- [ ] Tie-break configuration end-to-end: dice and manual rank flows — fix applied; re-verify full suite
+- [ ] Standings page after mid-tournament court-size change (finding 6) — **failing**; see 1045
 
 ### Notes
 

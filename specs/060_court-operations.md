@@ -107,3 +107,5 @@ No complex features:
 - No conflict resolution (last save wins)
 - No undo/confirmation for score edits
 - Canceled matches show "Canceled — scores will be averaged" notice (no score entry form)
+
+> **Implementation note (2026-07-04):** Tournament admin QR links currently expose `rotation.token` (see `tournament-data.remote.ts`), which **changes** when `retirePlayer` or `closeRoundForm` rebuilds rotations. The court page load handler supports stable `court.token` fallback, but admin links do not use it yet. This breaks stale QR URLs after retirement and causes E2E failures — tracked in [1045](./1045_e2e-flaky-fixes-and-dynamic-closeRound.md). Target fix: expose `court.token` in tournament QR links.

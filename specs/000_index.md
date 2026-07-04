@@ -48,7 +48,8 @@
 
 - **[1030_player-input-parsing.md](./archive/1030_player-input-parsing.md)**: [IMPLEMENTED] Fix paste from spreadsheet (tab-separated name+points), add WVV CSV file upload, improve parsePlayerLine regex. Unit tests for all parsers.
 
-- **[1040_code-review-findings.md](./1040_code-review-findings.md)**: [OPEN] Full-repo review findings: round-1 retirement crash, sub-8-player close-round crash, score endpoint auth/token binding, server-side round-closure enforcement, snapshot-aware retirement redistribution, standings aggregation fixes, multi-injury markers, finalStanding completeness, compute-then-write ordering, orchestration-layer test gaps.
+- **[1040_code-review-findings.md](./1040_code-review-findings.md)**: [MOSTLY DONE] Full-repo review findings 1–9 implemented (382+ unit tests). E2E in `e2e/code-review-findings.spec.ts`: 3/8 passing; 4 still failing on court-page token/rotation mismatch — see 1045.
+- **[1045_e2e-flaky-fixes-and-dynamic-closeRound.md](./1045_e2e-flaky-fixes-and-dynamic-closeRound.md)**: [IN PROGRESS] E2E stabilization after injury/retirement fixes. Dynamic closeRound, tie-break helpers, live-query pause done. Remaining: stable `court.token` vs `rotation.token` in QR links causes stale URLs after rotation rebuild.
 
 - **[600_incomplete-rosters-index.md](./600_incomplete-rosters-index.md)**: [IN PROGRESS] Index for incomplete roster specs. Supports 8-64 players, recursive preseed, physical/virtual courts.
   - **[610_incomplete-core.md](./610_incomplete-core.md)**: Problem statement, physical vs virtual courts, player count extension (8-64), vertical seeding, leftover configuration.
