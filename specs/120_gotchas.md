@@ -143,6 +143,31 @@ webServer: {
 </form>
 ```
 
+### Stable Court Token vs Rotation Token (E2E + production)
+
+**Problem**: After between-round retirement or round-1 retirement rebuild, E2E tests navigate to court URLs that no longer load match forms. Playwright hangs on `[data-testid^="match-form-"]` or silently skips scoring when `extractMatchIds()` times out and returns `[]`.
+
+**Root cause**: Specs 050/060 require **stable** QR URLs via `court.token`. The tournament page exposes `rotation.token` in `.qr-link` hrefs (`tournament-data.remote.ts`). `retirePlayer` and `closeRoundForm` delete old rotations and insert new ones with **new** rotation tokens. Old rotation URLs 404 in `court/[token]/+page.server.ts` because:
+
+1. Lookup by `courtRotation.token` fails (row deleted).
+2. Fallback lookup by `court.token` fails (URL contains rotation token, not court token).
+
+`reportInjury` does not rebuild rotations — injury-only flows should keep the same rotation token unless tests cache links from before a prior retirement.
+
+**Symptoms**:
+
+- Court page loads with no match forms (`ssr = false`, empty `matches` array).
+- Score helpers skip courts; `canCloseRound` stays false; "Close Round & Advance" never appears.
+- Occasional navigation to `/` during score-save waits (404 / redirect side-effect).
+
+**Fix options**:
+
+1. **Preferred:** Expose `court.token` (stable) in tournament QR links instead of `rotation.token`.
+2. Re-fetch `.qr-link` hrefs after every rotation rebuild; poll until URLs change.
+3. Make `extractMatchIds` throw (not return `[]`) when an active court should have forms.
+
+See [spec 1045](./1045_e2e-flaky-fixes-and-dynamic-closeRound.md).
+
 ## Performance
 
 ### Network Overload in Parallel Tests
