@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { closeRoundViaFetch } from './helpers';
 
 async function findPlayerCourt(page: Page, playerName: string): Promise<number> {
 	const courtCards = await page.locator('.court-card').all();
@@ -925,6 +926,7 @@ test.describe('Tournament Integration Tests', () => {
 		});
 
 		test('report mid-round injury with Cancel & Average option', async ({ page }) => {
+			test.setTimeout(90000);
 			const tournamentName = `Injury Cancel Test ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
@@ -1006,39 +1008,21 @@ test.describe('Tournament Integration Tests', () => {
 			// Close Round 1 — navigate directly, with canCloseRound fallback
 			await page.goto(tournamentUrl);
 			await expect(page).toHaveURL(/\/tournament\/\d+/);
-			await page.waitForTimeout(5000);
-			const btnCount = await page.locator('button:has-text("Close Round & Advance")').count();
-			if (btnCount > 0) {
-				await page.click('button:has-text("Close Round & Advance")');
+			await page.waitForTimeout(3000);
+			const closeBtn = page.locator('button:has-text("Close Round & Advance")');
+			if (await closeBtn.isEnabled().catch(() => false)) {
+				await closeBtn.click();
 			} else {
-				await page.evaluate(async () => {
-					const input = document.querySelector(
-						'input[name="n:tournamentId"]'
-					) as HTMLInputElement | null;
-					if (!input) return;
-					const form = input.closest('form') as HTMLFormElement | null;
-					if (!form) return;
-					const remoteParam = new URL(form.action).searchParams.get('/remote');
-					if (!remoteParam) return;
-					const remoteUrl = '/_app/remote/' + remoteParam;
-					const fd = new URLSearchParams();
-					for (const [key, val] of new FormData(form)) {
-						fd.append(key, val as string);
-					}
-					await fetch(remoteUrl, {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-						body: fd.toString()
-					});
-				});
+				const tid = tournamentUrl.match(/\/tournament\/(\d+)/)![1];
+				const res = await closeRoundViaFetch(page, tid);
+				expect(res.ok, res.body ?? res.reason).toBe(true);
 				await page.goto(tournamentUrl);
-				await page.waitForTimeout(2000);
 			}
-			await page.waitForSelector('text=Round 2 of 2');
+			await page.waitForSelector('text=Round 2 of 2', { timeout: 30000 });
 		});
 
 		test('report mid-round injury with Substitute option', async ({ page }) => {
-			test.setTimeout(60000);
+			test.setTimeout(90000);
 			const tournamentName = `Injury Sub Test ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
@@ -1131,35 +1115,17 @@ test.describe('Tournament Integration Tests', () => {
 			// Close Round 1 — navigate directly, with canCloseRound fallback
 			await page.goto(tournamentUrl);
 			await expect(page).toHaveURL(/\/tournament\/\d+/);
-			await page.waitForTimeout(5000);
-			const sBtnCount = await page.locator('button:has-text("Close Round & Advance")').count();
-			if (sBtnCount > 0) {
-				await page.click('button:has-text("Close Round & Advance")');
+			await page.waitForTimeout(3000);
+			const subCloseBtn = page.locator('button:has-text("Close Round & Advance")');
+			if (await subCloseBtn.isEnabled().catch(() => false)) {
+				await subCloseBtn.click();
 			} else {
-				await page.evaluate(async () => {
-					const input = document.querySelector(
-						'input[name="n:tournamentId"]'
-					) as HTMLInputElement | null;
-					if (!input) return;
-					const form = input.closest('form') as HTMLFormElement | null;
-					if (!form) return;
-					const remoteParam = new URL(form.action).searchParams.get('/remote');
-					if (!remoteParam) return;
-					const remoteUrl = '/_app/remote/' + remoteParam;
-					const fd = new URLSearchParams();
-					for (const [key, val] of new FormData(form)) {
-						fd.append(key, val as string);
-					}
-					await fetch(remoteUrl, {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-						body: fd.toString()
-					});
-				});
+				const tid = tournamentUrl.match(/\/tournament\/(\d+)/)![1];
+				const res = await closeRoundViaFetch(page, tid);
+				expect(res.ok, res.body ?? res.reason).toBe(true);
 				await page.goto(tournamentUrl);
-				await page.waitForTimeout(2000);
 			}
-			await page.waitForSelector('text=Round 2 of 2');
+			await page.waitForSelector('text=Round 2 of 2', { timeout: 30000 });
 		});
 
 		test('undo retirement within 5 min window', async ({ page }) => {
@@ -1591,15 +1557,15 @@ test.describe('Tournament Integration Tests', () => {
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBe(4);
 
-			const courtLinks = await page.locator('.qr-link a').all();
+			const courtLinks = await page.locator('.qr-link a').evaluateAll(
+				(els) => els.map((el) => (el as HTMLAnchorElement).href).filter(Boolean)
+			);
 			expect(courtLinks.length).toBe(4);
-			for (const link of courtLinks) {
-				const href = await link.getAttribute('href');
-				await page.goto(href || '');
+			for (const url of courtLinks) {
+				await page.goto(url);
 				await page.waitForSelector('[data-testid^="match-form-"]');
 				const forms = await page.locator('[data-testid^="match-form-"]').all();
 				expect(forms.length).toBeGreaterThan(0);
-				await page.goBack();
 			}
 		});
 

@@ -513,7 +513,7 @@ export const closeRoundForm = form(
 			.update(tournament)
 			.set({
 				currentRound: nextRoundNumber,
-				courtSizes: JSON.stringify(nextCourtSizes),
+				courtSizes: JSON.stringify(courtSizes),
 				lastActivityAt: new Date()
 			})
 			.where(and(eq(tournament.id, tournamentId), eq(tournament.currentRound, currentRound)))

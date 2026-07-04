@@ -165,38 +165,11 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.goto(tournamentUrl);
 		await page.waitForTimeout(3000);
 		const closeBtn = page.locator('button:has-text("Close Round & Advance")');
-		if (await closeBtn.isVisible().catch(() => false)) {
+		if (await closeBtn.isEnabled().catch(() => false)) {
 			await closeBtn.click();
 		} else {
-			let res = await closeRoundViaFetch(page, tid);
-			let attempts = 0;
-			while (!res.ok && attempts < 8) {
-				// Re-score any incomplete matches on each retry
-				const links = await getCourtLinks(page);
-				for (const link of links) {
-					await page.goto(link);
-					const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
-						(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
-					);
-					for (const mid of matchIds) {
-						const saved = await page.locator(`[data-testid="saved-${mid}"]`).count();
-						if (saved > 0) continue;
-						try {
-							await page.fill(`[data-testid="team-a-score-${mid}"]`, '21');
-							await page.fill(`[data-testid="team-b-score-${mid}"]`, '19');
-							await page.click(`[data-testid="save-score-${mid}"]`);
-							await page.waitForSelector(`[data-testid="saved-${mid}"]`, { timeout: 5000 });
-						} catch {
-							// match might be canceled or already closed
-						}
-					}
-				}
-				await page.goto(tournamentUrl);
-				await page.waitForTimeout(1000);
-				res = await closeRoundViaFetch(page, tid);
-				attempts++;
-			}
-			expect(res.ok).toBe(true);
+			const res = await closeRoundViaFetch(page, tid);
+			expect(res.ok, res.body ?? res.reason).toBe(true);
 		}
 		await page.waitForSelector('text=Round 2 of 2', { timeout: 15000 });
 
@@ -233,15 +206,18 @@ test.describe('Code review findings (spec 1040)', () => {
 		const target = opts.find((o) => /\bP1\b/.test(o));
 		if (!target) throw new Error('P1 not found');
 		await page.selectOption('#retirePlayerId', { label: target.trim() });
-		await page.locator('.retire-section input[type="checkbox"]').check();
+		await page.locator('.retire-form input[type="checkbox"]').check();
 		await page.fill('#replacementName', 'Replacement Alex');
 		await page.click('.retire-form button.btn-danger');
-		await page.waitForTimeout(3000);
+		await expect
+			.poll(async () => {
+				await page.reload();
+				const texts = await page.locator('.court-card .player').allTextContents();
+				return texts.some((t) => /Replacement Alex/i.test(t));
+			})
+			.toBe(true);
 
-		await page.reload();
 		const playerTexts = await page.locator('.court-card .player').allTextContents();
-		const hasReplacement = playerTexts.some((t) => /Replacement Alex/i.test(t));
-		expect(hasReplacement).toBe(true);
 		expect(playerTexts.filter((t) => !/Retired/i.test(t)).length).toBeGreaterThanOrEqual(15);
 	});
 
@@ -304,7 +280,7 @@ test.describe('Code review findings (spec 1040)', () => {
 			const cb = page.locator(`.tie-break-item label:has-text("${label}") input[type="checkbox"]`);
 			if (await cb.isChecked().catch(() => false)) await cb.uncheck().catch(() => {});
 		}
-		await page.locator('.tie-break-finals input[type="radio"][value="manual"]').check();
+		await page.locator('label.tie-break-final-option').filter({ hasText: /Manual/i }).click();
 		await page.click('button:has-text("Save tie-break rules")');
 		await page.waitForTimeout(1500);
 
@@ -346,7 +322,7 @@ test.describe('Code review findings (spec 1040)', () => {
 			const cb = page.locator(`.tie-break-item label:has-text("${label}") input[type="checkbox"]`);
 			if (await cb.isChecked().catch(() => false)) await cb.uncheck().catch(() => {});
 		}
-		await page.locator('.tie-break-finals input[type="radio"][value="dice"]').check();
+		await page.locator('label.tie-break-final-option').filter({ hasText: /Dice/i }).click();
 		await page.click('button:has-text("Save tie-break rules")');
 		await page.waitForTimeout(1500);
 
