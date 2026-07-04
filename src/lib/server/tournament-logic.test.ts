@@ -57,6 +57,7 @@ import {
 	computeFinalStandingMap,
 	MIN_TOURNAMENT_PLAYERS,
 	validateAssignmentsForMatchGeneration,
+	assignmentMatchCourtSize,
 	getPreseedBracketRange,
 	calculateRetiredStanding,
 	getFinalRoundCourtConfig,
@@ -3906,6 +3907,39 @@ describe('resolveForwardRetirement (injury forward on closeRound)', () => {
 		expect(result[0].playerIds).toEqual(r3Template[0].playerIds);
 		expect(result[2].playerIds).toEqual(r3Template[2].playerIds);
 	});
+
+	it('E5 RS: replacement on injury forward keeps roster on 4+4 courts', () => {
+		const r1: CourtResult[] = [
+			mockCourtResult(1, [
+				{ playerId: 1, rank: 1, points: 20, diff: 0, matchCount: 3 },
+				{ playerId: 2, rank: 2, points: 12, diff: 0, matchCount: 3 },
+				{ playerId: 3, rank: 3, points: -4, diff: 0, matchCount: 3 },
+				{ playerId: 4, rank: 4, points: -28, diff: 0, matchCount: 3 }
+			]),
+			mockCourtResult(2, [
+				{ playerId: 5, rank: 1, points: 16, diff: 0, matchCount: 3 },
+				{ playerId: 6, rank: 2, points: 8, diff: 0, matchCount: 3 },
+				{ playerId: 7, rank: 3, points: -2, diff: 0, matchCount: 3 },
+				{ playerId: 8, rank: 4, points: -22, diff: 0, matchCount: 3 }
+			])
+		];
+		const result = resolveForwardRetirement({
+			formatType: 'random-seed',
+			policy: 'cascade',
+			templateAssignments: [],
+			previousRoundResults: r1,
+			retiredPlayerIds: new Set([1]),
+			replacements: [{ retiredPlayerId: 1, replacementPlayerId: 99 }],
+			newCourtSizes: [4, 4],
+			originalCourtCount: 2,
+			roundsCompleted: 0,
+			frozenCourtNumbers: frozenNone
+		});
+		expect(result.flatMap((a) => a.playerIds)).toContain(99);
+		expect(result.flatMap((a) => a.playerIds)).not.toContain(1);
+		expect(result.reduce((sum, a) => sum + a.playerIds.length, 0)).toBe(8);
+		expect(() => validateAssignmentsForMatchGeneration(result, [4, 4])).not.toThrow();
+	});
 });
 
 // ============================================================================
@@ -5292,6 +5326,18 @@ describe('generateRound1Assignments (code review finding 1)', () => {
 			expect(() => validateAssignmentsForMatchGeneration(assignments, courtSizes)).not.toThrow();
 		});
 	}
+});
+
+describe('assignmentMatchCourtSize (injury forward validation)', () => {
+	it('generates 3p matches when assignment has 3 players on a 4p court slot', () => {
+		const assignments = [
+			{ courtNumber: 1, playerIds: [2, 5, 3, 6] },
+			{ courtNumber: 2, playerIds: [7, 4, 8] }
+		];
+		const courtSizes = [4, 4];
+		expect(() => validateAssignmentsForMatchGeneration(assignments, courtSizes)).not.toThrow();
+		expect(assignmentMatchCourtSize(assignments[1], courtSizes)).toBe(3);
+	});
 });
 
 describe('isRoundReadyToClose (code review finding 4)', () => {

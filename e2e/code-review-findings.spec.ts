@@ -255,6 +255,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.goto(`/tournament/${tid}`);
 		await page.click('summary:has-text("Tie-break rules")');
 		await page.waitForSelector('.tie-break-list');
+		await page.waitForTimeout(500);
 
 		const statLabels = [
 			'Points this round',
@@ -265,9 +266,9 @@ test.describe('Code review findings (spec 1040)', () => {
 		];
 		for (const label of statLabels) {
 			const cb = page.locator(`.tie-break-item label:has-text("${label}") input[type="checkbox"]`);
-			if (await cb.isChecked()) await cb.uncheck();
+			if (await cb.isChecked().catch(() => false)) await cb.uncheck().catch(() => {});
 		}
-		await page.locator('input[type="radio"][value="manual"]').check();
+		await page.locator('.tie-break-finals input[type="radio"][value="manual"]').check();
 		await page.click('button:has-text("Save tie-break rules")');
 		await page.waitForTimeout(1500);
 
@@ -296,6 +297,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.goto(`/tournament/${tid}`);
 		await page.click('summary:has-text("Tie-break rules")');
 		await page.waitForSelector('.tie-break-list');
+		await page.waitForTimeout(500);
 
 		const statLabels = [
 			'Points this round',
@@ -306,9 +308,9 @@ test.describe('Code review findings (spec 1040)', () => {
 		];
 		for (const label of statLabels) {
 			const cb = page.locator(`.tie-break-item label:has-text("${label}") input[type="checkbox"]`);
-			if (await cb.isChecked()) await cb.uncheck();
+			if (await cb.isChecked().catch(() => false)) await cb.uncheck().catch(() => {});
 		}
-		await page.locator('input[type="radio"][value="dice"]').check();
+		await page.locator('.tie-break-finals input[type="radio"][value="dice"]').check();
 		await page.click('button:has-text("Save tie-break rules")');
 		await page.waitForTimeout(1500);
 
