@@ -333,7 +333,7 @@ export const closeRoundForm = form(
 				.returning({ id: tournament.id });
 			if (completedUpdate.length === 0) error(409, m.err_round_already_closed());
 
-			getTournamentData({ tournamentId }).refresh();
+			await getTournamentData({ tournamentId }).refresh();
 
 			redirectLocalized(303, `/tournament/${tournamentId}/standings`, getRequestEvent());
 		}
@@ -550,7 +550,7 @@ export const setCourtLabel = command(
 			.set({ label: label.trim() || null })
 			.where(eq(court.id, courtId));
 
-		getTournamentData({ tournamentId: tourney.id }).refresh();
+		await getTournamentData({ tournamentId: tourney.id }).refresh();
 
 		return { success: true };
 	}
@@ -752,7 +752,7 @@ export const updateManualRankOrder = command(
 			.set({ manualRankOrder: submittedOrder })
 			.where(eq(courtRotation.id, rotationId));
 
-		getTournamentData({ tournamentId: tourney.id }).refresh();
+		await getTournamentData({ tournamentId: tourney.id }).refresh();
 
 		return { success: true };
 	}
@@ -908,7 +908,7 @@ export const retirePlayer = command(
 				})
 				.where(eq(player.id, playerId));
 
-			getTournamentData({ tournamentId }).refresh();
+			await getTournamentData({ tournamentId }).refresh();
 			return { success: true };
 		}
 

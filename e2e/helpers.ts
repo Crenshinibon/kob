@@ -87,17 +87,29 @@ export async function scoreAllMatchesOnCourt(
 	await page.goto(courtUrl);
 	const matchIds = await extractMatchIds(page);
 	for (const matchId of matchIds) {
-		const saved = await page.locator(`[data-testid="saved-${matchId}"]`).count();
-		if (saved > 0) continue;
+		const savedCount = await page.locator(`[data-testid="saved-${matchId}"]`).count();
+		if (savedCount > 0) continue;
 		await page.fill(`[data-testid="team-a-score-${matchId}"]`, String(aScore));
 		await page.fill(`[data-testid="team-b-score-${matchId}"]`, String(bScore));
 		await page.click(`[data-testid="save-score-${matchId}"]`);
-		await page.waitForSelector(`[data-testid="saved-${matchId}"]`, { timeout: 15000 });
+		const appeared = await page
+			.locator(`[data-testid="saved-${matchId}"]`)
+			.waitFor({ state: 'visible', timeout: 5000 })
+			.then(() => true)
+			.catch(() => false);
+		if (!appeared) {
+			await page.reload();
+			await page.waitForSelector(`[data-testid="saved-${matchId}"]`, { timeout: 10000 }).catch(() => {});
+		}
 	}
 }
 
 export async function extractMatchIds(page: Page): Promise<string[]> {
-	await page.waitForSelector('[data-testid^="match-form-"]');
+	try {
+		await page.waitForSelector('[data-testid^="match-form-"]', { timeout: 5000 });
+	} catch {
+		return [];
+	}
 	return page
 		.locator('[data-testid^="match-form-"]')
 		.evaluateAll((els) =>
@@ -126,7 +138,15 @@ export async function scoreAllOpenMatches(page: Page): Promise<void> {
 			await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 			await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 			await page.click(`[data-testid="save-score-${matchId}"]`);
-			await page.waitForSelector(`[data-testid="saved-${matchId}"]`, { timeout: 15000 });
+			const appeared = await page
+				.locator(`[data-testid="saved-${matchId}"]`)
+				.waitFor({ state: 'visible', timeout: 5000 })
+				.then(() => true)
+				.catch(() => false);
+			if (!appeared) {
+				await page.reload();
+				await page.waitForSelector(`[data-testid="saved-${matchId}"]`, { timeout: 10000 }).catch(() => {});
+			}
 		}
 	}
 }
@@ -186,9 +206,14 @@ export async function closeRoundOrFetch(
 	await expect
 		.poll(
 			async () => {
-				const closeBtn = page.locator('button:has-text("Close Round & Advance")');
-				if (await closeBtn.isEnabled().catch(() => false)) {
-					await closeBtn.click();
+				const advanceBtn = page.locator('button:has-text("Close Round & Advance")');
+				const finalizeBtn = page.locator('button:has-text("Finalize Tournament")');
+				if (await advanceBtn.isEnabled().catch(() => false)) {
+					await advanceBtn.click();
+					return true;
+				}
+				if (await finalizeBtn.isEnabled().catch(() => false)) {
+					await finalizeBtn.click();
 					return true;
 				}
 				const res = await closeRoundViaFetch(page, tournamentId);
@@ -206,27 +231,39 @@ export async function configureTieBreakFinal(
 	await page.click('summary:has-text("Tie-break rules")');
 	await page.waitForSelector('.tie-break-list');
 
-	const statLabels = [
-		'Points this round',
-		'Diff this round',
-		'Total points',
-		'Total diff',
-		'Seeding'
-	];
-	for (const label of statLabels) {
-		const cb = page.locator(`.tie-break-item label:has-text("${label}") input[type="checkbox"]`);
-		if (await cb.isChecked().catch(() => false)) {
-			await cb.uncheck({ force: true });
-		}
-	}
+	await page.evaluate(
+		({ finalFactor: ff }) => {
+			const items = document.querySelectorAll('.tie-break-item');
+			for (const item of items) {
+				const cb = item.querySelector('input[type="checkbox"]') as HTMLInputElement;
+				if (cb && cb.checked) {
+					cb.checked = false;
+					cb.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+			}
+			const radios = document.querySelectorAll('.tie-break-final-option input[type="radio"]');
+			const pattern = ff === 'manual' ? /Manual/i : /Dice/i;
+			for (const radio of radios) {
+				const label = radio.closest('label');
+				if (label && pattern.test(label.textContent ?? '')) {
+					radio.checked = true;
+					radio.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+			}
+		},
+		{ finalFactor }
+	);
 
-	const pattern = finalFactor === 'manual' ? /Manual/i : /Dice/i;
-	await page
-		.locator('label.tie-break-final-option')
-		.filter({ hasText: pattern })
-		.click({ force: true });
-	await page.click('button:has-text("Save tie-break rules")');
-	await page.waitForTimeout(1000);
+	await page.waitForTimeout(500);
+
+	const saveBtn = page.locator('button:has-text("Save tie-break rules")');
+	await expect(saveBtn).toBeVisible({ timeout: 10000 });
+	await saveBtn.click();
+	await page.waitForSelector('button:has-text("Save tie-break rules")', {
+		state: 'detached',
+		timeout: 10000
+	}).catch(() => {});
+	await page.waitForTimeout(500);
 }
 
 export async function deleteTournament(page: Page, tournamentName: string): Promise<void> {

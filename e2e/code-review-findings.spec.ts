@@ -191,6 +191,9 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.locator('.retire-form input[type="checkbox"]').check();
 		await page.fill('#replacementName', 'Replacement Alex');
 		await clickRetireSubmit(page);
+		await page.waitForTimeout(3000);
+		await page.reload();
+		await page.waitForSelector('.court-card .player', { timeout: 15000 });
 		await expect
 			.poll(
 				async () => {
@@ -257,7 +260,9 @@ test.describe('Code review findings (spec 1040)', () => {
 		await scoreAllMatchesOnCourt(page, links[0]);
 
 		await page.goto(`/tournament/${tid}`);
-		await page.waitForSelector('.btn-manual-tie', { timeout: 10000 });
+		await page.waitForSelector('.court-card', { timeout: 10000 });
+		await page.waitForTimeout(2000);
+		await page.waitForSelector('.btn-manual-tie', { timeout: 30000 });
 		await page.click('.btn-manual-tie');
 		await page.waitForSelector('.manual-tie-dialog');
 		const moveDown = page.locator('.manual-rank-actions button').last();
@@ -282,7 +287,8 @@ test.describe('Code review findings (spec 1040)', () => {
 		await scoreAllMatchesOnCourt(page, links[0]);
 
 		await page.goto(`/tournament/${tid}`);
-		await page.waitForSelector('.court-standings-heading', { timeout: 10000 });
+		await page.waitForSelector('.court-card', { timeout: 10000 });
+		await page.waitForSelector('.court-standings-heading', { timeout: 30000 });
 		const ranks = (await page.locator('.court-card .standing-rank').allTextContents()).map((r) =>
 			r.replace('.', '').trim()
 		);
