@@ -3553,7 +3553,9 @@ describe('retirement integration (17p random seed)', () => {
 		const prevResults: CourtResult[] = s.completedRounds[s.completedRounds.length - 1];
 		const court2 = currentAssignments.find((a) => a.courtNumber === 2)!;
 		const retiredId = court2.playerIds.find(
-			(pid) => prevResults.find((cr) => cr.courtNumber === 1)!.standings.find((st) => st.playerId === pid)?.rank === 4
+			(pid) =>
+				prevResults.find((cr) => cr.courtNumber === 1)!.standings.find((st) => st.playerId === pid)
+					?.rank === 4
 		)!;
 		expect(retiredId).toBeDefined();
 
@@ -4150,7 +4152,10 @@ describe('retirement edge cases', () => {
 				playerCount: 17,
 				numRounds: 3
 			});
-			s = addPlayers(s, Array.from({ length: 17 }, (_, i) => mockPlayer(i + 1)));
+			s = addPlayers(
+				s,
+				Array.from({ length: 17 }, (_, i) => mockPlayer(i + 1))
+			);
 			s = startRound(s);
 			s = advanceToRound(s, 3);
 			vi.restoreAllMocks();
@@ -4182,7 +4187,10 @@ describe('retirement edge cases', () => {
 				playerCount: 23,
 				numRounds: 4
 			});
-			s = addPlayers(s, Array.from({ length: 23 }, (_, i) => mockPlayer(i + 1)));
+			s = addPlayers(
+				s,
+				Array.from({ length: 23 }, (_, i) => mockPlayer(i + 1))
+			);
 			s = startRound(s);
 			s = advanceToRound(s, 3);
 
@@ -4247,13 +4255,7 @@ describe('retirement edge cases', () => {
 		it('A3 PS: cascade on 3p bottom court matches shrink', () => {
 			const assignments = r3Assignments16p();
 			const sizes = recalculateCourtConfigAfterRetirement(15).courtSizes;
-			const cascade = applyPreseedCascade(
-				assignments,
-				r2Results16p(),
-				13,
-				sizes,
-				frozenNone
-			);
+			const cascade = applyPreseedCascade(assignments, r2Results16p(), 13, sizes, frozenNone);
 			const shrink = applyPreseedShrink(assignments, 13, sizes, frozenNone);
 			expect(cascade[3].playerIds).toEqual(shrink[3].playerIds);
 			expect(cascade[0].playerIds).toEqual(shrink[0].playerIds);
@@ -4304,7 +4306,10 @@ describe('retirement edge cases', () => {
 				playerCount: 17,
 				numRounds: 4
 			});
-			s = addPlayers(s, Array.from({ length: 17 }, (_, i) => mockPlayer(i + 1)));
+			s = addPlayers(
+				s,
+				Array.from({ length: 17 }, (_, i) => mockPlayer(i + 1))
+			);
 			s = startRound(s);
 			s = advanceToRound(s, 3);
 			vi.restoreAllMocks();
@@ -4350,7 +4355,10 @@ describe('retirement edge cases', () => {
 				playerCount: 17,
 				numRounds: 4
 			});
-			s = addPlayers(s, Array.from({ length: 17 }, (_, i) => mockPlayer(i + 1)));
+			s = addPlayers(
+				s,
+				Array.from({ length: 17 }, (_, i) => mockPlayer(i + 1))
+			);
 			s = startRound(s);
 			s = advanceToRound(s, 4);
 			vi.restoreAllMocks();
@@ -4863,7 +4871,10 @@ describe('tie-break ranking', () => {
 			{ id: 'initial_order', enabled: false }
 		]);
 		const roundStats = new Map([
-			[2, { playerId: 2, rawPoints: 60, rawDiff: 6, gamesPlayed: 3, roundPoints: 60, roundDiff: 6 }],
+			[
+				2,
+				{ playerId: 2, rawPoints: 60, rawDiff: 6, gamesPlayed: 3, roundPoints: 60, roundDiff: 6 }
+			],
 			[3, { playerId: 3, rawPoints: 63, rawDiff: 3, gamesPlayed: 3, roundPoints: 63, roundDiff: 3 }]
 		]);
 		const cmpDiffFirst = comparePlayersForTieBreak(2, 3, diffFirst, { roundStats });
@@ -5059,7 +5070,10 @@ describe('tie-break ranking', () => {
 
 	it('explainCourtStandings marks tied and deciding factors', () => {
 		const roundStats = new Map([
-			[1, { playerId: 1, rawPoints: 63, rawDiff: 3, gamesPlayed: 3, roundPoints: 63, roundDiff: 3 }],
+			[
+				1,
+				{ playerId: 1, rawPoints: 63, rawDiff: 3, gamesPlayed: 3, roundPoints: 63, roundDiff: 3 }
+			],
 			[2, { playerId: 2, rawPoints: 60, rawDiff: 0, gamesPlayed: 3, roundPoints: 60, roundDiff: 0 }]
 		]);
 		const cfg = configWith([
@@ -5088,10 +5102,22 @@ describe('tie-break ranking', () => {
 
 	it('explainCourtStandings assigns shared dice explanation to multi-player tie groups', () => {
 		const roundStats = new Map([
-			[1, { playerId: 1, rawPoints: 61, rawDiff: 2, gamesPlayed: 3, roundPoints: 61, roundDiff: 2 }],
-			[2, { playerId: 2, rawPoints: 61, rawDiff: 2, gamesPlayed: 3, roundPoints: 61, roundDiff: 2 }],
-			[3, { playerId: 3, rawPoints: 61, rawDiff: 2, gamesPlayed: 3, roundPoints: 61, roundDiff: 2 }],
-			[4, { playerId: 4, rawPoints: 57, rawDiff: -6, gamesPlayed: 3, roundPoints: 57, roundDiff: -6 }]
+			[
+				1,
+				{ playerId: 1, rawPoints: 61, rawDiff: 2, gamesPlayed: 3, roundPoints: 61, roundDiff: 2 }
+			],
+			[
+				2,
+				{ playerId: 2, rawPoints: 61, rawDiff: 2, gamesPlayed: 3, roundPoints: 61, roundDiff: 2 }
+			],
+			[
+				3,
+				{ playerId: 3, rawPoints: 61, rawDiff: 2, gamesPlayed: 3, roundPoints: 61, roundDiff: 2 }
+			],
+			[
+				4,
+				{ playerId: 4, rawPoints: 57, rawDiff: -6, gamesPlayed: 3, roundPoints: 57, roundDiff: -6 }
+			]
 		]);
 		const cfg = configWith([
 			{ id: 'round_points', enabled: true },
@@ -5127,7 +5153,10 @@ describe('tie-break ranking', () => {
 
 	it('explainCourtStandings uses won/lost outcomes for two-player dice ties', () => {
 		const roundStats = new Map([
-			[1, { playerId: 1, rawPoints: 53, rawDiff: 6, gamesPlayed: 3, roundPoints: 53, roundDiff: 6 }],
+			[
+				1,
+				{ playerId: 1, rawPoints: 53, rawDiff: 6, gamesPlayed: 3, roundPoints: 53, roundDiff: 6 }
+			],
 			[2, { playerId: 2, rawPoints: 53, rawDiff: 6, gamesPlayed: 3, roundPoints: 53, roundDiff: 6 }]
 		]);
 		const cfg = configWith([
@@ -5222,9 +5251,18 @@ describe('tie-break ranking', () => {
 
 	it('getManualTieGroups finds players tied on automatic factors', () => {
 		const roundStats = new Map([
-			[1, { playerId: 1, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }],
-			[2, { playerId: 2, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }],
-			[3, { playerId: 3, rawPoints: 40, rawDiff: -2, gamesPlayed: 2, roundPoints: 40, roundDiff: -2 }]
+			[
+				1,
+				{ playerId: 1, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }
+			],
+			[
+				2,
+				{ playerId: 2, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }
+			],
+			[
+				3,
+				{ playerId: 3, rawPoints: 40, rawDiff: -2, gamesPlayed: 2, roundPoints: 40, roundDiff: -2 }
+			]
 		]);
 		const cfg = configWith([
 			{ id: 'round_points', enabled: true },
@@ -5243,9 +5281,18 @@ describe('tie-break ranking', () => {
 
 	it('isValidManualRankOrder rejects cross-group reordering', () => {
 		const roundStats = new Map([
-			[1, { playerId: 1, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }],
-			[2, { playerId: 2, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }],
-			[3, { playerId: 3, rawPoints: 40, rawDiff: -2, gamesPlayed: 2, roundPoints: 40, roundDiff: -2 }]
+			[
+				1,
+				{ playerId: 1, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }
+			],
+			[
+				2,
+				{ playerId: 2, rawPoints: 42, rawDiff: 0, gamesPlayed: 2, roundPoints: 42, roundDiff: 0 }
+			],
+			[
+				3,
+				{ playerId: 3, rawPoints: 40, rawDiff: -2, gamesPlayed: 2, roundPoints: 40, roundDiff: -2 }
+			]
 		]);
 		const cfg = configWith([
 			{ id: 'round_points', enabled: true },
@@ -5393,6 +5440,64 @@ describe('isRoundReadyToClose (code review finding 4)', () => {
 			}
 		];
 		expect(isRoundReadyToClose(rotations, matches, [4])).toBe(true);
+	});
+
+	it('returns true when canceled unscored matches complete an injured court', () => {
+		const rotations = [
+			{ id: 1, courtNumber: 1, courtSize: 4 },
+			{ id: 2, courtNumber: 2, courtSize: 4 }
+		];
+		const matches = [
+			{
+				courtRotationId: 1,
+				matchNumber: 1,
+				setNumber: 1,
+				teamAScore: 21,
+				teamBScore: 15,
+				isCanceled: false
+			},
+			{
+				courtRotationId: 1,
+				matchNumber: 2,
+				setNumber: 1,
+				teamAScore: null,
+				teamBScore: null,
+				isCanceled: true
+			},
+			{
+				courtRotationId: 1,
+				matchNumber: 3,
+				setNumber: 1,
+				teamAScore: null,
+				teamBScore: null,
+				isCanceled: true
+			},
+			{
+				courtRotationId: 2,
+				matchNumber: 1,
+				setNumber: 1,
+				teamAScore: 21,
+				teamBScore: 18,
+				isCanceled: false
+			},
+			{
+				courtRotationId: 2,
+				matchNumber: 2,
+				setNumber: 1,
+				teamAScore: 21,
+				teamBScore: 10,
+				isCanceled: false
+			},
+			{
+				courtRotationId: 2,
+				matchNumber: 3,
+				setNumber: 1,
+				teamAScore: 21,
+				teamBScore: 12,
+				isCanceled: false
+			}
+		];
+		expect(isRoundReadyToClose(rotations, matches, [4, 3])).toBe(true);
 	});
 });
 
