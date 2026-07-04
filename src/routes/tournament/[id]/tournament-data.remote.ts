@@ -8,6 +8,7 @@ import * as v from 'valibot';
 import * as m from '$lib/paraglide/messages';
 import {
 	calculateCourtSizes,
+	recalculateCourtConfigAfterRetirement,
 	matchCountForCourtSize,
 	expectedMatchCountForRotations,
 	isMatchComplete,
@@ -104,7 +105,7 @@ async function fetchTournamentData(
 	if (!tourney) error(404, m.tournament_not_found());
 
 	const currentRound = tourney.currentRound || 0;
-	const courtSizes: number[] = parseCourtSizes(tourney);
+	let courtSizes: number[] = parseCourtSizes(tourney);
 	const totalRounds = tourney.numRounds;
 	const maxViewableRound =
 		tourney.status === 'completed' ? totalRounds : Math.max(currentRound, 1);
@@ -134,6 +135,10 @@ async function fetchTournamentData(
 			injuredAt: p.injuredAt
 		}));
 	const activePlayerCount = dbPlayers.filter((p) => !p.retiredAt).length;
+
+	if (activePlayerCount !== tourney.playerCount) {
+		courtSizes = recalculateCourtConfigAfterRetirement(activePlayerCount).courtSizes;
+	}
 
 	const displayRound = viewRound;
 	const allRotations = await db

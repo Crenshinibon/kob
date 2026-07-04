@@ -614,26 +614,29 @@
 			{/if}
 
 			<section class="actions">
-				{#if isViewingCurrentRound}
-					{#if canCloseRound}
-						<form
-							{...closeRoundForm.enhance(async ({ submit }) => {
-								closingRound = true;
-								try {
-									await submit();
-								} finally {
-									closingRound = false;
-								}
-							})}
-						>
-							<input {...closeRoundForm.fields.tournamentId.as('hidden', tournament.id)} />
+				{#if isViewingCurrentRound && isActive}
+					<form
+						{...closeRoundForm.enhance(async ({ submit }) => {
+							if (!canCloseRound) return;
+							closingRound = true;
+							try {
+								await submit();
+							} finally {
+								closingRound = false;
+							}
+						})}
+					>
+						<input {...closeRoundForm.fields.tournamentId.as('hidden', tournament.id)} />
+						{#if canCloseRound}
 							<button type="submit" class="btn-primary" disabled={closingRound}>
 								{isFinalRound ? m.finalize_tournament() : m.close_round()}
 							</button>
-						</form>
-					{:else if isActive}
-						<button disabled class="btn-primary btn-disabled">{m.waiting_scores()}</button>
-					{/if}
+						{:else}
+							<button type="button" disabled class="btn-primary btn-disabled"
+								>{m.waiting_scores()}</button
+							>
+						{/if}
+					</form>
 				{/if}
 
 				{#if tournament.status !== 'completed'}
