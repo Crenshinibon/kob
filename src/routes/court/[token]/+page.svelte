@@ -106,8 +106,21 @@
 	// Track which matches are being saved
 	let savingMatches = $state<Set<number>>(new Set());
 	let editingMatches = $state<Set<number>>(new Set());
-	let savedSetScores = new SvelteMap<number, { teamAScore: number; teamBScore: number }>();
+	let savedScores = new SvelteMap<number, { teamAScore: number; teamBScore: number }>();
 	let formErrors = new SvelteMap<number, string[]>();
+
+	function getSavedScore(match: MatchRow): { teamAScore: number; teamBScore: number } | null {
+		const saved = savedScores.get(match.id);
+		if (saved) return saved;
+		if (match.teamAScore !== null && match.teamBScore !== null) {
+			return { teamAScore: match.teamAScore, teamBScore: match.teamBScore };
+		}
+		return null;
+	}
+
+	function isMatchCompleted(matchId: number, serverScore: number | null): boolean {
+		return serverScore !== null || savedScores.has(matchId);
+	}
 	// Dynamic score schema based on court's minimum points
 	const effectiveScoring = $derived(
 		getEffectiveScoring(
@@ -124,9 +137,13 @@
 	const dynamicScoreSchema = $derived(
 		createScoreSchema(data.court.minPoints ?? 21, effectiveScoring.winBy)
 	);
-	// Track completed matches locally for smooth transitions
+	// Track completed matches locally for smooth transitions after save
 	let completedMatches = $derived<Set<number>>(
-		new Set(data.matches.filter((m: MatchRow) => m.teamAScore !== null).map((m: MatchRow) => m.id))
+		new Set(
+			data.matches
+				.filter((m: MatchRow) => isMatchCompleted(m.id, m.teamAScore))
+				.map((m: MatchRow) => m.id)
+		)
 	);
 	// Group matches by matchNumber for best-of-3 support
 	const matchGroups = $derived.by(() => {
@@ -286,10 +303,10 @@
 		const set2 = sets.find((s) => s.setNumber === 2);
 		if (!set1 || !set2) return false;
 
-		const s1A = set1.teamAScore ?? savedSetScores.get(set1.id)?.teamAScore;
-		const s1B = set1.teamBScore ?? savedSetScores.get(set1.id)?.teamBScore;
-		const s2A = set2.teamAScore ?? savedSetScores.get(set2.id)?.teamAScore;
-		const s2B = set2.teamBScore ?? savedSetScores.get(set2.id)?.teamBScore;
+		const s1A = set1.teamAScore ?? savedScores.get(set1.id)?.teamAScore;
+		const s1B = set1.teamBScore ?? savedScores.get(set1.id)?.teamBScore;
+		const s2A = set2.teamAScore ?? savedScores.get(set2.id)?.teamAScore;
+		const s2B = set2.teamBScore ?? savedScores.get(set2.id)?.teamBScore;
 
 		if (s1A == null || s1B == null || s2A == null || s2B == null) return false;
 
@@ -326,8 +343,7 @@
 	async function handleScoreSubmit(
 		formInstance: ScoreSubmitForm,
 		matchId: number,
-		isEditing: boolean,
-		isSet?: boolean
+		isEditing: boolean
 	) {
 		savingMatches = new Set([...savingMatches, matchId]);
 		formErrors.delete(matchId);
@@ -344,16 +360,13 @@
 
 		try {
 			const result = await formInstance.submit();
-      console.log(result, isSet, isEditing)
 
 			if (result) {
-				if (isSet) {
-					const formData = new FormData(formInstance.element);
-					savedSetScores.set(matchId, {
-						teamAScore: parseInt(formData.get('teamAScore') as string),
-						teamBScore: parseInt(formData.get('teamBScore') as string)
-					});
-				}
+				const formData = new FormData(formInstance.element);
+				savedScores.set(matchId, {
+					teamAScore: parseInt(formData.get('teamAScore') as string),
+					teamBScore: parseInt(formData.get('teamBScore') as string)
+				});
 				if (isEditing) {
 					editingMatches = new Set([...editingMatches].filter((id) => id !== matchId));
 				}
@@ -397,7 +410,7 @@
 	<form
 		data-testid="{formTestId}-form-{matchId}"
 		{...formObj.enhance(async (fi: ScoreSubmitForm) => {
-			await handleScoreSubmit(fi, matchId, editing, setNum !== undefined);
+			await handleScoreSubmit(fi, matchId, editing);
 		})}
 	>
 		<input type="hidden" name="token" value={page.params.token} />
@@ -602,11 +615,11 @@
 												<div class="completed">
 													<p>
 														{getTeamDisplay(setMatch, 'a')}:
-														<strong>{setMatch.teamAScore}</strong>
+														<strong>{getSavedScore(setMatch)?.teamAScore}</strong>
 													</p>
 													<p>
 														{getTeamDisplay(setMatch, 'b')}:
-														<strong>{setMatch.teamBScore}</strong>
+														<strong>{getSavedScore(setMatch)?.teamBScore}</strong>
 													</p>
 													<span class="saved" data-testid="saved-{setMatch.id}"
 														>{msg.court_saved()}</span
@@ -674,11 +687,11 @@
 											<div class="completed" transition:slide>
 												<p>
 													{getTeamDisplay(match, 'a')}:
-													<strong>{match.teamAScore}</strong>
+													<strong>{getSavedScore(match)?.teamAScore}</strong>
 												</p>
 												<p>
 													{getTeamDisplay(match, 'b')}:
-													<strong>{match.teamBScore}</strong>
+													<strong>{getSavedScore(match)?.teamBScore}</strong>
 												</p>
 												<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span
 												>
@@ -739,11 +752,11 @@
 								<div class="completed" transition:slide>
 									<p>
 										{getTeamDisplay(match, 'a')}:
-										<strong>{match.teamAScore}</strong>
+										<strong>{getSavedScore(match)?.teamAScore}</strong>
 									</p>
 									<p>
 										{getTeamDisplay(match, 'b')}:
-										<strong>{match.teamBScore}</strong>
+										<strong>{getSavedScore(match)?.teamBScore}</strong>
 									</p>
 									<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span>
 									{#if data.isAuthenticated && data.isEditable}

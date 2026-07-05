@@ -210,7 +210,7 @@
 	"err_undo_window_expired": "Fenêtre d'annulation expirée (5 minutes)",
 	"err_undo_retire_scores_entered": "Impossible d'annuler le retrait : des scores ont été saisis",
 	"err_undo_injury_scores_entered": "Impossible d'annuler la blessure : des scores ont été saisis dans ce groupe",
-	"err_retire_min_players": "Retrait impossible : au moins 8 joueurs actifs doivent rester",
+	"err_retire_min_players": "Retrait impossible : au moins 2 joueurs actifs doivent rester",
 	"err_round_incomplete": "Impossible de clôturer la manche : tous les matchs ne sont pas terminés",
 	"err_round_already_closed": "Cette manche a déjà été clôturée",
 	"err_min_players": "Au moins {count} joueurs requis. Vous avez saisi {entered}.",
@@ -571,4 +571,4 @@
 	"docs_diagram_5p6p_normalization": "Points du tour (5p/6p) :\nround_points = sum(matchPoints) / gamesPlayed\n\nPoints totaux (5p/6p) :\nChaque tour contribue roundRawPoints / 3\n(3 = matchs standard par tour, quel que soit le nombre de matchs réellement joués)\n\nExemple d'un terrain à 5 joueurs :\nJoueur A : 3 matchs, 38 pts → moy 12.7\nJoueur B : 4 matchs, 48 pts → moy 12.0\nClassement : A > B (moyenne plus élevée) même si B a plus de points totaux",
 	"nav_docs": "Doc",
 	"nav_faq": "FAQ"
- }
+}
