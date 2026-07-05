@@ -2,6 +2,7 @@
 
 ## ToDo
 
+- [] Many tests fail, because the score saving is broken. Currently when you save a score the form RemoteFunction is successfully called. But the inputs are not disabled and show still the entries. When you reload the page the inputs are correctly disabled.
 - [] Interestingly there are a bunch of unused tiebreak related imports in the "tournament-actions.remote.ts" file. Are those relics or actual missing implementations to acknowledge different tie breaking rules.
 - [] There exists an e2e tests that verifies that retirement is not possible when there are less then 8 players left. Actually this should be possible. We have the requirement, that we won't start a tournament with less then 8 players. But retirement and injury will happen in a real world tournament, even when only started with 8. The least amount of players that would allow a final round is actually 3. After that (only 2 left) the players are ranked purely by order of retirement. The last two players share the first place.
 - [] court links on the tournament page should include the currently selected locale, in contrast to the QRCode encoded URLs which shouldn't include the selected lang, so that the target page can pick up the device language and start with the users native lang.
