@@ -96,9 +96,7 @@
 
 	$effect(() => {
 		const cfg = tournamentQuery.current?.tournament?.tieBreakConfig as
-			| TieBreakConfig
-			| null
-			| undefined;
+			TieBreakConfig | null | undefined;
 		if (!editingTieBreak) {
 			applyTieBreakConfig(cfg);
 		}
@@ -584,8 +582,9 @@
 
 						{#if court.token}
 							<div class="qr-link">
-								<a href={resolve('/court/[token]', { token: String(court.token) })} target="_blank"
-									>{m.open_court_page()}</a
+								<a
+									href={localizeHref(resolve('/court/[token]', { token: String(court.token) }))}
+									target="_blank">{m.open_court_page()}</a
 								>
 							</div>
 						{/if}

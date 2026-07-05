@@ -1592,8 +1592,10 @@ test.describe('Tournament Integration Tests', () => {
 			}
 		});
 
-		test('rejects retirement that would leave fewer than 8 active players', async ({ page }) => {
-			const tournamentName = `Min Players Retire ${Date.now()}`;
+		test('allows retirement below 8 active players when tournament started with 8', async ({
+			page
+		}) => {
+			const tournamentName = `Below8 Retire ${Date.now()}`;
 			testTournamentNames.push(tournamentName);
 
 			await page.click('text=+ New Tournament');
@@ -1615,9 +1617,9 @@ test.describe('Tournament Integration Tests', () => {
 			await dismissCookieNotice(page);
 			await page.locator('.retire-form button.btn-danger').click({ force: true });
 
-			await page.waitForSelector('.retire-form', { state: 'visible' });
+			await page.waitForSelector('.retire-form', { state: 'hidden', timeout: 15000 });
 			const courtCards = await page.locator('.court-card').count();
-			expect(courtCards).toBe(2);
+			expect(courtCards).toBeGreaterThan(0);
 		});
 	});
 

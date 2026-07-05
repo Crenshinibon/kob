@@ -229,6 +229,8 @@ export function calculateRoundCount(courtCount: number, formatType: FormatType):
 
 /** Minimum players required to create a tournament or voluntarily retire below this count. */
 export const MIN_TOURNAMENT_PLAYERS = 8;
+/** Minimum active players that must remain after voluntary retirement (not replacement). */
+export const MIN_ACTIVE_PLAYERS_AFTER_RETIREMENT = 2;
 
 export type CreateTournamentOpts = {
 	tournamentId: TournamentId;
@@ -360,7 +362,10 @@ function snakeDistribute(items: number[], courtSizes: readonly number[]): CourtA
 		const forward = row % 2 === 0;
 		for (let c = 0; c < courtCount; c++) {
 			const courtIdx = forward ? c : courtCount - 1 - c;
-			if (courts[courtIdx].playerIds.length < courts[courtIdx].capacity && itemIndex < items.length) {
+			if (
+				courts[courtIdx].playerIds.length < courts[courtIdx].capacity &&
+				itemIndex < items.length
+			) {
 				courts[courtIdx].playerIds.push(items[itemIndex++]);
 			}
 		}
@@ -558,12 +563,17 @@ export function redistributePreseedRecursive(
 				});
 			}
 		}
-		const sortedTier = sortTierByTieBreak(tier, tieBreak?.tieBreakConfig, {
-			completedRounds: tieBreak?.completedRounds,
-			courtSizes: tieBreak?.courtSizes ?? courtSizes,
-			players: tieBreak?.players,
-			rng: tieBreak?.rng
-		}, courtResults);
+		const sortedTier = sortTierByTieBreak(
+			tier,
+			tieBreak?.tieBreakConfig,
+			{
+				completedRounds: tieBreak?.completedRounds,
+				courtSizes: tieBreak?.courtSizes ?? courtSizes,
+				players: tieBreak?.players,
+				rng: tieBreak?.rng
+			},
+			courtResults
+		);
 		tiers.push(sortedTier);
 	}
 
@@ -784,12 +794,17 @@ export function verticalSeeding(
 			if (s && !exclude.has(s.playerId))
 				tier.push({ playerId: s.playerId, points: s.points, diff: s.diff });
 		}
-		const sortedTier = sortTierByTieBreak(tier, tieBreak?.tieBreakConfig, {
-			completedRounds: tieBreak?.completedRounds,
-			courtSizes: tieBreak?.courtSizes ?? courtSizes,
-			players: tieBreak?.players,
-			rng: tieBreak?.rng
-		}, courtResults);
+		const sortedTier = sortTierByTieBreak(
+			tier,
+			tieBreak?.tieBreakConfig,
+			{
+				completedRounds: tieBreak?.completedRounds,
+				courtSizes: tieBreak?.courtSizes ?? courtSizes,
+				players: tieBreak?.players,
+				rng: tieBreak?.rng
+			},
+			courtResults
+		);
 		for (const t of sortedTier) flattened.push(t.playerId);
 	}
 
@@ -884,7 +899,8 @@ export function redistributeLadder(
 	courtSizes?: readonly number[],
 	tieBreak?: TieBreakSortOptions
 ): CourtAssignment[] {
-	if (isFirstRound) return verticalSeeding(courtResults, courtCount, courtSizes, undefined, tieBreak);
+	if (isFirstRound)
+		return verticalSeeding(courtResults, courtCount, courtSizes, undefined, tieBreak);
 	return ladderRedistribute(courtResults, courtCount, courtSizes);
 }
 
@@ -941,7 +957,9 @@ function enforceFinalTieBreakFactorRules(config: TieBreakConfig): TieBreakConfig
 	};
 }
 
-export function getEnabledTieBreakFactors(config: TieBreakConfig | null | undefined): TieBreakFactorId[] {
+export function getEnabledTieBreakFactors(
+	config: TieBreakConfig | null | undefined
+): TieBreakFactorId[] {
 	return normalizeTieBreakConfig(config)
 		.factors.filter((f) => f.enabled)
 		.map((f) => f.id);
@@ -1023,10 +1041,7 @@ export function buildPlayerRoundStats(
 	return result;
 }
 
-function roundPointsContribution(
-	standing: CourtStandings,
-	courtSize: number
-): number {
+function roundPointsContribution(standing: CourtStandings, courtSize: number): number {
 	if (courtSize >= 5) {
 		const raw = standing.rawPoints ?? standing.points * (standing.matchCount || 1);
 		return raw / STANDARD_GAMES_PER_ROUND;
@@ -1123,11 +1138,7 @@ export function comparePlayersForTieBreak(
 		}
 
 		if (factor === 'manual') {
-			const tieGroups = getManualTieGroups(
-				[playerA, playerB],
-				config,
-				context
-			);
+			const tieGroups = getManualTieGroups([playerA, playerB], config, context);
 			if (tieGroups.length === 0) continue;
 			const ma = manualRankIndex(playerA, context.manualRankOrder);
 			const mb = manualRankIndex(playerB, context.manualRankOrder);
@@ -1313,7 +1324,10 @@ export function getPlayerTieBreakValues(
 	return values;
 }
 
-function tieBreakValuesSignature(values: PlayerTieBreakValues, factors: readonly TieBreakFactorId[]): string {
+function tieBreakValuesSignature(
+	values: PlayerTieBreakValues,
+	factors: readonly TieBreakFactorId[]
+): string {
 	return factors.map((f) => values[f as keyof PlayerTieBreakValues] ?? 0).join('|');
 }
 
@@ -1373,7 +1387,10 @@ export function configExcludingFactor(
 	};
 }
 
-function compressedBlockOrder(order: readonly number[], tieGroups: readonly ManualTieGroupDisplay[]): string {
+function compressedBlockOrder(
+	order: readonly number[],
+	tieGroups: readonly ManualTieGroupDisplay[]
+): string {
 	const groupKey = new Map<number, string>();
 	tieGroups.forEach((g, i) => {
 		const key = `g${i}`;
@@ -1417,7 +1434,9 @@ export function isValidManualRankOrder(
 	const autoConfig = configExcludingFactor(config, 'manual');
 	const autoOrder = sortPlayersByTieBreak(playerIds, autoConfig, context);
 
-	if (compressedBlockOrder(submittedOrder, tieGroups) !== compressedBlockOrder(autoOrder, tieGroups)) {
+	if (
+		compressedBlockOrder(submittedOrder, tieGroups) !== compressedBlockOrder(autoOrder, tieGroups)
+	) {
 		return false;
 	}
 
@@ -1447,12 +1466,7 @@ function areAdjacentInTieBreakGroup(
 	},
 	groupDecidingFactor: TieBreakFactorId | null
 ): { inGroup: boolean; decidingFactor: TieBreakFactorId | null } {
-	const { tiedFactors, decidingFactor } = explainPairTieBreak(
-		higherId,
-		lowerId,
-		config,
-		context
-	);
+	const { tiedFactors, decidingFactor } = explainPairTieBreak(higherId, lowerId, config, context);
 	if (tiedFactors.length === 0) {
 		return { inGroup: false, decidingFactor };
 	}
@@ -1462,10 +1476,7 @@ function areAdjacentInTieBreakGroup(
 	return { inGroup: true, decidingFactor };
 }
 
-function decidingOutcomeForGroupIndex(
-	index: number,
-	groupSize: number
-): TieBreakDecidingOutcome {
+function decidingOutcomeForGroupIndex(index: number, groupSize: number): TieBreakDecidingOutcome {
 	if (groupSize < 2) return null;
 	if (index === 0) return 'won';
 	if (groupSize >= 3 && index === 1) return 'middle';
@@ -2417,7 +2428,11 @@ function removePlayerFromCourt(
 	};
 }
 
-function addPlayerToCourt(assignments: CourtAssignment[], courtNumber: number, playerId: number): void {
+function addPlayerToCourt(
+	assignments: CourtAssignment[],
+	courtNumber: number,
+	playerId: number
+): void {
 	const courtIdx = assignments.findIndex((a) => a.courtNumber === courtNumber);
 	if (courtIdx < 0) return;
 	const court = assignments[courtIdx];
@@ -2439,9 +2454,7 @@ function pickBestPromotee(
 	if (!donor) return null;
 	const candidates = donor.playerIds.filter((id) => !exclude.has(id));
 	if (candidates.length === 0) return null;
-	candidates.sort((a, b) =>
-		compareByPrevRoundRank(prevResults, donorCourtNumber, a, b)
-	);
+	candidates.sort((a, b) => compareByPrevRoundRank(prevResults, donorCourtNumber, a, b));
 	return candidates[0];
 }
 
@@ -2557,11 +2570,7 @@ export function resolvePreseedRetirement(opts: {
 	readonly replacementPlayerId?: number;
 }): CourtAssignment[] {
 	if (opts.replacementPlayerId !== undefined) {
-		return applyReplacementSlot(
-			opts.assignments,
-			opts.retiredPlayerId,
-			opts.replacementPlayerId
-		);
+		return applyReplacementSlot(opts.assignments, opts.retiredPlayerId, opts.replacementPlayerId);
 	}
 
 	const retiredCourt = opts.assignments.find((a) => a.playerIds.includes(opts.retiredPlayerId));

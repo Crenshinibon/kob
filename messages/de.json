@@ -213,7 +213,7 @@
 	"err_undo_window_expired": "Rückgängig-Fenster abgelaufen (5 Minuten)",
 	"err_undo_retire_scores_entered": "Entfernung kann nicht rückgängig gemacht werden: Ergebnisse wurden eingetragen",
 	"err_undo_injury_scores_entered": "Verletzung kann nicht rückgängig gemacht werden: Ergebnisse wurden in dieser Gruppe eingetragen",
-	"err_retire_min_players": "Entfernung nicht möglich: mindestens 8 aktive Spieler müssen verbleiben",
+	"err_retire_min_players": "Entfernung nicht möglich: mindestens 2 aktive Spieler müssen verbleiben",
 	"err_round_incomplete": "Runde kann nicht geschlossen werden: nicht alle Spiele sind abgeschlossen",
 	"err_round_already_closed": "Diese Runde wurde bereits geschlossen",
 	"err_min_players": "Mindestens {count} Spieler erforderlich. Du hast {entered} eingegeben.",
@@ -571,4 +571,4 @@
 	"docs_diagram_5p6p_normalization": "Rundenpunkte (5p/6p):\nround_points = sum(matchPoints) / gamesPlayed\n\nGesamtpunkte (5p/6p):\nJede Runde zählt roundRawPoints / 3\n(3 = Standard-Spiele pro Runde, unabhängig von tatsächlich gespielten Spielen)\n\nBeispiel 5er-Gruppe:\nSpieler A: 3 Spiele, 39 Pkt → ø 13.0\nSpieler B: 4 Spiele, 48 Pkt → ø 12.0\nRang: A > B (höherer Durchschnitt) obwohl B mehr Gesamtpunkte hat",
 	"nav_docs": "Doku",
 	"nav_faq": "FAQ"
- }
+}

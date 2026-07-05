@@ -25,15 +25,14 @@ import {
 	resolveForwardRetirement,
 	processPreseedTransition,
 	applyReplacementSlot,
-	DEFAULT_TIE_BREAK_CONFIG,
 	normalizeTieBreakConfig,
 	buildStandingsTieBreakContext,
 	isValidManualRankOrder,
 	isRoundReadyToClose,
 	computeFinalStandingMap,
 	MIN_TOURNAMENT_PLAYERS,
+	MIN_ACTIVE_PLAYERS_AFTER_RETIREMENT,
 	type TieBreakConfig,
-	type TieBreakFactorId,
 	type FormatType,
 	type MatchData,
 	type CourtAssignment,
@@ -854,7 +853,7 @@ export const retirePlayer = command(
 		}
 
 		const replacing = Boolean(useReplacement && replacementName?.trim());
-		if (!replacing && activePlayers.length < MIN_TOURNAMENT_PLAYERS) {
+		if (!replacing && activePlayers.length < MIN_ACTIVE_PLAYERS_AFTER_RETIREMENT) {
 			error(400, m.err_retire_min_players());
 		}
 
