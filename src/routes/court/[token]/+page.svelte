@@ -111,6 +111,7 @@
 
 	function getSavedScore(match: MatchRow): { teamAScore: number; teamBScore: number } | null {
 		const saved = savedScores.get(match.id);
+
 		if (saved) return saved;
 		if (match.teamAScore !== null && match.teamBScore !== null) {
 			return { teamAScore: match.teamAScore, teamBScore: match.teamBScore };
@@ -348,6 +349,11 @@
 		savingMatches = new Set([...savingMatches, matchId]);
 		formErrors.delete(matchId);
 
+		const formData = new FormData(formInstance.element);
+
+		const teamAScore = parseInt(formData.get('teamAScore') as string);
+		const teamBScore = parseInt(formData.get('teamBScore') as string);
+
 		const preflightIssues = formInstance.fields.allIssues() ?? [];
 		if (preflightIssues.length > 0) {
 			formErrors.set(
@@ -362,10 +368,9 @@
 			const result = await formInstance.submit();
 
 			if (result) {
-				const formData = new FormData(formInstance.element);
 				savedScores.set(matchId, {
-					teamAScore: parseInt(formData.get('teamAScore') as string),
-					teamBScore: parseInt(formData.get('teamBScore') as string)
+					teamAScore,
+					teamBScore
 				});
 				if (isEditing) {
 					editingMatches = new Set([...editingMatches].filter((id) => id !== matchId));
@@ -409,8 +414,8 @@
 )}
 	<form
 		data-testid="{formTestId}-form-{matchId}"
-		{...formObj.enhance(async (fi: ScoreSubmitForm) => {
-			await handleScoreSubmit(fi, matchId, editing);
+		{...formObj.enhance(async (form) => {
+			await handleScoreSubmit(form, matchId, editing);
 		})}
 	>
 		<input type="hidden" name="token" value={page.params.token} />

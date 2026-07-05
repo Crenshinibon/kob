@@ -1,14 +1,11 @@
 # To Fix
 
-## ToDo
+## Done
 
 - [x] Many tests fail, because the score saving is broken. Currently when you save a score the form RemoteFunction is successfully called. But the inputs are not disabled and show still the entries. When you reload the page the inputs are correctly disabled. (Fixed: court page updates `savedScores` local state on successful save so completed UI shows immediately.)
 - [x] Interestingly there are a bunch of unused tiebreak related imports in the "tournament-actions.remote.ts" file. Are those relics or actual missing implementations to acknowledge different tie breaking rules. (Fixed: removed unused `DEFAULT_TIE_BREAK_CONFIG` and `TieBreakFactorId` imports; remaining tiebreak imports are used by manual tie-break and config update commands.)
 - [x] There exists an e2e tests that verifies that retirement is not possible when there are less then 8 players left. Actually this should be possible. We have the requirement, that we won't start a tournament with less then 8 players. But retirement and injury will happen in a real world tournament, even when only started with 8. The least amount of players that would allow a final round is actually 3. After that (only 2 left) the players are ranked purely by order of retirement. The last two players share the first place. (Fixed: `MIN_ACTIVE_PLAYERS_AFTER_RETIREMENT = 2`; creation still requires 8.)
 - [x] court links on the tournament page should include the currently selected locale, in contrast to the QRCode encoded URLs which shouldn't include the selected lang, so that the target page can pick up the device language and start with the users native lang. (Fixed: court page links use `localizeHref`; QR codes stay locale-free.)
-
-## Done
-
 - [x] Make Standings page visible without auth
 - [x] For manual tiebreak, enable only when there all previous factors are exhausted and did not yield result.
 - [x] The manual tie breaking should only be possible between players who are on "the same level". Meaning all other options didn't yield an order.
