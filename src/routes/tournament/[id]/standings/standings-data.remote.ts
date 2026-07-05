@@ -5,7 +5,6 @@ import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import * as m from '$lib/paraglide/messages';
 import {
-	calculateCourtSizes,
 	matchCountForCourtSize,
 	isMatchComplete,
 	getFrozenCourts,
@@ -14,6 +13,7 @@ import {
 	type MatchSetScore,
 	type CourtStandings
 } from '$lib/server/tournament-logic';
+import { bracketCourtSizes, parseStoredCourtSizes } from '$lib/server/court-size-config';
 import {
 	buildCompletedRoundsBefore,
 	hasStandingsSnapshot,
@@ -62,19 +62,24 @@ async function fetchStandingsData(tournamentId: number) {
 
 	const players = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
 
-	const courtSizes: number[] = tourney.courtSizes ? JSON.parse(tourney.courtSizes) : [4, 4, 4, 4];
-	const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
+	const courtSizes: number[] = parseStoredCourtSizes(tourney);
+	const rotations = await db
+		.select()
+		.from(courtRotation)
+		.where(eq(courtRotation.tournamentId, tournamentId));
+
+	const virtualCourtCount = Math.max(
+		...rotations.map((r) => r.courtNumber),
+		courtSizes.length,
+		1
+	);
+	const originalCourtSizes = bracketCourtSizes(tourney, virtualCourtCount);
 
 	const roundsCompleted = (tourney.currentRound ?? 1) - 1;
 	const frozenCourts =
 		tourney.formatType === 'preseed'
 			? getFrozenCourts(originalCourtSizes, roundsCompleted, 'preseed')
 			: [];
-
-	const rotations = await db
-		.select()
-		.from(courtRotation)
-		.where(eq(courtRotation.tournamentId, tournamentId));
 
 	const currentRound = tourney.currentRound || 1;
 	const currentRotations = rotations.filter((r) => r.roundNumber === currentRound);

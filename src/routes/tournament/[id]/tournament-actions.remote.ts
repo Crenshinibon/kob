@@ -519,7 +519,7 @@ export const closeRoundForm = form(
 			.returning({ id: tournament.id });
 		if (advanced.length === 0) error(409, m.err_round_already_closed());
 
-		getTournamentData({ tournamentId }).refresh();
+		await getTournamentData({ tournamentId }).refresh();
 
 		return { success: true };
 	}
@@ -619,7 +619,7 @@ export const updateScoringOverrides = command(
 			.set({ scoringOverrides: overrides, lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentData({ tournamentId }).refresh();
+		await getTournamentData({ tournamentId }).refresh();
 
 		return { success: true };
 	}
@@ -663,7 +663,7 @@ export const updateTieBreakConfig = command(
 			.set({ tieBreakConfig: config, lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentData({ tournamentId }).refresh();
+		await getTournamentData({ tournamentId }).refresh();
 
 		return { success: true };
 	}
@@ -1080,7 +1080,7 @@ export const retirePlayer = command(
 			})
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentData({ tournamentId }).refresh();
+		await getTournamentData({ tournamentId }).refresh();
 
 		return { success: true };
 	}
@@ -1256,7 +1256,7 @@ export const reportInjury = command(
 			.set({ lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentData({ tournamentId }).refresh();
+		await getTournamentData({ tournamentId }).refresh();
 
 		return { success: true };
 	}
@@ -1525,7 +1525,7 @@ export const undoRetirement = command(
 			})
 			.where(eq(tournament.id, tournamentId));
 
-		getTournamentData({ tournamentId }).refresh();
+		await getTournamentData({ tournamentId }).refresh();
 
 		return { success: true };
 	}
@@ -1663,7 +1663,7 @@ export const undoInjury = command(
 			})
 			.where(eq(player.id, playerId));
 
-		getTournamentData({ tournamentId }).refresh();
+		await getTournamentData({ tournamentId }).refresh();
 
 		return { success: true };
 	}

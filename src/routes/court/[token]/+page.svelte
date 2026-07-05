@@ -2,6 +2,7 @@
 	import { slide } from 'svelte/transition';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { browser } from '$app/environment';
+	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import QRCode from 'qrcode';
 	import * as msg from '$lib/paraglide/messages';
@@ -375,6 +376,7 @@
 				if (isEditing) {
 					editingMatches = new Set([...editingMatches].filter((id) => id !== matchId));
 				}
+				await invalidateAll();
 			} else {
 				const serverIssues = formInstance.fields.allIssues() ?? [];
 				if (serverIssues.length > 0) {
