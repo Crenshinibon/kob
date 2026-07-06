@@ -8,7 +8,10 @@ import {
 	closeRoundViaFetch,
 	closeRoundOrFetch,
 	clickRetireSubmit,
+	clickRetireSubmitAndWait,
+	enableRetireReplacement,
 	waitForCourtCardCount,
+	waitForTournamentPlayer,
 	configureTieBreakFinal,
 	deleteTournament
 } from './helpers';
@@ -184,23 +187,16 @@ test.describe('Code review findings (spec 1040)', () => {
 
 		await page.click('summary:has-text("Retire a Player")');
 		await page.waitForSelector('.retire-form');
-		const opts = await page.locator('#retirePlayerId option').allTextContents();
-		const target = opts.find((o) => /\bP1\b/.test(o));
-		if (!target) throw new Error('P1 not found');
-		await page.selectOption('#retirePlayerId', { label: target.trim() });
-		await page.locator('.retire-form input[type="checkbox"]').check();
-		await page.fill('#replacementName', 'Replacement Alex');
-		await clickRetireSubmit(page);
-		await waitForCourtCardCount(page, 4);
-		await expect
-			.poll(
-				async () => {
-					const texts = await page.locator('.court-card .player').allTextContents();
-					return texts.some((t) => /Replacement Alex/i.test(t));
-				},
-				{ timeout: 30000 }
-			)
-			.toBe(true);
+		const option = page
+			.locator('#retirePlayerId option')
+			.filter({ hasText: /\bP1\b/ })
+			.first();
+		const playerValue = await option.getAttribute('value');
+		if (!playerValue) throw new Error('P1 not found in retire options');
+		await page.selectOption('#retirePlayerId', playerValue);
+		await enableRetireReplacement(page, 'Replacement Alex');
+		await clickRetireSubmitAndWait(page);
+		await waitForTournamentPlayer(page, /Replacement Alex/i);
 
 		const playerTexts = await page.locator('.court-card .player').allTextContents();
 		expect(playerTexts.filter((t) => !/Retired/i.test(t)).length).toBeGreaterThanOrEqual(15);
