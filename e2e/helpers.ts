@@ -108,7 +108,9 @@ export async function scoreAllMatchesOnCourt(
 			.catch(() => false);
 		if (!appeared) {
 			await page.reload();
-			await page.waitForSelector(`[data-testid="saved-${matchId}"]`, { timeout: 10000 }).catch(() => {});
+			await page
+				.waitForSelector(`[data-testid="saved-${matchId}"]`, { timeout: 10000 })
+				.catch(() => {});
 		}
 	}
 }
@@ -138,6 +140,12 @@ export async function scoreAllOpenMatches(page: Page): Promise<void> {
 	const links = await getCourtLinks(page);
 	for (const link of links) {
 		await page.goto(link);
+		await page
+			.waitForSelector(
+				'[data-testid^="match-form-"], [data-testid^="saved-"], .canceled-notice, .player-card',
+				{ timeout: 15000 }
+			)
+			.catch(() => {});
 		const formCount = await page.locator('[data-testid^="match-form-"]').count();
 		if (formCount === 0) continue;
 		const matchIds = await extractMatchIds(page);
@@ -154,7 +162,9 @@ export async function scoreAllOpenMatches(page: Page): Promise<void> {
 				.catch(() => false);
 			if (!appeared) {
 				await page.reload();
-				await page.waitForSelector(`[data-testid="saved-${matchId}"]`, { timeout: 10000 }).catch(() => {});
+				await page
+					.waitForSelector(`[data-testid="saved-${matchId}"]`, { timeout: 10000 })
+					.catch(() => {});
 			}
 		}
 	}
@@ -212,6 +222,13 @@ export async function closeRoundOrFetch(
 	tournamentId: string,
 	timeout = 30000
 ): Promise<void> {
+	await page
+		.waitForSelector(
+			'input[name="n:tournamentId"], button:has-text("Close Round & Advance"), button:has-text("Finalize Tournament"), button:has-text("Waiting")',
+			{ timeout: 15000 }
+		)
+		.catch(() => {});
+
 	await expect
 		.poll(
 			async () => {
@@ -268,10 +285,12 @@ export async function configureTieBreakFinal(
 	const saveBtn = page.locator('button:has-text("Save tie-break rules")');
 	await expect(saveBtn).toBeVisible({ timeout: 10000 });
 	await saveBtn.click();
-	await page.waitForSelector('button:has-text("Save tie-break rules")', {
-		state: 'detached',
-		timeout: 10000
-	}).catch(() => {});
+	await page
+		.waitForSelector('button:has-text("Save tie-break rules")', {
+			state: 'detached',
+			timeout: 10000
+		})
+		.catch(() => {});
 	await page.waitForTimeout(500);
 }
 

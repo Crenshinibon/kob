@@ -8,6 +8,7 @@
 
 	import { saveScore, saveSetScore } from './scores.remote';
 	import { getCourtData } from './court-data.remote';
+	import type { CourtPageData } from '$lib/server/court-page-data';
 	import { createScoreSchema, createSetScoreSchema } from './scoreSchema';
 	import {
 		isDecidingSet,
@@ -78,6 +79,7 @@
 	let { data: routeData } = $props<{
 		data: {
 			token: string;
+			courtPageData: CourtPageData;
 		};
 	}>();
 
@@ -97,31 +99,7 @@
 		return () => clearInterval(interval);
 	});
 
-	const data = $derived(
-		courtQuery.current ?? {
-			court: {
-				tournamentName: '',
-				courtNumber: 0,
-				roundNumber: 0,
-				courtSize: 4,
-				playerNames: {},
-				minPoints: 21,
-				scoringLabel: '',
-				winBy: 2,
-				setsToWin: 1,
-				pointsToWin: 21,
-				decidingSetPoints: 15,
-				label: null,
-				scoringOverrides: null
-			},
-			matches: [] as MatchRow[],
-			standings: [] as StandingRow[],
-			isActive: false,
-			isEditable: false,
-			currentRound: 0,
-			isAuthenticated: false
-		}
-	);
+	const data = $derived(courtQuery.current ?? routeData.courtPageData);
 
 	const showTieBreakIcons = $derived(
 		data.standings.some((s: StandingRow) => s.tiedFactors.length > 0 || s.decidingFactor)
@@ -510,7 +488,6 @@
 	</form>
 {/snippet}
 
-{#if courtQuery.current}
 <main>
 	<header>
 		<h1>{data.court.tournamentName}</h1>
@@ -875,10 +852,9 @@
 		</section>
 	{/if}
 </main>
-{:else if courtQuery.error}
-	<div class="loading">{msg.not_found()}</div>
-{:else}
-	<div class="loading">{msg.loading_tournament()}</div>
+
+{#if courtQuery.error && !courtQuery.current}
+	<div class="loading query-error" role="alert">{msg.not_found()}</div>
 {/if}
 
 <style>

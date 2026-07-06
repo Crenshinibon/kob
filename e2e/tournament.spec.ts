@@ -1615,10 +1615,8 @@ test.describe('Tournament Integration Tests', () => {
 			if (!targetOption) throw new Error(`MinP1 not found in retire options`);
 			await page.selectOption('#retirePlayerId', { label: targetOption.trim() });
 			await page.selectOption('#retireReason', { value: 'schedule' });
-			await dismissCookieNotice(page);
-			await page.locator('.retire-form button.btn-danger').click({ force: true });
-
-			await page.waitForSelector('.retire-form', { state: 'hidden', timeout: 15000 });
+			await clickRetireSubmit(page);
+			await waitForCourtCardCount(page, 2);
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBeGreaterThan(0);
 		});
