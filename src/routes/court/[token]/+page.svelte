@@ -7,6 +7,7 @@
 	import * as msg from '$lib/paraglide/messages';
 
 	import { saveScore, saveSetScore } from './scores.remote';
+	import { getCourtData } from './court-data.remote';
 	import { createScoreSchema, createSetScoreSchema } from './scoreSchema';
 	import {
 		isDecidingSet,
@@ -74,17 +75,53 @@
 		};
 	}
 
-	let { data } = $props<{
+	let { data: routeData } = $props<{
 		data: {
-			court: CourtInfo;
-			matches: MatchRow[];
-			standings: StandingRow[];
-			isActive: boolean;
-			isEditable: boolean;
-			currentRound: number;
-			isAuthenticated: boolean;
+			token: string;
 		};
 	}>();
+
+	const courtQuery = $derived(getCourtData({ token: routeData.token }));
+
+	// Track which matches are being saved
+	let savingMatches = $state<Set<number>>(new Set());
+	let editingMatches = $state<Set<number>>(new Set());
+	let savedScores = new SvelteMap<number, { teamAScore: number; teamBScore: number }>();
+	let formErrors = new SvelteMap<number, string[]>();
+
+	$effect(() => {
+		if (savingMatches.size > 0) return;
+		const interval = setInterval(() => {
+			courtQuery.refresh().catch(() => {});
+		}, 5000);
+		return () => clearInterval(interval);
+	});
+
+	const data = $derived(
+		courtQuery.current ?? {
+			court: {
+				tournamentName: '',
+				courtNumber: 0,
+				roundNumber: 0,
+				courtSize: 4,
+				playerNames: {},
+				minPoints: 21,
+				scoringLabel: '',
+				winBy: 2,
+				setsToWin: 1,
+				pointsToWin: 21,
+				decidingSetPoints: 15,
+				label: null,
+				scoringOverrides: null
+			},
+			matches: [] as MatchRow[],
+			standings: [] as StandingRow[],
+			isActive: false,
+			isEditable: false,
+			currentRound: 0,
+			isAuthenticated: false
+		}
+	);
 
 	const showTieBreakIcons = $derived(
 		data.standings.some((s: StandingRow) => s.tiedFactors.length > 0 || s.decidingFactor)
@@ -102,12 +139,6 @@
 		};
 		return labels[id]();
 	}
-
-	// Track which matches are being saved
-	let savingMatches = $state<Set<number>>(new Set());
-	let editingMatches = $state<Set<number>>(new Set());
-	let savedScores = new SvelteMap<number, { teamAScore: number; teamBScore: number }>();
-	let formErrors = new SvelteMap<number, string[]>();
 
 	function getSavedScore(match: MatchRow): { teamAScore: number; teamBScore: number } | null {
 		const saved = savedScores.get(match.id);
@@ -479,6 +510,7 @@
 	</form>
 {/snippet}
 
+{#if courtQuery.current}
 <main>
 	<header>
 		<h1>{data.court.tournamentName}</h1>
@@ -843,8 +875,21 @@
 		</section>
 	{/if}
 </main>
+{:else if courtQuery.error}
+	<div class="loading">{msg.not_found()}</div>
+{:else}
+	<div class="loading">{msg.loading_tournament()}</div>
+{/if}
 
 <style>
+	.loading {
+		text-align: center;
+		padding: var(--spacing-xl);
+		font-size: var(--font-size-lg);
+		max-width: 600px;
+		margin: 0 auto;
+	}
+
 	main {
 		max-width: 600px;
 		margin: 0 auto;
