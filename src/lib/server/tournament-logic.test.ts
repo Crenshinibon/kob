@@ -2929,6 +2929,34 @@ describe('calculateCourtStandings with canceled matches', () => {
 		expect(p2?.points).toBe(41);
 	});
 
+	it('retired or injured player ranks last on court regardless of partial points', () => {
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			{ ...mockMatch([1, 3], [2, 4], 25, 23), injuredPlayerIds: [2] },
+			mockMatch([1, 4], [2, 3], 22, 20)
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4], {
+			courtLastPlacePlayerIds: [2]
+		});
+		const p2 = result.find((s) => s.playerId === 2);
+		expect(p2?.rank).toBe(4);
+		expect(p2?.points).toBe(41);
+	});
+
+	it('cancel injury: injured player ranks last with averages on canceled court', () => {
+		const matches = [
+			mockMatch([1, 2], [3, 4], 21, 19),
+			{ ...mockMatch([1, 3], [2, 4], null, null), isCanceled: true },
+			{ ...mockMatch([1, 4], [2, 3], null, null), isCanceled: true }
+		];
+		const result = calculateCourtStandings(matches, [1, 2, 3, 4], {
+			courtLastPlacePlayerIds: [2]
+		});
+		const p2 = result.find((s) => s.playerId === 2);
+		expect(p2?.rank).toBe(4);
+		expect(p2?.points).toBe(21);
+	});
+
 	it('all matches canceled: averages used, all get 0 points', () => {
 		const matches = [
 			{ ...mockMatch([1, 2], [3, 4], null, null), isCanceled: true },

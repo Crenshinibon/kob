@@ -6,8 +6,8 @@
 
 **Mid-round injury handling**: ✅ IMPLEMENTED — `reportInjury` remote command with two options:
 
-- **Option A (Substitute)**: Remaining matches are scored normally. Injured player's name displays as "SUBST" on the court page. Injured player gets 0 points for substituted matches. The substitute is a physical stand-in (not tracked in standings).
-- **Option B (Cancel & Average)**: Remaining matches involving the injured player are canceled. Standings use average points per completed match.
+- **Option A (Substitute)**: Remaining matches are scored normally. Injured player's name displays as "SUBST" on the court page. Injured player gets 0 points for substituted matches. The substitute is a physical stand-in (not tracked in standings). **Injured player ranks last on the court for that round** regardless of points from completed matches before the injury.
+- **Option B (Cancel & Average)**: Remaining matches involving the injured player are canceled. Standings use average points per completed match. **Injured player ranks last on the court for that round.**
 - Option C (Restructure court mid-round) is **out of scope** — changing court sizes on a court that already has match scores is mathematically inconsistent and not viable.
 
 **Final round elimination**: ✅ IMPLEMENTED — Top court must have exactly 4 players. Extra players eliminated.
@@ -91,10 +91,10 @@ Use the standard redistribution logic (ladder or preseed) with the new player co
 
 **Preseed format:** Two org-selectable policies apply when the next round's groups are already calculated. See **[091_preseed-retirement-bracket-policy.md](./091_preseed-retirement-bracket-policy.md)**:
 
-| Policy | Behaviour |
-| ------ | --------- |
+| Policy                            | Behaviour                                                                                                                                                |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Cascade** (recommended default) | Remove retiree; backfill from the next lower bracket level; cascade downward. Keeps 4p courts at higher levels. Analogous to random-seed ladder cascade. |
-| **Shrink** | Remove retiree only. The affected court may become 3p mid-bracket. No promotion from lower brackets. |
+| **Shrink**                        | Remove retiree only. The affected court may become 3p mid-bracket. No promotion from lower brackets.                                                     |
 
 **Optional replacement:** Organizer may add a replacement player who inherits the retiree's court slot. Player count unchanged → **no shrink/cascade**. See [091](./091_preseed-retirement-bracket-policy.md#optional-replacement-for-the-retiree).
 
@@ -164,6 +164,7 @@ The remaining unplayed matches for that court must be handled in one of the foll
   2. The healthy partner who plays _with_ the substitute receives the **actual points scored** by their team in the match.
   3. The opponents receive their **actual points scored** in the match.
   4. The injured player receives **0 points** (forfeit) for the matches they missed.
+- **Court standing**: The injured player **always ranks last** on the court for the current round, regardless of points earned in completed matches before the injury.
 - **Database Implementation**: The match is entered normally with the injured player's ID in the slot. Since the substitute is temporary and doesn't get points, keeping the injured player's ID in the match record allows the partner's points to be computed naturally.
 - **Works on**: All court sizes (4p, 5p, 6p, 3p). No format change needed.
 - **Pros**: Standard 2v2 gameplay is preserved. No mathematical skewing. Partners can still play and earn points. Opponents don't get free 21-0 wins that distort tournament-wide standings.
@@ -180,7 +181,7 @@ The remaining unplayed matches for that court must be handled in one of the foll
      - P1 and P2 only played 1 match. Their average points = 21.0. Their average diff = +3.0.
      - P3 only played 1 match. Their average points = 18.0. Their average diff = -3.0.
      - P4 gets 0 points.
-     - Court Standings for the round: P1 & P2 (1st place, 21.0 avg pts) > P3 (3rd place, 18.0 avg pts) > P4 (4th place, 0 avg pts).
+     - Court Standings for the round: P1 & P2 (1st place, 21.0 avg pts) > P3 (3rd place, 18.0 avg pts) > P4 (4th place, 0 avg pts). **P4 ranks last** even if partial totals would otherwise place them higher.
 - **Database Implementation**:
   1. Canceled matches are marked `is_canceled = true` and their scores are left as `null`.
   2. When calculating standings for a court, if any match has `is_canceled = true`, the system automatically ranks players on that court by average points per completed match and average point differential per completed match, instead of total points.

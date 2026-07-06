@@ -282,6 +282,8 @@
 	let injuryUseReplacement = $state(false);
 	let injuryReplacementName = $state('');
 	let injuryReplacementSeedPoints = $state(0);
+	let retireDetailsOpen = $state(false);
+	let injuryDetailsOpen = $state(false);
 	let now = $state(Date.now());
 
 	$effect(() => {
@@ -939,7 +941,7 @@
 
 			{#if isActive && isViewingCurrentRound && currentRound > 0 && !hasScores}
 				<section class="retire-section">
-					<details>
+					<details bind:open={retireDetailsOpen}>
 						<summary class="btn-retire-header">{m.retire_player()}</summary>
 						<div class="retire-form">
 							<p class="retire-note">
@@ -1024,6 +1026,7 @@
 										retireUseReplacement = false;
 										replacementName = '';
 										replacementSeedPoints = 0;
+										retireDetailsOpen = false;
 									} finally {
 										retireSubmitting = false;
 									}
@@ -1065,7 +1068,7 @@
 
 			{#if isActive && isViewingCurrentRound && currentRound > 0 && hasScores && !allCourtsComplete}
 				<section class="injury-section">
-					<details>
+					<details bind:open={injuryDetailsOpen}>
 						<summary class="btn-injury-header">{m.report_injury()}</summary>
 						<div class="injury-form">
 							<p class="injury-note">
@@ -1154,6 +1157,7 @@
 										injuryUseReplacement = false;
 										injuryReplacementName = '';
 										injuryReplacementSeedPoints = 0;
+										injuryDetailsOpen = false;
 									} finally {
 										injurySubmitting = false;
 									}

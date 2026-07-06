@@ -78,6 +78,50 @@ export async function clickRetireSubmit(page: Page): Promise<void> {
 	await btn.click({ force: true });
 }
 
+/** Toggle replacement checkbox and fill name (Svelte bind:checked needs label click). */
+export async function enableRetireReplacement(page: Page, replacementName: string): Promise<void> {
+	const checkbox = page.locator('.retire-form .checkbox-label input[type="checkbox"]');
+	if (!(await checkbox.isChecked())) {
+		await page.locator('.retire-form .checkbox-label').click();
+	}
+	await expect(page.locator('#replacementName')).toBeVisible({ timeout: 5000 });
+	await page.fill('#replacementName', replacementName);
+}
+
+/** Click retire confirm and wait for the remote command to finish. */
+export async function clickRetireSubmitAndWait(page: Page): Promise<void> {
+	await dismissCookieNotice(page);
+	const btn = page.locator('.retire-form button.btn-danger');
+	const responsePromise = page.waitForResponse(
+		(res) => res.url().includes('/_app/remote/') && res.request().method() === 'POST',
+		{ timeout: 30000 }
+	);
+	await btn.click({ force: true });
+	const response = await responsePromise;
+	expect(response.status()).toBeLessThan(500);
+	await page.waitForTimeout(500);
+}
+
+export async function waitForRetireFormClosed(page: Page, timeout = 15000): Promise<void> {
+	await expect(page.locator('.retire-form')).toBeHidden({ timeout });
+}
+
+export async function waitForTournamentPlayer(
+	page: Page,
+	namePattern: RegExp,
+	timeout = 30000
+): Promise<void> {
+	await expect
+		.poll(
+			async () => {
+				const texts = await page.locator('.court-card .player').allTextContents();
+				return texts.some((t) => namePattern.test(t));
+			},
+			{ timeout }
+		)
+		.toBe(true);
+}
+
 /** Standings on the court page come from server load data; reload after saving scores. */
 export async function reloadForCourtStandings(
 	page: Page,
@@ -94,6 +138,12 @@ export async function scoreAllMatchesOnCourt(
 	bScore = 19
 ): Promise<void> {
 	await page.goto(courtUrl);
+	await page
+		.waitForSelector(
+			'[data-testid^="match-form-"], [data-testid^="saved-"], .canceled-notice, .player-card',
+			{ timeout: 15000 }
+		)
+		.catch(() => {});
 	const matchIds = await extractMatchIds(page);
 	for (const matchId of matchIds) {
 		const savedCount = await page.locator(`[data-testid="saved-${matchId}"]`).count();
