@@ -1020,6 +1020,15 @@ test.describe('Tournament Integration Tests', () => {
 			// Complete remaining matches on all courts
 			await scoreAllOpenMatches(page);
 
+			// Injured player must rank last on their court for this round
+			await page.goto(tournamentUrl);
+			await page.waitForSelector('.standing-entry', { timeout: 15000 });
+			const injuredCourtCard = page.locator('.court-card').nth(player1Court - 1);
+			const player1Rank = injuredCourtCard.locator(
+				'.standing-entry:has(.standing-name:text-is("Player1")) .standing-rank'
+			);
+			await expect(player1Rank).toHaveText('4.');
+
 			// Close Round 1
 			await page.goto(tournamentUrl);
 			await expect(page).toHaveURL(/\/tournament\/\d+/);
@@ -1097,36 +1106,19 @@ test.describe('Tournament Integration Tests', () => {
 			const subTags = page.locator('.injured-tag');
 			await expect(subTags).toHaveText('Sub');
 
-			// Navigate back to tournament page before collecting court links
+			// Complete remaining matches on all courts
 			await page.goto(tournamentUrl);
 			await expect(page).toHaveURL(/\/tournament\/\d+/);
-			await page.waitForTimeout(1000);
-			const allCourtLinks = await page.locator('.qr-link a').all();
-			const courtUrls: string[] = [];
-			for (const cl of allCourtLinks) {
-				const url = await cl.getAttribute('href');
-				if (url) courtUrls.push(url);
-			}
-			for (const url of courtUrls) {
-				await page.goto(url);
-				const matchFormCount = await page.locator('[data-testid^="match-form-"]').count();
-				if (matchFormCount === 0) continue;
-				const matchIds = await page
-					.locator('[data-testid^="match-form-"]')
-					.evaluateAll((els) =>
-						els
-							.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '')
-							.filter(Boolean)
-					);
-				for (const mId of matchIds) {
-					const saved = await page.locator(`[data-testid="saved-${mId}"]`).count();
-					if (saved > 0) continue;
-					await page.fill(`[data-testid="team-a-score-${mId}"]`, '21');
-					await page.fill(`[data-testid="team-b-score-${mId}"]`, '19');
-					await page.click(`[data-testid="save-score-${mId}"]`);
-					await page.waitForSelector(`[data-testid="saved-${mId}"]`, { timeout: 15000 });
-				}
-			}
+			await scoreAllOpenMatches(page);
+
+			// Injured player must rank last on their court for this round
+			await page.goto(tournamentUrl);
+			await page.waitForSelector('.standing-entry', { timeout: 15000 });
+			const injuredCourtCard = page.locator('.court-card').nth(player1Court - 1);
+			const player1Rank = injuredCourtCard.locator(
+				'.standing-entry:has(.standing-name:text-is("Player1")) .standing-rank'
+			);
+			await expect(player1Rank).toHaveText('4.');
 
 			// Close Round 1
 			await page.goto(tournamentUrl);

@@ -60,6 +60,23 @@ function toMatchData(rows: (typeof match.$inferSelect)[]): MatchData[] {
 	}));
 }
 
+type PlayerRetirementFields = {
+	id: number;
+	retiredAt?: Date | null;
+	retiredRound?: number | null;
+};
+
+function courtLastPlacePlayerIdsForRound(
+	playerIds: readonly number[],
+	players: readonly PlayerRetirementFields[],
+	roundNumber: number
+): number[] {
+	return playerIds.filter((id) => {
+		const p = players.find((pl) => pl.id === id);
+		return p?.retiredAt != null && p.retiredRound === roundNumber;
+	});
+}
+
 export function snapshotToExplainedStandings(
 	snapshot: readonly CourtStandingSnapshot[],
 	playerNames: Map<number, string>
@@ -79,7 +96,9 @@ export function snapshotToExplainedStandings(
 	}));
 }
 
-export function explainedToSnapshot(standings: readonly ExplainedCourtStanding[]): CourtStandingSnapshot[] {
+export function explainedToSnapshot(
+	standings: readonly ExplainedCourtStanding[]
+): CourtStandingSnapshot[] {
 	return standings.map((s) => ({
 		playerId: s.playerId,
 		rank: s.rank,
@@ -157,7 +176,8 @@ export async function buildCompletedRoundsBefore(
 				courtSizes,
 				players,
 				manualRankOrder: rotation.manualRankOrder ?? undefined,
-				mutableDiceRolls: diceRolls
+				mutableDiceRolls: diceRolls,
+				courtLastPlacePlayerIds: courtLastPlacePlayerIdsForRound(playerIds, players, roundNum)
 			});
 			courtResults.push({ courtNumber: rotation.courtNumber, standings });
 		}
@@ -220,6 +240,7 @@ export function computeExplainedStandings(opts: {
 	players: readonly (typeof player.$inferSelect)[];
 	completedRounds: readonly CourtResult[][];
 	courtSizes: readonly number[];
+	roundNumber: number;
 	manualRankOrder?: readonly number[] | null;
 	diceRolls?: Record<string, number> | null;
 	tieBreakConfigOverride?: TieBreakConfig | null;
@@ -232,6 +253,7 @@ export function computeExplainedStandings(opts: {
 		players,
 		completedRounds,
 		courtSizes,
+		roundNumber,
 		manualRankOrder,
 		diceRolls: initialDiceRolls,
 		tieBreakConfigOverride
@@ -254,7 +276,8 @@ export function computeExplainedStandings(opts: {
 		courtSizes,
 		players: logicPlayers,
 		manualRankOrder: manualRankOrder ?? undefined,
-		mutableDiceRolls
+		mutableDiceRolls,
+		courtLastPlacePlayerIds: courtLastPlacePlayerIdsForRound(playerIds, players, roundNumber)
 	};
 
 	const standings = calculateCourtStandings(matchData, playerIds, standingsOptions);
@@ -314,12 +337,7 @@ export function resolveRotationStandings(opts: {
 		const tbContext = buildStandingsTieBreakContext(matchData, playerIds, standingsOptions);
 
 		return {
-			standings: applyStandingsExplanations(
-				baseStandings,
-				playerNames,
-				tieBreakConfig,
-				tbContext
-			),
+			standings: applyStandingsExplanations(baseStandings, playerNames, tieBreakConfig, tbContext),
 			diceRolls: mutableDiceRolls,
 			tieBreakConfig,
 			fromSnapshot: true
@@ -343,6 +361,7 @@ export function resolveRotationStandings(opts: {
 		players,
 		completedRounds,
 		courtSizes,
+		roundNumber: rotation.roundNumber,
 		manualRankOrder: rotation.manualRankOrder,
 		diceRolls: rotation.diceRolls,
 		tieBreakConfigOverride: useSnapshot ? rotation.tieBreakConfigSnapshot : undefined

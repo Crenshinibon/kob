@@ -29,10 +29,10 @@ Scores / averages            Shrink | Cascade | Replacement
 Cannot change court size     Player count may drop (unless replacement)
 ```
 
-| Phase | Question answered |
-| ----- | ----------------- |
+| Phase                 | Question answered                               |
+| --------------------- | ----------------------------------------------- |
 | **1 — Current round** | How do we finish today's matches on this court? |
-| **2 — Forward** | Who plays on which group next round? |
+| **2 — Forward**       | Who plays on which group next round?            |
 
 ---
 
@@ -47,12 +47,13 @@ When the organizer reports an injury **after at least one score** is entered on 
 - Injured player earns **0 points** for substituted matches
 - Partners and opponents score normally
 - Court size unchanged (still 4p/5p/6p)
+- **Injured player ranks last on the court for this round** regardless of points earned before the injury (same as cancel & average)
 
 ### Option B: Cancel & Average
 
 - Unscored matches involving the injured player → `isCanceled = true`
 - Court standings use **average points per completed match** (already implemented for 5p/6p)
-- Injured player ranks last on the court with 0 average contribution from canceled games
+- **Injured player ranks last on the court for this round** regardless of partial points from completed matches
 
 ### What injury does NOT do (Phase 1)
 
@@ -78,12 +79,12 @@ When the organizer closes the round after an injury:
 
 ```
 1. Calculate current-round standings per court
-   - Cancel courts: averages (injured player typically 4th)
-   - Substitute courts: normal totals (injured player 0 for missed games)
+   - Cancel courts: averages (injured player last on court)
+   - Substitute courts: normal totals (injured player last on court; 0 pts for missed games)
 
 2. Save round results to history (injured player's results preserved)
 
-3. activePlayerCount = players where retiredAt is null OR ... 
+3. activePlayerCount = players where retiredAt is null OR ...
    → injured players ARE retired → excluded from count
 
 4. Recalculate courtSizes[] for activePlayerCount
@@ -102,12 +103,12 @@ When the organizer closes the round after an injury:
 
 **Forward behaviour MUST match between-round retirement** for the same format, policy, and player count — the only difference is timing:
 
-| | Between-round retirement | Injury forward |
-| - | ------------------------ | -------------- |
-| Scores on current round | None | Some/all entered |
-| Current round assignments | Deleted and rebuilt | Kept in history |
-| Next round computation | From previous round OR rebuild current | From `closeRound` pipeline |
-| Policy applied | At retirement time | At `closeRound` |
+|                           | Between-round retirement               | Injury forward             |
+| ------------------------- | -------------------------------------- | -------------------------- |
+| Scores on current round   | None                                   | Some/all entered           |
+| Current round assignments | Deleted and rebuilt                    | Kept in history            |
+| Next round computation    | From previous round OR rebuild current | From `closeRound` pipeline |
+| Policy applied            | At retirement time                     | At `closeRound`            |
 
 ---
 
@@ -130,12 +131,12 @@ Forward (optional):
 [Confirm Injury]
 ```
 
-| Choice | Current round | Next round onward |
-| ------ | ------------- | ----------------- |
-| Substitute only | SUBST play | Shrink/cascade per policy |
-| Cancel only | Canceled matches | Shrink/cascade per policy |
-| Cancel + replacement | Canceled matches | **Replacement on D's next-round slot** — no shrink/cascade |
-| Substitute + replacement | SUBST play | Replacement on next-round slot |
+| Choice                   | Current round    | Next round onward                                          |
+| ------------------------ | ---------------- | ---------------------------------------------------------- |
+| Substitute only          | SUBST play       | Shrink/cascade per policy                                  |
+| Cancel only              | Canceled matches | Shrink/cascade per policy                                  |
+| Cancel + replacement     | Canceled matches | **Replacement on D's next-round slot** — no shrink/cascade |
+| Substitute + replacement | SUBST play       | Replacement on next-round slot                             |
 
 **Rationale:** Organizer may know at injury time that a waitlist player is available for **next round**, while still needing substitute/cancel to finish **this round**.
 
@@ -216,14 +217,14 @@ Injury on Court 5 (5p bottom) during R3:
 
 ## Current implementation gaps
 
-| Area | Current behaviour | Required behaviour |
-| ---- | ----------------- | ------------------ |
-| `closeRound` after injury | Re-runs full redistribution; preseed ignores shrink/cascade | Apply format-specific forward policy |
-| `reportInjury` | Marks retired; no replacement option | Optional `replacementName` / `replacementSeed` |
-| `buildRedistributionFromResults` (preseed) | No `excludedPlayerIds` | Filter retiree; then apply shrink/cascade |
-| Between-round vs injury forward | Different code paths | Unify through `resolveForwardRetirement()` |
-| 670 spec | "Standard redistribution" vague | Point to 091 + this spec |
-| 670 replacements | "Only before tournament starts" | **Superseded** for optional mid-tournament replacement per 091 |
+| Area                                       | Current behaviour                                           | Required behaviour                                             |
+| ------------------------------------------ | ----------------------------------------------------------- | -------------------------------------------------------------- |
+| `closeRound` after injury                  | Re-runs full redistribution; preseed ignores shrink/cascade | Apply format-specific forward policy                           |
+| `reportInjury`                             | Marks retired; no replacement option                        | Optional `replacementName` / `replacementSeed`                 |
+| `buildRedistributionFromResults` (preseed) | No `excludedPlayerIds`                                      | Filter retiree; then apply shrink/cascade                      |
+| Between-round vs injury forward            | Different code paths                                        | Unify through `resolveForwardRetirement()`                     |
+| 670 spec                                   | "Standard redistribution" vague                             | Point to 091 + this spec                                       |
+| 670 replacements                           | "Only before tournament starts"                             | **Superseded** for optional mid-tournament replacement per 091 |
 
 ---
 
@@ -231,23 +232,23 @@ Injury on Court 5 (5p bottom) during R3:
 
 ```typescript
 type ForwardRetirementOpts = {
-  formatType: 'random-seed' | 'preseed';
-  policy: 'shrink' | 'cascade'; // preseed only; RS always cascade
-  trigger: 'between-round' | 'close-round';
-  currentAssignments: CourtAssignment[];
-  previousRoundResults: CourtResult[];
-  retiredPlayerIds: ReadonlySet<number>;
-  replacement?: { name: string; seedPoints?: number; slotCourtNumber: number };
-  courtSizes: readonly number[];
-  originalPlayerCount: number;
-  roundsCompleted: number;
-  frozenCourts: FrozenCourt[];
+	formatType: 'random-seed' | 'preseed';
+	policy: 'shrink' | 'cascade'; // preseed only; RS always cascade
+	trigger: 'between-round' | 'close-round';
+	currentAssignments: CourtAssignment[];
+	previousRoundResults: CourtResult[];
+	retiredPlayerIds: ReadonlySet<number>;
+	replacement?: { name: string; seedPoints?: number; slotCourtNumber: number };
+	courtSizes: readonly number[];
+	originalPlayerCount: number;
+	roundsCompleted: number;
+	frozenCourts: FrozenCourt[];
 };
 
 function resolveForwardRetirement(opts: ForwardRetirementOpts): {
-  assignments: CourtAssignment[];
-  courtSizes: number[];
-  replacementPlayer?: { id: number }; // if created
+	assignments: CourtAssignment[];
+	courtSizes: number[];
+	replacementPlayer?: { id: number }; // if created
 };
 ```
 
@@ -298,14 +299,14 @@ Phase 2 injury tests are rows **E1–E6** and **F1–F5** in [091](./091_preseed
 
 Additional injury-specific tests:
 
-| ID | Scenario | Expected |
-| -- | -------- | -------- |
-| J1 | Injury cancel → closeRound → R3 assignments match between-round retire same player | Identical forward state |
-| J2 | Injury substitute → all matches scored → closeRound | Forward cascade; injured 0 pts on missed games only |
-| J3 | Injury on 5p court cancel | Averages; forward sizing correct |
-| J4 | Injury + replacement → closeRound | No shrink/cascade; replacement on correct next-round court |
-| J5 | Two injuries same round different courts | Sequential forward policy application |
-| J6 | Injury R2, between-round retire R3 pre-scores different player | Both exclusions in next assignment |
+| ID  | Scenario                                                                           | Expected                                                   |
+| --- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| J1  | Injury cancel → closeRound → R3 assignments match between-round retire same player | Identical forward state                                    |
+| J2  | Injury substitute → all matches scored → closeRound                                | Forward cascade; injured 0 pts on missed games only        |
+| J3  | Injury on 5p court cancel                                                          | Averages; forward sizing correct                           |
+| J4  | Injury + replacement → closeRound                                                  | No shrink/cascade; replacement on correct next-round court |
+| J5  | Two injuries same round different courts                                           | Sequential forward policy application                      |
+| J6  | Injury R2, between-round retire R3 pre-scores different player                     | Both exclusions in next assignment                         |
 
 ---
 

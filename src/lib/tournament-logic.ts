@@ -86,6 +86,8 @@ export type TieBreakContext = {
 	readonly rng?: () => number;
 	/** Mutable store for stable pair-wise dice rolls (key: "minId:maxId"). */
 	readonly mutableDiceRolls?: Record<string, number>;
+	/** Retired/injured players pinned to last place(s) on this court for the round. */
+	readonly courtLastPlacePlayerIds?: readonly number[];
 };
 
 export type TieBreakSortOptions = {
@@ -1638,9 +1640,17 @@ export function sortPlayersByTieBreak(
 		totalStats?: Map<number, { totalPoints: number; totalDiff: number }>;
 	}
 ): number[] {
-	const sorted = [...playerIds];
-	sorted.sort((a, b) => comparePlayersForTieBreak(a, b, config, context));
-	return sorted;
+	const lastPlace = new Set(context.courtLastPlacePlayerIds ?? []);
+	const active = playerIds.filter((id) => !lastPlace.has(id));
+	const last = playerIds.filter((id) => lastPlace.has(id));
+
+	const sortGroup = (ids: readonly number[]): number[] => {
+		const sorted = [...ids];
+		sorted.sort((a, b) => comparePlayersForTieBreak(a, b, config, context));
+		return sorted;
+	};
+
+	return [...sortGroup(active), ...sortGroup(last)];
 }
 
 function sortTierByTieBreak<T extends { playerId: number; points: number; diff: number }>(
@@ -1822,7 +1832,8 @@ export function calculateCourtStandings(
 	const sortedIds = sortPlayersByTieBreak(playerIds, config, {
 		...options,
 		roundStats,
-		totalStats
+		totalStats,
+		courtLastPlacePlayerIds: options?.courtLastPlacePlayerIds
 	});
 
 	return sortedIds.map((playerId, i) => {
