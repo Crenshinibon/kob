@@ -129,19 +129,12 @@ export const closeRoundForm = form(
 		const allCourts = await db.select().from(court).where(eq(court.tournamentId, tournamentId));
 		const virtualCourtCount = allCourts.length;
 
-		// If player count changed due to retirements, recalculate court sizes
-		// Note: playerCount stays as the original tournament size — it's used by
-		// bracketCourtSizes, frozen courts, and retirement standing calculations.
-		if (activePlayerCount !== tourney.playerCount) {
-			const newConfig = recalculateCourtConfigAfterRetirement(activePlayerCount);
-			courtSizes = newConfig.courtSizes;
-			await db
-				.update(tournament)
-				.set({
-					courtSizes: JSON.stringify(courtSizes),
-					lastActivityAt: new Date()
-				})
-				.where(eq(tournament.id, tournamentId));
+		// Mid-round injury keeps the stored layout until close; only recalculate completion
+		// sizing when retirePlayer has already updated courtSizes away from playerCount.
+		const storedCourtSizeSum = courtSizes.reduce((a, b) => a + b, 0);
+		let courtSizesForCompletion = courtSizes;
+		if (activePlayerCount !== tourney.playerCount && storedCourtSizeSum !== tourney.playerCount) {
+			courtSizesForCompletion = recalculateCourtConfigAfterRetirement(activePlayerCount).courtSizes;
 		}
 
 		const currentRotations = await db
@@ -161,8 +154,21 @@ export const closeRoundForm = form(
 				? await db.select().from(match).where(inArray(match.courtRotationId, currentRotationIds))
 				: [];
 
-		if (!isRoundReadyToClose(currentRotations, allCurrentMatches, courtSizes)) {
+		if (!isRoundReadyToClose(currentRotations, allCurrentMatches, courtSizesForCompletion)) {
 			error(400, m.err_round_incomplete());
+		}
+
+		// Apply redistribution sizing for the next round when active roster shrank.
+		if (activePlayerCount !== tourney.playerCount) {
+			const newConfig = recalculateCourtConfigAfterRetirement(activePlayerCount);
+			courtSizes = newConfig.courtSizes;
+			await db
+				.update(tournament)
+				.set({
+					courtSizes: JSON.stringify(courtSizes),
+					lastActivityAt: new Date()
+				})
+				.where(eq(tournament.id, tournamentId));
 		}
 
 		const claimed = await db

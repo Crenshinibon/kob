@@ -191,9 +191,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.locator('.retire-form input[type="checkbox"]').check();
 		await page.fill('#replacementName', 'Replacement Alex');
 		await clickRetireSubmit(page);
-		await page.waitForTimeout(3000);
-		await page.reload();
-		await page.waitForSelector('.court-card .player', { timeout: 15000 });
+		await waitForCourtCardCount(page, 4);
 		await expect
 			.poll(
 				async () => {
