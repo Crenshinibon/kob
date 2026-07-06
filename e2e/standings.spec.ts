@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { reloadForCourtStandings } from './helpers';
 
 test.describe('Standings Calculation', () => {
 	const testTournamentNames: string[] = [];
@@ -89,9 +90,9 @@ test.describe('Standings Calculation', () => {
 		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 		await page.click(`[data-testid="save-score-${matchId}"]`);
-		await page.waitForLoadState('networkidle');
+		await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 
-		await page.waitForSelector('.standings');
+		await reloadForCourtStandings(page, '.standings');
 		const standingsText = await page.locator('.standings').textContent();
 
 		expect(standingsText).toContain('21');
@@ -123,9 +124,9 @@ test.describe('Standings Calculation', () => {
 		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '25');
 		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '23');
 		await page.click(`[data-testid="save-score-${matchId}"]`);
-		await page.waitForLoadState('networkidle');
+		await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 
-		await page.waitForSelector('.standings tbody tr');
+		await reloadForCourtStandings(page);
 		const rows = await page.locator('.standings tbody tr').all();
 
 		expect(rows.length).toBe(4);
@@ -160,9 +161,9 @@ test.describe('Standings Calculation', () => {
 		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 		await page.click(`[data-testid="save-score-${matchId}"]`);
-		await page.waitForLoadState('networkidle');
+		await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 
-		await page.waitForSelector('.standings');
+		await reloadForCourtStandings(page, '.standings');
 		const diffHeader = await page.locator('.standings th:has-text("Diff")').count();
 		expect(diffHeader).toBe(1);
 	});
@@ -201,10 +202,9 @@ test.describe('Standings Calculation', () => {
 		await page.fill(`[data-testid="team-a-score-${matchIds[2]}"]`, '22');
 		await page.fill(`[data-testid="team-b-score-${matchIds[2]}"]`, '20');
 		await page.click(`[data-testid="save-score-${matchIds[2]}"]`);
+		await page.waitForSelector(`[data-testid="saved-${matchIds[2]}"]`);
 
-		await page.waitForLoadState('networkidle');
-
-		await page.waitForSelector('.standings tbody tr');
+		await reloadForCourtStandings(page);
 		const rows = await page.locator('.standings tbody tr').all();
 
 		const topPlayerPoints = await rows[0].locator('td:nth-last-child(2)').textContent();
@@ -287,8 +287,7 @@ test.describe('Standings Calculation', () => {
 			// Enter one score so standings render
 			await enterOneScore(page);
 
-			// 3p court should have 3 players in standings
-			await page.waitForSelector('.standings tbody tr');
+			await reloadForCourtStandings(page);
 			const playerCount = await page.locator('.standings tbody tr').count();
 			expect(playerCount).toBe(3);
 
@@ -321,8 +320,7 @@ test.describe('Standings Calculation', () => {
 			// Enter one score so standings render
 			await enterOneScore(page);
 
-			// 5p court should have 5 players in standings
-			await page.waitForSelector('.standings tbody tr');
+			await reloadForCourtStandings(page);
 			const playerCount = await page.locator('.standings tbody tr').count();
 			expect(playerCount).toBe(5);
 
@@ -355,8 +353,7 @@ test.describe('Standings Calculation', () => {
 			// Enter one score so standings render
 			await enterOneScore(page);
 
-			// 6p court should have 6 players in standings
-			await page.waitForSelector('.standings tbody tr');
+			await reloadForCourtStandings(page);
 			const playerCount = await page.locator('.standings tbody tr').count();
 			expect(playerCount).toBe(6);
 
@@ -407,8 +404,7 @@ test.describe('Standings Calculation', () => {
 				await page.waitForSelector(`[data-testid="saved-${matchIds[i]}"]`);
 			}
 
-			// Verify standings show 3 players ranked
-			await page.waitForSelector('.standings tbody tr');
+			await reloadForCourtStandings(page);
 			const rows = await page.locator('.standings tbody tr').all();
 			expect(rows.length).toBe(3);
 
@@ -451,8 +447,7 @@ test.describe('Standings Calculation', () => {
 			await page.click(`[data-testid="save-score-${matchId}"]`);
 			await page.waitForSelector(`[data-testid="saved-${matchId}"]`);
 
-			// Verify standings show 5 players
-			await page.waitForSelector('.standings tbody tr');
+			await reloadForCourtStandings(page);
 			const rows = await page.locator('.standings tbody tr').all();
 			expect(rows.length).toBe(5);
 

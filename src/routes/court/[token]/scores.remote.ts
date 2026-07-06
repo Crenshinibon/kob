@@ -14,6 +14,7 @@ import {
 import * as v from 'valibot';
 import * as m from '$lib/paraglide/messages';
 import { getTournamentData } from '../../tournament/[id]/tournament-data.remote';
+import { getCourtData } from './court-data.remote';
 
 const baseScoreSchema = v.pipe(
 	v.object({
@@ -177,6 +178,7 @@ export const saveScore = form(baseScoreSchema, async (data, issue) => {
 		.where(eq(tournament.id, rotation.tournamentId));
 
 	await getTournamentData({ tournamentId: rotation.tournamentId }).refresh();
+	await getCourtData({ token: data.token }).refresh();
 
 	return { success: true, matchId, teamAScore, teamBScore };
 });
@@ -261,6 +263,7 @@ export const saveSetScore = form(setScoreSchema, async (data, issue) => {
 		.where(eq(tournament.id, rotation.tournamentId));
 
 	await getTournamentData({ tournamentId: rotation.tournamentId }).refresh();
+	await getCourtData({ token: data.token }).refresh();
 
 	return { success: true, matchId, setNumber, teamAScore, teamBScore };
 });

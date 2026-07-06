@@ -7,7 +7,6 @@ import { eq, and, inArray } from 'drizzle-orm';
 import * as v from 'valibot';
 import * as m from '$lib/paraglide/messages';
 import {
-	calculateCourtSizes,
 	recalculateCourtConfigAfterRetirement,
 	matchCountForCourtSize,
 	expectedMatchCountForRotations,
@@ -33,6 +32,7 @@ import {
 	type ManualTieGroupDisplay
 } from '$lib/tournament-logic';
 import { formatDuration } from '$lib/i18n/format';
+import { bracketCourtSizes, parseStoredCourtSizes } from '$lib/server/court-size-config';
 
 export interface CourtDisplayData {
 	courtNumber: number;
@@ -83,12 +83,6 @@ export interface TournamentDisplayData {
 	error?: string;
 }
 
-function parseCourtSizes(tourney: typeof tournament.$inferSelect): number[] {
-	return tourney.courtSizes
-		? JSON.parse(tourney.courtSizes)
-		: calculateCourtSizes(tourney.playerCount);
-}
-
 async function fetchTournamentData(
 	tournamentId: number,
 	viewRoundInput?: number
@@ -105,7 +99,7 @@ async function fetchTournamentData(
 	if (!tourney) error(404, m.tournament_not_found());
 
 	const currentRound = tourney.currentRound || 0;
-	let courtSizes: number[] = parseCourtSizes(tourney);
+	let courtSizes: number[] = parseStoredCourtSizes(tourney);
 	const totalRounds = tourney.numRounds;
 	const maxViewableRound =
 		tourney.status === 'completed' ? totalRounds : Math.max(currentRound, 1);
@@ -135,8 +129,14 @@ async function fetchTournamentData(
 			injuredAt: p.injuredAt
 		}));
 	const activePlayerCount = dbPlayers.filter((p) => !p.retiredAt).length;
+	const storedCourtSizeSum = courtSizes.reduce((a, b) => a + b, 0);
 
-	if (activePlayerCount !== tourney.playerCount) {
+	// Mid-round injury keeps original court layout until close round; only recalculate when
+	// retirePlayer has already updated playerCount away from the stored court configuration.
+	if (
+		activePlayerCount !== tourney.playerCount &&
+		storedCourtSizeSum !== tourney.playerCount
+	) {
 		courtSizes = recalculateCourtConfigAfterRetirement(activePlayerCount).courtSizes;
 	}
 
@@ -193,7 +193,7 @@ async function fetchTournamentData(
 		const matches = await db.select().from(match).where(eq(match.courtRotationId, rotation.id));
 
 		const access = await db
-			.select({ label: court.label, id: court.id })
+			.select({ label: court.label, id: court.id, token: court.token })
 			.from(court)
 			.where(eq(court.id, rotation.courtId))
 			.limit(1);
@@ -292,7 +292,9 @@ async function fetchTournamentData(
 			courtNumber: rotation.courtNumber,
 			courtSize: size,
 			matches,
-			token: rotation.token ?? null,
+			token: isViewingPastRound
+				? (rotation.token ?? null)
+				: (access[0]?.token ?? null),
 			label: access[0]?.label ?? null,
 			courtId: access[0]?.id ?? rotation.courtId,
 			rotationId: rotation.id,
@@ -312,7 +314,7 @@ async function fetchTournamentData(
 
 	// Compute frozen courts for preseed format
 	const roundsCompleted = currentRound > 0 ? currentRound - 1 : 0;
-	const originalCourtSizes = calculateCourtSizes(tourney.playerCount);
+	const originalCourtSizes = bracketCourtSizes(tourney, virtualCourtCount);
 	const frozenCourts =
 		tourney.formatType === 'preseed'
 			? getFrozenCourts(originalCourtSizes, roundsCompleted, 'preseed')
