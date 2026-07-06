@@ -78,6 +78,15 @@ export async function clickRetireSubmit(page: Page): Promise<void> {
 	await btn.click({ force: true });
 }
 
+/** Standings on the court page come from server load data; reload after saving scores. */
+export async function reloadForCourtStandings(
+	page: Page,
+	selector = '.standings tbody tr'
+): Promise<void> {
+	await page.reload();
+	await page.waitForSelector(selector);
+}
+
 export async function scoreAllMatchesOnCourt(
 	page: Page,
 	courtUrl: string,

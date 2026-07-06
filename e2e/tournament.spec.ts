@@ -3,6 +3,7 @@ import {
 	closeRoundOrFetch,
 	clickRetireSubmit,
 	dismissCookieNotice,
+	reloadForCourtStandings,
 	scoreAllOpenMatches,
 	waitForCourtCardCount
 } from './helpers';
@@ -177,8 +178,8 @@ test.describe('Tournament Integration Tests', () => {
 				await page.waitForSelector(`[data-testid="saved-${matchIds[matchIdx]}"]`);
 			}
 
-			// Verify standings are calculated
-			await page.waitForSelector('.standings tbody tr');
+			// Verify standings are calculated (server load data; reload after client-side saves)
+			await reloadForCourtStandings(page);
 			const playerRows = await page.locator('.standings tbody tr').count();
 			expect(playerRows).toBe(4);
 		}
