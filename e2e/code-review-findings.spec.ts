@@ -10,7 +10,9 @@ import {
 	clickRetireSubmit,
 	clickRetireSubmitAndWait,
 	enableRetireReplacement,
+	selectRetirePlayer,
 	waitForCourtCardCount,
+	waitForLiveQuerySettle,
 	waitForRetireFormClosed,
 	waitForTournamentPlayer,
 	configureTieBreakFinal,
@@ -185,13 +187,12 @@ test.describe('Code review findings (spec 1040)', () => {
 		await expect(closeBtn).toBeVisible({ timeout: 10000 });
 		await closeBtn.click();
 		await page.waitForSelector('text=Round 2 of 2', { timeout: 15000 });
+		await waitForLiveQuerySettle(page);
 
 		await page.click('summary:has-text("Retire a Player")');
 		await page.waitForSelector('.retire-form');
-		const opts = await page.locator('#retirePlayerId option').allTextContents();
-		const target = opts.find((o) => /\bP1\b/.test(o));
-		if (!target) throw new Error('P1 not found');
-		await page.selectOption('#retirePlayerId', { label: target.trim() });
+		await page.waitForTimeout(500);
+		await selectRetirePlayer(page, /\bP1\b/);
 		await enableRetireReplacement(page, 'Replacement Alex');
 		await clickRetireSubmitAndWait(page);
 		await waitForRetireFormClosed(page);

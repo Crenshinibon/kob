@@ -1020,13 +1020,13 @@
 													? replacementSeedPoints
 													: undefined
 										});
-										await tournamentQuery.refresh();
 										retirePlayerId = 0;
 										retireReason = '';
 										retireUseReplacement = false;
 										replacementName = '';
 										replacementSeedPoints = 0;
 										retireDetailsOpen = false;
+										await tournamentQuery.refresh();
 									} finally {
 										retireSubmitting = false;
 									}
@@ -1151,13 +1151,13 @@
 													? injuryReplacementSeedPoints
 													: undefined
 										});
-										await tournamentQuery.refresh();
 										injuryPlayerId = 0;
 										injuryOption = '';
 										injuryUseReplacement = false;
 										injuryReplacementName = '';
 										injuryReplacementSeedPoints = 0;
 										injuryDetailsOpen = false;
+										await tournamentQuery.refresh();
 									} finally {
 										injurySubmitting = false;
 									}
