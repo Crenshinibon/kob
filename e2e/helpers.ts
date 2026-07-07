@@ -72,10 +72,35 @@ export async function waitForCourtCardCount(
 		.toBe(count);
 }
 
+export async function waitForLiveQuerySettle(page: Page, ms = 1500): Promise<void> {
+	await page.waitForTimeout(ms);
+}
+
+/** Select a retire player by name pattern; verifies bind:value stuck before submit. */
+export async function selectRetirePlayer(page: Page, namePattern: RegExp): Promise<void> {
+	const pattern = namePattern.source;
+	const flags = namePattern.flags;
+	const value = await page.locator('#retirePlayerId option').evaluateAll(
+		(opts, { pattern, flags }) => {
+			const re = new RegExp(pattern, flags);
+			for (const opt of opts) {
+				const text = opt.textContent ?? '';
+				if (opt.value && re.test(text)) return opt.value;
+			}
+			return null;
+		},
+		{ pattern, flags }
+	);
+	if (!value) throw new Error(`Retire player not found matching ${namePattern}`);
+	await page.selectOption('#retirePlayerId', value);
+	await expect(page.locator('#retirePlayerId')).toHaveValue(value);
+}
+
 export async function clickRetireSubmit(page: Page): Promise<void> {
 	await dismissCookieNotice(page);
 	const btn = page.locator('.retire-form button.btn-danger');
-	await btn.click({ force: true });
+	await expect(page.locator('#retirePlayerId')).not.toHaveValue('');
+	await btn.click({ timeout: 10000 });
 }
 
 /** Toggle replacement checkbox and fill name (Svelte bind:checked needs label click). */
@@ -84,22 +109,36 @@ export async function enableRetireReplacement(page: Page, replacementName: strin
 	if (!(await checkbox.isChecked())) {
 		await page.locator('.retire-form .checkbox-label').click();
 	}
+	await expect(checkbox).toBeChecked({ timeout: 5000 });
 	await expect(page.locator('#replacementName')).toBeVisible({ timeout: 5000 });
 	await page.fill('#replacementName', replacementName);
 }
 
-/** Click retire confirm and wait for the remote command to finish. */
+/** Click retire confirm and wait for the details panel to close (command finished). */
 export async function clickRetireSubmitAndWait(page: Page): Promise<void> {
 	await dismissCookieNotice(page);
 	const btn = page.locator('.retire-form button.btn-danger');
-	const responsePromise = page.waitForResponse(
-		(res) => res.url().includes('/_app/remote/') && res.request().method() === 'POST',
-		{ timeout: 30000 }
-	);
-	await btn.click({ force: true });
-	const response = await responsePromise;
-	expect(response.status()).toBeLessThan(500);
-	await page.waitForTimeout(500);
+	const details = page.locator('section.retire-section details');
+	await expect(page.locator('#retirePlayerId')).not.toHaveValue('');
+	await expect(btn).toBeEnabled();
+
+	const remoteDone = page
+		.waitForResponse(
+			(res) =>
+				res.request().method() === 'POST' &&
+				res.url().includes('/remote/') &&
+				res.url().includes('retirePlayer'),
+			{ timeout: 30000 }
+		)
+		.catch(() => null);
+
+	await btn.click({ timeout: 10000 });
+	const response = await remoteDone;
+	if (response) {
+		expect(response.status()).toBeLessThan(500);
+	}
+
+	await expect(details).not.toHaveAttribute('open', { timeout: 30000 });
 }
 
 export async function waitForRetireFormClosed(page: Page, timeout = 15000): Promise<void> {
