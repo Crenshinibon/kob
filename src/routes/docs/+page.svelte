@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { localizeHref } from '$lib/paraglide/runtime';
 	import * as m from '$lib/paraglide/messages';
 </script>
 
 <main class="docs-page">
 	<header>
+		<a href={localizeHref(resolve('/'))} class="back-link">{m.dashboard_btn()}</a>
 		<h1>{m.docs_title()}</h1>
 		<p class="lead">{m.docs_lead()}</p>
 	</header>
@@ -492,6 +494,19 @@
 	header {
 		margin-bottom: var(--spacing-xl);
 		text-align: center;
+	}
+
+	.back-link {
+		display: block;
+		text-align: left;
+		color: var(--text-muted);
+		text-decoration: none;
+		font-size: var(--font-size-sm);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.back-link:hover {
+		color: var(--text-secondary);
 	}
 
 	h1 {
