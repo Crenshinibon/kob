@@ -73,6 +73,10 @@ Combined form with:
 - [Delete Tournament] button
 - **Live query**: Auto-updates court data every 3 seconds via `query.live()`
 
+### Proposed: Manage (`/tournament/[id]/manage`) and Check-in (`/tournament/[id]/check-in`)
+
+Organizer back office (roster edits, swap/move players, rules, finish early) and player check-in with per-player QR codes. Not implemented — see **[095_org-player-experience-index.md](./095_org-player-experience-index.md)**, [096](./096_tournament-management-page.md), [097](./097_player-check-in.md).
+
 ### Total Standings (`/tournament/[id]/standings`)
 
 - Podium view with medals for top 3

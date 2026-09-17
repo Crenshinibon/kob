@@ -88,6 +88,8 @@ Final Court 1 Standings:
 Check with organizer for your next court.
 ```
 
+> **Proposed:** a per-player public page `/player/[token]` that shows the player's current court after every close round, so this hint no longer sends players to the organizer. See **[098_player-page.md](./098_player-page.md)** and [097_player-check-in.md](./097_player-check-in.md) (QR codes).
+
 ## Admin Court View
 
 Same as tournament view - just shows all courts at once. No separate detailed view needed.
