@@ -13,11 +13,11 @@ Two things were missing on the beach:
 
 ## Sub-specs
 
-| Spec                                                                         | Scope                                                                                                                                                                                           | Audience  |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| **[096_tournament-management-page.md](./096_tournament-management-page.md)** | `/tournament/[id]/manage` — roster (add / remove / rename / re-seed / retire / injury), court assignments (swap / move), rules & config edits, finish early, delete. Slims the operations view. | Organizer |
-| **[097_player-check-in.md](./097_player-check-in.md)**                       | `/tournament/[id]/check-in` — per-player token + QR, check-in list with search, full-screen QR, print sheet, self check-in on scan, close check-in → remove no-shows.                           | Organizer |
-| **[098_player-page.md](./098_player-page.md)**                               | `/player/[token]` — public personal page: current court, physical court label, shift/wait, own matches, court standings, movement, history, final standing. Polls after close round.            | Player    |
+| Spec                                                                         | Scope                                                                                                                                                                                                                                        | Audience  |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| **[096_tournament-management-page.md](./096_tournament-management-page.md)** | `/tournament/[id]/manage` — roster (add / remove / rename / re-seed / retire / injury), court assignments (swap / move), rules & config edits, finish early, delete. Slims the operations view.                                              | Organizer |
+| **[097_player-check-in.md](./097_player-check-in.md)**                       | `/tournament/[id]/check-in` — per-player token + QR, check-in list with search, full-screen QR, print sheet, self check-in on scan, close check-in → remove no-shows.                                                                        | Organizer |
+| **[098_player-page.md](./098_player-page.md)**                               | `/player/[token]` — public personal page: current court, physical court label, shift/wait, own matches, court standings, movement, history, live current place + best/worst achievable final place, final standing. Polls after close round. | Player    |
 
 ## Shared Decisions
 
@@ -63,13 +63,14 @@ Backfill for `player.token`: add nullable → `UPDATE player SET token = encode(
 
 Both the manage page and the existing retire/undo/close-round commands rebuild the current round in the same way (delete matches → write rotations → insert matches). That block is currently copy-pasted three times in `tournament-actions.remote.ts`. Before adding a fourth copy:
 
-| Extract                                                                      | From                                                            | Used by                                                  |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------- |
-| `rebuildCurrentRound(tournamentId, round, assignments, courtSizes, scoring)` | `retirePlayer`, `undoRetirement`, `closeRoundForm`              | 096 add/remove/re-seed/reshuffle/reset                   |
-| `ensureCourtsExist(tournamentId, courtCount)`                                | (new — today `closeRoundForm` 500s if a `court` row is missing) | 096 add player when court count grows                    |
-| `QrCode.svelte` (generic `url` prop)                                         | `CourtQRCode.svelte`                                            | court QR (existing), player QR modal + print sheet (097) |
-| `fetchStandingsData` → `$lib/server/standings-service.ts`                    | `standings/standings-data.remote.ts`                            | player page overall position (098)                       |
-| `derivePlayerRoundState(...)` (pure)                                         | new in `$lib/tournament-logic.ts`                               | player page state machine (098); unit-tested             |
+| Extract                                                                      | From                                                            | Used by                                                                         |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `rebuildCurrentRound(tournamentId, round, assignments, courtSizes, scoring)` | `retirePlayer`, `undoRetirement`, `closeRoundForm`              | 096 add/remove/re-seed/reshuffle/reset                                          |
+| `ensureCourtsExist(tournamentId, courtCount)`                                | (new — today `closeRoundForm` 500s if a `court` row is missing) | 096 add player when court count grows                                           |
+| `QrCode.svelte` (generic `url` prop)                                         | `CourtQRCode.svelte`                                            | court QR (existing), player QR modal + print sheet (097)                        |
+| `fetchStandingsData` → `$lib/server/standings-service.ts`                    | `standings/standings-data.remote.ts`                            | player page overall position (098)                                              |
+| `derivePlayerRoundState(...)` (pure)                                         | new in `$lib/tournament-logic.ts`                               | player page state machine (098); unit-tested                                    |
+| `reachableFinalPlaceRange(...)` (pure)                                       | new in `$lib/tournament-logic.ts`                               | best/worst achievable place (098); reuses ladder and bracket rules; unit-tested |
 
 ### Auth model (unchanged from 030)
 
