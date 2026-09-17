@@ -13,9 +13,10 @@ Players have no personal view of the tournament. The court QR (060) is per court
 1. Public, mobile-first page **`/player/[token]`**. One URL per player for the whole tournament — bookmark it, add it to the home screen.
 2. Always answers: **Which court? Which physical court? When (shift / wait)? With and against whom? How am I doing?**
 3. Always shows **placement**: where the player is currently placed overall, and the **best and worst final place still theoretically achievable** — see [Placement](#placement).
-4. **Updates itself** after close round, retirement, manual moves (096), round-1 rebuilds — via polling, no reload.
-5. Links to the court page for score entry. Scoring stays on the court page (060); the player page never writes scores.
-6. Covers every player state: check-in open, active, court done / waiting, frozen bracket, eliminated in final, retired / injured, completed, unknown token.
+4. Always shows a **record**: seed (if any), total points, total diff, and a **game-by-game history** (partner, opponents, score, per-game diff) so the player can see why they were promoted or relegated — see [Record and history](#record-and-history).
+5. **Updates itself** after close round, retirement, manual moves (096), round-1 rebuilds — via polling, no reload.
+6. Links to the court page for score entry. Scoring stays on the court page (060); the player page never writes scores.
+7. Covers every player state: check-in open, active, court done / waiting, frozen bracket, eliminated in final, retired / injured, completed, unknown token.
 
 ## Non-Goals
 
@@ -147,7 +148,113 @@ Placement hidden. Polling continues so the court appears at start without reload
 
 ### Below the main card
 
-- **History**: one row per closed round — round, court (+label), court size, rank, points, diff — from `standingsSnapshot` (094).
+See [Record and history](#record-and-history) — always below placement (or below the main card in `not_started` / `completed`). Hidden only before the tournament has started and the player has no games.
+
+## Record and history
+
+The point of this block is that a player can answer, without asking the organizer: **what did I score, with whom, and why did I change courts?**
+
+### Record strip
+
+Always visible once the tournament has started (`status = 'active'` or `completed`), including `retired` / `frozen` / `eliminated`.
+
+```
+┌────────────────────────────────────────────────┐
+│ Record                                          │
+│ Seed 4 of 16 · 1250 pts          (preseed)      │
+│ Points 126 · Diff +18 · 6 matches               │
+└────────────────────────────────────────────────┘
+```
+
+| Field       | Source                                                                                                                                                                                                                                           | Notes                                                                                                                                                              |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Seed**    | `player.seedRank` + `seedPoints`                                                                                                                                                                                                                 | Preseed only. Rank 1 = highest seed points (same order as round-1 snake). Hidden for random seed; instead: "Random seed · started on Court k" once round 1 exists. |
+| **Points**  | Sum of **raw** points scored in every completed set/match the player took part in (same `rawPoints` as `buildPlayerRoundStats`). Unplayed / canceled matches do not add. Injured-with-substitute matches add **0** for the injured player (092). |
+| **Diff**    | Sum of **raw** (points for − points against) across those same matches (`rawDiff`).                                                                                                                                                              |
+| **Matches** | Count of completed, non-canceled matches the player actually played (not sit-outs).                                                                                                                                                              |
+
+On 5p/6p courts, ranking uses **average** points per game and total-points tie-break divides a 5p/6p round by 3 (094). The strip still shows **raw** totals (what the player actually scored). If any round was 5p/6p or had canceled matches, a one-line note under the strip: "5-player / 6-player rounds use average points to rank the court — raw totals are shown here." Linking to the court standings for that round is enough; do not show a second "normalized total" unless it avoids a real argument (Open Question 10).
+
+`not_started`: record strip hidden (no games yet). Seed may still be shown for preseed: "Seed 4 of 16 · 1250 pts · tournament not started."
+
+### History
+
+One **round card** per round the player was on a court, **newest first**. Includes the **current** round as soon as any of the player's matches have a score (so "games played so far" is one list, not split with "Your matches" above). The current-round card is labelled "in progress". Closed rounds use `standingsSnapshot` (094) for rank/points/diff so they do not move on reload; match rows come from the `match` table (historical scores are immutable unless the organizer reopens the round — 096).
+
+```
+┌────────────────────────────────────────────────┐
+│ Round 2 · Court 3 (Beach B) · 4p                │
+│ You finished 2nd · 42 pts · +7                  │
+│ ▲ from Court 4  →  Court 2 next                 │
+│ Promoted: rank 1–2 move up one court            │
+│ (ladder, 2 up / 2 down)                         │
+│                                                 │
+│ You + Ben     vs  Carla + Dan    21–18   +3     │
+│ You + Carla   vs  Ben + Dan      21–19   +2     │
+│ You + Dan     vs  Ben + Carla    21–16   +5     │
+├────────────────────────────────────────────────┤
+│ Round 1 · Court 4 · 4p                          │
+│ You finished 1st · 63 pts · +12                 │
+│ Started here  →  Court 3                        │
+│ Vertical seeding: 1st-place tier fills Court 1, │
+│ then Court 2, … — you went to Court 3 because   │
+│ two other 1sts ranked above you on points.      │
+│                                                 │
+│ You + Eva     vs  Finn + Gita    21–15   +6     │
+│ …                                               │
+└────────────────────────────────────────────────┘
+```
+
+#### Per-round header
+
+| Field                                           | Meaning                                                                                                                               |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Round, court number, physical label, court size | From `court_rotation` / `court.label`                                                                                                 |
+| Rank on court, round points, round diff         | Snapshot for closed rounds; live `calculateCourtStandings` for the current round                                                      |
+| Movement                                        | Previous court → next court (or "in progress"). Same `up` / `down` / `same` arrows as the main card.                                  |
+| **Why**                                         | One sentence from the format + this rank — see [Movement copy](#movement-copy). This is the "understand promotion / relegation" line. |
+
+#### Per-game rows
+
+One row per **match** the player was in (`matchNumber` group). 5p/6p sit-outs are listed as "You sat out" with no score. 3p solo: partner is "— (solo)".
+
+| Column    | Content                                                                                                                                                                                                                      |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Partners  | "You + {partner}" (or solo)                                                                                                                                                                                                  |
+| Opponents | "{a} + {b}" (one name on 3p 2v1 when the player is in the pair and the opponent is solo: "vs {name} (solo)")                                                                                                                 |
+| Result    | Single set: `21–18`. Best-of-3: `21–19, 15–21, 15–13` (sets in order; unplayed deciding set omitted). Player's team score is always on the left. Canceled: "canceled". Substitute: player's name still, notice "sub played". |
+| Diff      | Player's team points − opponents' points for that match. Single set: `21−18 = +3`. Best-of-3: sum of set diffs (same as how `buildPlayerRoundStats` adds set rows). Unscored: "—".                                           |
+
+Rows in match order (1, 2, 3 / 4). Unscored matches of the current round stay in the list as "—" so the player sees what is left; they duplicate the "Your matches" block on the main card — acceptable (history is the archive; the main card is "now"). Alternative (Open Question 11): omit the current round from history and keep games only on the main card.
+
+#### Movement copy
+
+Short, format-specific, derived from the same rules as `reachableFinalPlaceRange` / 080. No extra simulation.
+
+| Format                 | Rank on this court | Copy                                                                                                                                               |
+| ---------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Random seed, round 1   | any                | "Vertical seeding: finishers of the same rank are ordered by points, then fill courts from the top. You were in the {nth}-place tier → Court {k}." |
+| Random seed, round ≥ 2 | 1 or 2             | "Ladder: ranks 1 and 2 move up one court." Court 1 rank 1–2: "You stay on Court 1."                                                                |
+| Random seed, round ≥ 2 | ≥ 3                | "Ladder: ranks 3 and below move down one court." Bottom court: "You stay on the bottom court."                                                     |
+| Preseed                | 1 or 2             | "Winners of this group play in the {winners' role} next (places {min}–{max})."                                                                     |
+| Preseed                | ≥ 3                | "This group splits: ranks 3–4 go to the {losers' role} (places {min}–{max})."                                                                      |
+| Frozen (087)           | —                  | "This court is finished — your place in this bracket is final."                                                                                    |
+| Manual move (096)      | —                  | "The organizer moved you onto this court." (if `manualAdjustedAt` is set on the rotation you arrived on)                                           |
+| Late joiner (096)      | —                  | "You joined in round {n} (entered at the bottom court)."                                                                                           |
+
+A collapsible **How courts change** under the first history card explains the tournament's format in three lines (random: R1 vertical, then 2 up / 2 down; preseed: group split by rank). No diagrams. Link to `/docs` if that page already covers it.
+
+### Edge cases
+
+| Case                     | History                                                                          |
+| ------------------------ | -------------------------------------------------------------------------------- |
+| Best-of-3                | One row per match, all played sets, diff = sum of set diffs                      |
+| 5p/6p sit-out            | Row with no score: "You sat out (parallel games)"                                |
+| Canceled (injury B)      | Row: "canceled — not counted"                                                    |
+| Substitute (injury A)    | Row with score; injured player 0 pts; tag "sub"                                  |
+| Reopened round (096)     | Current-round card replaces the closed one; scores remain until edited           |
+| `not_started`            | No history                                                                       |
+| Player sat a whole shift | Still a round card (they have matches); wait/shift is on the main card, not here |
 
 ## Placement
 
@@ -301,6 +408,8 @@ type PlayerPageData = {
 		name;
 		joinedRound;
 		finalStanding;
+		seedRank: number | null;
+		seedPoints: number | null;
 		retired: { round; reason; injured: boolean; replacedByName: string | null } | null;
 	};
 	state: PlayerRoundState; // see States
@@ -337,7 +446,42 @@ type PlayerPageData = {
 			direction: 'up' | 'down' | 'same';
 		} | null;
 	};
-	history: { round; courtNumber; label; courtSize; rank; points; diff }[];
+	history: {
+		round: number;
+		courtNumber: number;
+		label: string | null;
+		courtSize: number;
+		rank: number | null;
+		points: number;
+		diff: number;
+		isCurrent: boolean;
+		fromCourt: number | null;
+		toCourt: number | null;
+		movement: 'up' | 'down' | 'same' | null;
+		whyKey: string; // i18n key id for Movement copy
+		whyParams: Record<string, string | number>;
+		manualAdjusted: boolean;
+		matches: {
+			matchNumber: number;
+			partnerName: string | null;
+			opponentNames: string[];
+			solo: boolean;
+			sitOut: boolean;
+			sets: { a: number | null; b: number | null }[];
+			diff: number | null;
+			isCanceled: boolean;
+			hasSubstitute: boolean;
+		}[];
+	}[];
+	record: {
+		seedRank: number | null;
+		seedPoints: number | null;
+		startedCourt: number | null;
+		totalPoints: number; // raw sum
+		totalDiff: number; // raw sum
+		matchesPlayed: number;
+		usedAverages: boolean; // any 5p/6p or canceled round
+	};
 	placement: {
 		current: number | null; // live overall position including current round (null only in `not_started`)
 		total: number; // active players
@@ -354,7 +498,7 @@ type PlayerPageData = {
 
 Queries per request: player by token → tournament → all rotations of the tournament (needed for history, movement, progress) → matches of the current round (all courts — needed for live standings, `liveRoundResults`, round progress) → players of the tournament (names) → standings. `court.token` is read from the `court` table via `rotation.courtId`.
 
-`placement.current` comes from the shared standings computation (`standings-service.ts`, 095) **including the current round's live court standings**. `placement.best/worst/nextCourt` come from `reachableFinalPlaceRange` with `projectedRank` and `liveRoundResults`.
+`placement.current` comes from the shared standings computation (`standings-service.ts`, 095) **including the current round's live court standings**. `placement.best/worst/nextCourt` come from `reachableFinalPlaceRange` with `projectedRank` and `liveRoundResults`. `record` / `history` are derived from the same rotations + matches already loaded for placement (`playerMatchesView` per round, `buildPlayerRoundStats` / `buildPlayerTotalStats` for totals). No extra round-trip.
 
 ### `src/routes/player/[token]/player-data.remote.ts`
 
@@ -382,7 +526,7 @@ The closed-round text "Check with organizer for your next court." becomes "Your 
 
 ## i18n Keys (new)
 
-`player_title`, `player_round_of`, `player_court_now`, `player_physical_court`, `player_players_scoring` (`{size} players · {scoring}`), `player_shift_now`, `player_shift_wait`, `player_your_matches`, `player_you`, `player_vs`, `player_sit_out`, `player_canceled`, `player_substitute_note`, `player_court_standings`, `player_open_court`, `player_court_done`, `player_finished_rank`, `player_waiting_courts` (`{done} of {total}`), `player_next_appears`, `player_next_hint_up`, `player_next_hint_down`, `player_next_hint_same`, `player_next_hint_winners`, `player_next_hint_losers`, `player_frozen`, `player_eliminated`, `player_retired`, `player_retired_injury`, `player_replaced_by`, `player_final_place`, `player_finished_early`, `player_placement_heading`, `player_placement_current` (`Currently {place} of {total}`), `player_placement_range` (`Still possible: {best} – {worst}`), `player_placement_final`, `player_placement_bar_label` (a11y), `player_placement_can_still_change`, `player_not_started`, `player_not_started_registered`, `player_history`, `player_checkin_open_note`, `player_movement_up`, `player_movement_down`, `player_movement_same`, `player_last_updated`, `player_refresh`, `player_not_found`, `court_closed_see_player_page` (replaces the current closed-round hint).
+`player_title`, `player_round_of`, `player_court_now`, `player_physical_court`, `player_players_scoring` (`{size} players · {scoring}`), `player_shift_now`, `player_shift_wait`, `player_your_matches`, `player_you`, `player_vs`, `player_sit_out`, `player_canceled`, `player_substitute_note`, `player_court_standings`, `player_open_court`, `player_court_done`, `player_finished_rank`, `player_waiting_courts` (`{done} of {total}`), `player_next_appears`, `player_next_hint_up`, `player_next_hint_down`, `player_next_hint_same`, `player_next_hint_winners`, `player_next_hint_losers`, `player_frozen`, `player_eliminated`, `player_retired`, `player_retired_injury`, `player_replaced_by`, `player_final_place`, `player_finished_early`, `player_placement_heading`, `player_placement_current` (`Currently {place} of {total}`), `player_placement_range` (`Still possible: {best} – {worst}`), `player_placement_final`, `player_placement_bar_label` (a11y), `player_placement_can_still_change`, `player_not_started`, `player_not_started_registered`, `player_history`, `player_record`, `player_record_seed` (`Seed {rank} of {total}`), `player_record_seed_points`, `player_record_random` (`Random seed · started on Court {court}`), `player_record_totals` (`Points {points} · Diff {diff} · {matches} matches`), `player_record_averages_note`, `player_history_in_progress`, `player_history_finished_rank`, `player_history_from_to`, `player_history_why_ladder_up`, `player_history_why_ladder_down`, `player_history_why_ladder_stay_top`, `player_history_why_ladder_stay_bottom`, `player_history_why_vertical`, `player_history_why_preseed_winners`, `player_history_why_preseed_losers`, `player_history_why_frozen`, `player_history_why_manual`, `player_history_why_joined`, `player_history_how_heading`, `player_history_how_random`, `player_history_how_preseed`, `player_history_sit_out`, `player_history_solo`, `player_history_canceled`, `player_history_sub`, `player_checkin_open_note`, `player_movement_up`, `player_movement_down`, `player_movement_same`, `player_last_updated`, `player_refresh`, `player_not_found`, `court_closed_see_player_page` (replaces the current closed-round hint).
 
 ## Testing
 
@@ -391,7 +535,8 @@ The closed-round text "Check with organizer for your next court." becomes "Your 
 - `derivePlayerRoundState` — one case per state, including: injured-with-substitute in current round → `injured`, injured in a past round → `retired`; frozen court; eliminated in final; completed overrides everything.
 - `movementFor(prevCourt, currentCourt)` → up/down/same/null.
 - `nextHintFor(format, round, rank, courtNumber, courtCount, courtSize)` — ladder table above; Court 1 rank 1 → same; bottom court rank 4 → same; R1 random → null; preseed → winners/losers.
-- `playerMatchesView(matches, playerId, courtSize)` — partner/opponents/sit-out extraction for 3p/4p/5p/6p.
+- `playerMatchesView(matches, playerId, courtSize)` — partner/opponents/sit-out extraction for 3p/4p/5p/6p; per-match diff with player's team on the left; best-of-3 sums set diffs; canceled → `diff: null`.
+- `movementWhy(format, round, rank, courtNumber, courtCount, …)` — one key per row of the Movement copy table.
 - `placeForCourtRank(courtSizes, k, r)` — canonical `[4,4,4,4]`, non-standard bottom `[4,4,4,5]` (Court 4 rank 5 → 17), manual layout `[4,3,5,4]`.
 - `reachableFinalPlaceRange` — every row of both example tables above, plus:
   - live rank 2 vs 3 on Court 3 in round 2 of 16p: up → 1st–12th, down → 9th–16th.
@@ -409,7 +554,7 @@ The closed-round text "Check with organizer for your next court." becomes "Your 
 1. Create 16p → open a player's URL anonymously → shows "Round 1 of N", Court X, "Open court page" links to the stable court token URL; placement reads "Currently ?th of 16 · Still possible: 1st – 16th".
 2. Save one match so the player is 1st on the court → "Still possible" narrows (projected promote); "Currently" matches the live standings page row; hint "Remaining matches can still change this."
 3. Score all matches on that court → state `court_done`; hint gone; range uses the now-stable rank.
-4. Score all courts, close round → within one poll interval (use the Refresh button in the test) the page shows the new court and a movement arrow; history has one row; "Currently" matches the player's row on the standings page.
+4. Score all courts, close round → within one poll interval (use the Refresh button in the test) the page shows the new court and a movement arrow; history has a **Round 1** card with three game rows (partner names, scores, diffs that sum to the round diff); record strip totals match; "Currently" matches the player's row on the standings page.
    3b. In the final round with the court done → placement shows a single "Final place N" equal to the standings page.
 5. Set a court label on the manage page → label appears on the player page.
 6. Swap this player with another (096) → court number changes without reload.
@@ -424,11 +569,13 @@ The closed-round text "Check with organizer for your next court." becomes "Your 
 2. **Poll interval**: 10 s (proposed) vs. 5 s like the court/tournament pages. 10 s halves the load for the largest page population.
 3. **"Likely next" hint**: include (proposed, rule-based only) or drop to avoid arguments when the organizer's tie-break changes it?
 4. **Current place is live including the current round** (required). The `(tournamentId, lastActivityAt)` cache is the proposed way to make that cheap. OK to ship without the cache first and measure?
-5. **History detail**: rank/points/diff per round (proposed) vs. also listing each match result.
+5. **History** lists every match (required). Current-round matches appear both on the main card and in the in-progress history card (proposed) vs. history = closed rounds only (Open Question 11).
 6. **Tone**: second person ("You finished 2nd") — proposed; the standings page is third person. Fine for a personal page?
 7. **Range bar**: keep the visual bar (proposed) or text only? On 64-player tournaments the bar has 64 segments — still readable at phone width as a plain gradient, but worth a look.
 8. Should the range also be shown on the **standings page** per row (organizer/spectator view)? Cheap once the function exists; proposed as a follow-up, not part of this spec.
 9. Round 1 vertical seeding with **partial** scores on _other_ courts: `nextCourt` from live `verticalSeeding` can jump as those courts report. Acceptable (it is current position) vs. only project once this court has scores but ignore other courts' incompleteness?
+10. **5p/6p totals**: raw points/diff on the record strip (proposed) vs. also showing the normalized total used in tie-break.
+11. Duplicate "Your matches" vs. current-round history card: keep both (proposed) or history starts after the round is closed?
 
 ## Related Specs
 
@@ -439,7 +586,8 @@ The closed-round text "Check with organizer for your next court." becomes "Your 
 - [060_court-operations.md](./060_court-operations.md) — court page the player links to; closed-round hint text
 - [660_virtual-court-scheduling.md](./660_virtual-court-scheduling.md) — shift and wait model
 - [087_preseed-frozen-courts.md](./087_preseed-frozen-courts.md), [670_player-retirement.md](./670_player-retirement.md) — frozen / eliminated / retired placement rules
-- [094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md) — snapshots used for history
+- [070_scoring-and-standings.md](./070_scoring-and-standings.md), [080_promotion-relegation.md](./080_promotion-relegation.md) — points, diff, and the movement copy
+- [094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md) — snapshots used for closed-round headers
 - [1020_live-query-timeout.md](./archive/1020_live-query-timeout.md) — polling pattern
 
 ## Implementation Files
@@ -447,8 +595,8 @@ The closed-round text "Check with organizer for your next court." becomes "Your 
 - `src/routes/player/[token]/+page.svelte`, `+page.server.ts` (404 + self check-in), `+page.ts` (`ssr = false`), `player-data.remote.ts`
 - `src/lib/server/player-page-data.ts`
 - `src/lib/server/standings-service.ts` (extracted from `standings/standings-data.remote.ts`, 095)
-- `src/lib/tournament-logic.ts` — `derivePlayerRoundState`, `movementFor`, `nextHintFor`, `playerMatchesView`, `placeForCourtRank`, `reachableFinalPlaceRange`
+- `src/lib/tournament-logic.ts` — `derivePlayerRoundState`, `movementFor`, `nextHintFor`, `playerMatchesView`, `movementWhy`, `placeForCourtRank`, `reachableFinalPlaceRange`
 - `src/lib/components/player/PlacementCard.svelte` (numbers + range bar)
-- `src/lib/components/player/NowCard.svelte`, `MatchList.svelte`, `HistoryTable.svelte`
+- `src/lib/components/player/RecordStrip.svelte`, `HistoryList.svelte`, `NowCard.svelte`, `MatchList.svelte`
 - `src/routes/court/[token]/+page.svelte` — closed-round hint text
 - `messages/*.json`, `e2e/player-page.spec.ts`
