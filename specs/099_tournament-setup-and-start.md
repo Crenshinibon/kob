@@ -18,7 +18,7 @@ Today `createTournamentForm` does everything at once: it needs ≥ 8 player name
 2. **Create** with name + format + rules and **0–64 players**. No courts, no round 1.
 3. **Start** explicitly: requires 8–64 active players; generates courts + round 1; sets `active`, `currentRound = 1`, `startedAt`.
 4. Roster edits in `setup` are plain inserts/deletes — no rebuild logic.
-5. Check-in ([097](./097_player-check-in.md)) runs **before** start; "Close check-in" leads straight into "Start tournament". Players who scan before start see "not started yet" on their player page ([098](./098_player-page.md)) and then their court appears at start.
+5. Check-in ([097](./097_player-check-in.md)) runs **before** start; "Close check-in" leads straight into "Start tournament". Players who scan before start see "not started yet" on their player page ([098](./098_player-page.md)) and then NOW (court, who vs whom, score entry) appears at start.
 6. Keep the fast path: creating with ≥ 8 pasted names and starting immediately is one extra tap.
 
 ## Non-Goals
@@ -84,7 +84,7 @@ The operations view renders a **start panel** instead of court cards:
 - Court layout, rounds and duration come from the existing pure functions (`getCourtConfiguration`, `calculateRoundCount`, `estimateTournamentDuration`) on the current roster count.
 - "Checked-in only" option appears when check-in has at least one check-in and at least one player is not checked in. It **removes** the unchecked players (hard delete, same as 096 Remove) before starting. Open Question 3.
 - The Start button is disabled below 8 (or below 8 checked-in when that option is selected) with the reason shown.
-- Round stepper, close round, QR codes are hidden in `setup`.
+- Round stepper and close round are hidden in `setup`. Player QRs live on the check-in page (097), which is available before start.
 
 ## Start
 
@@ -107,8 +107,8 @@ This is the second half of today's `createTournamentForm`, extracted into `start
 | **Dashboard** (`/`)                                          | New **Setup** section listing `status = 'setup'` tournaments with player count and "Start" hint. (Replaces the empty "Draft" section that was removed earlier.)                                                                                                                                                                            |
 | **Manage page** ([096](./096_tournament-management-page.md)) | New `setup` row in the locking matrix: add / remove / rename / re-seed / paste list / CSV import are plain roster edits (no rebuild); Courts tab shows "Tournament not started"; Rules fully editable including scoring mode and rounds; Tournament tab offers Start (same panel) and Delete. Retire/injury/swap/move/finish-early hidden. |
 | **Check-in** ([097](./097_player-check-in.md))               | Normal case is now check-in **before** start. "Close check-in" dialog offers **Start tournament** (with the checked-in-only option) instead of "remove & reshuffle". The reshuffle banner on the player page only appears in the rare case that the tournament was started while check-in was still open.                                  |
-| **Player page** ([098](./098_player-page.md))                | `not_started` becomes a real state: "Tournament has not started yet · 14 players registered · You are checked in ✓". Placement block hidden. Polling continues so the court appears at start without reload.                                                                                                                               |
-| **Court pages**                                              | No `court` rows exist in `setup` — nothing to link to. Court QR codes appear after start as today.                                                                                                                                                                                                                                         |
+| **Player page** ([098](./098_player-page.md))                | `not_started` becomes a real state: "Tournament has not started yet · 14 players registered · You are checked in ✓". Placement and score entry hidden. Polling continues so NOW (court + matchup + score fields) appears at start without reload.                                                                                          |
+| **Court pages**                                              | No `court` rows exist in `setup` — organizer fallback 404s. After start the organizer link works; players score on `/player/[token]`, not via court QRs (098).                                                                                                                                                                          |
 | **Cleanup cron** ([1010](./archive/1010_cleanup-cronjob.md)) | Stale rule (no activity for 31 days) already covers `setup` tournaments that were never started; no change.                                                                                                                                                                                                                                |
 | **050 / 030**                                                | "No draft state" note and the dashboard description are updated when this lands.                                                                                                                                                                                                                                                           |
 
@@ -148,10 +148,10 @@ Remote functions:
 ### E2E (`e2e/setup-start.spec.ts`)
 
 1. Create with 0 players → dashboard Setup section; operations view shows the start panel with Start disabled.
-2. Paste 16 names on the manage page → panel shows `4 × 4p`, Start enabled → Start → round 1 with QR codes; stepper visible.
+2. Paste 16 names on the manage page → panel shows `4 × 4p`, Start enabled → Start → round 1; stepper visible; player pages show NOW.
 3. Create with 16 names via **Create & start** → round 1 immediately (existing flows).
 4. Check-in 12 of 16 in `setup` → Close check-in → Start with checked-in only → 12 players, `[4,4,4]`, removed players' tokens 404.
-5. Player page opened in `setup` → "not started" → after Start, page shows the court within one poll.
+5. Player page opened in `setup` → "not started" → after Start, page shows court + first matchup + score inputs within one poll.
 6. Preseed: rounds shown as "computed at start"; after start `numRounds` matches `calculateRoundCount`.
 7. Rules (scoring mode, rounds) editable in `setup` without any lock message.
 

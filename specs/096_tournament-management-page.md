@@ -127,7 +127,7 @@ New players always get a `player.token` (097). Standings: rounds not played cont
 
 ## Tab: Courts
 
-Compact cards for the **current round only** (no QR codes here — those stay on the operations view). Each card: court number, label, size badge, lock state (🔓/🔒 per court), player list.
+Compact cards for the **current round only** (no QR codes — player QRs live on check-in, 097). Each card: court number, label, size badge, lock state (🔓/🔒 per court), player list.
 
 Two operations, both driven by a tap flow (drag-and-drop is a desktop-only progressive enhancement, not required for v1):
 
@@ -355,9 +355,9 @@ Reused unchanged from `tournament-actions.remote.ts`: `retirePlayer`, `reportInj
 
 ## Operations View Changes (`/tournament/[id]`)
 
-Removed from `+page.svelte`: scoring overrides editor, tie-break editor, retire form, injury form, delete button. Added: **Manage** button in the header, **Check-in** button (097) while check-in is open, compact rules summary line ("Single set to 21 · win by 2 · tie-break: points → diff → …") linking to `/manage#rules`, **Report injury** shortcut linking to `/manage#players` while the round has scores, **adjusted** badge on court cards with `manualAdjustedAt`.
+Removed from `+page.svelte`: scoring overrides editor, tie-break editor, retire form, injury form, delete button, **player-facing `CourtQRCode`**. Added: **Manage** button in the header, **Check-in** button (097) while check-in is open, compact rules summary line ("Single set to 21 · win by 2 · tie-break: points → diff → …") linking to `/manage#rules`, **Report injury** shortcut linking to `/manage#players` while the round has scores, **adjusted** badge on court cards with `manualAdjustedAt`.
 
-Kept: round stepper, court cards with QR + labels, manual tie-break dialog (it belongs to closing a round), close round / finalize, **Reopen last round** (visible when variant A or B applies). Expected size after the split: roughly half of the current 2,300 lines.
+Kept: round stepper, court cards with labels and an organizer **Open court page** link (stable `court.token`, 1045) — **no** player-facing court QR. Manual tie-break dialog (it belongs to closing a round), close round / finalize, **Reopen last round** (visible when variant A or B applies). Expected size after the split: roughly half of the current 2,300 lines.
 
 In `setup` ([099](./099_tournament-setup-and-start.md)) this page shows the start panel instead of court cards.
 
@@ -382,14 +382,14 @@ In `setup` ([099](./099_tournament-setup-and-start.md)) this page shows the star
 1. Rename → new name visible on court page and player page.
 2. Remove no-show in R1 (16 → 15) → courts become `[4,4,4,3]`, removed player absent from standings.
 3. Add late player in R1 (16 → 17) → still 4 courts, bottom court 5p (`[4,4,4,5]`); new player has a token. Add in R1 (20 → 21) → 5 courts, bottom 5p; a fifth `court` row was created.
-4. Swap two players pre-scores → both court pages show swapped names; rotation tokens unchanged (old court URLs still work).
+4. Swap two players pre-scores → both **player pages** show swapped names; organizer court fallback URLs still work (stable `court.token`).
 5. Save a score on Court 1 → swap involving Court 1 rejected (`err_court_locked`); swap between Courts 3 and 4 still works.
 6. Move creates a 3p court → warning shown; round closes correctly using rotation sizes; next round sizes canonical.
 7. `numRounds` 4 → 2 while in round 2 (no scores) → "Finalize Tournament" button appears; 4 → 1 rejected.
 8. Finish early after round 2 with partial scores → standings page shows finished-early note; player page shows final standing.
 9. Preseed: add player in round 2 rejected with `err_add_player_preseed`.
 10. Existing retire / injury / undo E2E tests re-pointed at `/manage#players` and still pass.
-11. Close round 1 → reopen → round 1 scores editable, round 2 gone, Close Round shown again; court tokens of round 1 still work.
+11. Close round 1 → reopen → round 1 scores editable on player pages, round 2 gone, Close Round shown again; organizer court tokens of round 1 still work.
 12. Enter a score in round 2 → reopen blocked (`err_reopen_has_scores`).
 13. Retire between rounds, then reopen → retiree restored, replacement gone if any.
 14. Finalize tournament → reopen last round → `status = active`, standings no longer final, scores editable.
@@ -410,7 +410,7 @@ In `setup` ([099](./099_tournament-setup-and-start.md)) this page shows the star
 - [095_org-player-experience-index.md](./095_org-player-experience-index.md) — shared migration, extraction list, implementation order
 - [050_tournament-management.md](./050_tournament-management.md) — current pages; update when implemented
 - [097_player-check-in.md](./097_player-check-in.md) — check-in badge, remove no-shows
-- [098_player-page.md](./098_player-page.md) — reflects moves/adds automatically
+- [098_player-page.md](./098_player-page.md) — reflects moves/adds automatically; primary scoring surface
 - [099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md) — `setup` status, start panel
 - [093_round-history-stepper.md](./093_round-history-stepper.md) — browsing closed rounds stays read-only; reopen is the only way to edit them again
 - [670](./670_player-retirement.md), [091](./091_preseed-retirement-bracket-policy.md), [092](./092_mid-round-injury-forward-retirement.md) — reused retirement/injury commands
