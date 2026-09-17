@@ -29,15 +29,17 @@ At the start of a tournament the organizer stands at a table with a phone and a 
 ## Flow
 
 ```
-Create tournament ─► Round 1 generated ─► Check-in page
+Create tournament (`setup`, 0+ players) ─► Check-in page
                                           │  print sheet / show QRs
 Players arrive ──► scan own QR (auto check-in) or organizer taps name
-Start time ──────► organizer: "Close check-in" ─► "2 not checked in — remove & reshuffle?"
-                                              └► Round 1 rebuilt without no-shows (096)
+Start time ──────► organizer: "Close check-in" ─► "Start with 12 checked-in players?"
+                                              └► startTournament (099) — round 1 generated
 Players open their player page ─► see court ─► "Enter scores" ─► court page (060)
 ```
 
-While check-in is open **and** round 1 has no scores, the player page shows a banner "Check-in still open — your court may change" (098), because removing no-shows reshuffles round 1. Closing check-in removes that banner. Check-in can be reopened.
+Check-in **before start** is the normal path ([099](./099_tournament-setup-and-start.md)). Courts do not exist yet, so the player page shows `not_started` until start.
+
+The reshuffle banner ("your court may change") only appears if check-in is still open **after** the tournament has started (rare: "Create & start", or reopen check-in). Closing check-in after start may still remove no-shows and rebuild round 1 if it has no scores (096). Check-in can be reopened.
 
 ## UI
 
@@ -71,12 +73,29 @@ While check-in is open **and** round 1 has no scores, the player page shows a ba
 
 ### Close check-in dialog
 
+**In `setup` ([099](./099_tournament-setup-and-start.md)):**
+
+```
+Close check-in and start?
+4 players are not checked in:
+  Carla Ruiz · Dan Weber · Eva Lang · Finn Berg
+
+(•) Start with the 12 checked-in players  (12 players, 3 × 4p)
+( ) Start with all 16 players
+
+[Start tournament]  [Cancel]
+```
+
+Delegates to `startTournamentForm({ checkedInOnly })` (099) and sets `checkInClosedAt`. Start still requires ≥ 8 players in the chosen set.
+
+**After the tournament has started** (round 1 exists):
+
 ```
 Close check-in?
 4 players are not checked in:
   Carla Ruiz · Dan Weber · Eva Lang · Finn Berg
 
-(•) Remove them and reshuffle round 1  (16 → 12 players, 3 × 4p)
+(•) Remove them and rebuild round 1  (16 → 12 players)   // only if round 1 has no scores
 ( ) Keep them on the roster
 
 [Close check-in]  [Cancel]
@@ -96,7 +115,7 @@ Close check-in?
 
 - Operations view header: **Check-in** button while `checkInClosedAt` is null (or always, low-key, after that).
 - Manage page → Players tab shows the ✓/○ badge per player and links to the check-in page.
-- Creation redirect stays `/tournament/[id]` (095 cross-cutting OQ 2).
+- Creation redirect is `/tournament/[id]` in `setup` ([099](./099_tournament-setup-and-start.md)); the start panel links to check-in.
 
 ## Self Check-in (on the player page)
 
@@ -131,12 +150,12 @@ Token generation: `crypto.randomBytes(16).toString('hex')` on every `player` ins
 
 ### `src/routes/tournament/[id]/check-in/check-in.remote.ts`
 
-| Function           | Kind    | Input                                 | Notes                                                                                                     |
-| ------------------ | ------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `getCheckInData`   | query   | `tournamentId`                        | active players with `token`, `checkedInAt`, `checkInSource`; counts; `checkInClosedAt`; `round1HasScores` |
-| `setPlayerCheckIn` | command | `playerId, checkedIn: boolean`        | sets/clears `checkedInAt`, `checkInSource = 'org'`                                                        |
-| `closeCheckIn`     | command | `tournamentId, removeUnchecked: bool` | `removeUnchecked` → 096 `removeUncheckedPlayers`, then sets `checkInClosedAt`                             |
-| `reopenCheckIn`    | command | `tournamentId`                        | clears `checkInClosedAt`                                                                                  |
+| Function           | Kind    | Input                                 | Notes                                                                                                                       |
+| ------------------ | ------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `getCheckInData`   | query   | `tournamentId`                        | active players with `token`, `checkedInAt`, `checkInSource`; counts; `checkInClosedAt`; `round1HasScores`                   |
+| `setPlayerCheckIn` | command | `playerId, checkedIn: boolean`        | sets/clears `checkedInAt`, `checkInSource = 'org'`                                                                          |
+| `closeCheckIn`     | command | `tournamentId, removeUnchecked: bool` | After start: `removeUnchecked` → 096. In `setup`, the UI calls `startTournamentForm` (099) instead. Sets `checkInClosedAt`. |
+| `reopenCheckIn`    | command | `tournamentId`                        | clears `checkInClosedAt`                                                                                                    |
 
 All organizer-only (same guard as the operations view). `regeneratePlayerToken` lives in 096 (`manage-actions.remote.ts`) and is linked from the QR modal's ⋯ menu.
 
@@ -146,7 +165,7 @@ All organizer-only (same guard as the operations view). `regeneratePlayerToken` 
 
 ## i18n Keys (new)
 
-`checkin_title`, `checkin_progress` (`{checked} / {total}`), `checkin_search`, `checkin_print`, `checkin_close`, `checkin_reopen`, `checkin_closed_at`, `checkin_open_note`, `checkin_not_checked_in`, `checkin_source_scan`, `checkin_source_org`, `checkin_qr_hint`, `checkin_copy_link`, `checkin_link_copied`, `checkin_share`, `checkin_manage_no_shows`, `checkin_close_remove_option`, `checkin_close_keep_option`, `checkin_close_scores_exist`, `checkin_print_hint`, `checkin_print_button`, `checkin_sort_alpha`, `checkin_sort_status`.
+`checkin_title`, `checkin_progress` (`{checked} / {total}`), `checkin_search`, `checkin_print`, `checkin_close`, `checkin_reopen`, `checkin_closed_at`, `checkin_open_note`, `checkin_not_checked_in`, `checkin_source_scan`, `checkin_source_org`, `checkin_qr_hint`, `checkin_copy_link`, `checkin_link_copied`, `checkin_share`, `checkin_manage_no_shows`, `checkin_close_remove_option`, `checkin_close_keep_option`, `checkin_close_scores_exist`, `checkin_start_checked_in`, `checkin_start_all`, `checkin_print_hint`, `checkin_print_button`, `checkin_sort_alpha`, `checkin_sort_status`.
 
 ## Testing
 
@@ -161,23 +180,24 @@ All organizer-only (same guard as the operations view). `regeneratePlayerToken` 
 2. Tap a row → ✓ with "by you"; tap again → ○.
 3. Open another player's `/player/[token]` in an anonymous context → organizer's list shows ✓ "scanned" within one poll.
 4. Organizer un-checks that player → reload the player page → stays ○ (source stays `org`).
-5. Close check-in with "remove" and 2 no-shows → roster 14 → courts `[4,4,6]`, print page has 14 cards, removed players' tokens 404.
-6. Save one score in round 1 → close-check-in dialog offers only "Keep".
-7. Reopen check-in → banner disappears from player page (098).
+5. In `setup`, check in 12 of 16 → Close check-in → Start with checked-in only → 12 players, round 1 generated, removed tokens 404.
+6. After start, save one score in round 1 → close-check-in dialog offers only "Keep".
+7. Reopen check-in after start → banner appears on player page (098).
 
 ## Open Questions
 
 1. **Self check-in on scan** — keep (proposed), or make check-in a strictly organizer action?
-2. Should **closing check-in be required** before scores can be saved? Proposed: no — soft gate, banner only.
+2. Should **closing check-in be required** before start / before scores can be saved? Proposed: no — soft gate, banner only after start.
 3. Print layout: **cards, 3 columns** (proposed) vs. a dense table with small QRs (more per page, harder to scan).
 4. **Regenerate link** per player when a QR was shared: included via 096 (proposed). Needed for v1?
-5. Should the check-in page also show each player's **round-1 court** (helps the organizer answer questions at the desk)? Proposed: yes, as a small suffix, hidden until check-in is closed to avoid "but you said Court 2" after a reshuffle.
+5. Should the check-in page show each player's **round-1 court**? Hidden in `setup` (no courts yet). After start: as a small suffix (proposed).
 
 ## Related Specs
 
 - [095_org-player-experience-index.md](./095_org-player-experience-index.md)
 - [096_tournament-management-page.md](./096_tournament-management-page.md) — `removeUncheckedPlayers`, `regeneratePlayerToken`, badges
-- [098_player-page.md](./098_player-page.md) — landing page after scan; check-in banner
+- [099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md) — check-in before start
+- [098_player-page.md](./098_player-page.md) — landing page after scan; `not_started` + banner
 - [060_court-operations.md](./060_court-operations.md) — existing court QR codes and the `qrcode` package
 - [030_auth-and-users.md](./030_auth-and-users.md) — anonymous player access model
 

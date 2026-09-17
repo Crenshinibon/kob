@@ -18,6 +18,7 @@ The operations view (`/tournament/[id]`) mixes running the round with configurin
 | Round 1 took 75 minutes, 4 rounds will not fit → want 3 rounds              | `numRounds` is fixed after creation                                  |
 | Switch to single set after seeing best-of-3 is too slow                     | Only per-court-type overrides                                        |
 | Rain / darkness after round 2 → need final standings now                    | Nothing; tournament stays `active` and is auto-deleted after 31 days |
+| Closed a round too early / a score was wrong after close                    | Past rounds are read-only (093); no way back                         |
 
 ## Goals
 
@@ -26,12 +27,13 @@ The operations view (`/tournament/[id]`) mixes running the round with configurin
 3. Court assignments for the **current round**: swap two players, move one player, reset to computed, reshuffle round 1.
 4. Rules editable after creation with explicit **locking rules**.
 5. **Finish tournament early** with correct final standings.
-6. Slim the operations view down to running the round.
+6. **Reopen the last closed round** — scores become editable again; the next round (if any) is discarded. Also undoes finish-early / accidental finalize.
+7. Slim the operations view down to running the round.
 
 ## Non-Goals
 
-- Editing scores of closed rounds (093 non-goal stands).
-- Reopening a closed round — see Open Question 5.
+- Editing scores of a closed round **without** reopening it (093 still holds for the stepper: browsing history is read-only).
+- Reopening more than one round at a time (re-close, then reopen again).
 - Co-organizers / permissions (030 stays single admin).
 - Audit log table (095 cross-cutting OQ 3).
 
@@ -84,20 +86,20 @@ Badges: `active` (no badge), `✓ checked in` / `○ not checked in` (097), `ret
 
 ### Per-player actions
 
-| Action                         | Effect                                                                                                                                                                | Allowed when                                  |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| **Rename**                     | `player.name` update. Case-insensitive uniqueness among non-retired players.                                                                                          | Always (also completed tournaments)           |
-| **Edit seed points** (preseed) | Update `seedPoints`, recompute `seedRank` for the whole roster, rebuild round 1 from seed order.                                                                      | Round 1, no scores anywhere                   |
-| **Move…**                      | Jumps to the Courts tab with this player pre-selected.                                                                                                                | See Courts tab                                |
-| **Retire…**                    | Existing `retirePlayer` (reason, optional replacement, shrink/cascade preview — 670/091). Form moves here from the operations view.                                   | Existing rules (player's court has no scores) |
-| **Report injury…**             | Existing `reportInjury` (substitute / cancel & average, optional replacement — 670/092). Form moves here; operations view keeps a shortcut.                           | Existing rules (player's court has scores)    |
-| **Undo retirement / injury**   | Existing commands, 5-minute window, countdown shown.                                                                                                                  | Existing rules                                |
-| **Remove (no-show)**           | **Hard delete** of the player row, `playerCount--`, court sizes recalculated, round 1 rebuilt. Unlike retire: no final standing, never shown in standings or history. | Round 1, no scores anywhere                   |
-| **⋯ → Regenerate player link** | New `player.token` (invalidates a leaked/shared QR). See 097.                                                                                                         | Always while active                           |
+| Action                         | Effect                                                                                                                                                                                                                          | Allowed when                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| **Rename**                     | `player.name` update. Case-insensitive uniqueness among non-retired players.                                                                                                                                                    | Always (also completed tournaments)           |
+| **Edit seed points** (preseed) | Update `seedPoints`, recompute `seedRank` for the whole roster, rebuild round 1 from seed order.                                                                                                                                | Round 1, no scores anywhere                   |
+| **Move…**                      | Jumps to the Courts tab with this player pre-selected.                                                                                                                                                                          | See Courts tab                                |
+| **Retire…**                    | Existing `retirePlayer` (reason, optional replacement, shrink/cascade preview — 670/091). Form moves here from the operations view.                                                                                             | Existing rules (player's court has no scores) |
+| **Report injury…**             | Existing `reportInjury` (substitute / cancel & average, optional replacement — 670/092). Form moves here; operations view keeps a shortcut.                                                                                     | Existing rules (player's court has scores)    |
+| **Undo retirement / injury**   | Existing commands, 5-minute window, countdown shown.                                                                                                                                                                            | Existing rules                                |
+| **Remove (no-show)**           | **Hard delete** of the player row. In `setup`: no rebuild. After start (round 1, no scores): `playerCount--`, court sizes recalculated, round 1 rebuilt. Unlike retire: no final standing, never shown in standings or history. | `setup`, or round 1 with no scores            |
+| **⋯ → Regenerate player link** | New `player.token` (invalidates a leaked/shared QR). See 097.                                                                                                                                                                   | Always while `setup` or `active`              |
 
 **Remove all not checked in (N)** — bulk variant of Remove with a confirm dialog listing the names. Also reachable from the check-in page's "Close check-in" dialog (097). Same lock as Remove.
 
-Minimum roster after removals: creation still requires `MIN_TOURNAMENT_PLAYERS = 8`; removal is allowed down to **6** (two 3p courts) with a warning, because a real 8-player event with two no-shows must still be able to run. Below 6 → error suggesting delete + recreate. (Open Question 3.)
+Minimum roster after removals: in `setup` the roster may be 0. After start, removal is allowed down to **6** (two 3p courts) with a warning; creation/start still requires `MIN_TOURNAMENT_PLAYERS = 8`. Below 6 after start → error suggesting finish early or delete. (Open Question 3.)
 
 ### Add player
 
@@ -112,6 +114,7 @@ Joins: Court 4 — 17 players → 4 × 4p + 1 × 5p. Round 1 will be reshuffled.
 
 | Phase                                                   | Behaviour                                                                                                                                                                                                                                                                                                                                 |
 | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setup` ([099](./099_tournament-setup-and-start.md))    | Insert player with token. No courts yet — no rebuild. Max 64. Bulk paste / CSV on this tab.                                                                                                                                                                                                                                               |
 | Round 1, no scores                                      | Insert player (`joinedRound = null` — counts as original roster), `playerCount++`, `courtSizes = calculateCourtSizes(count)`, **rebuild round 1** (random: fresh shuffle; preseed: recompute `seedRank`, seed order). `ensureCourtsExist` adds a `court` row if the court count grows. Max 64.                                            |
 | Round ≥ 2, current round has no scores, **random seed** | Insert with `joinedRound = currentRound`. Rebuild the current round from the previous round's results with the new player appended as the **lowest-ranked** entrant (enters at the bottom court). Court sizes recalculated for `active + 1`. Ladder upper courts keep their computed players; only bottom-court composition/size changes. |
 | Round ≥ 2, **preseed**                                  | **Rejected** — a late entrant has no bracket. Error text points to "replacement" on a retiree as the supported path (091).                                                                                                                                                                                                                |
@@ -208,7 +211,7 @@ Collapsible groups, same `<details>` pattern as today. Editors for scoring overr
   ( ) Discard round 2 — final standings from round 1.
 
   Final standings will be computed and the tournament marked completed.
-  This cannot be undone.
+  Reopen last round (below) undoes this.
   [Finish tournament]  [Cancel]
   ```
 
@@ -217,18 +220,60 @@ Collapsible groups, same `<details>` pattern as today. Editors for scoring overr
   - Both: `status = 'completed'`, `completedAt = now()`, `finishedEarly = true`. Standings page shows "Finished early after round N". The stepper (093) shows only rounds ≤ `numRounds`.
   - Same 409 protection as `closeRoundForm` (`WHERE currentRound = ? AND status = 'active'`).
 
+- **Reopen last closed round** — also on the operations view, next to Close Round / Finalize. No time window.
+
+  **Variant A — tournament `active`, `currentRound = r ≥ 2`** (just closed round `r − 1`):
+
+  ```
+  Reopen round 1?
+  Round 2 has no scores and will be discarded.
+  Court pages for round 1 will accept scores again.
+
+  Also undoes after the close:
+    · Retired: Eva Lang
+    · Added: Finn Berg
+
+  [Reopen round 1]  [Cancel]
+  ```
+
+  Preconditions (blocking):
+
+  1. `status = 'active'` and `currentRound ≥ 2`.
+  2. Round `r` has **no scores**. If it does → `err_reopen_has_scores` ("Round 2 already has scores — cannot reopen round 1"). Organizer can still finish early / wait.
+
+  Effect:
+
+  1. List in the confirm dialog, then reverse, any **between-round** roster change after round `r − 1` closed: retirements with `retiredAt` after that close and `injuredAt` null (same restore as `undoRetirement`, no 5-minute window), replacements and late joiners with `joinedRound = r` (deleted). Injuries reported **during** round `r − 1` stay.
+  2. Delete round `r` rotations and matches.
+  3. Clear `roundClosedAt`, `standingsSnapshot`, `tieBreakConfigSnapshot` on round `r − 1` rotations. Keep `diceRolls` so standings do not reshuffle on reload.
+  4. `currentRound = r − 1`. Courts that froze after round `r − 1` (087) become active again; earlier frozen courts stay frozen.
+  5. Conditional update `WHERE currentRound = r AND status = 'active'` (same 409 claim as close).
+
+  **Variant B — tournament `completed`:**
+
+  ```
+  Reopen round 4?
+  Final standings will be cleared. Scores stay; you can edit them and close the round again.
+  [Reopen round 4]  [Cancel]
+  ```
+
+  Effect: clear snapshots on the last round's rotations (scores stay); clear `finalStanding` on players who are **not** retired (retiree standings from `computeRetirementFinalStanding` stay); `status = 'active'`, `completedAt = null`, `finishedEarly = false`. Close Round / Finalize reappears.
+
+  One round at a time: to undo two closes, reopen, re-close, reopen again.
+
 - **Delete tournament** — existing `deleteTournamentForm`, moved here into a "Danger zone" block. Removed from the operations view.
 
 ---
 
 ## Locking Rules (summary)
 
-| Tournament state              | Rename, labels, timing, tie-break, overrides, policy | Add / remove / re-seed / reshuffle R1 | Swap / move (per court) | Scoring mode | `numRounds` (random) | Retire | Injury | Finish early |
-| ----------------------------- | ---------------------------------------------------- | ------------------------------------- | ----------------------- | ------------ | -------------------- | ------ | ------ | ------------ |
-| Round 1, no scores            | ✓                                                    | ✓                                     | ✓                       | ✓            | ✓ (≥ 1)              | ✓\*    | –      | –            |
-| Round ≥ 2, no scores in round | ✓                                                    | add only, random seed only            | ✓                       | ✓            | ✓ (≥ current)        | ✓      | –      | ✓            |
-| Scores exist in round         | ✓                                                    | –                                     | courts without scores   | –            | ✓ (≥ current + 1)    | –      | ✓      | ✓            |
-| Completed                     | rename only                                          | –                                     | –                       | –            | –                    | –      | –      | –            |
+| Tournament state                                   | Rename, labels, timing, tie-break, overrides, policy | Add / remove / re-seed / reshuffle R1 | Swap / move (per court) | Scoring mode | `numRounds` (random) | Retire | Injury | Finish early | Reopen last round |
+| -------------------------------------------------- | ---------------------------------------------------- | ------------------------------------- | ----------------------- | ------------ | -------------------- | ------ | ------ | ------------ | ----------------- |
+| Setup ([099](./099_tournament-setup-and-start.md)) | ✓ (all rules)                                        | ✓ (plain roster, no rebuild)          | – (not started)         | ✓            | ✓                    | –      | –      | –            | –                 |
+| Round 1, no scores                                 | ✓                                                    | ✓                                     | ✓                       | ✓            | ✓ (≥ 1)              | ✓\*    | –      | –            | –                 |
+| Round ≥ 2, no scores in round                      | ✓                                                    | add only, random seed only            | ✓                       | ✓            | ✓ (≥ current)        | ✓      | –      | ✓            | ✓                 |
+| Scores exist in round                              | ✓                                                    | –                                     | courts without scores   | –            | ✓ (≥ current + 1)    | –      | ✓      | ✓            | –                 |
+| Completed                                          | rename only                                          | –                                     | –                       | –            | –                    | –      | –      | –            | ✓ (variant B)     |
 
 \* Retire works in round 1 but **Remove** is the right tool for a no-show; the UI says so.
 
@@ -281,6 +326,7 @@ getManageData({ tournamentId }): {
 | `updateScoringRules`       | `scoringMode, pointsToWin, winBy, setsToWin, decidingSetPoints`  | regenerates current round match rows                              |
 | `updateRoundCount`         | `numRounds`                                                      | random seed                                                       |
 | `finishTournamentEarly`    | `mode: 'use_current' \| 'discard_current'`                       |                                                                   |
+| `reopenLastRound`          | `tournamentId`                                                   | variant A or B from status; 409 claim                             |
 
 Reused unchanged from `tournament-actions.remote.ts`: `retirePlayer`, `reportInjury`, `undoRetirement`, `undoInjury`, `updateScoringOverrides`, `updateTieBreakConfig`, `setCourtLabel`, `deleteTournamentForm`.
 
@@ -311,13 +357,15 @@ Reused unchanged from `tournament-actions.remote.ts`: `retirePlayer`, `reportInj
 
 Removed from `+page.svelte`: scoring overrides editor, tie-break editor, retire form, injury form, delete button. Added: **Manage** button in the header, **Check-in** button (097) while check-in is open, compact rules summary line ("Single set to 21 · win by 2 · tie-break: points → diff → …") linking to `/manage#rules`, **Report injury** shortcut linking to `/manage#players` while the round has scores, **adjusted** badge on court cards with `manualAdjustedAt`.
 
-Kept: round stepper, court cards with QR + labels, manual tie-break dialog (it belongs to closing a round), close round / finalize. Expected size after the split: roughly half of the current 2,300 lines.
+Kept: round stepper, court cards with QR + labels, manual tie-break dialog (it belongs to closing a round), close round / finalize, **Reopen last round** (visible when variant A or B applies). Expected size after the split: roughly half of the current 2,300 lines.
+
+In `setup` ([099](./099_tournament-setup-and-start.md)) this page shows the start panel instead of court cards.
 
 ---
 
 ## i18n Keys (new)
 
-`manage_title`, `manage_tab_players`, `manage_tab_courts`, `manage_tab_rules`, `manage_tab_tournament`, `manage_lock_open`, `manage_lock_partial`, `manage_lock_completed`, `manage_search_players`, `manage_add_player`, `manage_add_joins`, `manage_add_reshuffle_note`, `manage_remove_player`, `manage_remove_confirm`, `manage_remove_unchecked`, `manage_remove_unchecked_confirm`, `manage_rename`, `manage_seed_points`, `manage_regenerate_link`, `manage_badge_joined`, `manage_badge_replacement_for`, `manage_badge_eliminated`, `manage_swap`, `manage_move`, `manage_move_to`, `manage_preview_result`, `manage_reset_assignments`, `manage_reshuffle_round1`, `manage_adjusted_badge`, `manage_warn_two_nonstandard`, `manage_warn_bracket_cross`, `manage_warn_ladder_jump`, `manage_rules_scoring_locked`, `manage_rounds_min_hint`, `manage_rounds_preseed_fixed`, `manage_finish_early`, `manage_finish_early_use_current`, `manage_finish_early_discard`, `manage_finish_early_confirm`, `manage_finished_early_note`, `manage_danger_zone`, `err_state_changed`, `err_court_too_small`, `err_court_too_large`, `err_final_court_must_be_4`, `err_court_frozen`, `err_court_locked`, `err_add_player_phase`, `err_add_player_preseed`, `err_remove_after_scores`, `err_roster_min_after_remove`, `err_rounds_below_current`, `err_rounds_final_court_size`, `err_name_taken`.
+`manage_title`, `manage_tab_players`, `manage_tab_courts`, `manage_tab_rules`, `manage_tab_tournament`, `manage_lock_open`, `manage_lock_partial`, `manage_lock_completed`, `manage_search_players`, `manage_add_player`, `manage_add_joins`, `manage_add_reshuffle_note`, `manage_remove_player`, `manage_remove_confirm`, `manage_remove_unchecked`, `manage_remove_unchecked_confirm`, `manage_rename`, `manage_seed_points`, `manage_regenerate_link`, `manage_badge_joined`, `manage_badge_replacement_for`, `manage_badge_eliminated`, `manage_swap`, `manage_move`, `manage_move_to`, `manage_preview_result`, `manage_reset_assignments`, `manage_reshuffle_round1`, `manage_adjusted_badge`, `manage_warn_two_nonstandard`, `manage_warn_bracket_cross`, `manage_warn_ladder_jump`, `manage_rules_scoring_locked`, `manage_rounds_min_hint`, `manage_rounds_preseed_fixed`, `manage_finish_early`, `manage_finish_early_use_current`, `manage_finish_early_discard`, `manage_finish_early_confirm`, `manage_finished_early_note`, `manage_reopen_round`, `manage_reopen_confirm`, `manage_reopen_discards_next`, `manage_reopen_undoes_roster`, `manage_reopen_completed`, `manage_danger_zone`, `err_state_changed`, `err_reopen_has_scores`, `err_reopen_round1`, `err_court_too_small`, `err_court_too_large`, `err_final_court_must_be_4`, `err_court_frozen`, `err_court_locked`, `err_add_player_phase`, `err_add_player_preseed`, `err_remove_after_scores`, `err_roster_min_after_remove`, `err_rounds_below_current`, `err_rounds_final_court_size`, `err_name_taken`.
 
 ## Testing
 
@@ -341,17 +389,21 @@ Kept: round stepper, court cards with QR + labels, manual tie-break dialog (it b
 8. Finish early after round 2 with partial scores → standings page shows finished-early note; player page shows final standing.
 9. Preseed: add player in round 2 rejected with `err_add_player_preseed`.
 10. Existing retire / injury / undo E2E tests re-pointed at `/manage#players` and still pass.
+11. Close round 1 → reopen → round 1 scores editable, round 2 gone, Close Round shown again; court tokens of round 1 still work.
+12. Enter a score in round 2 → reopen blocked (`err_reopen_has_scores`).
+13. Retire between rounds, then reopen → retiree restored, replacement gone if any.
+14. Finalize tournament → reopen last round → `status = active`, standings no longer final, scores editable.
 
 ## Open Questions
 
 1. **Per-court lock for swap/move** (proposed) vs. whole-round lock (simpler, but blocks shift-2 courts while shift 1 plays)?
 2. **Late joiner in random seed between rounds** enters at the bottom court (proposed). Alternative: organizer picks the court in the Add dialog (then it is a move with the same validation).
-3. **Roster minimum after removing no-shows**: allow down to 6 with warning (proposed), or keep the hard 8?
+3. **Roster minimum after removing no-shows**: allow down to 6 with warning (proposed), or keep the hard 8? In `setup` ([099](./099_tournament-setup-and-start.md)) the roster can be 0; the 8-player floor is a **start** condition.
 4. **Achievements** on the standings page for late joiners: exclude (proposed) or include with fewer rounds?
-5. **Reopen last closed round** (mis-entered score discovered after closing): out of scope here; would need to delete the next round's rotations, clear snapshots, `currentRound--`, and reverse forward retirements. Separate spec?
-6. **One page or two?** Proposed: operations view + manage page. Alternative: fold the operations view into the manage page as a fifth "Round" tab.
-7. **Finish early with partial scores**: "use as final with cancel & average" default (proposed) vs. "discard" default.
-8. Should **scoring mode** changes be allowed mid-round for **unscored courts** only (per-court like swap/move)? Proposed: no — one rule set per round.
+5. **One page or two?** Proposed: operations view + manage page. Alternative: fold the operations view into the manage page as a fifth "Round" tab.
+6. **Finish early with partial scores**: "use as final with cancel & average" default (proposed) vs. "discard" default.
+7. Should **scoring mode** changes be allowed mid-round for **unscored courts** only (per-court like swap/move)? Proposed: no — one rule set per round.
+8. Reopen while round `r` has scores: block (proposed) vs. also discard those scores after a second confirm?
 
 ## Related Specs
 
@@ -359,6 +411,8 @@ Kept: round stepper, court cards with QR + labels, manual tie-break dialog (it b
 - [050_tournament-management.md](./050_tournament-management.md) — current pages; update when implemented
 - [097_player-check-in.md](./097_player-check-in.md) — check-in badge, remove no-shows
 - [098_player-page.md](./098_player-page.md) — reflects moves/adds automatically
+- [099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md) — `setup` status, start panel
+- [093_round-history-stepper.md](./093_round-history-stepper.md) — browsing closed rounds stays read-only; reopen is the only way to edit them again
 - [670](./670_player-retirement.md), [091](./091_preseed-retirement-bracket-policy.md), [092](./092_mid-round-injury-forward-retirement.md) — reused retirement/injury commands
 - [087_preseed-frozen-courts.md](./087_preseed-frozen-courts.md) — frozen courts excluded from edits
 - [610_incomplete-core.md](./610_incomplete-core.md) — one non-standard court goal (warnings)
@@ -370,6 +424,6 @@ Kept: round stepper, court cards with QR + labels, manual tie-break dialog (it b
 - `src/lib/components/manage/PlayersTab.svelte`, `CourtsTab.svelte`, `RulesTab.svelte`, `TournamentTab.svelte`, `LockIndicator.svelte`
 - `src/lib/tournament-logic.ts` — pure functions above
 - `src/lib/server/tournament-orchestration.ts` — `rebuildCurrentRound`, `ensureCourtsExist`
-- `src/routes/tournament/[id]/tournament-actions.remote.ts` — refactor onto `rebuildCurrentRound`; `closeRoundForm` checklist
+- `src/routes/tournament/[id]/tournament-actions.remote.ts` — refactor onto `rebuildCurrentRound`; `closeRoundForm` checklist; `reopenLastRound`
 - `src/routes/tournament/[id]/+page.svelte` — remove editors/forms, add links and badge
 - `messages/*.json`, `e2e/manage.spec.ts`

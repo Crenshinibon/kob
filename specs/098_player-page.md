@@ -27,16 +27,16 @@ Players have no personal view of the tournament. The court QR (060) is per court
 
 `derivePlayerRoundState()` (pure, unit-tested) maps `(tournament, player, rotations, matches)` to one of:
 
-| State         | Condition                                                                                        |
-| ------------- | ------------------------------------------------------------------------------------------------ |
-| `completed`   | `tournament.status === 'completed'`                                                              |
-| `retired`     | `player.retiredAt` set and (`retiredRound < currentRound` or no rotation contains the player)    |
-| `injured`     | `player.injuredAt` set and the current-round rotation still contains the player (Phase 1 of 092) |
-| `frozen`      | Player's current court is frozen (087) — bracket finished early                                  |
-| `eliminated`  | Final round; player is active but not on any rotation (670 final-round elimination)              |
-| `court_done`  | Player's court has all matches complete, round not yet closed                                    |
-| `active`      | Player on a current-round rotation, matches open                                                 |
-| `not_started` | `currentRound === 0` (defensive; not produced by today's creation flow)                          |
+| State         | Condition                                                                                              |
+| ------------- | ------------------------------------------------------------------------------------------------------ |
+| `completed`   | `tournament.status === 'completed'`                                                                    |
+| `retired`     | `player.retiredAt` set and (`retiredRound < currentRound` or no rotation contains the player)          |
+| `injured`     | `player.injuredAt` set and the current-round rotation still contains the player (Phase 1 of 092)       |
+| `frozen`      | Player's current court is frozen (087) — bracket finished early                                        |
+| `eliminated`  | Final round; player is active but not on any rotation (670 final-round elimination)                    |
+| `court_done`  | Player's court has all matches complete, round not yet closed                                          |
+| `active`      | Player on a current-round rotation, matches open                                                       |
+| `not_started` | `tournament.status === 'setup'` (or `currentRound === 0`) — [099](./099_tournament-setup-and-start.md) |
 
 Plus two orthogonal flags: `checkInOpen` (097 banner) and `movement: 'up' | 'down' | 'same' | null` (court number vs. previous round).
 
@@ -72,7 +72,7 @@ Header: tournament name · **player name** · "Round 2 of 4". Language switcher 
 └────────────────────────────────────────────────┘
 ```
 
-The **Placement** block is present in every state (see [Placement](#placement)); in terminal states it collapses to a single final place.
+The **Placement** block is present in every playing state (see [Placement](#placement)); in terminal states it collapses to a single final place. Hidden in `not_started`.
 
 - Court number is the largest element on the page; physical label (`court.label`) directly under it when set.
 - Shift 2+: "Shift 2 of 2 · est. wait ~45 min" using `getShiftForCourt` and the wait estimate from `tournament-data.remote.ts` (660). Hidden when virtual = physical courts.
@@ -127,9 +127,22 @@ Wording is always "likely" — retirements, manual moves and tie-break resolutio
 
 Big final place ("**3rd of 16**" with medal for top 3), "Finished early after round 2" note when `finishedEarly` (096), history, link to the standings page.
 
+### `not_started` ([099](./099_tournament-setup-and-start.md))
+
+```
+┌────────────────────────────────────────────────┐
+│ Beach Bash 2026 has not started yet             │
+│ 14 players registered · You are checked in ✓    │
+│ Your court appears here when the organizer      │
+│ starts the tournament.                          │
+└────────────────────────────────────────────────┘
+```
+
+Placement hidden. Polling continues so the court appears at start without reload.
+
 ### Banners (any state)
 
-- `checkInOpen`: "Check-in still open — your court may change until the organizer closes check-in." (097)
+- `checkInOpen` and tournament already started: "Check-in still open — your court may change until the organizer closes check-in." (097). Hidden in `not_started` (courts do not exist yet).
 - Poll failure: small "Last updated 12:04 · retry" line; the page never blanks out on a failed refresh.
 
 ### Below the main card
@@ -138,19 +151,15 @@ Big final place ("**3rd of 16**" with medal for top 3), "Finished early after ro
 
 ## Placement
 
-Every state shows three numbers: **current place**, **best achievable final place**, **worst achievable final place**. The range is what a player can still reach _by results alone_ from now until the final round closes, given the format's movement rules. It is recomputed on every poll, so retirements, manual moves (096) or a changed round count (096) are reflected automatically rather than predicted.
+Every state except `not_started` shows three numbers: **current place**, **best achievable final place**, **worst achievable final place**.
 
-```
-Placement
- Currently 7th of 16
- Still possible: 5th – 16th
- 1 ├────▓▓▓▓▓▓●▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓┤ 16
-```
-
-- **Current place**: the player's position in the live overall standings — the same ordering as the standings page (court position of the current round first, then the configured tie-break factors; 070 / 090 / 094). Label: "Currently 7th of 16" where 16 = active players (retirees are excluded from `total` but keep their fixed final place).
+- **Current place is live and includes the current round.** It uses the same ordering as the standings page (070 / 090 / 094): court position of the **current** round first (from live court standings, including partial scores), then the configured tie-break factors. Unplayed matches count as 0 so far. Label: "Currently 7th of 16" where 16 = active players (retirees are excluded from `total` but keep their fixed final place). This is **not** "after the last closed round".
+- **Achievable range follows the projected next court** from that live court rank: if the player would promote or relegate _if the round closed now_, the first redistribution step is treated as already decided, then remaining rounds are free movement around that court. See [Reachable court range](#reachable-court-range).
+- The range is recomputed on every poll, so a saved score that changes the player's rank on their court immediately moves the range (and the "Currently" number).
 - **Range bar**: one segment per place; reachable range filled, current place marked. Purely visual, no interaction.
 - **Terminal states** (`completed`, `retired`, `eliminated`, `frozen` with court done): best = worst = final place; the block reads "**Final place 5**" and the bar is a single marker.
-- Copy always says "still possible", never "will finish".
+- Copy: "Still possible" when remaining matches on this court can still change the rank; "If you finish as now" is not used — the numbers already assume current position. A one-line hint under the range when the court is not done: "Remaining matches can still change this."
+- `not_started`: placement block hidden.
 
 ### Place numbering
 
@@ -174,77 +183,93 @@ reachableFinalPlaceRange(ctx: {
 	currentRound: number; // r
 	numRounds: number; // N
 	courtNumber: number; // k, player's current court
-	courtSizes: readonly number[]; // current layout
-	courtRankIfDone: number | null; // rank on current court once all its matches are complete
-	groupResultsIfDone: CourtResult[] | null; // preseed: results of the whole bracket group once complete
+	courtSizes: readonly number[];
+	projectedRank: number | null; // live rank on this court when it has ≥ 1 score; else null
+	liveRoundResults: CourtResult[] | null; // live standings of every current-round court (partial scores ok)
 	frozenCourtNumbers: ReadonlySet<number>;
-}): { best: number; worst: number; minCourt: number; maxCourt: number };
+}): { best: number; worst: number; minCourt: number; maxCourt: number; nextCourt: number | null };
 ```
 
-Let `t = N − r` be the number of redistributions still to come. When `t = 0` (final round) the range is the current court: `[k, k]`, tightened to the exact place once `courtRankIfDone` is known.
+Let `t = N − r` be the number of redistributions still to come. When `t = 0` (final round) the range is the current court: `[k, k]`, tightened to the exact live rank once `projectedRank` is known.
+
+**Projected next court.** Whenever the player's court has at least one saved (or canceled) score, `projectedRank` is their live rank from `calculateCourtStandings` (same numbers as the court page). If the round closed _now_, they would promote or relegate according to that rank. Compute `nextCourt` by running the **real** redistribution on `liveRoundResults`:
+
+| Format / round         | Function                                        | `nextCourt`                                                          |
+| ---------------------- | ----------------------------------------------- | -------------------------------------------------------------------- |
+| Random seed, round 1   | `verticalSeeding(liveRoundResults, …)`          | the court the player is assigned to                                  |
+| Random seed, round ≥ 2 | `ladderRedistribute(liveRoundResults, …)`       | the court the player is assigned to (rank 1–2 up, ≥ 3 down, clamped) |
+| Preseed                | `processPreseedTransition(liveRoundResults, …)` | the court after this group's split                                   |
+
+Then `t − 1` remaining redistributions fan out around `nextCourt` (ladder: ± `(t−1)` courts; preseed: the **next** bracket group that contains `nextCourt`).
+
+Other courts' live standings are included even if incomplete (0 points so far, ordered by the configured tie-break). That is what "based on current position" means tournament-wide, not only on this court.
+
+When the player's court has **no scores yet**, `projectedRank` is null: do not pretend a 0–0 ranking is a result. Use the unconstrained bound from the current court (below).
 
 #### Random seed (080, `ladderRedistribute` / `verticalSeeding`)
 
-| Situation                         | Rule                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Round ≥ 2, court not done         | Each ladder step moves at most one court: `[max(1, k − t), min(C, k + t)]`.                                                                                                                                                                                                                                                                                                                                                    |
-| Round ≥ 2, court done with rank ρ | First step is determined by `ladderRedistribute`: ρ ≤ 2 → `k − 1` (Court 1 stays); ρ ≥ 3 → `k + 1` (bottom court stays, incl. ranks 3..size on a 5p/6p bottom court). Then `t − 1` free steps around that court.                                                                                                                                                                                                               |
-| Round 1, court not done           | Vertical seeding can send anyone anywhere: `[1, C]`.                                                                                                                                                                                                                                                                                                                                                                           |
-| Round 1, court done with rank ρ   | Vertical seeding places the rank-ρ **tier** into flattened slots `(S_{ρ−1}, S_ρ]` where `S_ρ` = number of players with rank ≤ ρ across all courts (all courts contribute to ranks 1–4 except a 3p court; only a 5p/6p bottom court contributes ranks 5–6). Map the first and last slot to courts via cumulative `courtSizes` → `[k_lo, k_hi]`, then `t − 1` free ladder steps: `[max(1, k_lo − (t−1)), min(C, k_hi + (t−1))]`. |
+| Situation                                 | Rule                                                                                                                                                                                                |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No scores on this court yet               | `t` free ladder steps from `k`: `[max(1, k − t), min(C, k + t)]`. Round 1 with no scores: `[1, C]` (vertical seeding can send anyone anywhere).                                                     |
+| Live rank ρ (any number of matches saved) | First step = `nextCourt` from the table above. Then `t − 1` free steps around it. Ladder: ρ ≤ 2 → up (Court 1 stays); ρ ≥ 3 → down (bottom stays, including ranks 3..size on a 5p/6p bottom court). |
+| Court fully done                          | Same as live rank — the projection is now stable for this court (other courts may still move `nextCourt` in round 1 vertical seeding until they finish).                                            |
 
-The worst case matches the retirement formula already in 670 (`worstCourt = min(currentCourt + remainingRounds, totalCourts)`); the best case is its mirror image.
+The worst unconstrained case matches the retirement formula already in 670 (`worstCourt = min(currentCourt + remainingRounds, totalCourts)`); the best case is its mirror image.
 
 **Example — 16 players, 4 courts, 4 rounds:**
 
-| Round | Court | Court done? | Reachable courts                            | Still possible |
-| ----- | ----- | ----------- | ------------------------------------------- | -------------- |
-| 1     | 3     | no          | 1–4                                         | 1st – 16th     |
-| 1     | 3     | rank 1      | tier 1 = slots 1–4 → Court 1; then ±2 → 1–3 | 1st – 12th     |
-| 2     | 3     | no          | 1–4 (t = 2)                                 | 1st – 16th     |
-| 3     | 3     | no          | 2–4 (t = 1)                                 | 5th – 16th     |
-| 3     | 3     | rank 2      | Court 2, t − 1 = 0 → 2                      | 5th – 8th      |
-| 4     | 2     | no          | 2                                           | 5th – 8th      |
-| 4     | 2     | rank 3      | 2, exact                                    | Final place 7  |
+| Round | Court | Live rank on court   | `nextCourt`    | Reachable courts | Still possible |
+| ----- | ----- | -------------------- | -------------- | ---------------- | -------------- |
+| 1     | 3     | none (0–0)           | —              | 1–4              | 1st – 16th     |
+| 1     | 3     | 1st (1 of 3 matches) | Court 1        | 1–3 (then ±2)    | 1st – 12th     |
+| 2     | 3     | none                 | —              | 1–4 (t = 2)      | 1st – 16th     |
+| 2     | 3     | 2nd (partial)        | Court 2 (up)   | 1–3 (then ±1)    | 1st – 12th     |
+| 2     | 3     | 3rd (partial)        | Court 4 (down) | 3–4 (then ±1)    | 9th – 16th     |
+| 3     | 3     | 2nd                  | Court 2, t−1=0 | 2                | 5th – 8th      |
+| 4     | 2     | none                 | —              | 2                | 5th – 8th      |
+| 4     | 2     | 3rd                  | exact          | 2                | Final place 7  |
+
+A score that flips the player from 2nd to 3rd on Court 3 in round 2 moves "Still possible" from 1st–12th to 9th–16th on the next poll.
 
 #### Preseed (080 / 087 / 091, `getBracketGroups`, `processPreseedTransition`)
 
-A player's future is bounded by their **bracket group**: the set of courts that still get mixed together. `getBracketGroups(C, r − 1)` returns those groups for the current round; the group containing `k` spans courts `[g_lo, g_hi]`.
+A player's future is bounded by their **bracket group**: `getBracketGroups(C, r − 1)`; the group containing `k` spans courts `[g_lo, g_hi]`.
 
-| Situation                                                            | Rule                                                                                                                                                                                                                                                                                                                                    |
-| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Court not frozen, group not fully done                               | `[g_lo, g_hi]` — the group's full place range (this is the same range 670 uses for retirees' worst place).                                                                                                                                                                                                                              |
-| Group fully done (every court in the group has all matches complete) | Simulate the group's split with the real `processPreseedTransition` on the completed results (dice rolls are persisted per rotation, so the result is stable). The player's next court `k'` is now known; recurse with `getBracketGroups(C, r)` and `k'` to get the next group's range. In the final round this yields the exact place. |
-| Court done but group not done                                        | No refinement beyond the group range (which sub-group a player lands in depends on other courts' results through origin mixing). _Optional (OQ 7):_ for balanced groups of 4p courts, rank ≤ 2 ⇒ winners' sub-group and rank ≥ 3 ⇒ losers' sub-group is deterministic and could be used.                                                |
-| Court frozen (087)                                                   | `[k, k]`; exact once the court is done.                                                                                                                                                                                                                                                                                                 |
+| Situation                         | Rule                                                                                                                                                                                                                                         |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No scores on this court yet       | `[g_lo, g_hi]` — the group's full place range (same range 670 uses for retirees).                                                                                                                                                            |
+| Live rank ρ, group not fully done | Project the split from **this court's live rank**: on a standard 4p court ρ ≤ 2 → winners' sub-group, ρ ≥ 3 → losers' sub-group. Range = that sub-group's place span. Origin mixing on other courts cannot move the player out of that half. |
+| Group fully done                  | Simulate with real `processPreseedTransition` on completed results (dice persisted → stable). `nextCourt` known; recurse with `getBracketGroups(C, r)`.                                                                                      |
+| Court frozen (087)                | `[k, k]`; exact once the court has a live rank.                                                                                                                                                                                              |
 
 **Example — 16 players, 4 courts, 3 rounds (082):**
 
-| Round | Court | Group state                         | Reachable courts     | Still possible |
-| ----- | ----- | ----------------------------------- | -------------------- | -------------- |
-| 1     | 3     | running                             | 1–4                  | 1st – 16th     |
-| 1     | 3     | all 4 courts done, player → Court 2 | 1–2 (winners' group) | 1st – 8th      |
-| 2     | 2     | running                             | 1–2                  | 1st – 8th      |
-| 2     | 2     | both courts done, player → Court 2  | 2 (L(W))             | 5th – 8th      |
-| 3     | 2     | running                             | 2                    | 5th – 8th      |
-| 3     | 2     | done, rank 2                        | exact                | Final place 6  |
+| Round | Court | Live rank / group | Reachable courts    | Still possible |
+| ----- | ----- | ----------------- | ------------------- | -------------- |
+| 1     | 3     | none              | 1–4                 | 1st – 16th     |
+| 1     | 3     | 2nd (partial)     | 1–2 (winners' half) | 1st – 8th      |
+| 1     | 3     | 3rd (partial)     | 3–4 (losers' half)  | 9th – 16th     |
+| 2     | 2     | none              | 1–2                 | 1st – 8th      |
+| 2     | 2     | 3rd               | 2 (L(W))            | 5th – 8th      |
+| 3     | 2     | 2nd               | exact               | Final place 6  |
 
 **Example — 20 players (083), Court 5 frozen after round 2:** a player on Court 5 in round 2 shows 17th – 20th while playing and the exact place once the court is done; nothing changes for them in rounds 3–4.
 
 ### Special cases
 
-| Case                                             | Placement block                                                                                                                    |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Retired / injured (past round)                   | `finalStanding` from `computeRetirementFinalStanding` — fixed. "Final place 14".                                                   |
-| Injured this round with substitute (092 Phase 1) | Ranks last on the court this round; range computed with `courtRankIfDone = courtSize`; forward retirement makes it final on close. |
-| Eliminated in final round (670)                  | Fixed place from `getFinalRoundCourtConfig` ordering.                                                                              |
-| Late joiner (096)                                | Same rules from the round they joined; `total` counts them.                                                                        |
-| Roster shrinks (retirement elsewhere)            | `total` and court sizes change; range recomputed on next poll. Ranges may _widen_ slightly (e.g. a 5p bottom court becoming 4p).   |
-| `numRounds` changed by organizer (096)           | `t` changes; range recomputed.                                                                                                     |
-| Tournament finished early (096)                  | Exact final place.                                                                                                                 |
+| Case                                             | Placement block                                                                                                                  |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| Retired / injured (past round)                   | `finalStanding` from `computeRetirementFinalStanding` — fixed. "Final place 14".                                                 |
+| Injured this round with substitute (092 Phase 1) | Ranks last on the court this round; range computed with `projectedRank = courtSize`; forward retirement makes it final on close. |
+| Eliminated in final round (670)                  | Fixed place from `getFinalRoundCourtConfig` ordering.                                                                            |
+| Late joiner (096)                                | Same rules from the round they joined; `total` counts them.                                                                      |
+| Roster shrinks (retirement elsewhere)            | `total` and court sizes change; range recomputed on next poll. Ranges may _widen_ slightly (e.g. a 5p bottom court becoming 4p). |
+| `numRounds` changed by organizer (096)           | `t` changes; range recomputed.                                                                                                   |
+| Tournament finished early (096)                  | Exact final place.                                                                                                               |
 
-### Why not simulate everything?
+### Why not simulate every future result?
 
-A full enumeration over all possible results of all courts is unnecessary: in the ladder the per-step movement bound is exact, and in preseed the bracket group _is_ the reachable set by construction. Both bounds are tight for the "by results alone" definition — every place in the range is attainable by some sequence of results — so the numbers players see are honest.
+The **first** redistribution is projected from live standings (real `ladderRedistribute` / `verticalSeeding` / `processPreseedTransition`). Remaining rounds still have unknown results, so the ladder ±`(t−1)` bound and the next preseed bracket group are the tight envelope around that projected court. The range is honest given current position and can still move if remaining matches change the rank (the hint says so).
 
 ## Live Updates
 
@@ -314,20 +339,22 @@ type PlayerPageData = {
 	};
 	history: { round; courtNumber; label; courtSize; rank; points; diff }[];
 	placement: {
-		current: number | null; // live overall position (null only in `not_started`)
+		current: number | null; // live overall position including current round (null only in `not_started`)
 		total: number; // active players
-		best: number; // best achievable final place
-		worst: number; // worst achievable final place
-		isFinal: boolean; // best === worst and nothing can change it
-		minCourt: number | null; // for debugging / tests
+		best: number;
+		worst: number;
+		isFinal: boolean;
+		nextCourt: number | null; // projected from live rank
+		minCourt: number | null;
 		maxCourt: number | null;
+		rankCanStillChange: boolean;
 	};
 };
 ```
 
-Queries per request: player by token → tournament → all rotations of the tournament (needed for history, movement, progress, bracket-group completeness) → matches of the current round (all courts — needed for `groupResultsIfDone` and round progress) → players of the tournament (names) → standings (see below). `court.token` is read from the `court` table via `rotation.courtId`.
+Queries per request: player by token → tournament → all rotations of the tournament (needed for history, movement, progress) → matches of the current round (all courts — needed for live standings, `liveRoundResults`, round progress) → players of the tournament (names) → standings. `court.token` is read from the `court` table via `rotation.courtId`.
 
-`placement.current` comes from the shared standings computation (`standings-service.ts`, 095); `placement.best/worst` from `reachableFinalPlaceRange` fed with the current round's rotations, matches and frozen courts.
+`placement.current` comes from the shared standings computation (`standings-service.ts`, 095) **including the current round's live court standings**. `placement.best/worst/nextCourt` come from `reachableFinalPlaceRange` with `projectedRank` and `liveRoundResults`.
 
 ### `src/routes/player/[token]/player-data.remote.ts`
 
@@ -355,7 +382,7 @@ The closed-round text "Check with organizer for your next court." becomes "Your 
 
 ## i18n Keys (new)
 
-`player_title`, `player_round_of`, `player_court_now`, `player_physical_court`, `player_players_scoring` (`{size} players · {scoring}`), `player_shift_now`, `player_shift_wait`, `player_your_matches`, `player_you`, `player_vs`, `player_sit_out`, `player_canceled`, `player_substitute_note`, `player_court_standings`, `player_open_court`, `player_court_done`, `player_finished_rank`, `player_waiting_courts` (`{done} of {total}`), `player_next_appears`, `player_next_hint_up`, `player_next_hint_down`, `player_next_hint_same`, `player_next_hint_winners`, `player_next_hint_losers`, `player_frozen`, `player_eliminated`, `player_retired`, `player_retired_injury`, `player_replaced_by`, `player_final_place`, `player_finished_early`, `player_placement_heading`, `player_placement_current` (`Currently {place} of {total}`), `player_placement_range` (`Still possible: {best} – {worst}`), `player_placement_final`, `player_placement_bar_label` (a11y), `player_history`, `player_checkin_open_note`, `player_movement_up`, `player_movement_down`, `player_movement_same`, `player_last_updated`, `player_refresh`, `player_not_found`, `court_closed_see_player_page` (replaces the current closed-round hint).
+`player_title`, `player_round_of`, `player_court_now`, `player_physical_court`, `player_players_scoring` (`{size} players · {scoring}`), `player_shift_now`, `player_shift_wait`, `player_your_matches`, `player_you`, `player_vs`, `player_sit_out`, `player_canceled`, `player_substitute_note`, `player_court_standings`, `player_open_court`, `player_court_done`, `player_finished_rank`, `player_waiting_courts` (`{done} of {total}`), `player_next_appears`, `player_next_hint_up`, `player_next_hint_down`, `player_next_hint_same`, `player_next_hint_winners`, `player_next_hint_losers`, `player_frozen`, `player_eliminated`, `player_retired`, `player_retired_injury`, `player_replaced_by`, `player_final_place`, `player_finished_early`, `player_placement_heading`, `player_placement_current` (`Currently {place} of {total}`), `player_placement_range` (`Still possible: {best} – {worst}`), `player_placement_final`, `player_placement_bar_label` (a11y), `player_placement_can_still_change`, `player_not_started`, `player_not_started_registered`, `player_history`, `player_checkin_open_note`, `player_movement_up`, `player_movement_down`, `player_movement_same`, `player_last_updated`, `player_refresh`, `player_not_found`, `court_closed_see_player_page` (replaces the current closed-round hint).
 
 ## Testing
 
@@ -367,45 +394,48 @@ The closed-round text "Check with organizer for your next court." becomes "Your 
 - `playerMatchesView(matches, playerId, courtSize)` — partner/opponents/sit-out extraction for 3p/4p/5p/6p.
 - `placeForCourtRank(courtSizes, k, r)` — canonical `[4,4,4,4]`, non-standard bottom `[4,4,4,5]` (Court 4 rank 5 → 17), manual layout `[4,3,5,4]`.
 - `reachableFinalPlaceRange` — every row of both example tables above, plus:
-  - random seed R1 court done rank 4 on 17 players `[4,4,4,5]`: tier 4 = slots 13–16 → Court 4; then ±(t−1).
-  - random seed 5p bottom court rank 5 → stays on bottom court.
-  - random seed Court 1 rank 1 with `t = 3` → `[1, 3]`; bottom court rank 4 with `t = 1` → bottom only.
-  - preseed 20p (083): Court 5 frozen → `[5, 5]`; player on Court 2 in R3 → winners' sub-group range from `getBracketGroups(5, 2)`.
-  - preseed group fully done → simulated split equals the actual `closeRound` assignment (property test against `processPreseedTransition` with fixed dice).
-  - `t = 0` + court done → `best === worst === finalStanding` that `computeFinalStandingMap` produces (consistency test).
+  - live rank 2 vs 3 on Court 3 in round 2 of 16p: up → 1st–12th, down → 9th–16th.
+  - random seed R1 with live rank 1 (partial scores) → nextCourt 1, then ±(t−1).
+  - random seed 5p bottom court live rank 5 → stays on bottom court.
+  - random seed Court 1 live rank 1 with `t = 3` → `[1, 3]`; bottom court rank 4 with `t = 1` → bottom only.
+  - preseed live rank 2 on Court 3 in R1 → winners' half (1st–8th) even before other courts finish.
+  - preseed 20p (083): Court 5 frozen → `[5, 5]`.
+  - `t = 0` + live rank → `best === worst ===` that place.
+  - no scores on player's court → unconstrained bound, `nextCourt === null`.
   - `numRounds` reduced → range shrinks accordingly.
-- Tightness spot-check: for 16p random seed R3 Court 3, enumerate all rank combinations of the remaining rounds and assert the attained places equal the computed range.
 
 ### E2E (`e2e/player-page.spec.ts`)
 
 1. Create 16p → open a player's URL anonymously → shows "Round 1 of N", Court X, "Open court page" links to the stable court token URL; placement reads "Currently ?th of 16 · Still possible: 1st – 16th".
-2. Score all matches on that court → state `court_done`, "Waiting for other courts (1 of 4 done)"; placement range narrows (rank known).
-3. Score all courts, close round → within one poll interval (use the Refresh button in the test) the page shows the new court and a movement arrow; history has one row; "Currently" matches the player's row on the standings page.
+2. Save one match so the player is 1st on the court → "Still possible" narrows (projected promote); "Currently" matches the live standings page row; hint "Remaining matches can still change this."
+3. Score all matches on that court → state `court_done`; hint gone; range uses the now-stable rank.
+4. Score all courts, close round → within one poll interval (use the Refresh button in the test) the page shows the new court and a movement arrow; history has one row; "Currently" matches the player's row on the standings page.
    3b. In the final round with the court done → placement shows a single "Final place N" equal to the standings page.
-4. Set a court label on the manage page → label appears on the player page.
-5. Swap this player with another (096) → court number changes without reload.
-6. Retire the player → `retired` state with final place.
-7. Complete the tournament → final place shown; standings link works.
-8. Unknown token → 404 page, no stack trace.
-9. Check-in banner visible before close check-in, gone after (097).
+5. Set a court label on the manage page → label appears on the player page.
+6. Swap this player with another (096) → court number changes without reload.
+7. Retire the player → `retired` state with final place.
+8. Complete the tournament → final place shown; standings link works.
+9. Unknown token → 404 page, no stack trace.
+10. Check-in banner visible before close check-in, gone after (097).
 
 ## Open Questions
 
 1. **Score entry from the player page?** Proposed: no — one scoring surface (court page), one link away. Revisit if players ask for it.
 2. **Poll interval**: 10 s (proposed) vs. 5 s like the court/tournament pages. 10 s halves the load for the largest page population.
 3. **"Likely next" hint**: include (proposed, rule-based only) or drop to avoid arguments when the organizer's tie-break changes it?
-4. **Current place is live** (required) — the `(tournamentId, lastActivityAt)` cache is the proposed way to make that cheap. OK to ship without the cache first and measure?
+4. **Current place is live including the current round** (required). The `(tournamentId, lastActivityAt)` cache is the proposed way to make that cheap. OK to ship without the cache first and measure?
 5. **History detail**: rank/points/diff per round (proposed) vs. also listing each match result.
 6. **Tone**: second person ("You finished 2nd") — proposed; the standings page is third person. Fine for a personal page?
-7. **Preseed refinement when only the player's court is done**: skip (proposed — always correct, sometimes wider than necessary) or add the balanced-group shortcut (rank ≤ 2 ⇒ winners' sub-group)?
-8. **Range bar**: keep the visual bar (proposed) or text only? On 64-player tournaments the bar has 64 segments — still readable at phone width as a plain gradient, but worth a look.
-9. Should the range also be shown on the **standings page** per row (organizer/spectator view)? Cheap once the function exists; proposed as a follow-up, not part of this spec.
+7. **Range bar**: keep the visual bar (proposed) or text only? On 64-player tournaments the bar has 64 segments — still readable at phone width as a plain gradient, but worth a look.
+8. Should the range also be shown on the **standings page** per row (organizer/spectator view)? Cheap once the function exists; proposed as a follow-up, not part of this spec.
+9. Round 1 vertical seeding with **partial** scores on _other_ courts: `nextCourt` from live `verticalSeeding` can jump as those courts report. Acceptable (it is current position) vs. only project once this court has scores but ignore other courts' incompleteness?
 
 ## Related Specs
 
 - [095_org-player-experience-index.md](./095_org-player-experience-index.md)
 - [097_player-check-in.md](./097_player-check-in.md) — QR codes, self check-in, banner
-- [096_tournament-management-page.md](./096_tournament-management-page.md) — moves and late joins reflected here
+- [096_tournament-management-page.md](./096_tournament-management-page.md) — moves, late joins, reopen
+- [099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md) — `not_started` state
 - [060_court-operations.md](./060_court-operations.md) — court page the player links to; closed-round hint text
 - [660_virtual-court-scheduling.md](./660_virtual-court-scheduling.md) — shift and wait model
 - [087_preseed-frozen-courts.md](./087_preseed-frozen-courts.md), [670_player-retirement.md](./670_player-retirement.md) — frozen / eliminated / retired placement rules

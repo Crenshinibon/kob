@@ -8,20 +8,21 @@
 
 Two things were missing on the beach:
 
-1. **The organizer has no back office.** Everything lives on `/tournament/[id]` (~2,300 lines): court cards, QR codes, close round, scoring overrides, tie-break editor, retire, injury, delete. Things that came up and are not possible today: remove a no-show, add a late arrival, fix a typo in a name, move two players apart, change the number of rounds after seeing how long round 1 took, finish early when the light goes.
-2. **Players have no personal view.** A court QR code shows one court for one round. After every close round, players queue at the organizer's table to ask "where do I play next?". With 32–64 players and shifts, that is the single biggest time sink between rounds.
+1. **The organizer has no back office.** Everything lives on `/tournament/[id]` (~2,300 lines): court cards, QR codes, close round, scoring overrides, tie-break editor, retire, injury, delete. Things that came up and are not possible today: remove a no-show, add a late arrival, fix a typo in a name, move two players apart, change the number of rounds after seeing how long round 1 took, finish early when the light goes, **reopen a round closed too soon**, **create the tournament the day before without starting it**.
+2. **Players have no personal view.** A court QR code shows one court for one round. After every close round, players queue at the organizer's table to ask "where do I play next?". With 32–64 players and shifts, that is the single biggest time sink between rounds. They also want to know **where they stand right now** (including this round) and **best/worst place they can still reach**.
 
 ## Sub-specs
 
-| Spec                                                                         | Scope                                                                                                                                                                                                                                        | Audience  |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| **[096_tournament-management-page.md](./096_tournament-management-page.md)** | `/tournament/[id]/manage` — roster (add / remove / rename / re-seed / retire / injury), court assignments (swap / move), rules & config edits, finish early, delete. Slims the operations view.                                              | Organizer |
-| **[097_player-check-in.md](./097_player-check-in.md)**                       | `/tournament/[id]/check-in` — per-player token + QR, check-in list with search, full-screen QR, print sheet, self check-in on scan, close check-in → remove no-shows.                                                                        | Organizer |
-| **[098_player-page.md](./098_player-page.md)**                               | `/player/[token]` — public personal page: current court, physical court label, shift/wait, own matches, court standings, movement, history, live current place + best/worst achievable final place, final standing. Polls after close round. | Player    |
+| Spec                                                                         | Scope                                                                                                                                                                                                                                                                             | Audience  |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| **[096_tournament-management-page.md](./096_tournament-management-page.md)** | `/tournament/[id]/manage` — roster (add / remove / rename / re-seed / retire / injury), court assignments (swap / move), rules & config edits, finish early, **reopen last closed round**, delete. Slims the operations view.                                                     | Organizer |
+| **[097_player-check-in.md](./097_player-check-in.md)**                       | `/tournament/[id]/check-in` — per-player token + QR, check-in list with search, full-screen QR, print sheet, self check-in on scan, close check-in → start (099) or remove no-shows.                                                                                              | Organizer |
+| **[098_player-page.md](./098_player-page.md)**                               | `/player/[token]` — public personal page: current court, physical court label, shift/wait, own matches, court standings, movement, history, **live current place (including current round)** + best/worst achievable final place from projected promote/relegate, final standing. | Player    |
+| **[099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md)** | Create ≠ start. `setup` status with 0–64 players; explicit start at ≥ 8 generates round 1. Dashboard Setup section. Reverses the "no draft" decision in 050.                                                                                                                      | Organizer |
 
 ## Shared Decisions
 
-These apply across all three sub-specs so they are not repeated.
+These apply across all four sub-specs so they are not repeated.
 
 ### Vocabulary
 
@@ -35,7 +36,7 @@ These apply across all three sub-specs so they are not repeated.
 
 ### One migration for the whole group
 
-All schema additions ship in a single migration so the three features can be implemented in any order without migration conflicts.
+All schema additions ship in a single migration so the four features can be implemented in any order without migration conflicts.
 
 `drizzle/0016_org_player_experience.sql`:
 
@@ -50,10 +51,14 @@ joinedRound: integer('joined_round'),             // null = original roster; N =
 manualAdjustedAt: timestamp('manual_adjusted_at'), // set by swap/move (096)
 
 // tournament
+status: text('status').notNull().default('setup'), // 'setup' | 'active' | 'completed' (099)
+startedAt: timestamp('started_at'),               // 099
 checkInClosedAt: timestamp('check_in_closed_at'), // 097
 completedAt: timestamp('completed_at'),           // set on normal completion and finish-early (096)
 finishedEarly: boolean('finished_early').notNull().default(false) // 096
 ```
+
+Existing tournaments stay `active` / `completed` — no status backfill. New rows default to `setup`.
 
 Backfill for `player.token`: add nullable → `UPDATE player SET token = encode(gen_random_bytes(16), 'hex')` (pgcrypto is available on Neon; fallback `md5(random()::text || id::text)`) → `SET NOT NULL` + unique index. New rows get `crypto.randomBytes(16).toString('hex')` at insert, same as `court.token`.
 
@@ -63,14 +68,15 @@ Backfill for `player.token`: add nullable → `UPDATE player SET token = encode(
 
 Both the manage page and the existing retire/undo/close-round commands rebuild the current round in the same way (delete matches → write rotations → insert matches). That block is currently copy-pasted three times in `tournament-actions.remote.ts`. Before adding a fourth copy:
 
-| Extract                                                                      | From                                                            | Used by                                                                         |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `rebuildCurrentRound(tournamentId, round, assignments, courtSizes, scoring)` | `retirePlayer`, `undoRetirement`, `closeRoundForm`              | 096 add/remove/re-seed/reshuffle/reset                                          |
-| `ensureCourtsExist(tournamentId, courtCount)`                                | (new — today `closeRoundForm` 500s if a `court` row is missing) | 096 add player when court count grows                                           |
-| `QrCode.svelte` (generic `url` prop)                                         | `CourtQRCode.svelte`                                            | court QR (existing), player QR modal + print sheet (097)                        |
-| `fetchStandingsData` → `$lib/server/standings-service.ts`                    | `standings/standings-data.remote.ts`                            | player page overall position (098)                                              |
-| `derivePlayerRoundState(...)` (pure)                                         | new in `$lib/tournament-logic.ts`                               | player page state machine (098); unit-tested                                    |
-| `reachableFinalPlaceRange(...)` (pure)                                       | new in `$lib/tournament-logic.ts`                               | best/worst achievable place (098); reuses ladder and bracket rules; unit-tested |
+| Extract                                                   | From                                                            | Used by                                                                              |
+| --------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `rebuildCurrentRound(...)`                                | `retirePlayer`, `undoRetirement`, `closeRoundForm`              | 096 add/remove/re-seed/reshuffle/reset; 099 start (round 1)                          |
+| `ensureCourtsExist(tournamentId, courtCount)`             | (new — today `closeRoundForm` 500s if a `court` row is missing) | 096 add player; 099 start                                                            |
+| `startTournament()`                                       | second half of today's `createTournamentForm`                   | 099 `startTournamentForm` and "Create & start"                                       |
+| `QrCode.svelte` (generic `url` prop)                      | `CourtQRCode.svelte`                                            | court QR (existing), player QR modal + print sheet (097)                             |
+| `fetchStandingsData` → `$lib/server/standings-service.ts` | `standings/standings-data.remote.ts`                            | player page overall position (098)                                                   |
+| `derivePlayerRoundState(...)` (pure)                      | new in `$lib/tournament-logic.ts`                               | player page state machine (098); unit-tested                                         |
+| `reachableFinalPlaceRange(...)` (pure)                    | new in `$lib/tournament-logic.ts`                               | best/worst from **projected** promote/relegate on live current-round standings (098) |
 
 ### Auth model (unchanged from 030)
 
@@ -89,30 +95,30 @@ Every new user-facing string gets a Paraglide key in all four locales (`messages
 
 Ordered by player-facing value per unit of risk; each step is independently shippable.
 
-| Step | Work                                                                                                              | Spec |
-| ---- | ----------------------------------------------------------------------------------------------------------------- | ---- |
-| 0    | Migration `0016`; extract `rebuildCurrentRound`, `ensureCourtsExist`, `QrCode.svelte`, `standings-service.ts`     | this |
-| 1    | Player page, read-only, all states, polling                                                                       | 098  |
-| 2    | Check-in page + full-screen QR + print sheet + self check-in                                                      | 097  |
-| 3    | Manage page shell + **Players** tab (rename, remove no-show, add late, retire/injury/undo moved here)             | 096  |
-| 4    | **Courts** tab (swap, move, reset/reshuffle) + `manualAdjustedAt` badge on operations view                        | 096  |
-| 5    | **Rules** + **Tournament** tabs (scoring mode, rounds, finish early, delete); remove editors from operations view | 096  |
-| 6    | Close check-in → remove no-shows flow (needs steps 2 + 3)                                                         | 097  |
+| Step | Work                                                                                                                             | Spec |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 0    | Migration `0016`; extract `rebuildCurrentRound`, `ensureCourtsExist`, `startTournament`, `QrCode.svelte`, `standings-service.ts` | this |
+| 1    | Player page, read-only, all states, polling, live placement + projected range                                                    | 098  |
+| 2    | `setup` status, optional players on create, start panel, dashboard Setup section                                                 | 099  |
+| 3    | Check-in page + full-screen QR + print sheet + self check-in (before start)                                                      | 097  |
+| 4    | Manage page shell + **Players** tab (rename, remove no-show, add late, retire/injury/undo moved here)                            | 096  |
+| 5    | **Courts** tab (swap, move, reset/reshuffle) + `manualAdjustedAt` badge on operations view                                       | 096  |
+| 6    | **Rules** + **Tournament** tabs (scoring mode, rounds, finish early, **reopen last round**, delete)                              | 096  |
 
-Steps 1–2 do not touch the redistribution engine at all. Steps 3–5 do, and rely on the extracted `rebuildCurrentRound`.
+Steps 1–3 do not touch the redistribution engine except `startTournament`. Steps 4–6 do, and rely on the extracted `rebuildCurrentRound`.
 
 ## Cross-cutting Open Questions
 
-1. **Two pages or one?** Proposed: keep the operations view as the "during play" screen and add the manage page as the back office. Alternative: merge everything into one tabbed page. See 096 OQ 6.
-2. **Where does creation redirect?** Today `/tournament/[id]`. Proposed: unchanged, but the operations view shows a prominent **Check-in** button until check-in is closed or round 1 has scores. Alternative: redirect to `/check-in` (breaks the E2E flows that expect the operations view).
-3. **Audit trail?** Proposed: none for v1 — `manualAdjustedAt`, `joinedRound`, `finishedEarly` cover the visible cases. Revisit if co-organizers are ever added.
+1. **Two pages or one?** Proposed: keep the operations view as the "during play" screen and add the manage page as the back office. Alternative: merge everything into one tabbed page. See 096 OQ 5.
+2. **Where does creation redirect?** `/tournament/[id]` in `setup` (099) — the start panel links to check-in. "Create & start" still lands on the operations view with round 1 (existing E2E).
+3. **Audit trail?** Proposed: none for v1 — `manualAdjustedAt`, `joinedRound`, `finishedEarly`, `startedAt` cover the visible cases. Revisit if co-organizers are ever added.
 4. **PWA manifest** ("Add to home screen" for the player page) — cheap, out of scope here; candidate for a small follow-up spec.
 
 ## Related Specs
 
-- [050_tournament-management.md](./050_tournament-management.md) — current pages and remote functions
+- [050_tournament-management.md](./050_tournament-management.md) — current pages and remote functions (create-and-start to be split per 099)
 - [060_court-operations.md](./060_court-operations.md) — court page (player page links to it)
-- [093_round-history-stepper.md](./093_round-history-stepper.md) — read-only past rounds
+- [093_round-history-stepper.md](./093_round-history-stepper.md) — read-only past rounds; reopen (096) is the way to edit them again
 - [094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md) — editors that move to the manage page
 - [660_virtual-court-scheduling.md](./660_virtual-court-scheduling.md) — shift / wait model reused on the player page
 - [670_player-retirement.md](./670_player-retirement.md), [091](./091_preseed-retirement-bracket-policy.md), [092](./092_mid-round-injury-forward-retirement.md) — retirement/injury commands reused as-is
