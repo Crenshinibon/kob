@@ -23,7 +23,7 @@ Tiebreaker order (default — see **[094_configurable-tie-breaking.md](./094_con
 2. Diff this round (average on 5p/6p / canceled courts)
 3. Total points (5p/6p rounds contribute `roundRaw/3`)
 4. Total diff (cumulative)
-5. Seeding (player ID / seed rank)
+5. Seeding (`seedRank`: points, then name-list order; else player ID)
 
 Optional org factors: **dice** (random among tied), **manual** (org-defined order).
 
@@ -35,7 +35,7 @@ Players play different numbers of games per round (3-4 for 5p, 2-3 for 6p). Use 
 Player ranking = totalPoints / gamesPlayed
 ```
 
-Tiebreaker: if averages are equal, use total points (more games = more data), then diff, then playerId.
+Tiebreaker: if averages are equal, use total points (more games = more data), then diff, then seeding (`seedRank` / name-list order).
 
 ### Canceled Matches (Injury Handling)
 

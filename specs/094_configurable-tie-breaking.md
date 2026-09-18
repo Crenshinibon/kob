@@ -19,7 +19,7 @@ This spec defines **configurable, reorderable tie-break factors** stored per tou
 | `round_diff` | Diff This Round | Point differential this round on this court. Normalized to **average diff per game** on 5p/6p / canceled courts. |
 | `total_points` | Total Points | Sum of per-round point contributions across all completed rounds **plus** the round being ranked. Each 5p/6p round contributes `roundRawPoints / 3` (3 = standard games per round). Standard 4p rounds contribute raw round points. |
 | `total_diff` | Total Diff | Sum of raw point differentials across all rounds (no per-game normalization). |
-| `initial_order` | Seeding | Lower `playerId` wins (deterministic). For preseed with `seedRank`, lower `seedRank` wins; ties fall back to `playerId`. |
+| `initial_order` | Seeding | Lower `seedRank` wins. `seedRank` is assigned from the roster: higher `seedPoints` first; **when points are omitted or tied, the order of names in the player list** (first name = seed 1). If `seedRank` is missing (legacy rows), lower `playerId` wins (insert order). |
 | `dice` | Dice | When still tied after all prior **enabled** factors, pick a random ordering among the tied group. Uses injected RNG (tests use seeded RNG). |
 | `manual` | Manual | Organizer-defined order for tied players on a court before closing the round. Stored as `manual_rank_order` on `court_rotation`. Lower index = better rank. |
 
@@ -89,6 +89,19 @@ total_points = sum(contributions over all rounds)
 ```
 
 The divisor `3` is the **standard games per round** (not games actually played). Example: 4 games on a 5p court → round points summed, divided by 3, added to cumulative total.
+
+### Seeding (`initial_order`)
+
+This factor is the deterministic last resort in the default config. It is **not** “whoever got a lower database id”.
+
+1. At create (and whenever the roster is re-seeded), `assignSeedRanks` writes `player.seedRank` for **both** formats:
+   - Higher `seedPoints` → better (lower) seed.
+   - Missing and `0` points are equal.
+   - Equal or missing points keep **name-list order**: the order the names were entered (or later insertion order: `ORDER BY player.id`). First name = seed 1.
+2. `getInitialOrderValue` compares `seedRank` when present; otherwise `playerId` (legacy tournaments created before seed ranks were always stored).
+3. Preseed round-1 snake uses the same `seedRank`. Random-seed still shuffles round 1; the stored seed rank is still what breaks ties when this factor is reached.
+
+Example: names pasted as `Zoe`, `Alex`, `Mia` with no points → seeds 1, 2, 3. If Zoe and Alex later have the same points and diff on a court, Zoe ranks above Alex.
 
 ### Dice
 
@@ -201,7 +214,7 @@ Dedicated `describe('tie-break ranking')` with cases for:
 4. **5p round_points** — averages vs totals.
 5. **5p total_points** — raw sum/3 contribution to cumulative.
 6. **total_diff** — cumulative diff breaks tie when round stats equal.
-7. **Seeding** — playerId / seed rank tiebreak.
+7. **Seeding** — `seedRank` from points then name-list order; `playerId` only when `seedRank` is missing.
 8. **dice** — seeded RNG produces deterministic shuffle among equals.
 9. **manual** — manual_rank_order overrides automatic tie.
 10. **Combined** — realistic multi-factor scenarios (e.g. equal round points, diff differs on total).
@@ -217,7 +230,7 @@ Minimum **30+** new assertions across factor combinations.
 
 ## Implementation Files
 
-- `src/lib/tournament-logic.ts` — core ranking engine
+- `src/lib/tournament-logic.ts` — core ranking engine (`assignSeedRanks`, `getInitialOrderValue`)
 - `src/lib/server/db/schema.ts` — columns
 - `drizzle/0014_tie_break_config.sql` — migration
 - `src/routes/tournament/create/*` — creation UI

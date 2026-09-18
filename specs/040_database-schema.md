@@ -42,8 +42,8 @@
   id: serial().primaryKey(),
   tournamentId: integer().notNull(),
   name: text().notNull(),
-  seedPoints: integer(), // Required for preseed format
-  seedRank: integer(),   // Calculated seed position
+  seedPoints: integer(), // Optional numeric seed (WVV points, etc.). Omitted/0 are equal.
+  seedRank: integer(),   // 1-based seed: higher seedPoints first; omitted/tied points keep name-list order (first name = seed 1). Stored for both formats — random-seed still shuffles round 1; seedRank is the initial_order tie-break.
   // Retirement
   retiredAt: timestamp(),        // null = active
   retiredRound: integer(),       // Which round they retired after

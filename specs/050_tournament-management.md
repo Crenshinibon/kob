@@ -51,8 +51,8 @@ Combined form with:
 - Physical courts: slider (1-16)
 - **Duration estimation**: Live display with round-by-round breakdown
 - Number of rounds (auto-calculated for preseed, configurable 1-10 for random seed)
-- Player names textarea (supports smart paste with comma/semicolon splitting, tab-separated name+points from spreadsheets)
-- For preseed: names + seed points input
+- Player names textarea (supports smart paste with comma/semicolon splitting, tab-separated name+points from spreadsheets). **List order is the seeding** when no points are entered (first name = seed 1). The same `seedRank` is the default last tie-break (`initial_order`).
+- For preseed: names + optional seed points. Higher points = better seed; omitted or tied points keep list order.
 - CSV file upload: Upload WVV Setzliste CSV directly (extracts `spieler1` and `wvv` columns, auto-switches to preseed format)
 - [Create] button — saves as `setup` (proposed 099); today still starts immediately
 - [Create & start] — proposed 099, same as today's Create when ≥ 8 names are pasted

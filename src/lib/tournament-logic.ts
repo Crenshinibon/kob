@@ -376,18 +376,48 @@ function snakeDistribute(items: number[], courtSizes: readonly number[]): CourtA
 	return courts.map(({ courtNumber, playerIds }) => ({ courtNumber, playerIds }));
 }
 
+/**
+ * Assign 1-based seedRank.
+ * Higher seedPoints first; missing/0 points are equal.
+ * Equal points keep **name-list / roster order** (the input array order).
+ * First name in a no-points list is seed 1.
+ */
+export function assignSeedRanks<T extends { seedPoints: number | null }>(
+	players: readonly T[]
+): (T & { seedRank: number })[] {
+	return [...players]
+		.map((player, rosterIndex) => ({ player, rosterIndex }))
+		.sort(
+			(a, b) =>
+				(b.player.seedPoints ?? 0) - (a.player.seedPoints ?? 0) || a.rosterIndex - b.rosterIndex
+		)
+		.map((entry, i) => ({ ...entry.player, seedRank: i + 1 }));
+}
+
+type SeedablePlayer = {
+	id: number;
+	seedPoints: number | null;
+	seedRank?: number | null;
+};
+
+/** Prefer persisted seedRank; otherwise assign from points then array/list order. */
+function seedOrderedPlayers<T extends SeedablePlayer>(
+	players: readonly T[]
+): (T & { seedRank: number })[] {
+	if (players.length > 0 && players.every((p) => p.seedRank != null)) {
+		return [...players]
+			.sort((a, b) => (a.seedRank as number) - (b.seedRank as number) || a.id - b.id)
+			.map((p) => ({ ...p, seedRank: p.seedRank as number }));
+	}
+	return assignSeedRanks(players);
+}
+
 function generatePreseedRound1(
 	courtSizes: readonly number[],
 	players: readonly Player[]
 ): CourtAssignment[] {
-	const sorted = [...players].sort((a, b) => {
-		if (a.seedPoints !== null && b.seedPoints !== null) return b.seedPoints - a.seedPoints;
-		if (a.seedPoints !== null) return -1;
-		if (b.seedPoints !== null) return 1;
-		return a.id - b.id;
-	});
 	return snakeDistribute(
-		sorted.map((p) => p.id),
+		seedOrderedPlayers(players).map((p) => p.id),
 		courtSizes
 	);
 }
@@ -404,16 +434,14 @@ function generateRandomRound1(
 	return snakeDistribute(items, courtSizes);
 }
 
-/** Player IDs in round-1 seeding order (preseed by points, random-seed shuffled). */
+/** Player IDs in round-1 seeding order (preseed by points then list order, random-seed shuffled). */
 export function orderPlayerIdsForRound1(
 	formatType: FormatType,
-	players: readonly Pick<Player, 'id' | 'seedPoints'>[],
+	players: readonly Pick<Player, 'id' | 'seedPoints' | 'seedRank'>[],
 	rng: () => number = Math.random
 ): number[] {
 	if (formatType === 'preseed') {
-		return [...players]
-			.sort((a, b) => (b.seedPoints ?? 0) - (a.seedPoints ?? 0) || a.id - b.id)
-			.map((p) => p.id);
+		return seedOrderedPlayers(players).map((p) => p.id);
 	}
 	const items = players.map((p) => p.id);
 	for (let i = items.length - 1; i > 0; i--) {
@@ -1078,6 +1106,7 @@ export function buildPlayerTotalStats(
 	return totals;
 }
 
+/** Lower is better. Prefers `seedRank` (points, then name-list order); else `playerId`. */
 function getInitialOrderValue(playerId: number, players?: readonly Player[]): number {
 	if (!players) return playerId;
 	const p = players.find((pl) => pl.id === playerId);

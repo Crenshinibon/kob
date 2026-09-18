@@ -50,7 +50,7 @@ Today `createTournamentForm` does everything at once: it needs ≥ 8 player name
 The existing form, with the player section made optional:
 
 - Name, format, scoring mode, custom scoring, tie-break, preseed retirement policy, physical courts, timing — unchanged.
-- **Players** textarea / CSV upload: optional. The court-layout preview, duration estimate and rounds input keep updating live from the pasted count; with 0 names they show "Add players to see the court layout".
+- **Players** textarea / CSV upload: optional. The court-layout preview, duration estimate and rounds input keep updating live from the pasted count; with 0 names they show "Add players to see the court layout". **The order of names is the seeding** when no points are entered (first name = seed 1). Omitted or tied seed points keep that list order. The same `seedRank` is the default last tie-break (`initial_order`, [094](./094_configurable-tie-breaking.md)).
 - `numRounds` (random seed) is stored as entered; for preseed it is derived at **start** (depends on court count), the form shows "computed at start".
 - Two submit buttons:
   - **Create** → `status = 'setup'`, players inserted with tokens (097), redirect to `/tournament/[id]` (setup view, below).
@@ -92,7 +92,7 @@ The operations view renders a **start panel** instead of court cards:
 
 1. Optional: delete players not checked in (`checkedInOnly`).
 2. Validate 8 ≤ active players ≤ 64 → else `err_min_players` / `err_max_players` (existing keys).
-3. `courtSizes = calculateCourtSizes(count)`; preseed: recompute `seedRank` from `seedPoints`, `numRounds = calculateRoundCount(courtCount, 'preseed')`; random seed: `numRounds` as stored (1–10).
+3. `courtSizes = calculateCourtSizes(count)`; `assignSeedRanks` on the roster in insertion order (`ORDER BY player.id`): higher `seedPoints` first; omitted or tied points keep that **name-list order** (first name = seed 1). Persist `seedRank` for **both** formats (random-seed still shuffles round 1; `seedRank` is the `initial_order` tie-break). Preseed: `numRounds = calculateRoundCount(courtCount, 'preseed')`. Random seed: `numRounds` as stored (1–10).
 4. `ensureCourtsExist` (095) creates the stable `court` rows with tokens.
 5. Round 1 assignments (`createInitialState` → `addPlayers` → `startRound`) and match rows via `rebuildCurrentRound` (095) for round 1.
 6. `UPDATE tournament SET status = 'active', currentRound = 1, numRounds, courtSizes, playerCount, startedAt = now(), lastActivityAt = now() WHERE id = ? AND status = 'setup'` — the conditional update is the double-submit guard.
@@ -141,7 +141,9 @@ Remote functions:
 
 ### Unit
 
-- `startTournament()` with 8, 17, 64 players → court sizes, `numRounds` (preseed derived, random as stored), `seedRank` order, `court` rows + round-1 rotations + match rows, `status/currentRound/startedAt`.
+- `assignSeedRanks` — no points → list order (first = seed 1); points desc then list order among ties; null and 0 treated equal.
+- `orderPlayerIdsForRound1('preseed')` uses persisted `seedRank` when present, otherwise `assignSeedRanks`.
+- `startTournament()` with 8, 17, 64 players → court sizes, `numRounds` (preseed derived, random as stored), `seedRank` (points then name-list order; first name = seed 1 when no points), `court` rows + round-1 rotations + match rows, `status/currentRound/startedAt`.
 - `startTournament()` with 7 → `err_min_players`; with `checkedInOnly` and 9 of 14 checked in → 5 deleted, 9 assigned.
 - Double start (second call after status flipped) → 409.
 

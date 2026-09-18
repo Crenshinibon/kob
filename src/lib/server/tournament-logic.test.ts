@@ -52,6 +52,7 @@ import {
 	hasFreshScoresAfterInjury,
 	generateRound1Assignments,
 	orderPlayerIdsForRound1,
+	assignSeedRanks,
 	generateAllMatchesForAssignment,
 	isRoundReadyToClose,
 	computeFinalStandingMap,
@@ -445,6 +446,65 @@ describe('addPlayers', () => {
 });
 
 // ============================================================================
+// assignSeedRanks (name-list order when no points)
+// ============================================================================
+
+describe('assignSeedRanks', () => {
+	it('uses name-list order when no points are entered (first name = seed 1)', () => {
+		const ranked = assignSeedRanks([
+			{ id: 30, name: 'Alice', seedPoints: null },
+			{ id: 10, name: 'Bob', seedPoints: null },
+			{ id: 20, name: 'Carol', seedPoints: null }
+		]);
+		expect(ranked.map((p) => p.id)).toEqual([30, 10, 20]);
+		expect(ranked.map((p) => p.seedRank)).toEqual([1, 2, 3]);
+	});
+
+	it('ranks higher seedPoints first', () => {
+		const ranked = assignSeedRanks([
+			{ id: 1, name: 'Low', seedPoints: 50 },
+			{ id: 2, name: 'High', seedPoints: 200 },
+			{ id: 3, name: 'Mid', seedPoints: 100 }
+		]);
+		expect(ranked.map((p) => p.id)).toEqual([2, 3, 1]);
+		expect(ranked.map((p) => p.seedRank)).toEqual([1, 2, 3]);
+	});
+
+	it('keeps name-list order among equal or missing points', () => {
+		const ranked = assignSeedRanks([
+			{ id: 9, name: 'A', seedPoints: 100 },
+			{ id: 1, name: 'B', seedPoints: 100 },
+			{ id: 5, name: 'C', seedPoints: null },
+			{ id: 2, name: 'D', seedPoints: 0 }
+		]);
+		expect(ranked.map((p) => p.id)).toEqual([9, 1, 5, 2]);
+		expect(ranked.map((p) => p.seedRank)).toEqual([1, 2, 3, 4]);
+	});
+});
+
+describe('orderPlayerIdsForRound1 (preseed seeding)', () => {
+	it('snakes by name-list order when points are omitted', () => {
+		const players = [
+			{ id: 40, name: 'First', seedPoints: null, seedRank: null },
+			{ id: 10, name: 'Second', seedPoints: null, seedRank: null },
+			{ id: 30, name: 'Third', seedPoints: null, seedRank: null },
+			{ id: 20, name: 'Fourth', seedPoints: null, seedRank: null }
+		];
+		expect(orderPlayerIdsForRound1('preseed', players, () => 0)).toEqual([40, 10, 30, 20]);
+	});
+
+	it('uses persisted seedRank even when the array is shuffled', () => {
+		const players = [
+			{ id: 1, name: 'Last', seedPoints: 0, seedRank: 4 },
+			{ id: 2, name: 'First', seedPoints: 0, seedRank: 1 },
+			{ id: 3, name: 'Third', seedPoints: 0, seedRank: 3 },
+			{ id: 4, name: 'Second', seedPoints: 0, seedRank: 2 }
+		];
+		expect(orderPlayerIdsForRound1('preseed', players, () => 0)).toEqual([2, 4, 3, 1]);
+	});
+});
+
+// ============================================================================
 // startRound
 // ============================================================================
 
@@ -467,6 +527,19 @@ describe('startRound', () => {
 		expect(s.currentAssignments[2].playerIds).toEqual([3, 6, 11, 14]);
 		// C4 = [4, 5, 12, 13]
 		expect(s.currentAssignments[3].playerIds).toEqual([4, 5, 12, 13]);
+	});
+
+	it('generates Round 1 for preseed with no points using name-list order', () => {
+		let s = createInitialState({ tournamentId: 1, formatType: 'preseed', playerCount: 16 });
+		// IDs are reverse of list order so a playerId sort would snake differently.
+		const players = Array.from({ length: 16 }, (_, i) => mockPlayer(16 - i));
+		s = addPlayers(s, players);
+		s = startRound(s);
+
+		expect(s.currentAssignments[0].playerIds).toEqual([16, 9, 8, 1]);
+		expect(s.currentAssignments[1].playerIds).toEqual([15, 10, 7, 2]);
+		expect(s.currentAssignments[2].playerIds).toEqual([14, 11, 6, 3]);
+		expect(s.currentAssignments[3].playerIds).toEqual([13, 12, 5, 4]);
 	});
 
 	it('generates Round 1 for random seed', () => {
@@ -4955,9 +5028,42 @@ describe('tie-break ranking', () => {
 		expect(totals.get(2)!.totalDiff).toBe(-3);
 	});
 
-	it('initial_order uses lower playerId', () => {
+	it('initial_order uses lower playerId when no seedRank is provided', () => {
 		const sorted = sortPlayersByTieBreak([3, 1, 2], only('initial_order'), {});
 		expect(sorted).toEqual([1, 2, 3]);
+	});
+
+	it('initial_order uses seedRank (name-list order) over playerId', () => {
+		const players = [
+			{ id: 10, name: 'First', seedPoints: null, seedRank: 1 },
+			{ id: 1, name: 'Second', seedPoints: null, seedRank: 2 },
+			{ id: 5, name: 'Third', seedPoints: null, seedRank: 3 }
+		];
+		const sorted = sortPlayersByTieBreak([5, 1, 10], only('initial_order'), { players });
+		expect(sorted).toEqual([10, 1, 5]);
+	});
+
+	it('initial_order uses assignSeedRanks list order when points are absent', () => {
+		const roster = [
+			{ id: 30, name: 'First', seedPoints: null, seedRank: null },
+			{ id: 10, name: 'Second', seedPoints: null, seedRank: null },
+			{ id: 20, name: 'Third', seedPoints: null, seedRank: null }
+		];
+		const ranked = assignSeedRanks(roster);
+		const sorted = sortPlayersByTieBreak([20, 10, 30], only('initial_order'), { players: ranked });
+		expect(sorted).toEqual([30, 10, 20]);
+	});
+
+	it('initial_order keeps name-list order among equal seed points', () => {
+		const roster = [
+			{ id: 9, name: 'A', seedPoints: 100, seedRank: null },
+			{ id: 1, name: 'B', seedPoints: 100, seedRank: null },
+			{ id: 5, name: 'C', seedPoints: 50, seedRank: null }
+		];
+		const ranked = assignSeedRanks(roster);
+		expect(ranked.map((p) => p.id)).toEqual([9, 1, 5]);
+		const sorted = sortPlayersByTieBreak([5, 1, 9], only('initial_order'), { players: ranked });
+		expect(sorted).toEqual([9, 1, 5]);
 	});
 
 	it('dice uses seeded RNG deterministically', () => {

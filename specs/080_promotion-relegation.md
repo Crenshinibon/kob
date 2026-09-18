@@ -4,13 +4,13 @@
 
 ### Round 1 → Round 2 (Vertical Seeding)
 
-Collect all players by finish position, sort each tier by points (desc, tiebreak: diff desc, playerId asc), flatten into one list, fill courts sequentially top-to-bottom.
+Collect all players by finish position, sort each tier by the tournament's tie-break chain (default last factor: `seedRank` from points then name-list order; see [094](./094_configurable-tie-breaking.md)), flatten into one list, fill courts sequentially top-to-bottom.
 
 #### Algorithm
 
 ```
 1. Group all players by finish position (1sts, 2nds, 3rds, 4ths)
-2. Sort each tier by points desc → diff desc → playerId asc
+2. Sort each tier by the configured tie-break chain (default: round points → round diff → totals → `seedRank` / name-list order)
 3. Flatten: [1sts..., 2nds..., 3rds..., 4ths...]
 4. Fill courts sequentially: top players → Court 1, next → Court 2, etc.
 ```
@@ -78,7 +78,7 @@ Same logic extends for any number of courts.
 
 ### Algorithm
 
-After each round, players are grouped by finish position (1sts, then 2nds, then 3rds, then 4ths). Within each tier, they are sorted by performance (points desc, diff desc, playerId asc). Courts are split into winner and loser brackets via `splitSize()`.
+After each round, players are grouped by finish position (1sts, then 2nds, then 3rds, then 4ths). Within each tier, they are sorted by the configured tie-break chain (default last factor: `seedRank` from points then name-list order; see [094](./094_configurable-tie-breaking.md)). Courts are split into winner and loser brackets via `splitSize()`.
 
 1. **Winner bracket** gets the top `winnerCount × 4` players (all 1sts, then all 2nds, then best 3rds as needed)
 2. **Loser bracket** gets the remaining players (worst 3rds, all 4ths)
@@ -135,7 +135,7 @@ See **[088_preseed-example-64p.md](./088_preseed-example-64p.md)** for a full wa
 
 See `src/lib/tournament-logic.ts`:
 
-- **`verticalSeeding(results, courtCount, courtSizes)`** — Random Seed R1→R2: groups by finish position, sorts each tier by points desc (tiebreak: diff desc, playerId asc), flattens, fills courts top-to-bottom. Strongest players on Court 1.
+- **`verticalSeeding(results, courtCount, courtSizes)`** — Random Seed R1→R2: groups by finish position, sorts each tier by the configured tie-break chain (default last factor: `seedRank` / name-list order), flattens, fills courts top-to-bottom. Strongest players on Court 1.
 - **`redistributeLadder(results, isFirstRound, courtCount, courtSizes)`** — Random Seed entry point: calls `verticalSeeding` for R1→R2, `ladderRedistribute` for R2+.
 - **`ladderRedistribute(results, courtCount, courtSizes)`** — Random Seed R2+: 2-up/2-down between adjacent courts.
 - **`processPreseedTransition(results, sizes, roundsCompleted, totalCourts?)`** — Preseed redistribution.

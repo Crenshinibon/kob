@@ -25,7 +25,7 @@ export type MatchInsertRow = {
 
 export function buildRound1AssignmentsFromPlayers(
 	formatType: FormatType,
-	players: readonly Pick<Player, 'id' | 'seedPoints'>[],
+	players: readonly Pick<Player, 'id' | 'seedPoints' | 'seedRank'>[],
 	courtSizes: readonly number[]
 ): CourtAssignment[] {
 	const orderedIds = orderPlayerIdsForRound1(formatType, players);
