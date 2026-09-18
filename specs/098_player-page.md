@@ -2,11 +2,11 @@
 
 ## Status
 
-**PROPOSED — DRAFT FOR REVIEW.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Depends on `player.token` from the shared migration `0016`; the QR codes that lead here are produced by [097_player-check-in.md](./097_player-check-in.md).
+**PROPOSED — DRAFT FOR REVIEW.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Depends on `player.token` from the shared migration `0016`; optional QR codes that lead here are produced by [097_player-check-in.md](./097_player-check-in.md). The page also works if someone opens the URL without using check-in.
 
 ## Problem
 
-Players have no personal view of the tournament. The court QR (060) is per court and per round: after every close round the whole field walks to the organizer to ask "where am I now, when do I play, with whom?". Scoring lives on that same court URL, so players also hunt a QR that is not theirs. With virtual courts and shifts (660) the question is also "how long is my break?". The answer exists in the database the moment `closeRound` runs — it just has no screen.
+Players have no personal view of the tournament. The court QR (060) is still a valid way to enter scores — one URL per court, stable across rounds — but it cannot tell a player where they go **next**. After every close round the field walks to the organizer to ask "where am I now, when do I play, with whom?". With virtual courts and shifts (660) the question is also "how long is my break?". The answer exists in the database the moment `closeRound` runs — it just has no personal screen unless the organizer hands one out.
 
 ## Goals
 
@@ -15,15 +15,16 @@ Players have no personal view of the tournament. The court QR (060) is per court
 3. Shows **upcoming games** this round under the current one (still enterable, so play order on the sand does not matter).
 4. Always shows **placement**: where the player is currently placed overall, and the **best and worst final place still theoretically achievable** — see [Placement](#placement).
 5. Always shows a **record**: seed (if any), total points, total diff, and a **game-by-game history** of closed rounds — see [Record and history](#record-and-history).
-6. **Check-in is the player-facing flow.** A personal QR (`/player/[token]`) replaces court QRs. Players never need `/court/[token]`.
-7. **Updates itself** after close round, a score saved by anyone on the court, retirement, manual moves (096), round-1 rebuilds — via polling, no reload.
-8. Covers every player state: check-in open, not started, waiting (shift), current game, sit-out, court done, frozen, eliminated, retired / injured, completed, unknown token.
+6. **Works alongside the court page (060), not instead of it.** The organizer chooses how to drive scoring: court QRs on the operations view, personal player QRs via optional check-in ([097](./097_player-check-in.md)), or both. Scores saved on either page last-write-wins and show up on the other.
+7. **Updates itself** after close round, a score saved by anyone on the court (player page or court page), retirement, manual moves (096), round-1 rebuilds — via polling, no reload.
+8. Covers every player state: check-in unused or open, not started, waiting (shift), current game, sit-out, court done, frozen, eliminated, retired / injured, completed, unknown token.
 
 ## Non-Goals
 
 - Push notifications / service worker.
 - Showing other players' personal links.
-- A separate player-facing court page. `/court/[token]` remains as an **organizer fallback** (see [Court page](#court-page-organizer-fallback)).
+- Replacing, hiding, or retiring `/court/[token]`. Court QRs stay on the operations view (see [Court page](#court-page)).
+- Requiring check-in. An organizer who never opens `/check-in` still has a complete tournament: court QRs, score entry, close round. Player tokens exist so a personal page can be handed out later.
 
 ## States
 
@@ -41,7 +42,7 @@ Players have no personal view of the tournament. The court QR (060) is per court
 | `active`      | Player on a current-round rotation, matches open, shift is playing                                     |
 | `not_started` | `tournament.status === 'setup'` (or `currentRound === 0`) — [099](./099_tournament-setup-and-start.md) |
 
-Plus two orthogonal flags: `checkInOpen` (097 banner) and `movement: 'up' | 'down' | 'same' | null` (court number vs. previous round).
+Plus two orthogonal flags: `checkInOpen` (097 banner — only when check-in has actually been used) and `movement: 'up' | 'down' | 'same' | null` (court number vs. previous round).
 
 `injured` still shows the [Current game](#current-game) block so the substitute's court can be scored from this token; a SUBST notice sits on the matchup. Terminal states (`completed` / `retired` / `eliminated` / `frozen` with court done) have no score entry.
 
@@ -89,7 +90,7 @@ The **Placement** block is present in every playing state (see [Placement](#plac
 - Shift line when virtual > physical courts (660): "Shift 1 of 2 · playing now". Hidden when virtual = physical.
 - The player's team is always on the **left** ("YOU + partner"). Scores save mapped back to stored team A/B — see [Score entry](#score-entry).
 - 3p court: "YOU vs Ben + Carla" or "YOU + Ben vs Carla (solo)".
-- 5p/6p sit-out as NOW: hero reads "You sit out this game"; **On court now** lists the parallel match(es) with the same score fields (this page replaces the court page, so those games still need a scorer on the sand).
+- 5p/6p sit-out as NOW: hero reads "You sit out this game"; **On court now** lists the parallel match(es) with the same score fields (so a player who only has a personal QR can still score the game they are watching; the court page can score it too).
 - Injured with substitute (Phase 1 of 092): the row shows "SUBST" for the injured player and a notice; score fields stay enabled.
 - Canceled matches: "canceled — averaged"; no inputs.
 - **Played** / **Up next**: remaining this-round matches in match order. Up next uses the same `ScoreEntry` control, visually smaller, so a court that plays game 3 first can still save it. Played rows are compact results with **Edit** (same as the court page). Hidden when empty.
@@ -135,7 +136,7 @@ No score inputs. Wait estimate from `getShiftForCourt` / `tournament-data.remote
 └────────────────────────────────────────────────┘
 ```
 
-Once the court is done the achievable range tightens (rank on the court is now known — see [Placement](#placement)). Score fields are gone; **Edit** is also gone (round still open, but the court is complete — organizer fallback can still correct a score). Open Question 12.
+Once the court is done the achievable range tightens (rank on the court is now known — see [Placement](#placement)). Score fields are gone; **Edit** is also gone (round still open, but the court is complete — the court page can still correct a score). Open Question 12.
 
 The **"Likely next"** hint is shown only when it is rule-deterministic from the player's own rank (Open Question 3):
 
@@ -176,11 +177,13 @@ Big final place ("**3rd of 16**" with medal for top 3), "Finished early after ro
 └────────────────────────────────────────────────┘
 ```
 
+The "You are checked in ✓" line is hidden if check-in was never used (all `checkedInAt` null) — then it is just "14 players registered".
+
 Placement hidden. Polling continues so the court appears at start without reload.
 
 ### Banners (any state)
 
-- `checkInOpen` and tournament already started: "Check-in still open — your court may change until the organizer closes check-in." (097). Hidden in `not_started` (courts do not exist yet).
+- `checkInOpen` and tournament already started: "Check-in still open — your court may change until the organizer closes check-in." (097). Hidden in `not_started`. Hidden entirely when check-in was never used (no `checkedInAt` / `checkInSource` on any player and `checkInClosedAt` is null).
 - Poll failure: small "Last updated 12:04 · retry" line; the page never blanks out on a failed refresh.
 
 ### Below the main card
@@ -208,7 +211,7 @@ When NOW's match is saved, NOW advances to the next incomplete group on the same
 
 ## Score entry
 
-This page is a scoring surface. Rules, validation, and last-write-wins are **the same as [060](./060_court-operations.md)**. The UI is extracted into `ScoreEntry.svelte` and reused on the court page (organizer fallback) so the two cannot drift.
+This page is a scoring surface **in parallel with** `/court/[token]`. Rules, validation, and last-write-wins are **the same as [060](./060_court-operations.md)**. The UI is extracted into `ScoreEntry.svelte` and reused on the court page so the two cannot drift. A score saved here appears on the court page (and vice versa) on the next poll.
 
 - **Single set**: one score pair + Save.
 - **Best-of-3**: Set 1, Set 2, Set 3 (Deciding) cards; deciding set only when 1–1; each set has its own save/edit/cancel.
@@ -217,7 +220,7 @@ This page is a scoring surface. Rules, validation, and last-write-wins are **the
 - **Edit** after save, for anyone who can save (not organizer-only). Matches today's court page, not the stale "authenticated only" line in 060.
 - Canceled matches: no form.
 - Last write wins. No conflict UI. Two phones submitting the same match is expected (four players, one game).
-- Inputs while focused pause polling so a refresh cannot wipe digits being typed (court page today only pauses while a save is in flight — this is stricter, and the court fallback should do the same).
+- Inputs while focused pause polling so a refresh cannot wipe digits being typed (court page today only pauses while a save is in flight — this is stricter, and the court page should do the same).
 
 ### Who can save
 
@@ -228,7 +231,7 @@ This page is a scoring surface. Rules, validation, and last-write-wins are **the
 3. The player must be one of the rotation's roster (`player1Id`…`playerNId` for that `courtSize`). Sit-out is still on the roster — that is how parallel games get scored.
 4. Same round-active / not-canceled / deciding-set guards as `saveScore` (060).
 5. Map the submitted left/right scores through `youOnTeam: 'a' | 'b'` onto `teamAScore` / `teamBScore`.
-6. Write the row, bump `lastActivityAt`, refresh `getPlayerData` and `getCourtData` so the organizer fallback updates.
+6. Write the row, bump `lastActivityAt`, refresh `getPlayerData` and `getCourtData` so the court page updates.
 
 A player token cannot save another court's match. The organizer's session is not required. Shared validation lives in `$lib/server/save-score.ts` so court-token saves and player-token saves cannot diverge.
 
@@ -516,7 +519,7 @@ type PlayerPageData = {
 			label;
 			courtSize;
 			rotationId;
-			courtToken; // organizer fallback only; not linked from this page
+			courtToken; // same stable token as the court QR (060); not linked from this page
 			shift;
 			totalShifts;
 			waitMinutes;
@@ -586,7 +589,7 @@ type PlayerPageData = {
 };
 ```
 
-Queries per request: player by token → tournament → all rotations of the tournament (needed for history, movement, progress) → matches of the current round (all courts — needed for live standings, `liveRoundResults`, round progress) → players of the tournament (names) → standings. `court.token` is read from the `court` table via `rotation.courtId` (organizer fallback refresh only).
+Queries per request: player by token → tournament → all rotations of the tournament (needed for history, movement, progress) → matches of the current round (all courts — needed for live standings, `liveRoundResults`, round progress) → players of the tournament (names) → standings. `court.token` is read from the `court` table via `rotation.courtId` so a player-page save can refresh `getCourtData`.
 
 `placement.current` comes from the shared standings computation (`standings-service.ts`, 095) **including the current round's live court standings**. `placement.best/worst/nextCourt` come from `reachableFinalPlaceRange` with `projectedRank` and `liveRoundResults`. `record` / `history` are derived from the same rotations + matches already loaded for placement (`playerMatchesView` per **closed** round, `buildPlayerRoundStats` / `buildPlayerTotalStats` for totals). No extra round-trip.
 
@@ -610,23 +613,23 @@ If Neon load is still a concern after measuring, fall back to computing `placeme
 - Token: 128-bit random hex; same threat model as court tokens (060). Unknown token → 404 with a friendly message.
 - Exposes: name, court, scores, standing — all already visible on the public standings page.
 - Writes: (1) idempotent self check-in (097), organizer-reversible; (2) score saves for matches on **this player's current-round rotation only**. "Regenerate link" on the manage page (096) invalidates a leaked token and cuts off both reads and saves.
-- Possessing a player token is equivalent to possessing that court's score-entry capability for the current round, scoped to the roster. That is intentional: check-in replaces the court QR.
+- Possessing a player token can save scores on **this player's current-round rotation**. Possessing a court token can save every match on that court. Both are first-class; last write wins. That is the same threat model as today's court QR, plus an optional per-player URL.
 
-## Court page (organizer fallback)
+## Court page
 
-`/court/[token]` stays in the app for the organizer (dead phone, projector, correcting a finished court). It is **not** player-facing after this group ships.
+`/court/[token]` remains a **player-facing** scoring URL. The organizer may print or show court QRs from the operations view exactly as today (060). Check-in and the player page are an optional second path, not a replacement.
 
-- Operations view: **remove** `CourtQRCode` from court cards. Keep an **Open court page** text link (stable `court.token`, 1045) labelled for the organizer.
-- Player page: no link to `/court/...`.
-- Check-in print sheet / QR modal: the personal URL is the only URL players are given (097).
-- Closed-round copy on the court page: "This round is closed. Players see their next court on their personal page."
+- Operations view: **keep** `CourtQRCode` on court cards (stable `court.token`, 1045) plus the existing "Open court page" link.
+- Player page: no link to `/court/...` (the personal page already has score entry). A player who only has a court QR never needs a player token.
+- Check-in print sheet / QR modal (097), when used: personal URL. Court QRs stay on the operations view for organizers who prefer that flow.
+- Closed-round copy on the court page: "This round is closed. Check with the organizer for your next court — or open your personal player page if you have one."
 - Score UI becomes `ScoreEntry.svelte`; court-token `saveScore` / `saveSetScore` keep working and share `$lib/server/save-score.ts` with the player forms.
 - Pause-on-focus polling (above) is applied here too.
-- Existing E2E that scores via `/court/[token]` stays valid as the organizer path; new player-page E2E covers the player path.
+- Existing E2E that scores via `/court/[token]` stays the court-QR path; new player-page E2E covers the optional personal path. A mixed test saves on one surface and asserts the other updates.
 
 ## i18n Keys (new)
 
-`player_title`, `player_round_of`, `player_now`, `player_court_now`, `player_physical_court`, `player_players_scoring` (`{size} players · {scoring}`), `player_shift_now`, `player_shift_wait`, `player_you`, `player_vs`, `player_sit_out`, `player_sit_out_now`, `player_on_court_now`, `player_also_on_court`, `player_played`, `player_up_next`, `player_waiting_scores_locked`, `player_canceled`, `player_substitute_note`, `player_court_standings`, `player_court_done`, `player_finished_rank`, `player_waiting_courts` (`{done} of {total}`), `player_next_appears`, `player_next_hint_up`, `player_next_hint_down`, `player_next_hint_same`, `player_next_hint_winners`, `player_next_hint_losers`, `player_frozen`, `player_eliminated`, `player_retired`, `player_retired_injury`, `player_replaced_by`, `player_final_place`, `player_finished_early`, `player_placement_heading`, `player_placement_current` (`Currently {place} of {total}`), `player_placement_range` (`Still possible: {best} – {worst}`), `player_placement_final`, `player_placement_bar_label` (a11y), `player_placement_can_still_change`, `player_not_started`, `player_not_started_registered`, `player_history`, `player_record`, `player_record_seed` (`Seed {rank} of {total}`), `player_record_seed_points`, `player_record_random` (`Random seed · started on Court {court}`), `player_record_totals` (`Points {points} · Diff {diff} · {matches} matches`), `player_record_averages_note`, `player_history_finished_rank`, `player_history_from_to`, `player_history_why_ladder_up`, `player_history_why_ladder_down`, `player_history_why_ladder_stay_top`, `player_history_why_ladder_stay_bottom`, `player_history_why_vertical`, `player_history_why_preseed_winners`, `player_history_why_preseed_losers`, `player_history_why_frozen`, `player_history_why_manual`, `player_history_why_joined`, `player_history_how_heading`, `player_history_how_random`, `player_history_how_preseed`, `player_history_sit_out`, `player_history_solo`, `player_history_canceled`, `player_history_sub`, `player_checkin_open_note`, `player_movement_up`, `player_movement_down`, `player_movement_same`, `player_last_updated`, `player_refresh`, `player_not_found`, `court_closed_see_player_page` (replaces the current closed-round hint). Reuse existing `court_save_score` / `court_update_score` / validation keys inside `ScoreEntry.svelte`.
+`player_title`, `player_round_of`, `player_now`, `player_court_now`, `player_physical_court`, `player_players_scoring` (`{size} players · {scoring}`), `player_shift_now`, `player_shift_wait`, `player_you`, `player_vs`, `player_sit_out`, `player_sit_out_now`, `player_on_court_now`, `player_also_on_court`, `player_played`, `player_up_next`, `player_waiting_scores_locked`, `player_canceled`, `player_substitute_note`, `player_court_standings`, `player_court_done`, `player_finished_rank`, `player_waiting_courts` (`{done} of {total}`), `player_next_appears`, `player_next_hint_up`, `player_next_hint_down`, `player_next_hint_same`, `player_next_hint_winners`, `player_next_hint_losers`, `player_frozen`, `player_eliminated`, `player_retired`, `player_retired_injury`, `player_replaced_by`, `player_final_place`, `player_finished_early`, `player_placement_heading`, `player_placement_current` (`Currently {place} of {total}`), `player_placement_range` (`Still possible: {best} – {worst}`), `player_placement_final`, `player_placement_bar_label` (a11y), `player_placement_can_still_change`, `player_not_started`, `player_not_started_registered`, `player_history`, `player_record`, `player_record_seed` (`Seed {rank} of {total}`), `player_record_seed_points`, `player_record_random` (`Random seed · started on Court {court}`), `player_record_totals` (`Points {points} · Diff {diff} · {matches} matches`), `player_record_averages_note`, `player_history_finished_rank`, `player_history_from_to`, `player_history_why_ladder_up`, `player_history_why_ladder_down`, `player_history_why_ladder_stay_top`, `player_history_why_ladder_stay_bottom`, `player_history_why_vertical`, `player_history_why_preseed_winners`, `player_history_why_preseed_losers`, `player_history_why_frozen`, `player_history_why_manual`, `player_history_why_joined`, `player_history_how_heading`, `player_history_how_random`, `player_history_how_preseed`, `player_history_sit_out`, `player_history_solo`, `player_history_canceled`, `player_history_sub`, `player_checkin_open_note`, `player_movement_up`, `player_movement_down`, `player_movement_same`, `player_last_updated`, `player_refresh`, `player_not_found`, `court_closed_see_organizer_or_player_page` (extends the current closed-round hint). Reuse existing `court_save_score` / `court_update_score` / validation keys inside `ScoreEntry.svelte`.
 
 ## Testing
 
@@ -672,11 +675,11 @@ If Neon load is still a concern after measuring, fall back to computing `placeme
 9. Complete the tournament → final place shown; standings link works.
 10. Unknown token → 404 page, no stack trace.
 11. Check-in banner visible before close check-in, gone after (097).
-12. Organizer `/court/[token]` still saves; the player page picks up that score. Operations view has no court QR image.
+12. Save a score on `/court/[token]` (court QR path) → the player page picks it up. Save from the player page → the court page picks it up. Operations view still shows the court QR.
 
 ## Open Questions
 
-1. **Score entry is in** (required). Remaining detail: any rostered player on the court can save any match on that court, including sit-outs / parallel games (proposed — this is what replacing the court QR requires). Alternative: only matches the player is in, which would leave parallel sit-out games with no player-facing scorer.
+1. **Score entry is in** (required) on the player page, **and** on the court page. Remaining detail: a player token can save any match on that court, including sit-outs / parallel games (proposed — so a player who only has their personal QR can still score the game they are watching). Alternative: only matches the player is in; parallel sit-out games are then scored on the court page (always available).
 2. **Poll interval**: 5 s while `active` / `waiting` / `injured` (proposed, same as today's court page) and 10 s once the court is done. 64 players at 5 s is more load than the earlier read-only 10 s plan; the `(tournamentId, lastActivityAt)` cache is what makes it acceptable.
 3. **"Likely next" hint**: include (proposed, rule-based only) or drop to avoid arguments when the organizer's tie-break changes it?
 4. **Current place is live including the current round** (required). The `(tournamentId, lastActivityAt)` cache is the proposed way to make that cheap. OK to ship without the cache first and measure?
@@ -687,15 +690,15 @@ If Neon load is still a concern after measuring, fall back to computing `placeme
 9. Round 1 vertical seeding with **partial** scores on _other_ courts: `nextCourt` from live `verticalSeeding` can jump as those courts report. Acceptable (it is current position) vs. only project once this court has scores but ignore other courts' incompleteness?
 10. **5p/6p totals**: raw points/diff on the record strip (proposed) vs. also showing the normalized total used in tie-break.
 11. **Up next score fields**: compact inputs on every remaining match (proposed, so courts can play out of order) vs. names only until a match becomes NOW.
-12. After `court_done`, can players still **Edit** a score on the player page until the round closes (proposed: no — organizer fallback only) or yes, until `closeRound`?
+12. After `court_done`, can players still **Edit** a score on the player page until the round closes (proposed: no — use the court page) or yes, until `closeRound`?
 
 ## Related Specs
 
 - [095_org-player-experience-index.md](./095_org-player-experience-index.md)
-- [097_player-check-in.md](./097_player-check-in.md) — QR codes, self check-in, banner; the player-facing URL for court + scores
-- [096_tournament-management-page.md](./096_tournament-management-page.md) — moves, late joins, reopen; operations view drops court QRs
-- [099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md) — `not_started` state
-- [060_court-operations.md](./060_court-operations.md) — score rules; court page becomes organizer fallback; `ScoreEntry` extract
+- [097_player-check-in.md](./097_player-check-in.md) — optional personal QRs, self check-in, banner
+- [096_tournament-management-page.md](./096_tournament-management-page.md) — moves, late joins, reopen; pre-play remove/swap/move; court QRs stay on operations
+- [099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md) — `not_started` state; start does not require check-in
+- [060_court-operations.md](./060_court-operations.md) — court page and court QRs remain; `ScoreEntry` extract shared with this page
 - [660_virtual-court-scheduling.md](./660_virtual-court-scheduling.md) — shift and wait model
 - [087_preseed-frozen-courts.md](./087_preseed-frozen-courts.md), [670_player-retirement.md](./670_player-retirement.md) — frozen / eliminated / retired placement rules
 - [070_scoring-and-standings.md](./070_scoring-and-standings.md), [080_promotion-relegation.md](./080_promotion-relegation.md) — points, diff, and the movement copy
@@ -713,6 +716,6 @@ If Neon load is still a concern after measuring, fall back to computing `placeme
 - `src/lib/components/player/RecordStrip.svelte`, `HistoryList.svelte`, `NowCard.svelte`
 - `src/lib/components/ScoreEntry.svelte` — extracted from `src/routes/court/[token]/+page.svelte`
 - `src/routes/court/[token]/+page.svelte` — uses `ScoreEntry`; closed-round hint; pause-on-focus
-- `src/routes/tournament/[id]/+page.svelte` — drop `CourtQRCode`; keep organizer court link
+- `src/routes/tournament/[id]/+page.svelte` — keep `CourtQRCode`; add Check-in / Manage links (095)
 - `src/routes/court/[token]/scores.remote.ts` — thin wrapper around `save-score.ts`
 - `messages/*.json`, `e2e/player-page.spec.ts`

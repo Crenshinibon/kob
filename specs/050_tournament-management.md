@@ -63,7 +63,7 @@ Combined form with:
 - Tournament name and status
 - Court cards showing:
   - Court number and size badge (3p/4p/5p/6p)
-  - **QR code at the top** - Players can scan to access the court page (**stable URL** — persists across rounds and player retirements). **Proposed (098/097):** drop the player-facing court QR; players scan a personal check-in QR. Keep an organizer "Open court page" link.
+  - **QR code at the top** - Players can scan to access the court page (**stable URL** — persists across rounds and player retirements). **Proposed (098/097):** court QRs stay. Optional personal QRs from check-in are a second path.
   - Player names
   - Matches completed (e.g., "2/3")
   - Shift badge (when virtual courts > physical courts)
@@ -78,7 +78,7 @@ Combined form with:
 
 ### Proposed: Manage (`/tournament/[id]/manage`) and Check-in (`/tournament/[id]/check-in`)
 
-Organizer back office (roster edits, swap/move players, rules, finish early, reopen last round), player check-in (personal QRs replace court QRs), player page as the scoring surface (current game + upcoming), and create ≠ start. Not implemented — see **[095_org-player-experience-index.md](./095_org-player-experience-index.md)**, [096](./096_tournament-management-page.md), [097](./097_player-check-in.md), [098](./098_player-page.md), [099](./099_tournament-setup-and-start.md).
+Organizer back office (roster edits, swap/move players **before scores**, rules, finish early, reopen last round), **optional** player check-in (personal QRs alongside court QRs), player page as an additional scoring surface (current game + upcoming), and create ≠ start. Not implemented — see **[095_org-player-experience-index.md](./095_org-player-experience-index.md)**, [096](./096_tournament-management-page.md), [097](./097_player-check-in.md), [098](./098_player-page.md), [099](./099_tournament-setup-and-start.md).
 
 ### Total Standings (`/tournament/[id]/standings`)
 

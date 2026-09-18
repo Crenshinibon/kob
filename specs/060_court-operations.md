@@ -1,10 +1,10 @@
 # Court Operations
 
-> **Proposed ([098](./098_player-page.md), [097](./097_player-check-in.md)):** players enter scores on their personal page `/player/[token]`. Check-in QRs replace court QRs. `/court/[token]` stays as an **organizer fallback** (dead phone, projector, fixing a finished court). The score rules below still apply; the UI is extracted into `ScoreEntry.svelte` and reused on both pages. Operations view drops `CourtQRCode` and keeps a text "Open court page" link.
+> **Proposed ([098](./098_player-page.md), [097](./097_player-check-in.md)):** `/court/[token]` stays a player-facing scoring URL. The organizer may keep handing out **court QRs** from the operations view, may additionally (or instead) hand out **personal player QRs** via optional check-in, or mix both. Score rules below still apply; the UI is extracted into `ScoreEntry.svelte` and reused on the player page. Last write wins across both surfaces.
 
 ## Player Interface (`/court/[token]`)
 
-Mobile-optimized page. Organizer fallback after 098; until then this is the player-facing scoring URL. No live query — data loads once on page load, then client poll (5 s) while visible.
+Mobile-optimized page. Player-facing scoring URL (court QR). No live query — data loads once on page load, then client poll (5 s) while visible. Pause while a score field is focused (098).
 
 ### Layout
 
@@ -87,10 +87,11 @@ Final Court 1 Standings:
 3. Carol
 4. David
 
-Players see their next court on their personal page.
+Check with organizer for your next court.
+(Or open your personal player page if you have one.)
 ```
 
-> **Proposed:** closed-round copy as above. Players never need this URL after check-in ships — see **[098_player-page.md](./098_player-page.md)** and [097_player-check-in.md](./097_player-check-in.md).
+> **Proposed:** keep the organizer hint; add the personal-page line for players who received a check-in QR. See **[098_player-page.md](./098_player-page.md)** and [097_player-check-in.md](./097_player-check-in.md).
 
 ## Admin Court View
 
@@ -98,12 +99,10 @@ Same as tournament view - just shows all courts at once. No separate detailed vi
 
 ## QR Codes
 
-**Proposed:** no player-facing court QRs. Players get a personal QR at check-in (097) pointing at `/player/[token]`. The operations view keeps a text link to `/court/[court.token]` for the organizer.
+Court QRs stay on the operations view. Optional personal QRs (097) are a second path, not a replacement.
 
-Until 098 ships, the existing court QR remains:
-
-- Simple QR code library (`qrcode` npm package)
-- URL: `/court/[token]`
+- Simple QR code library (`qrcode` npm package); extract to generic `QrCode.svelte` (095)
+- URL: `/court/[token]` (stable `court.token` — 1045)
 - Display as image
 - Download/Print buttons
 
@@ -112,8 +111,8 @@ No complex features:
 - No live query on court page (`query()` + 5 s client poll; pause while hidden or while a score field is focused — 098)
 - No token reset (tokens are stable — live on `court` table, persist across rounds and retirements)
 - No override UI (admin can edit directly in DB if needed)
-- No conflict resolution (last save wins)
+- No conflict resolution (last save wins — including vs. a player-page save)
 - No undo/confirmation for score edits
 - Canceled matches show "Canceled — scores will be averaged" notice (no score entry form)
 
-> **Implementation note (2026-07-04):** Tournament admin QR links currently expose `rotation.token` (see `tournament-data.remote.ts`), which **changes** when `retirePlayer` or `closeRoundForm` rebuilds rotations. The court page load handler supports stable `court.token` fallback, but admin links do not use it yet. This breaks stale QR URLs after retirement and causes E2E failures — tracked in [1045](./1045_e2e-flaky-fixes-and-dynamic-closeRound.md). Target fix: expose `court.token` in the organizer court link. Player-facing QRs move to 097, so 1045 no longer blocks players after check-in ships.
+> **Implementation note (2026-07-04):** Tournament admin QR links currently expose `rotation.token` (see `tournament-data.remote.ts`), which **changes** when `retirePlayer` or `closeRoundForm` rebuilds rotations. The court page load handler supports stable `court.token` fallback, but admin links do not use it yet. This breaks stale QR URLs after retirement and causes E2E failures — tracked in [1045](./1045_e2e-flaky-fixes-and-dynamic-closeRound.md). Target fix: expose `court.token` in tournament QR links. Personal player QRs (097) are a separate URL and do not replace this fix.

@@ -78,7 +78,7 @@ Courts may contain 3, 4, 5, or 6 players depending on player count. The system g
 
 ### 5.3 Scoring & Standings
 
-- Players enter scores via personal player URL (proposed, [098](./098_player-page.md)); court URL remains organizer fallback
+- Players enter scores via court URL (mobile-optimized) and, optionally, via personal player URL ([098](./098_player-page.md))
 - **Scoring modes**: Single set (default), Best of 3, or Custom
 - **Score validation**: Minimum points per set, win-by margin, no point caps
 - **Per-court-type overrides**: Org can configure different scoring for 3p/5p/6p courts

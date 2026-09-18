@@ -14,9 +14,9 @@ Simple auth system using Better Auth. Email and password only (no name field). P
 
 ### Player (Anonymous)
 
-- Enters scores via personal player URL (proposed, [098](./098_player-page.md)); check-in QR is that URL ([097](./097_player-check-in.md))
+- Enters scores via court URL and/or personal player URL (proposed, [098](./098_player-page.md)); check-in QR is optional ([097](./097_player-check-in.md))
 - No login needed
-- Pages: Player page (public access via token). Court score entry (`/court/[token]`) remains as organizer fallback.
+- Pages: Court score entry (public access via court token). Player page (public access via player token).
 
 ## Routes
 
@@ -41,8 +41,8 @@ Note: Auth pages are at root level, not under `/auth/` namespace, to avoid confl
 
 **Public Routes**:
 
+- `/court/[token]` - Court score entry (no login needed)
 - `/player/[token]` - Personal player page: current game + score entry (proposed, [098](./098_player-page.md))
-- `/court/[token]` - Court score entry, organizer fallback after 098 (no login needed)
 
 ## Flow
 

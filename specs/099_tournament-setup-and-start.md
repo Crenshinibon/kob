@@ -9,7 +9,7 @@
 Today `createTournamentForm` does everything at once: it needs ≥ 8 player names, computes courts, generates round 1 and puts the tournament into `active`. On the beach this order is wrong:
 
 - The organizer wants to create the tournament **the day before** (name, format, rules) and paste the roster as people register.
-- Registration happens at the venue via check-in ([097](./097_player-check-in.md)); with round 1 already generated, every no-show and late arrival forces a **rebuild** of round 1, and players who already scanned their QR see their court change.
+- Registration happens at the venue (optional check-in [097](./097_player-check-in.md), or just a list). With round 1 already generated, every no-show and late arrival forces a **rebuild** of round 1, and players who already scanned a **court** QR still reach the right court (stable `court.token`) but see a different roster; players who scanned a **personal** QR see their court change.
 - The 8-player minimum is a **start** condition, not a creation condition. Creating with zero players and adding them one by one, by paste, or by CSV should be normal.
 
 ## Goals
@@ -18,7 +18,7 @@ Today `createTournamentForm` does everything at once: it needs ≥ 8 player name
 2. **Create** with name + format + rules and **0–64 players**. No courts, no round 1.
 3. **Start** explicitly: requires 8–64 active players; generates courts + round 1; sets `active`, `currentRound = 1`, `startedAt`.
 4. Roster edits in `setup` are plain inserts/deletes — no rebuild logic.
-5. Check-in ([097](./097_player-check-in.md)) runs **before** start; "Close check-in" leads straight into "Start tournament". Players who scan before start see "not started yet" on their player page ([098](./098_player-page.md)) and then NOW (court, who vs whom, score entry) appears at start.
+5. Check-in ([097](./097_player-check-in.md)) is **optional** before start. "Close check-in" can lead into "Start tournament", but Start from the operations/manage start panel works with the full roster and no check-in. Players who scan a personal QR before start see "not started yet" on their player page ([098](./098_player-page.md)) and then NOW appears at start.
 6. Keep the fast path: creating with ≥ 8 pasted names and starting immediately is one extra tap.
 
 ## Non-Goals
@@ -71,7 +71,7 @@ The operations view renders a **start panel** instead of court cards:
 │ 4 physical → 1 shift)                            │
 │ Rounds: 4 · est. duration ~4h 30min              │
 │                                                  │
-│ [ Check-in ]  [ Manage players & rules ]         │
+│ [ Manage players & rules ]  [ Check-in (optional) ]     │
 │                                                  │
 │ ( ) Start with all 14 players                    │
 │ (•) Start with the 9 checked-in players only     │
@@ -82,9 +82,9 @@ The operations view renders a **start panel** instead of court cards:
 ```
 
 - Court layout, rounds and duration come from the existing pure functions (`getCourtConfiguration`, `calculateRoundCount`, `estimateTournamentDuration`) on the current roster count.
-- "Checked-in only" option appears when check-in has at least one check-in and at least one player is not checked in. It **removes** the unchecked players (hard delete, same as 096 Remove) before starting. Open Question 3.
+- "Checked-in only" option appears **only** when check-in has at least one check-in and at least one player is not checked in. It **removes** the unchecked players (hard delete, same as 096 Remove) before starting. If check-in was never used, Start uses the full roster. Open Question 3.
 - The Start button is disabled below 8 (or below 8 checked-in when that option is selected) with the reason shown.
-- Round stepper and close round are hidden in `setup`. Player QRs live on the check-in page (097), which is available before start.
+- Round stepper and close round are hidden in `setup`. Court QRs appear after start on the operations view. Personal QRs live on the optional check-in page (097).
 
 ## Start
 
@@ -106,9 +106,9 @@ This is the second half of today's `createTournamentForm`, extracted into `start
 | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Dashboard** (`/`)                                          | New **Setup** section listing `status = 'setup'` tournaments with player count and "Start" hint. (Replaces the empty "Draft" section that was removed earlier.)                                                                                                                                                                            |
 | **Manage page** ([096](./096_tournament-management-page.md)) | New `setup` row in the locking matrix: add / remove / rename / re-seed / paste list / CSV import are plain roster edits (no rebuild); Courts tab shows "Tournament not started"; Rules fully editable including scoring mode and rounds; Tournament tab offers Start (same panel) and Delete. Retire/injury/swap/move/finish-early hidden. |
-| **Check-in** ([097](./097_player-check-in.md))               | Normal case is now check-in **before** start. "Close check-in" dialog offers **Start tournament** (with the checked-in-only option) instead of "remove & reshuffle". The reshuffle banner on the player page only appears in the rare case that the tournament was started while check-in was still open.                                  |
-| **Player page** ([098](./098_player-page.md))                | `not_started` becomes a real state: "Tournament has not started yet · 14 players registered · You are checked in ✓". Placement and score entry hidden. Polling continues so NOW (court + matchup + score fields) appears at start without reload.                                                                                          |
-| **Court pages**                                              | No `court` rows exist in `setup` — organizer fallback 404s. After start the organizer link works; players score on `/player/[token]`, not via court QRs (098).                                                                                                                                                                          |
+| **Check-in** ([097](./097_player-check-in.md))               | **Optional.** When used before start, "Close check-in" can offer **Start tournament** (with the checked-in-only option). Start from this panel never requires check-in. The reshuffle banner on the player page only appears if check-in was opened and is still open after start. |
+| **Player page** ([098](./098_player-page.md))                | `not_started` becomes a real state: "Tournament has not started yet · 14 players registered · You are checked in ✓" (checked-in line hidden if check-in unused). Placement and score entry hidden. Polling continues so NOW appears at start without reload. |
+| **Court pages**                                              | No `court` rows exist in `setup` — court URLs 404. After start, court QRs on the operations view work as today. Players may score there **or** on `/player/[token]` (098). |
 | **Cleanup cron** ([1010](./archive/1010_cleanup-cronjob.md)) | Stale rule (no activity for 31 days) already covers `setup` tournaments that were never started; no change.                                                                                                                                                                                                                                |
 | **050 / 030**                                                | "No draft state" note and the dashboard description are updated when this lands.                                                                                                                                                                                                                                                           |
 
@@ -148,12 +148,13 @@ Remote functions:
 ### E2E (`e2e/setup-start.spec.ts`)
 
 1. Create with 0 players → dashboard Setup section; operations view shows the start panel with Start disabled.
-2. Paste 16 names on the manage page → panel shows `4 × 4p`, Start enabled → Start → round 1; stepper visible; player pages show NOW.
+2. Paste 16 names on the manage page (no check-in) → panel shows `4 × 4p`, Start enabled → Start → round 1; stepper visible; **court QRs** on operations; player pages show NOW if opened.
 3. Create with 16 names via **Create & start** → round 1 immediately (existing flows).
 4. Check-in 12 of 16 in `setup` → Close check-in → Start with checked-in only → 12 players, `[4,4,4]`, removed players' tokens 404.
 5. Player page opened in `setup` → "not started" → after Start, page shows court + first matchup + score inputs within one poll.
 6. Preseed: rounds shown as "computed at start"; after start `numRounds` matches `calculateRoundCount`.
 7. Rules (scoring mode, rounds) editable in `setup` without any lock message.
+8. After start, no scores: swap two players on Manage → both court pages and both player pages show the new roster. Court QR URLs unchanged.
 
 ## Open Questions
 
@@ -161,7 +162,7 @@ Remote functions:
 2. **"Create & start" button** kept for the fast path (proposed) vs. always two steps.
 3. **Checked-in-only start**: remove unchecked players (proposed, simplest) vs. keep them on the roster as "not playing" and let 096 add them later without retyping.
 4. Should the **creation form** drop the player textarea entirely and push all roster entry to the manage page? Proposed: keep it — pasting a list at creation is the common case for pre-registered events.
-5. Should a tournament in `setup` be **visible to players** at all (player page says "not started")? Proposed: yes — it makes pre-start QR scanning meaningful.
+5. Should a tournament in `setup` be **visible to players** at all (player page says "not started")? Proposed: yes — it makes optional pre-start personal-QR scanning meaningful. Court URLs 404 until start.
 
 ## Related Specs
 
@@ -169,7 +170,7 @@ Remote functions:
 - [050_tournament-management.md](./050_tournament-management.md) — current create-and-start flow (to be updated)
 - [030_auth-and-users.md](./030_auth-and-users.md) — dashboard sections
 - [096](./096_tournament-management-page.md) — setup row in the locking matrix
-- [097](./097_player-check-in.md) — check-in before start
+- [097](./097_player-check-in.md) — optional check-in; start does not require it
 - [098](./098_player-page.md) — `not_started` state
 - [880_creation-page-ux.md](./archive/880_creation-page-ux.md) — creation form history
 

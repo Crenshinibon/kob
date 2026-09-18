@@ -8,7 +8,7 @@ Organizers and test users need to review **past tournament rounds** without leav
 
 1. Full-width **round stepper** at the top of `/tournament/[id]` showing all rounds, e.g. `Round 1 → Round 2 → Round 3 → Round 4`.
 2. Clicking a step loads that round's court cards (players, match progress, links).
-3. **Past rounds**: organizer court links work; match scores are **read-only** on the court page. **Proposed (098):** no player-facing court QRs on these cards either.
+3. **Past rounds**: court links and QR codes work; match scores are **read-only** on the court page. Personal player pages (098) are a parallel view, not a replacement.
 4. **Current round**: unchanged behavior (score entry, close round, injury, retirement).
 5. **Completed tournaments**: all rounds viewable; all scoring read-only.
 
