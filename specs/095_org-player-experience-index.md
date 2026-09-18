@@ -2,7 +2,7 @@
 
 ## Status
 
-**PROPOSED — DRAFT FOR REVIEW.** Drafted from feedback after a live King of the Beach tournament (September 2026). Nothing in this group is implemented yet. Every sub-spec ends with **Open Questions** — those are the blanks to confirm or change before implementation starts.
+**PROPOSED — REVIEWED.** Drafted from feedback after a live King of the Beach tournament (September 2026). Nothing in this group is implemented yet. Every sub-spec ends with **Open Questions** — those are the blanks to confirm or change before implementation starts.
 
 ## Motivation
 
@@ -16,8 +16,8 @@ Two things were missing on the beach:
 | Spec                                                                         | Scope                                                                                                                                                                                                                         | Audience  |
 | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | **[096_tournament-management-page.md](./096_tournament-management-page.md)** | `/tournament/[id]/manage` — roster (add / remove / rename / re-seed / retire / injury), court assignments (swap / move), rules & config edits, finish early, **reopen last closed round**, delete. Slims the operations view. | Organizer |
-| **[097_player-check-in.md](./097_player-check-in.md)**                       | `/tournament/[id]/check-in` — **optional**. Per-player token + QR, check-in list, print sheet, self check-in, close check-in → start (099) or remove no-shows. Does **not** replace court QRs.                              | Organizer |
-| **[098_player-page.md](./098_player-page.md)**                               | `/player/[token]` — **NOW** (court, who vs whom) + **score entry**, upcoming games, placement, history. Parallel to `/court/[token]`; the organizer chooses which QR to hand out.                                            | Player    |
+| **[097_player-check-in.md](./097_player-check-in.md)**                       | `/tournament/[id]/check-in` — **optional**. Per-player token + QR, check-in list, print sheet, self check-in, close check-in → start (099) or remove no-shows. Does **not** replace court QRs.                                | Organizer |
+| **[098_player-page.md](./098_player-page.md)**                               | `/player/[token]` — **NOW** (court, who vs whom) + **score entry**, upcoming games, placement, history. Parallel to `/court/[token]`; the organizer chooses which QR to hand out.                                             | Player    |
 | **[099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md)** | Create ≠ start. `setup` status with 0–64 players; explicit start at ≥ 8 generates round 1. Dashboard Setup section. Reverses the "no draft" decision in 050.                                                                  | Organizer |
 
 ## Shared Decisions
@@ -26,13 +26,13 @@ These apply across all four sub-specs so they are not repeated.
 
 ### Vocabulary
 
-| Term                | Meaning                                                                                                                                         |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Term                | Meaning                                                                                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Operations view** | The existing `/tournament/[id]` page — round stepper, court cards **with court QRs**, close round. Used on the organizer's phone/tablet during play. |
-| **Manage page**     | New `/tournament/[id]/manage` — back office for one tournament. Sections: Players, Courts, Rules, Tournament.                                   |
-| **Check-in page**   | New `/tournament/[id]/check-in` — registration-desk screen + print sheet.                                                                       |
-| **Player page**     | New public `/player/[token]`.                                                                                                                   |
-| **Round lock**      | A round (or a single court within it) is _locked_ once any score is saved on it. Locks gate roster and assignment edits (see 096).              |
+| **Manage page**     | New `/tournament/[id]/manage` — back office for one tournament. Sections: Players, Courts, Rules, Tournament.                                        |
+| **Check-in page**   | New `/tournament/[id]/check-in` — registration-desk screen + print sheet.                                                                            |
+| **Player page**     | New public `/player/[token]`.                                                                                                                        |
+| **Round lock**      | A round (or a single court within it) is _locked_ once any score is saved on it. Locks gate roster and assignment edits (see 096).                   |
 
 ### One migration for the whole group
 
@@ -84,9 +84,9 @@ Both the manage page and the existing retire/undo/close-round commands rebuild t
 
 Both URLs stay player-facing. There is no tournament setting that hides one of them.
 
-| Surface | URL | QR lives on | Who typically uses it |
-| ------- | --- | ----------- | --------------------- |
-| **Court page** | `/court/[token]` | Operations view court cards (060) | Org prints/shows one QR per court; anyone on that court enters scores |
+| Surface         | URL               | QR lives on                                | Who typically uses it                                                        |
+| --------------- | ----------------- | ------------------------------------------ | ---------------------------------------------------------------------------- |
+| **Court page**  | `/court/[token]`  | Operations view court cards (060)          | Org prints/shows one QR per court; anyone on that court enters scores        |
 | **Player page** | `/player/[token]` | Optional check-in page + print sheet (097) | Org hands each player a personal QR; that player sees NOW + can enter scores |
 
 Scores share `$lib/server/save-score.ts` and `lastActivityAt`. Last write wins. An organizer who never opens check-in runs the tournament exactly as today (court QRs only). An organizer who only prints player QRs never needs the court QR. Mixing both on the same tournament is supported.
@@ -120,25 +120,39 @@ Every new user-facing string gets a Paraglide key in all four locales (`messages
 
 Ordered by player-facing value per unit of risk; each step is independently shippable.
 
-| Step | Work                                                                                                                             | Spec |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| Step | Work                                                                                                                                                                   | Spec |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 0    | Migration `0016`; extract `rebuildCurrentRound`, `ensureCourtsExist`, `startTournament`, `QrCode.svelte`, `standings-service.ts`, `ScoreEntry.svelte`, `save-score.ts` | this |
-| 1    | Player page: NOW + score entry + upcoming + all states, polling, live placement + projected range                                | 098  |
-| 2    | `setup` status, optional players on create, start panel, dashboard Setup section                                                 | 099  |
-| 3    | Check-in page + full-screen QR + print sheet + self check-in — **optional**; court QRs stay | 097  |
-| 4    | Manage page shell + **Players** tab (rename, remove no-show, add late, retire/injury/undo moved here)                            | 096  |
-| 5    | **Courts** tab (swap, move, reset/reshuffle) + `manualAdjustedAt` badge on operations view                                       | 096  |
-| 6    | **Rules** + **Tournament** tabs (scoring mode, rounds, finish early, **reopen last round**, delete)                              | 096  |
+| 1    | Player page: NOW + score entry + upcoming + all states, polling, live placement + projected range                                                                      | 098  |
+| 2    | `setup` status, optional players on create, start panel, dashboard Setup section                                                                                       | 099  |
+| 3    | Check-in page + full-screen QR + print sheet + self check-in — **optional**; court QRs stay                                                                            | 097  |
+| 4    | Manage page shell + **Players** tab (rename, remove no-show, add late, retire/injury/undo moved here)                                                                  | 096  |
+| 5    | **Courts** tab (swap, move, reset/reshuffle) + `manualAdjustedAt` badge on operations view                                                                             | 096  |
+| 6    | **Rules** + **Tournament** tabs (scoring mode, rounds, finish early, **reopen last round**, delete)                                                                    | 096  |
 
 Steps 1–3 do not touch the redistribution engine except `startTournament`. Steps 4–6 do, and rely on the extracted `rebuildCurrentRound`. Court QRs on the operations view are unchanged throughout.
 
 ## Cross-cutting Open Questions
 
 1. **Two pages or one?** Proposed: keep the operations view as the "during play" screen and add the manage page as the back office. Alternative: merge everything into one tabbed page. See 096 OQ 5.
+
+-> use two pages, move retirement/injury, playing mode and other things to back office page.
+
 2. **Where does creation redirect?** `/tournament/[id]` in `setup` (099) — the start panel links to **Manage** (roster) and optionally to check-in. "Create & start" still lands on the operations view with round 1 (existing E2E). Check-in is not on the required path.
+
+-> Yes. Keep the current creation redirect.
+
 3. **Audit trail?** Proposed: none for v1 — `manualAdjustedAt`, `joinedRound`, `finishedEarly`, `startedAt` cover the visible cases. Revisit if co-organizers are ever added.
+
+-> Keep as is.
+
 4. **PWA manifest** ("Add to home screen" for the player page) — cheap, out of scope here; candidate for a small follow-up spec.
+
+-> Won't do, for now. This might clutter the players phone.
+
 5. **Hide court QRs when check-in is used?** Proposed: **no** — both surfaces always available; the organizer chooses what to print. A per-tournament "scoring mode" flag is extra product surface for v1.
+
+-> As proposed.
 
 ## Related Specs
 

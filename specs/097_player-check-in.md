@@ -14,7 +14,7 @@ At the start of a tournament the organizer stands at a table with a phone and a 
 
 ## Goals
 
-1. Every player **can** get a **personal, stable URL** `/player/[token]` and a **QR code** for it, generated at creation (and for replacements / late joiners). That URL is court + scores + placement for the whole tournament ([098](./098_player-page.md)). Handing it out is **optional**.
+1. Every player **can** get a **personal, stable URL** `/player/[token]` and a **QR code** for it, generated at creation for every player added to the tournament (and for replacements / late joiners). That URL is court + scores + placement for the whole tournament ([098](./098_player-page.md)). Handing it out is **optional**.
 2. **Check-in page** for the organizer who wants it: searchable list, tap to check in, full-screen QR per player, live counter, not-checked-in list.
 3. **Print sheet**: all players with name + QR on A4/Letter, for self-serve at the registration table.
 4. **Self check-in**: opening your own player page counts as checked in. Organizer can override.
@@ -149,12 +149,12 @@ then set checkedInAt = now(), checkInSource = 'scan'
 
 ```typescript
 // player
-token: text('token').notNull().unique();
-checkedInAt: timestamp('checked_in_at');
-checkInSource: text('check_in_source'); // 'scan' | 'org' | null
+token: text("token").notNull().unique();
+checkedInAt: timestamp("checked_in_at");
+checkInSource: text("check_in_source"); // 'scan' | 'org' | null
 
 // tournament
-checkInClosedAt: timestamp('check_in_closed_at');
+checkInClosedAt: timestamp("check_in_closed_at");
 ```
 
 Token generation: `crypto.randomBytes(16).toString('hex')` on every `player` insert — `createTournamentForm`, replacement inserts in `retirePlayer` / `reportInjury`, `addPlayer` (096). A shared `newPlayerToken()` helper in `tournament-orchestration.ts` keeps this in one place.
@@ -199,10 +199,24 @@ All organizer-only (same guard as the operations view). `regeneratePlayerToken` 
 ## Open Questions
 
 1. **Self check-in on scan** — keep (proposed), or make check-in a strictly organizer action?
+
+Answer: Keep self-checkin on scan
+
 2. Should **closing check-in be required** before start / before scores can be saved? **No** — check-in itself is optional. Soft banner only if check-in was opened and is still open after start.
+
+Answer: correct. closing check-in is not required
+
 3. Print layout: **cards, 3 columns** (proposed) vs. a dense table with small QRs (more per page, harder to scan).
+
+Answer: 3 column cards is good.
+
 4. **Regenerate link** per player when a QR was shared: included via 096 (proposed). Needed for v1?
+
+Answer: allow regenrate.
+
 5. Should the check-in page show each player's **round-1 court**? Hidden in `setup` (no courts yet). After start: as a small suffix (proposed).
+
+Answer: No. When the tournament is explicitly started, the players see their first court on their player page.
 
 ## Related Specs
 

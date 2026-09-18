@@ -2,7 +2,7 @@
 
 ## Status
 
-**PROPOSED — DRAFT FOR REVIEW.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Schema additions are in the shared migration `0016` described there.
+**PROPOSED — REVIEWED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Schema additions are in the shared migration `0016` described there.
 
 ## Problem
 
@@ -90,7 +90,7 @@ Badges: `active` (no badge), `✓ checked in` / `○ not checked in` (097), `ret
 | Action                         | Effect                                                                                                                                                                                                                          | Allowed when                                  |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | **Rename**                     | `player.name` update. Case-insensitive uniqueness among non-retired players.                                                                                                                                                    | Always (also completed tournaments)           |
-| **Edit seed points** (preseed) | Update `seedPoints`, recompute `seedRank` for the whole roster with `assignSeedRanks` (points desc, then insertion / name-list order), rebuild round 1 from that seed order. | Round 1, no scores anywhere                   |
+| **Edit seed points** (preseed) | Update `seedPoints`, recompute `seedRank` for the whole roster with `assignSeedRanks` (points desc, then insertion / name-list order), rebuild round 1 from that seed order.                                                    | Round 1, no scores anywhere                   |
 | **Move…**                      | Jumps to the Courts tab with this player pre-selected.                                                                                                                                                                          | See Courts tab                                |
 | **Retire…**                    | Existing `retirePlayer` (reason, optional replacement, shrink/cascade preview — 670/091). Form moves here from the operations view.                                                                                             | Existing rules (player's court has no scores) |
 | **Report injury…**             | Existing `reportInjury` (substitute / cancel & average, optional replacement — 670/092). Form moves here; operations view keeps a shortcut.                                                                                     | Existing rules (player's court has scores)    |
@@ -100,7 +100,7 @@ Badges: `active` (no badge), `✓ checked in` / `○ not checked in` (097), `ret
 
 **Remove all not checked in (N)** — bulk variant of Remove with a confirm dialog listing the names. Shown only when check-in has been used (at least one `checkedInAt` or `checkInSource`). Also reachable from the check-in page's "Close check-in" dialog (097). Same lock as Remove. If the organizer skipped check-in, they remove no-shows one-by-one or via the Players tab before start.
 
-Minimum roster after removals: in `setup` the roster may be 0. After start, removal is allowed down to **6** (two 3p courts) with a warning; creation/start still requires `MIN_TOURNAMENT_PLAYERS = 8`. Below 6 after start → error suggesting finish early or delete. (Open Question 3.)
+Minimum roster after removals: in `setup` the roster may be 0. After start, removal is allowed down to **4** (one 4p courts) with a warning; creation/start still requires `MIN_TOURNAMENT_PLAYERS = 8`. Below 4 after start → error suggesting finish early or delete.
 
 ### Add player
 
@@ -111,18 +111,21 @@ Seed points: [____]   (preseed only)
 
 Joins: Court 4 — 17 players → 4 × 4p + 1 × 5p. Round 1 will be reshuffled.
 [Add]
+
+For Random-Seed tournaments we want the order of players entered to be used as a tie-breaker, similar to "Seed points". This order also needs to be changable. We could just use the number of entrance as the "seed points" with a different label for the user, like "Order"
+
 ```
 
-| Phase                                                   | Behaviour                                                                                                                                                                                                                                                                                                                                 |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `setup` ([099](./099_tournament-setup-and-start.md))    | Insert player with token at the **end of the roster**. Recompute `seedRank` for the whole roster (`assignSeedRanks` on `ORDER BY player.id`: points, then name-list / insertion order). No courts yet — no rebuild. Max 64. Bulk paste / CSV on this tab (paste order appends; list order remains the seed when no points). |
+| Phase                                                   | Behaviour                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setup` ([099](./099_tournament-setup-and-start.md))    | Insert player with token at the **end of the roster**. Recompute `seedRank` for the whole roster (`assignSeedRanks` on `ORDER BY player.id`: points, then name-list / insertion order). No courts yet — no rebuild. Max 64. Bulk paste / CSV on this tab (paste order appends; list order remains the seed when no points).                                                     |
 | Round 1, no scores                                      | Insert player (`joinedRound = null` — counts as original roster, appended after existing names), `playerCount++`, `courtSizes = calculateCourtSizes(count)`, **rebuild round 1** (random: fresh shuffle; preseed: recompute `seedRank` from points then name-list / insertion order, then seed snake). `ensureCourtsExist` adds a `court` row if the court count grows. Max 64. |
-| Round ≥ 2, current round has no scores, **random seed** | Insert with `joinedRound = currentRound`. Rebuild the current round from the previous round's results with the new player appended as the **lowest-ranked** entrant (enters at the bottom court). Court sizes recalculated for `active + 1`. Ladder upper courts keep their computed players; only bottom-court composition/size changes. |
-| Round ≥ 2, **preseed**                                  | **Rejected** — a late entrant has no bracket. Error text points to "replacement" on a retiree as the supported path (091).                                                                                                                                                                                                                |
-| Any round with scores                                   | Rejected. Hint: "Close the round first, then add before scores are entered."                                                                                                                                                                                                                                                              |
-| Final round                                             | Rejected (top court must be 4p; no remaining rounds to earn a place).                                                                                                                                                                                                                                                                     |
+| Round ≥ 2, current round has no scores, **random seed** | Insert with `joinedRound = currentRound`. Rebuild the current round from the previous round's results with the new player appended as the **lowest-ranked** entrant (enters at the bottom court). Court sizes recalculated for `active + 1`. Ladder upper courts keep their computed players; only bottom-court composition/size changes.                                       |
+| Round ≥ 2, **preseed**                                  | **Rejected** — a late entrant has no bracket. Error text points to "replacement" on a retiree as the supported path (091).                                                                                                                                                                                                                                                      |
+| Any round with scores                                   | Rejected. Hint: "Close the round first, then add before scores are entered."                                                                                                                                                                                                                                                                                                    |
+| Final round                                             | Rejected (top court must be 4p; no remaining rounds to earn a place).                                                                                                                                                                                                                                                                                                           |
 
-New players always get a `player.token` (097). Standings: rounds not played contribute 0 points / 0 diff; ranking is court-position-first (070/090) so a late joiner lands where they finish. Achievement categories ("Most Improved", "Consistent Performer") exclude players with `joinedRound !== null` (Open Question 2).
+New players always get a `player.token` (097). Standings: rounds not played contribute 0 points / 0 diff; ranking is court-position-first (070/090) so a late joiner lands where they finish. Achievement categories ("Most Improved", "Consistent Performer") exclude players with `joinedRound !== null`.
 
 ---
 
@@ -132,28 +135,11 @@ Compact cards for the **current round only** (no QR codes here — court QRs sta
 
 In `setup` this tab reads "Tournament not started — Start to generate courts, then swap or move before anyone scores." That post-start, pre-score window is how the organizer fixes round-1 assignments (club mates on the same court, a no-show removed, a late name added) **without using check-in**.
 
-Two operations, both driven by a tap flow (drag-and-drop is a desktop-only progressive enhancement, not required for v1):
+We want a drag-and-drop flow. Player names live on obvious "tiles" that can be long pressed and moved to different courts. The "targets" (courts) are highlighted when a player tile is floating, so that it's obvious where the Org can drop the players. This reshuffling/moving will allow for more than one "uneven" court. But highlight the fact of uneven courts to the Org. Also provide a button to "refill" the courts, so that only the "bottom court" is uneven. Also for the current round it's possible to have more than one "uneven" court. For the next round use the normal redistribution.
 
-### Swap (preferred — court sizes unchanged)
+Also allow the Org to move players from a bottom bracket to the top bracket, when using Preseed tournaments. Basically the Org can overwrite the computed position and court-placement at the start of a every round and the tournament should progress from that point as if the standing has been that way all along.
 
-```
-Swap players
-A: [Anna Müller — Court 3 ▼]
-B: [Ben Otto   — Court 1 ▼]
-
-Court 1: Ben → Anna        Court 3: Anna → Ben
-[Swap]
-```
-
-### Move (one player — two court sizes change)
-
-```
-Move Anna Müller  from Court 3 (4p)  to [Court 4 (3p) ▼]
-
-Result: Court 3 → 3p · Court 4 → 4p
-⚠ Court 3 becomes a 3-player court in the middle of the ladder
-[Move]
-```
+Make sure scrolling is working fine when moving players around. Also make sure to use Svelte-native functionality for drag-and-drop and animations correctly. The order of players on a single court can be adjusted as well. This will allow for different game constellations on a 6p and 5p court.
 
 ### Validation (server-side, blocking)
 
@@ -243,6 +229,7 @@ Collapsible groups, same `<details>` pattern as today. Editors for scoring overr
 
   1. `status = 'active'` and `currentRound ≥ 2`.
   2. Round `r` has **no scores**. If it does → `err_reopen_has_scores` ("Round 2 already has scores — cannot reopen round 1"). Organizer can still finish early / wait.
+  3. Org should be able to remove already entered scores, so that a previous round could be reopened
 
   Effect:
 
@@ -312,24 +299,24 @@ getManageData({ tournamentId }): {
 
 ### `src/routes/tournament/[id]/manage/manage-actions.remote.ts` (commands)
 
-| Command                    | Input                                                            | Notes                                                             |
-| -------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `renamePlayer`             | `playerId, name`                                                 |                                                                   |
+| Command                    | Input                                                            | Notes                                                                           |
+| -------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `renamePlayer`             | `playerId, name`                                                 |                                                                                 |
 | `updatePlayerSeed`         | `playerId, seedPoints`                                           | preseed, R1 pre-scores; `assignSeedRanks` on roster insertion order; rebuild R1 |
-| `addPlayer`                | `name, seedPoints?`                                              | phase table above; `ensureCourtsExist`                            |
-| `removePlayer`             | `playerId`                                                       | R1 pre-scores; hard delete; rebuild R1; drop surplus `court` rows |
-| `removeUncheckedPlayers`   | `tournamentId`                                                   | 097; same rules as `removePlayer`                                 |
-| `regeneratePlayerToken`    | `playerId`                                                       | 097                                                               |
-| `swapPlayers`              | `playerAId, playerBId`                                           | in-place rotation update                                          |
-| `movePlayer`               | `playerId, targetCourtNumber`                                    | in-place rotation update                                          |
-| `previewAssignmentChange`  | `{ kind: 'swap' \| 'move', ... }`                                | **query**, returns `{ errors[], warnings[], resultingCourts }`    |
-| `resetRoundAssignments`    | `tournamentId`                                                   | recompute current round; whole-round lock                         |
-| `reshuffleRound1`          | `tournamentId`                                                   | random seed only                                                  |
-| `updateTournamentSettings` | `name?, physicalCourtCount?, timing…?, preseedRetirementPolicy?` |                                                                   |
-| `updateScoringRules`       | `scoringMode, pointsToWin, winBy, setsToWin, decidingSetPoints`  | regenerates current round match rows                              |
-| `updateRoundCount`         | `numRounds`                                                      | random seed                                                       |
-| `finishTournamentEarly`    | `mode: 'use_current' \| 'discard_current'`                       |                                                                   |
-| `reopenLastRound`          | `tournamentId`                                                   | variant A or B from status; 409 claim                             |
+| `addPlayer`                | `name, seedPoints?`                                              | phase table above; `ensureCourtsExist`                                          |
+| `removePlayer`             | `playerId`                                                       | R1 pre-scores; hard delete; rebuild R1; drop surplus `court` rows               |
+| `removeUncheckedPlayers`   | `tournamentId`                                                   | 097; same rules as `removePlayer`                                               |
+| `regeneratePlayerToken`    | `playerId`                                                       | 097                                                                             |
+| `swapPlayers`              | `playerAId, playerBId`                                           | in-place rotation update                                                        |
+| `movePlayer`               | `playerId, targetCourtNumber`                                    | in-place rotation update                                                        |
+| `previewAssignmentChange`  | `{ kind: 'swap' \| 'move', ... }`                                | **query**, returns `{ errors[], warnings[], resultingCourts }`                  |
+| `resetRoundAssignments`    | `tournamentId`                                                   | recompute current round; whole-round lock                                       |
+| `reshuffleRound1`          | `tournamentId`                                                   | random seed only                                                                |
+| `updateTournamentSettings` | `name?, physicalCourtCount?, timing…?, preseedRetirementPolicy?` |                                                                                 |
+| `updateScoringRules`       | `scoringMode, pointsToWin, winBy, setsToWin, decidingSetPoints`  | regenerates current round match rows                                            |
+| `updateRoundCount`         | `numRounds`                                                      | random seed                                                                     |
+| `finishTournamentEarly`    | `mode: 'use_current' \| 'discard_current'`                       |                                                                                 |
+| `reopenLastRound`          | `tournamentId`                                                   | variant A or B from status; 409 claim                                           |
 
 Reused unchanged from `tournament-actions.remote.ts`: `retirePlayer`, `reportInjury`, `undoRetirement`, `undoInjury`, `updateScoringOverrides`, `updateTieBreakConfig`, `setCourtLabel`, `deleteTournamentForm`.
 
@@ -402,8 +389,15 @@ In `setup` ([099](./099_tournament-setup-and-start.md)) this page shows the star
 ## Open Questions
 
 1. **Per-court lock for swap/move** (proposed) vs. whole-round lock (simpler, but blocks shift-2 courts while shift 1 plays)?
+
+Answer: whole-round lock might be sufficient.
+
 2. **Late joiner in random seed between rounds** enters at the bottom court (proposed). Alternative: organizer picks the court in the Add dialog (then it is a move with the same validation).
+
+Answer: late joiner are optional and should not be part of v1.
+
 3. **Roster minimum after removing no-shows**: allow down to 6 with warning (proposed), or keep the hard 8? In `setup` ([099](./099_tournament-setup-and-start.md)) the roster can be 0; the 8-player floor is a **start** condition.
+
 4. **Achievements** on the standings page for late joiners: exclude (proposed) or include with fewer rounds?
 5. **One page or two?** Proposed: operations view + manage page. Alternative: fold the operations view into the manage page as a fifth "Round" tab.
 6. **Finish early with partial scores**: "use as final with cancel & average" default (proposed) vs. "discard" default.

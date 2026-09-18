@@ -18,6 +18,7 @@ Players have no personal view of the tournament. The court QR (060) is still a v
 6. **Works alongside the court page (060), not instead of it.** The organizer chooses how to drive scoring: court QRs on the operations view, personal player QRs via optional check-in ([097](./097_player-check-in.md)), or both. Scores saved on either page last-write-wins and show up on the other.
 7. **Updates itself** after close round, a score saved by anyone on the court (player page or court page), retirement, manual moves (096), round-1 rebuilds — via polling, no reload.
 8. Covers every player state: check-in unused or open, not started, waiting (shift), current game, sit-out, court done, frozen, eliminated, retired / injured, completed, unknown token.
+9. Additionally we want to show a useful information for the wait time. We should not show "minutes" but a time, when the player should be at her designated court. We can use the estimation + the point in time when the "facts" the estimation is based upon have updated. We should be conservative here, so that the players are not late, when we have a fast round.
 
 ## Non-Goals
 
@@ -104,7 +105,7 @@ The **Placement** block is present in every playing state (see [Placement](#plac
 │ ROUND 2 OF 4                                    │
 │                                                 │
 │   Court 5            ▼ down from Court 4        │
-│   Shift 2 of 2 · est. wait ~45 min              │
+│   Shift 2 of 2 · est. start at 10:15            │
 │                                                 │
 │ Up next this round                              │
 │  1  You + Ben      vs  Carla + Dan              │
@@ -196,14 +197,14 @@ See [Record and history](#record-and-history) — always below placement (or bel
 
 **NOW** is the first incomplete match-group that involves the player **or** that the player sits out while parallel games in the same run are still open:
 
-| Situation                                         | Hero                                                                                          | Score fields                                      |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| Player is in the next incomplete match            | That matchup (YOU on the left)                                                                | That match                                        |
-| Player sits out this run; parallel games open     | "You sit out this game" + **On court now** (the parallel matchups)                            | Every open parallel match                         |
-| Player is in one of two parallel games            | The player's own matchup; the other game under **Also on court**                              | Both (player's game is the large control)         |
-| All of the player's matches complete              | — (state is `court_done`)                                                                     | none                                              |
-| Shift not playing                                 | — (state is `waiting`; upcoming list only)                                                    | none                                              |
-| Match canceled                                    | "canceled — averaged"; skip to the next group                                                 | none on that group                                |
+| Situation                                     | Hero                                                               | Score fields                              |
+| --------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------- |
+| Player is in the next incomplete match        | That matchup (YOU on the left)                                     | That match                                |
+| Player sits out this run; parallel games open | "You sit out this game" + **On court now** (the parallel matchups) | Every open parallel match                 |
+| Player is in one of two parallel games        | The player's own matchup; the other game under **Also on court**   | Both (player's game is the large control) |
+| All of the player's matches complete          | — (state is `court_done`)                                          | none                                      |
+| Shift not playing                             | — (state is `waiting`; upcoming list only)                         | none                                      |
+| Match canceled                                | "canceled — averaged"; skip to the next group                      | none on that group                        |
 
 "Incomplete" means at least one required set has no saved score (same `isMatchComplete` as 060 / 930). Best-of-3 deciding set appears only when sets 1 and 2 are saved and split, same as the court page.
 
@@ -251,8 +252,8 @@ Always visible once the tournament has started (`status = 'active'` or `complete
 └────────────────────────────────────────────────┘
 ```
 
-| Field       | Source                                                                                                                                                                                                                                           | Notes                                                                                                                                                              |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Field       | Source                                                                                                                                                                                                                                           | Notes                                                                                                                                                                                                                                                                                              |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Seed**    | `player.seedRank` + `seedPoints`                                                                                                                                                                                                                 | Preseed: Rank 1 = highest seed (points, then **name-list order** — first name = seed 1 when no points; same order as round-1 snake). Hidden for random seed; instead: "Random seed · started on Court k" once round 1 exists. Random-seed still stores `seedRank` for the Seeding tie-break (094). |
 | **Points**  | Sum of **raw** points scored in every completed set/match the player took part in (same `rawPoints` as `buildPlayerRoundStats`). Unplayed / canceled matches do not add. Injured-with-substitute matches add **0** for the injured player (092). |
 | **Diff**    | Sum of **raw** (points for − points against) across those same matches (`rawDiff`).                                                                                                                                                              |
@@ -478,114 +479,114 @@ The **first** redistribution is projected from live standings (real `ladderRedis
 export async function fetchPlayerPageData(token: string): Promise<PlayerPageData>;
 
 type OrientedMatch = {
-	matchNumber: number;
-	matchIds: number[]; // per set, for savePlayerScore
-	youOnTeam: 'a' | 'b' | null; // null on sit-out
-	partnerName: string | null;
-	opponentNames: string[];
-	sets: { id: number; a: number | null; b: number | null }[]; // already oriented: a = left = YOU
-	isCanceled: boolean;
-	hasSubstitute: boolean;
-	sitOut: boolean;
-	run: number | null;
+  matchNumber: number;
+  matchIds: number[]; // per set, for savePlayerScore
+  youOnTeam: "a" | "b" | null; // null on sit-out
+  partnerName: string | null;
+  opponentNames: string[];
+  sets: { id: number; a: number | null; b: number | null }[]; // already oriented: a = left = YOU
+  isCanceled: boolean;
+  hasSubstitute: boolean;
+  sitOut: boolean;
+  run: number | null;
 };
 
 type PlayerPageData = {
-	tournament: {
-		id;
-		name;
-		status;
-		currentRound;
-		numRounds;
-		formatType;
-		checkInOpen: boolean;
-		finishedEarly: boolean;
-		physicalCourtCount;
-	};
-	player: {
-		id;
-		name;
-		joinedRound;
-		finalStanding;
-		seedRank: number | null;
-		seedPoints: number | null;
-		retired: { round; reason; injured: boolean; replacedByName: string | null } | null;
-	};
-	state: PlayerRoundState; // see States
-	movement: 'up' | 'down' | 'same' | null;
-	now: {
-		court: {
-			courtNumber;
-			label;
-			courtSize;
-			rotationId;
-			courtToken; // same stable token as the court QR (060); not linked from this page
-			shift;
-			totalShifts;
-			waitMinutes;
-			waitLabel;
-			scoringLabel;
-			isComplete;
-			frozenAfterRound: number | null;
-		} | null;
-		current: OrientedMatch | null;
-		parallel: OrientedMatch[]; // 5p/6p other game(s) in the current run
-		played: OrientedMatch[];
-		upcoming: OrientedMatch[];
-		courtStandings: { rank; name; points; diff; isYou; tiedFactors; decidingFactor }[];
-		roundProgress: { courtsDone: number; courtsTotal: number };
-		nextHint: {
-			courtNumber: number | null;
-			group: 'winners' | 'losers' | null;
-			direction: 'up' | 'down' | 'same';
-		} | null;
-	};
-	history: {
-		round: number;
-		courtNumber: number;
-		label: string | null;
-		courtSize: number;
-		rank: number | null;
-		points: number;
-		diff: number;
-		fromCourt: number | null;
-		toCourt: number | null;
-		movement: 'up' | 'down' | 'same' | null;
-		whyKey: string; // i18n key id for Movement copy
-		whyParams: Record<string, string | number>;
-		manualAdjusted: boolean;
-		matches: {
-			matchNumber: number;
-			partnerName: string | null;
-			opponentNames: string[];
-			solo: boolean;
-			sitOut: boolean;
-			sets: { a: number | null; b: number | null }[];
-			diff: number | null;
-			isCanceled: boolean;
-			hasSubstitute: boolean;
-		}[];
-	}[];
-	record: {
-		seedRank: number | null;
-		seedPoints: number | null;
-		startedCourt: number | null;
-		totalPoints: number; // raw sum
-		totalDiff: number; // raw sum
-		matchesPlayed: number;
-		usedAverages: boolean; // any 5p/6p or canceled round
-	};
-	placement: {
-		current: number | null; // live overall position including current round (null only in `not_started`)
-		total: number; // active players
-		best: number;
-		worst: number;
-		isFinal: boolean;
-		nextCourt: number | null; // projected from live rank
-		minCourt: number | null;
-		maxCourt: number | null;
-		rankCanStillChange: boolean;
-	};
+  tournament: {
+    id;
+    name;
+    status;
+    currentRound;
+    numRounds;
+    formatType;
+    checkInOpen: boolean;
+    finishedEarly: boolean;
+    physicalCourtCount;
+  };
+  player: {
+    id;
+    name;
+    joinedRound;
+    finalStanding;
+    seedRank: number | null;
+    seedPoints: number | null;
+    retired: { round; reason; injured: boolean; replacedByName: string | null } | null;
+  };
+  state: PlayerRoundState; // see States
+  movement: "up" | "down" | "same" | null;
+  now: {
+    court: {
+      courtNumber;
+      label;
+      courtSize;
+      rotationId;
+      courtToken; // same stable token as the court QR (060); not linked from this page
+      shift;
+      totalShifts;
+      waitMinutes;
+      waitLabel;
+      scoringLabel;
+      isComplete;
+      frozenAfterRound: number | null;
+    } | null;
+    current: OrientedMatch | null;
+    parallel: OrientedMatch[]; // 5p/6p other game(s) in the current run
+    played: OrientedMatch[];
+    upcoming: OrientedMatch[];
+    courtStandings: { rank; name; points; diff; isYou; tiedFactors; decidingFactor }[];
+    roundProgress: { courtsDone: number; courtsTotal: number };
+    nextHint: {
+      courtNumber: number | null;
+      group: "winners" | "losers" | null;
+      direction: "up" | "down" | "same";
+    } | null;
+  };
+  history: {
+    round: number;
+    courtNumber: number;
+    label: string | null;
+    courtSize: number;
+    rank: number | null;
+    points: number;
+    diff: number;
+    fromCourt: number | null;
+    toCourt: number | null;
+    movement: "up" | "down" | "same" | null;
+    whyKey: string; // i18n key id for Movement copy
+    whyParams: Record<string, string | number>;
+    manualAdjusted: boolean;
+    matches: {
+      matchNumber: number;
+      partnerName: string | null;
+      opponentNames: string[];
+      solo: boolean;
+      sitOut: boolean;
+      sets: { a: number | null; b: number | null }[];
+      diff: number | null;
+      isCanceled: boolean;
+      hasSubstitute: boolean;
+    }[];
+  }[];
+  record: {
+    seedRank: number | null;
+    seedPoints: number | null;
+    startedCourt: number | null;
+    totalPoints: number; // raw sum
+    totalDiff: number; // raw sum
+    matchesPlayed: number;
+    usedAverages: boolean; // any 5p/6p or canceled round
+  };
+  placement: {
+    current: number | null; // live overall position including current round (null only in `not_started`)
+    total: number; // active players
+    best: number;
+    worst: number;
+    isFinal: boolean;
+    nextCourt: number | null; // projected from live rank
+    minCourt: number | null;
+    maxCourt: number | null;
+    rankCanStillChange: boolean;
+  };
 };
 ```
 
