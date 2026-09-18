@@ -4,15 +4,15 @@
 
 - **[020_arch.md](./020_arch.md)**: Tech stack: SvelteKit, Svelte 5, Drizzle + Neon, Better Auth. No CSS frameworks.
 
-- **[030_auth-and-users.md](./030_auth-and-users.md)**: Simple auth: Admin login for management, anonymous access for players via court URLs.
+- **[030_auth-and-users.md](./030_auth-and-users.md)**: Simple auth: Admin login for management, anonymous access for players via court URLs and optional personal player URLs (098).
 
 - **[040_database-schema.md](./040_database-schema.md)**: Schema: tournament (with scoring/retirement/timing/court config), player (with retirement), court (stable tokens), courtRotation (variable size 3-6, linked to court), match (all court types, best-of-3, injury). Removed: match_3/5/6_player tables (dead schema, dropped via migration), courtAccess (replaced by `court` table).
 
-- **[050_tournament-management.md](./050_tournament-management.md)**: Flow: Create (with players, scoring, court config) → Run rounds → Finish. No draft state — tournaments start immediately. Uses remote functions (all legacy server actions removed). Stable court tokens persist across rounds/retirements.
+- **[050_tournament-management.md](./050_tournament-management.md)**: Flow: Create (`setup`, 0+ players) → Start (≥ 8) → Run rounds → Finish. [PROPOSED split of create vs start: 099.] Uses remote functions. Stable court tokens persist across rounds/retirements.
 
-- **[060_court-operations.md](./060_court-operations.md)**: Mobile-optimized score entry. Supports 3p/4p/5p/6p courts. Best-of-3 set-by-set scoring. No live query on court page.
+- **[060_court-operations.md](./060_court-operations.md)**: Mobile-optimized score entry. Supports 3p/4p/5p/6p courts. Best-of-3 set-by-set scoring. No live query on court page. [PROPOSED] Player page (098) is an additional scoring surface; court QRs stay; check-in is optional.
 
-- **[070_scoring-and-standings.md](./070_scoring-and-standings.md)**: Points = your score each match. Tiebreakers: points → differential → playerId (deterministic). 5p/6p use average points per game. Canceled matches use averages. Scoring modes: single-21, best-of-3, custom. Per-court-type overrides.
+- **[070_scoring-and-standings.md](./070_scoring-and-standings.md)**: Points = your score each match. Tiebreakers: points → differential → seeding (`seedRank` from points then name-list order). 5p/6p use average points per game. Canceled matches use averages. Scoring modes: single-21, best-of-3, custom. Per-court-type overrides.
 
 - **[080_promotion-relegation.md](./080_promotion-relegation.md)**: Random Seed: R1→R2 vertical seeding (flatten by rank, sort by points, fill courts top-to-bottom), R2+ ladder (2 up, 2 down). Preseed: recursive tiered redistribution with origin mixing. All work for 8-64 players (2-16 courts). Non-standard bottom court for leftovers.
   - **[081_preseed-example-12p.md](./081_preseed-example-12p.md)**: 12 players (3 courts, 3 rounds) — bracket tree: 3→2W+1L→1F+1L(W)+1L. Shows origin mixing on first split, recursive halving on second.
@@ -25,7 +25,12 @@
   - **[091_preseed-retirement-bracket-policy.md](./091_preseed-retirement-bracket-policy.md)**: Preseed retirement — Shrink vs Cascade, optional replacement, test matrix — **PROPOSED**
   - **[092_mid-round-injury-forward-retirement.md](./092_mid-round-injury-forward-retirement.md)**: Mid-round injury + forward retirement on closeRound — **PROPOSED**
   - **[093_round-history-stepper.md](./093_round-history-stepper.md)**: Round stepper on tournament admin view — browse past rounds, read-only historical scores
-  - **[094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md)**: Configurable tie-break factors (round/total points & diff, dice, manual) for standings and redistribution
+  - **[094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md)**: Configurable tie-break factors (round/total points & diff, seeding from points then name-list order, dice, manual) for standings and redistribution
+- **[095_org-player-experience-index.md](./095_org-player-experience-index.md)**: [PROPOSED — DRAFT] Index for organizer back office + player-facing pages. Shared migration `0016`, code to extract first, implementation order, cross-cutting open questions. Court QRs and optional player pages are parallel scoring surfaces; check-in is optional.
+  - **[096_tournament-management-page.md](./096_tournament-management-page.md)**: `/tournament/[id]/manage` — roster, swap & move, rules, finish early, **reopen last closed round**, delete. Slims the operations view. — **PROPOSED**
+  - **[097_player-check-in.md](./097_player-check-in.md)**: `/tournament/[id]/check-in` — **optional** per-player token + QR, searchable check-in list, full-screen QR, print sheet, self check-in on scan, close check-in → start or remove no-shows. Does not replace court QRs. — **PROPOSED**
+  - **[098_player-page.md](./098_player-page.md)**: `/player/[token]` — current game (court, who vs whom) + score entry, upcoming games, live place + best/worst still possible, game-by-game history, seed, totals, why they moved courts. Parallel to the court page. — **PROPOSED**
+  - **[099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md)**: Create ≠ start. `setup` with 0–64 players; explicit start at ≥ 8 generates round 1. — **PROPOSED**
 - **[087_preseed-frozen-courts.md](./087_preseed-frozen-courts.md)**: Preseed frozen courts — single-court bracket leaves freeze after their round-robin is complete. Covers all court counts 3–16 with cascade freeze points (e.g. 7 courts: C7 after R3, C1–C6 after R4). Implementation: `getFrozenCourts()` simulates bracket tree, returns freeze round per court.
 
 - **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export] Sorted by court position (not total points), per spec 070.

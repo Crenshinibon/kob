@@ -5,7 +5,6 @@ import { redirectLocalized } from '$lib/i18n/redirect';
 import { form, getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
 import { tournament, player, courtRotation, match, court } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 import {
 	getCourtConfiguration,
@@ -15,6 +14,7 @@ import {
 	startRound,
 	generateAllMatchesForAssignment,
 	getMaxSets,
+	assignSeedRanks,
 	type FormatType
 } from '$lib/server/tournament-logic';
 import { parsePlayerLine, type ParsedPlayer } from '$lib/parse-players';
@@ -129,29 +129,24 @@ export const createTournamentForm = form(
 			})
 			.returning();
 
-		for (const p of parsed) {
-			await db.insert(player).values({
-				tournamentId: newTournament.id,
-				name: p.name,
-				seedPoints: p.seedPoints,
-				seedRank: null
-			});
+		const ranked = assignSeedRanks(parsed.map((p, listIndex) => ({ ...p, listIndex })));
+		const inListOrder = [...ranked].sort((a, b) => a.listIndex - b.listIndex);
+
+		const insertedPlayers = [];
+		for (const p of inListOrder) {
+			const [row] = await db
+				.insert(player)
+				.values({
+					tournamentId: newTournament.id,
+					name: p.name,
+					seedPoints: p.seedPoints,
+					seedRank: p.seedRank
+				})
+				.returning();
+			if (row) insertedPlayers.push(row);
 		}
 
-		const allPlayers = await db
-			.select()
-			.from(player)
-			.where(eq(player.tournamentId, newTournament.id));
-
-		if (formatType === 'preseed') {
-			const sorted = [...allPlayers].sort((a, b) => (b.seedPoints ?? 0) - (a.seedPoints ?? 0));
-			for (let i = 0; i < sorted.length; i++) {
-				await db
-					.update(player)
-					.set({ seedRank: i + 1 })
-					.where(eq(player.id, sorted[i].id));
-			}
-		}
+		const allPlayers = insertedPlayers;
 
 		const initState = createInitialState({
 			tournamentId: newTournament.id,

@@ -8,14 +8,13 @@ Organizers and test users need to review **past tournament rounds** without leav
 
 1. Full-width **round stepper** at the top of `/tournament/[id]` showing all rounds, e.g. `Round 1 → Round 2 → Round 3 → Round 4`.
 2. Clicking a step loads that round's court cards (players, match progress, links).
-3. **Past rounds**: court links and QR codes work; match scores are **read-only** on the court page.
+3. **Past rounds**: court links and QR codes work; match scores are **read-only** on the court page. Personal player pages (098) are a parallel view, not a replacement.
 4. **Current round**: unchanged behavior (score entry, close round, injury, retirement).
 5. **Completed tournaments**: all rounds viewable; all scoring read-only.
 
 ## Non-Goals
 
-- Editing scores for past rounds (explicitly out of scope).
-- Changing redistribution after a round is closed.
+- Editing scores of a closed round **from the stepper** — browsing history stays read-only. To change a closed round, the organizer **reopens** it ([096](./096_tournament-management-page.md)); that makes it the current round again.
 - Round stepper on the public standings page (admin tournament view only).
 
 ## UI Specification
@@ -43,12 +42,12 @@ Organizers and test users need to review **past tournament rounds** without leav
 
 ### Behavior
 
-| State | Stepper | Court cards | Close round / injury / retire |
-|-------|---------|-------------|-------------------------------|
-| Viewing current active round | Current highlighted | Live data (5s poll) | Shown |
-| Viewing past round | Past step selected | Historical data | Hidden |
-| Tournament completed | All rounds clickable | Historical | Hidden |
-| Future round | Disabled | N/A | N/A |
+| State                        | Stepper              | Court cards         | Close round / injury / retire |
+| ---------------------------- | -------------------- | ------------------- | ----------------------------- |
+| Viewing current active round | Current highlighted  | Live data (5s poll) | Shown                         |
+| Viewing past round           | Past step selected   | Historical data     | Hidden                        |
+| Tournament completed         | All rounds clickable | Historical          | Hidden                        |
+| Future round                 | Disabled             | N/A                 | N/A                           |
 
 Default selection on page load: `max(1, currentRound)` (or last round if completed).
 
@@ -69,11 +68,11 @@ Returns additional fields:
 
 ```typescript
 {
-  viewRound: number;
-  isViewingPastRound: boolean;  // viewRound < currentRound
-  isViewingCurrentRound: boolean;
-  totalRounds: number;
-  // courts loaded for viewRound, not always currentRound
+	viewRound: number;
+	isViewingPastRound: boolean; // viewRound < currentRound
+	isViewingCurrentRound: boolean;
+	totalRounds: number;
+	// courts loaded for viewRound, not always currentRound
 }
 ```
 
@@ -88,9 +87,9 @@ Court page (`/court/[token]`) derives editability:
 
 ```typescript
 isEditable =
-  tourney.status === 'active' &&
-  rotation.roundNumber === tourney.currentRound &&
-  courtRecord.isActive;
+	tourney.status === 'active' &&
+	rotation.roundNumber === tourney.currentRound &&
+	courtRecord.isActive;
 ```
 
 - `+page.server.ts` returns `isEditable` (replaces ambiguous `isActive` for score forms).
@@ -102,10 +101,10 @@ Past-round court links use the **round-specific rotation token** stored on `cour
 
 ## Remote Functions
 
-| Function | Change |
-|----------|--------|
-| `getTournamentData` | Accept `viewRound`; load rotations for that round |
-| `saveScore` / `saveSetScore` | Block when rotation is not current round |
+| Function                     | Change                                            |
+| ---------------------------- | ------------------------------------------------- |
+| `getTournamentData`          | Accept `viewRound`; load rotations for that round |
+| `saveScore` / `saveSetScore` | Block when rotation is not current round          |
 
 No new database tables or migrations required.
 
@@ -130,7 +129,7 @@ No new database tables or migrations required.
 
 ## Related Specs
 
-- [050_tournament-management.md](./050_tournament-management.md) — tournament view
+- [096_tournament-management-page.md](./096_tournament-management-page.md) — reopen last closed round (the way to edit scores after close)
 - [060_court-operations.md](./060_court-operations.md) — court page
 - [094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md) — manual tie-break UI on court cards
 

@@ -1,8 +1,10 @@
 # Court Operations
 
+> **Proposed ([098](./098_player-page.md), [097](./097_player-check-in.md)):** `/court/[token]` stays a player-facing scoring URL. The organizer may keep handing out **court QRs** from the operations view, may additionally (or instead) hand out **personal player QRs** via optional check-in, or mix both. Score rules below still apply; the UI is extracted into `ScoreEntry.svelte` and reused on the player page. Last write wins across both surfaces.
+
 ## Player Interface (`/court/[token]`)
 
-Mobile-optimized page. No live query — data loads once on page load.
+Mobile-optimized page. Player-facing scoring URL (court QR). No live query — data loads once on page load, then client poll (5 s) while visible. Pause while a score field is focused (098).
 
 ### Layout
 
@@ -70,7 +72,7 @@ Current Standings:
 - Per-court-type scoring overrides from tournament config applied via `getEffectiveScoring()`
 - Save button per set (saves individual set)
 - On save: show "Saved" confirmation
-- Edit button available for authenticated users only
+- Edit after save for anyone who can save (court token today; player token on 098). Last write wins.
 
 ### Closed Round
 
@@ -86,7 +88,10 @@ Final Court 1 Standings:
 4. David
 
 Check with organizer for your next court.
+(Or open your personal player page if you have one.)
 ```
+
+> **Proposed:** keep the organizer hint; add the personal-page line for players who received a check-in QR. See **[098_player-page.md](./098_player-page.md)** and [097_player-check-in.md](./097_player-check-in.md).
 
 ## Admin Court View
 
@@ -94,18 +99,20 @@ Same as tournament view - just shows all courts at once. No separate detailed vi
 
 ## QR Codes
 
-- Simple QR code library (`qrcode` npm package)
-- URL: `/court/[token]`
+Court QRs stay on the operations view. Optional personal QRs (097) are a second path, not a replacement.
+
+- Simple QR code library (`qrcode` npm package); extract to generic `QrCode.svelte` (095)
+- URL: `/court/[token]` (stable `court.token` — 1045)
 - Display as image
 - Download/Print buttons
 
 No complex features:
 
-- No live query on court page (refresh for updates)
+- No live query on court page (`query()` + 5 s client poll; pause while hidden or while a score field is focused — 098)
 - No token reset (tokens are stable — live on `court` table, persist across rounds and retirements)
 - No override UI (admin can edit directly in DB if needed)
-- No conflict resolution (last save wins)
+- No conflict resolution (last save wins — including vs. a player-page save)
 - No undo/confirmation for score edits
 - Canceled matches show "Canceled — scores will be averaged" notice (no score entry form)
 
-> **Implementation note (2026-07-04):** Tournament admin QR links currently expose `rotation.token` (see `tournament-data.remote.ts`), which **changes** when `retirePlayer` or `closeRoundForm` rebuilds rotations. The court page load handler supports stable `court.token` fallback, but admin links do not use it yet. This breaks stale QR URLs after retirement and causes E2E failures — tracked in [1045](./1045_e2e-flaky-fixes-and-dynamic-closeRound.md). Target fix: expose `court.token` in tournament QR links.
+> **Implementation note (2026-07-04):** Tournament admin QR links currently expose `rotation.token` (see `tournament-data.remote.ts`), which **changes** when `retirePlayer` or `closeRoundForm` rebuilds rotations. The court page load handler supports stable `court.token` fallback, but admin links do not use it yet. This breaks stale QR URLs after retirement and causes E2E failures — tracked in [1045](./1045_e2e-flaky-fixes-and-dynamic-closeRound.md). Target fix: expose `court.token` in tournament QR links. Personal player QRs (097) are a separate URL and do not replace this fix.

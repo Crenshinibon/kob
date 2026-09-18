@@ -14,9 +14,9 @@ Simple auth system using Better Auth. Email and password only (no name field). P
 
 ### Player (Anonymous)
 
-- Enters scores via court URL
+- Enters scores via court URL and/or personal player URL (proposed, [098](./098_player-page.md)); check-in QR is optional ([097](./097_player-check-in.md))
 - No login needed
-- Pages: Court score entry (public access via token)
+- Pages: Court score entry (public access via court token). Player page (public access via player token).
 
 ## Routes
 
@@ -35,13 +35,14 @@ Note: Auth pages are at root level, not under `/auth/` namespace, to avoid confl
 
 **Protected Routes** (redirect to `/login` if not authenticated):
 
-- `/` - Dashboard (shows active, draft, finished, archived tournaments)
+- `/` - Dashboard (shows setup, active, finished, archived tournaments — setup: [099](./099_tournament-setup-and-start.md))
 - `/tournament/create` - Create tournament
 - `/tournament/[id]/*` - Tournament management
 
 **Public Routes**:
 
-- `/court/[token]` - Score entry (no login needed)
+- `/court/[token]` - Court score entry (no login needed)
+- `/player/[token]` - Personal player page: current game + score entry (proposed, [098](./098_player-page.md))
 
 ## Flow
 
@@ -49,7 +50,7 @@ Note: Auth pages are at root level, not under `/auth/` namespace, to avoid confl
 2. Enters email and password (min 10 characters)
 3. Submits form → POST to `/auth/sign-up/email`
 4. On success, redirects to `/` (dashboard)
-5. Dashboard shows: Active tournaments, Draft tournaments, Finished tournaments, Archived (max 5)
+5. Dashboard shows: Setup tournaments, Active tournaments, Finished tournaments, Archived (max 5)
 
 Same flow for login at `/login`.
 

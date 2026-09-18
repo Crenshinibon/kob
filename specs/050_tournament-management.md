@@ -2,11 +2,12 @@
 
 ## Flow
 
-1. **Create Tournament** → Enter name, format, player count, scoring mode, add player names — tournament starts immediately (no draft state)
-2. **Run Rounds** → Players enter scores, admin closes rounds
-3. **Finish** → Final standings displayed on Total Standings page
+1. **Create Tournament** (`setup`) → Name, format, rules; 0–64 players optional. No courts yet. See **[099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md)** (proposed).
+2. **Start Tournament** → Requires 8–64 players; generates round 1. Optional "Create & start" on the creation form.
+3. **Run Rounds** → Players enter scores, admin closes rounds (reopen last closed round: [096](./096_tournament-management-page.md))
+4. **Finish** → Final standings displayed on Total Standings page
 
-**Note**: The draft status exists in the schema but is never used. Tournaments are created as `active` with Round 1 immediately generated. There is no separate "add players" step — player names are entered on the creation form.
+**Note (current implementation):** Tournaments are still created as `active` with Round 1 immediately generated. Spec 099 proposes splitting create and start.
 
 ## Pages
 
@@ -19,9 +20,10 @@ Shows user's tournaments organized in sections:
 - All ongoing tournaments (status: active)
 - Shows round progress: "Round 2 of 3"
 
-**Draft Tournaments**
+**Setup Tournaments** (proposed — [099](./099_tournament-setup-and-start.md))
 
-- Currently empty (tournaments skip draft status and go straight to active)
+- Created but not started (`status: setup`)
+- Shows player count: "14 players · not started"
 
 **Finished Tournaments**
 
@@ -49,10 +51,11 @@ Combined form with:
 - Physical courts: slider (1-16)
 - **Duration estimation**: Live display with round-by-round breakdown
 - Number of rounds (auto-calculated for preseed, configurable 1-10 for random seed)
-- Player names textarea (supports smart paste with comma/semicolon splitting, tab-separated name+points from spreadsheets)
-- For preseed: names + seed points input
+- Player names textarea (supports smart paste with comma/semicolon splitting, tab-separated name+points from spreadsheets). **List order is the seeding** when no points are entered (first name = seed 1). The same `seedRank` is the default last tie-break (`initial_order`).
+- For preseed: names + optional seed points. Higher points = better seed; omitted or tied points keep list order.
 - CSV file upload: Upload WVV Setzliste CSV directly (extracts `spieler1` and `wvv` columns, auto-switches to preseed format)
-- [Create] button — immediately starts tournament with Round 1
+- [Create] button — saves as `setup` (proposed 099); today still starts immediately
+- [Create & start] — proposed 099, same as today's Create when ≥ 8 names are pasted
 
 ### Tournament View (`/tournament/[id]`)
 
@@ -60,7 +63,7 @@ Combined form with:
 - Tournament name and status
 - Court cards showing:
   - Court number and size badge (3p/4p/5p/6p)
-  - **QR code at the top** - Players can scan to access the court page (**stable URL** — persists across rounds and player retirements)
+  - **QR code at the top** - Players can scan to access the court page (**stable URL** — persists across rounds and player retirements). **Proposed (098/097):** court QRs stay. Optional personal QRs from check-in are a second path.
   - Player names
   - Matches completed (e.g., "2/3")
   - Shift badge (when virtual courts > physical courts)
@@ -72,6 +75,10 @@ Combined form with:
 - Injury reporting form (collapsible, during active rounds)
 - [Delete Tournament] button
 - **Live query**: Auto-updates court data every 3 seconds via `query.live()`
+
+### Proposed: Manage (`/tournament/[id]/manage`) and Check-in (`/tournament/[id]/check-in`)
+
+Organizer back office (roster edits, swap/move players **before scores**, rules, finish early, reopen last round), **optional** player check-in (personal QRs alongside court QRs), player page as an additional scoring surface (current game + upcoming), and create ≠ start. Not implemented — see **[095_org-player-experience-index.md](./095_org-player-experience-index.md)**, [096](./096_tournament-management-page.md), [097](./097_player-check-in.md), [098](./098_player-page.md), [099](./099_tournament-setup-and-start.md).
 
 ### Total Standings (`/tournament/[id]/standings`)
 
@@ -99,7 +106,9 @@ Combined form with:
 
 - `createTournamentForm` — form: parses player names, validates count, calculates court config, creates tournament + players + round 1, redirects
 
-**scores.remote.ts** (on court page)
+**scores.remote.ts** (on court page; shared `$lib/server/save-score.ts` after 098)
 
-- `saveScore` — form: single-set score entry with validation
-- `saveSetScore` — form: per-set score entry for best-of-3
+- `saveScore` — form: single-set score entry with validation (court token)
+- `saveSetScore` — form: per-set score entry for best-of-3 (court token)
+
+Player-token equivalents `savePlayerScore` / `savePlayerSetScore` live on the player page ([098](./098_player-page.md)).

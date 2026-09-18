@@ -410,14 +410,13 @@
 				placeholder={formatType === 'preseed'
 					? m.create_names_placeholder_preseed()
 					: m.create_names_placeholder_random()}
-				required
-			></textarea>
+				required></textarea>
 			<p class="hint">
 				{#if formatType === 'preseed'}
-					{m.create_names_placeholder_preseed()}<br />
+					{m.create_names_seed_order_hint_preseed()}<br />
 					<code>{m.create_player_example()}</code>
 				{:else}
-					{m.create_names_placeholder_random()}
+					{m.create_names_seed_order_hint_random()}
 				{/if}
 			</p>
 			<details class="import-tip">

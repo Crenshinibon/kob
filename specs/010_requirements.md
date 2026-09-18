@@ -43,7 +43,7 @@ Only the Org can create a tournament. The creation form requires:
 - **Name:** (String, Default: "KoB [Date]")
 - **Format:**
   - **Random Seed:** First round random placement, then ladder system. Configurable number of rounds (1-5).
-  - **Preseed:** Seeding based on player points. Fixed rounds: 3 for 16 players, 4 for 32 players.
+  - **Preseed**: Seeding based on player points. If no points are entered (or points are tied), the **order of names in the player list** is the seeding (first name = seed 1). Fixed rounds: 3 for 16 players, 4 for 32 players.
 - **Player Count:** 8-64 players.
 - **Validation:** The system validates the player count (8-64) with unique names.
   - _Error Handling:_ If the wrong count is provided, the system prevents starting the tournament and prompts the user to fix the count.
@@ -78,7 +78,7 @@ Courts may contain 3, 4, 5, or 6 players depending on player count. The system g
 
 ### 5.3 Scoring & Standings
 
-- Players enter scores via court URL (mobile-optimized interface)
+- Players enter scores via court URL (mobile-optimized) and, optionally, via personal player URL ([098](./098_player-page.md))
 - **Scoring modes**: Single set (default), Best of 3, or Custom
 - **Score validation**: Minimum points per set, win-by margin, no point caps
 - **Per-court-type overrides**: Org can configure different scoring for 3p/5p/6p courts
@@ -88,9 +88,9 @@ Courts may contain 3, 4, 5, or 6 players depending on player count. The system g
   Players are ranked 1st through 4th on their court based on the following hierarchy:
   1.  **Total Points Won:** (Highest sum of points across all matches).
   2.  **Point Differential:** (Points Won - Points Lost).
-  3.  **Player ID:** (Deterministic tiebreaker for consistent results).
+  3.  **Seeding:** `seedRank` — higher seed points first; when points are omitted or tied, the order of names in the player list (first name = seed 1). Legacy rows without `seedRank` use player ID.
 
-  For 5p/6p courts, use **average points per game** as the primary ranking (players play different numbers of games), then total points, then differential, then playerId.
+  For 5p/6p courts, use **average points per game** as the primary ranking (players play different numbers of games), then total points, then differential, then seeding (name-list order when no points).
 
   For courts with canceled matches (injury), use **average points per completed match**.
 
@@ -121,7 +121,7 @@ Vertical seeding cascade: fill courts top-to-bottom with each rank group. For an
 
 #### Initial Seeding
 
-Players distributed in snake pattern based on seed points. Works for any court count (8-64 players).
+Players distributed in snake pattern based on seed points. If no points are entered or points are tied, snake in **name-list order** (first name = seed 1). Works for any court count (8-64 players).
 
 #### Redistribution
 
