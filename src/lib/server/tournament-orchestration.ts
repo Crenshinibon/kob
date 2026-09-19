@@ -5,15 +5,11 @@ import { court, courtRotation, match, player, tournament } from '$lib/server/db/
 import {
 	addPlayers,
 	assignmentMatchCourtSize,
-	assignSeedRanks,
-	calculateCourtSizes,
-	calculateRoundCount,
 	createInitialState,
 	generateAllMatchesForAssignment,
 	generateRound1Assignments,
 	getMaxSets,
 	getEffectiveScoring,
-	MIN_TOURNAMENT_PLAYERS,
 	orderPlayerIdsForRound1,
 	startRound,
 	validateAssignmentsForMatchGeneration,
@@ -23,6 +19,10 @@ import {
 	type Player,
 	type ScoringOverrides
 } from '$lib/tournament-logic';
+import { newPlayerToken, planTournamentStart, StartTournamentError } from '$lib/tournament-start';
+
+export { newPlayerToken, planTournamentStart, StartTournamentError };
+export type { StartPlan } from '$lib/tournament-start';
 
 export type MatchInsertRow = {
 	courtRotationId: number;
@@ -114,54 +114,6 @@ export function toMatchData(
 		isCanceled: m.isCanceled ?? false,
 		injuredPlayerIds: m.injuredPlayerIds ?? undefined
 	}));
-}
-
-export function newPlayerToken(): string {
-	return crypto.randomBytes(16).toString('hex');
-}
-
-export type StartPlan = {
-	courtSizes: number[];
-	numRounds: number;
-	rankedPlayers: { id: number; seedPoints: number | null; seedRank: number }[];
-};
-
-export function planTournamentStart(opts: {
-	formatType: FormatType;
-	players: readonly { id: number; seedPoints: number | null }[];
-	storedNumRounds: number;
-}): StartPlan {
-	const playerCount = opts.players.length;
-	if (playerCount < MIN_TOURNAMENT_PLAYERS) {
-		throw new StartTournamentError('min_players', playerCount);
-	}
-	if (playerCount > 64) {
-		throw new StartTournamentError('max_players', playerCount);
-	}
-	const courtSizes = calculateCourtSizes(playerCount);
-	const courtCount = courtSizes.length;
-	let numRounds: number;
-	if (courtCount === 1) {
-		numRounds = 1;
-	} else if (opts.formatType === 'preseed') {
-		numRounds = calculateRoundCount(courtCount, 'preseed');
-	} else {
-		numRounds = Math.min(10, Math.max(1, opts.storedNumRounds));
-	}
-	return {
-		courtSizes,
-		numRounds,
-		rankedPlayers: assignSeedRanks(opts.players)
-	};
-}
-
-export class StartTournamentError extends Error {
-	constructor(
-		public readonly code: 'min_players' | 'max_players' | 'not_setup' | 'conflict' | 'not_found',
-		public readonly entered?: number
-	) {
-		super(code);
-	}
 }
 
 export async function ensureCourtsExist(

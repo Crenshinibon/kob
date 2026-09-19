@@ -1894,7 +1894,8 @@ describe('Random seed multi-round progression', () => {
 		let s = createInitialState({
 			tournamentId: 1,
 			formatType: 'random-seed',
-			playerCount
+			playerCount,
+			numRounds: 4
 		});
 		s = addPlayers(
 			s,
@@ -2758,7 +2759,12 @@ describe('Full 16-player preseed tournament', () => {
 
 describe('Full 8-player random seed tournament', () => {
 	it('completes 4 rounds', () => {
-		let s = createInitialState({ tournamentId: 2, formatType: 'random-seed', playerCount: 8 });
+		let s = createInitialState({
+			tournamentId: 2,
+			formatType: 'random-seed',
+			playerCount: 8,
+			numRounds: 4
+		});
 		s = addPlayers(
 			s,
 			Array.from({ length: 8 }, (_, i) => mockPlayer(i + 1))

@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { calculateRoundCount } from '$lib/tournament-logic';
-import {
-	newPlayerToken,
-	planTournamentStart,
-	StartTournamentError
-} from './tournament-orchestration';
+import { calculateRoundCount } from './tournament-logic';
+import { newPlayerToken, planTournamentStart, StartTournamentError } from './tournament-start';
 
 function players(
 	count: number,
