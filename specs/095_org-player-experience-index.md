@@ -2,7 +2,7 @@
 
 ## Status
 
-**PROPOSED — REVIEWED.** Index for the organizer back-office and player-facing pages. Nothing in this group is implemented yet. 097 / 098 / 099 have no remaining open questions. **096** still has four proposed UX defaults (refill, Order UI, Clear score, Reset after preseed overwrite) — they do not block starting implementation of steps 0–3.
+**PROPOSED — REVIEWED.** Index for the organizer back-office and player-facing pages. 096 / 097 / 098 / 099 have no remaining open questions. Ready for implementation.
 
 ## Motivation
 
@@ -148,7 +148,7 @@ Steps 1–3 do not touch the redistribution engine except `startTournament`. Ste
 
 ## Open Questions
 
-None on this index. Four proposed UX defaults remain on [096](./096_tournament-management-page.md) (refill algorithm, Order UI, Clear score, Reset after preseed overwrite). They do not block steps 0–3.
+None on this index.
 
 ## Related Specs
 

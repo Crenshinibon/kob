@@ -116,7 +116,7 @@ Joins: Court 4 — 17 players → 4 × 4p + 1 × 5p. Round 1 will be reshuffled.
 [Add]
 ```
 
-For **random seed**, list order is the Seeding tie-break (094). The Players tab shows that as **Order** (1-based `seedRank`), the same idea as seed points with a different label. Order is editable (number field and/or drag-reorder on this tab) while assignments are unlocked. A new player is appended (`seedRank = n+1`) unless the organizer types a different Order.
+For **random seed**, list order is the Seeding tie-break (094). The Players tab shows that as **Order** (1-based `seedRank`), the same idea as seed points with a different label. Order is editable via **number field and drag-reorder** on this tab while assignments are unlocked. A new player is appended (`seedRank = n+1`) unless the organizer types a different Order.
 
 | Phase                                                | Behaviour                                                                                                                                                                                                                                                                                                                                        |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -143,7 +143,7 @@ Player names are tiles. **Long-press** (touch) or pointer-down (desktop) picks u
 - **Order on a court is meaningful.** `player1Id`…`player6Id` slots drive 5p/6p match generation (who sits which run). Reordering regenerates that court's `match` rows when the round has no scores.
 - **More than one uneven court is allowed** for the _current_ round (two 5p, a 3p in the middle, etc.). Highlight every non-standard court so the organizer sees it. The **next** round still uses normal redistribution from results (`closeRoundForm` checklist — canonical sizes from active player count, not this manual layout).
 - **Preseed:** the organizer may drop a player from a lower bracket onto a higher one (and vice versa). From that point the tournament proceeds **as if that standing had been computed** — `manualAdjustedAt` set; next `processPreseedTransition` / ladder reads the current rotations as ground truth.
-- **Refill** button: pack players top-to-bottom into `calculateCourtSizes(playerCount)` so only the bottom court is uneven. Proposed algorithm: flatten current assignment in court order (then slot order), then snake/fill into canonical sizes. Confirm in Open Questions.
+- **Refill** button: pack players top-to-bottom into `calculateCourtSizes(playerCount)` so only the bottom court is uneven. Flatten the current assignment court-1-to-N, slot order, then fill canonical sizes (not a re-snake by seed).
 - **Reset to computed** / **Reshuffle round 1** stay as today (see below).
 
 Whole-round lock: once **any** score exists in the round, tiles are not draggable (including later shifts).
@@ -172,7 +172,7 @@ Whole-round lock: once **any** score exists in the round, tiles are not draggabl
 
 ### Reset / reshuffle
 
-- **Reset to computed assignment** (round ≥ 2): recompute the current round from the previous round's results (`buildRedistributionFromResults`, retirements applied), rebuild, clear `manualAdjustedAt`. Allowed only when the whole round has no scores (it touches every court).
+- **Reset to computed assignment** (round ≥ 2): recompute the current round from the previous round's results (`buildRedistributionFromResults`, retirements applied), rebuild, clear `manualAdjustedAt`. This **undoes a preseed bracket overwrite**. Allowed only when the whole round has no scores (it touches every court).
 - **Reshuffle round 1** (random seed, round 1, no scores): fresh random assignment. For preseed, "reset" re-applies seed order.
 
 ---
@@ -398,25 +398,14 @@ In `setup` ([099](./099_tournament-setup-and-start.md)) this page shows the star
 5. Finish early with scores: **always cancel-and-average**. Discard only when the current round is empty.
 6. Scoring mode only at the **start of a round** (no scores yet).
 7. Reopen is blocked while the current round has scores. Clear those scores one by one on the court page first. No bulk discard on the reopen dialog.
-8. Courts tab is **drag-and-drop**, including within-court order and preseed bracket overwrites. Multiple uneven courts allowed for the current round; **Refill** canonicalizes; next round redistributes normally.
+8. Courts tab is **drag-and-drop**, including within-court order and preseed bracket overwrites. Multiple uneven courts allowed for the current round; **Refill** flatten-by-current-assignment then canonical fill; next round redistributes normally.
+9. **Order UI:** number field **and** drag-reorder on the Players tab.
+10. **Clear score** on the court page only (empty both sides → incomplete). Used to unblock reopen.
+11. **Reset to computed** undoes a preseed overwrite (rebuild from previous-round snapshots) while the round has no scores.
 
 ## Open Questions
 
-1. **Refill algorithm.** Proposed: flatten current assignment court-1-to-N, slot order, then fill `calculateCourtSizes(n)` top-to-bottom (not a re-snake by seed). OK, or refill by `seedRank` / last-round rank instead?
-
-Answer: Yes. Flatten by current court assignment.
-
-2. **Random-seed Order UI.** Number field per player (proposed) **and** drag-reorder on the Players tab, or only one of those?
-
-Answer: Both
-
-3. **Clear score control.** Court page already has Edit. Add an explicit **Clear** (empty both sides, match becomes incomplete) so reopen can be unblocked without typing a dummy score? Proposed: yes, on the court page only.
-
-Answer: Yes on the courts page only.
-
-4. **Preseed overwrite + Reset.** After the organizer moves someone across brackets, does **Reset to computed** still rebuild from the previous round's snapshots (undoing the overwrite)? Proposed: yes, while the round has no scores.
-
-Answer: Yes.
+None remaining for this spec.
 
 ## Related Specs
 
