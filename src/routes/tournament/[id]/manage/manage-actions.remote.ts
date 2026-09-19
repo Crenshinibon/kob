@@ -11,7 +11,6 @@ import {
 	calculateCourtSizes,
 	getMaxSets,
 	getEffectiveScoring,
-	MIN_TOURNAMENT_PLAYERS,
 	type CourtAssignment,
 	type FormatType,
 	type ScoringOverrides
@@ -524,5 +523,3 @@ export const reopenLastRoundCommand = command(
 		return { success: true };
 	}
 );
-
-export { MIN_TOURNAMENT_PLAYERS };
