@@ -9,6 +9,7 @@
 		status: string;
 		currentRound: number;
 		numRounds: number;
+		playerCount: number;
 	}
 
 	let {
@@ -16,6 +17,7 @@
 	}: {
 		data: {
 			user?: { id: string };
+			setup: TournamentSummary[];
 			active: TournamentSummary[];
 			finished: TournamentSummary[];
 			archived: TournamentSummary[];
@@ -51,6 +53,26 @@
 			<p>{m.login_prompt()}</p>
 		</section>
 	{:else}
+		{#if data.setup && data.setup.length > 0}
+			<section class="tournaments" data-testid="dashboard-setup">
+				<h2>{m.dashboard_setup_heading()}</h2>
+				<div class="tournament-list">
+					{#each data.setup as tournament (tournament.id)}
+						<a
+							href={localizeHref(resolve('/tournament/[id]', { id: String(tournament.id) }))}
+							class="tournament-card"
+						>
+							<h3>{tournament.name}</h3>
+							<span class="status setup">{m.status_setup()}</span>
+							<p class="round">
+								{m.setup_player_count({ count: tournament.playerCount })}
+							</p>
+						</a>
+					{/each}
+				</div>
+			</section>
+		{/if}
+
 		<!-- Active Tournaments -->
 		{#if data.active.length > 0}
 			<section class="tournaments">
@@ -108,7 +130,7 @@
 			</section>
 		{/if}
 
-		{#if data.active.length === 0 && data.finished.length === 0 && data.archived.length === 0}
+		{#if data.active.length === 0 && data.finished.length === 0 && data.archived.length === 0 && (!data.setup || data.setup.length === 0)}
 			<section class="empty">
 				<p>{m.no_tournaments()}</p>
 				<a href={localizeHref(resolve('/tournament/create'))} class="btn-primary"
@@ -252,6 +274,11 @@
 		text-transform: uppercase;
 		font-weight: 700;
 		letter-spacing: 0.5px;
+	}
+
+	.status.setup {
+		background-color: var(--bg-secondary);
+		color: var(--text-secondary);
 	}
 
 	.status.active {

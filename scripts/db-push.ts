@@ -18,7 +18,8 @@ if (!url) {
 const migrationFiles = [
 	'0011_last_activity_at.sql',
 	'0012_round_tokens.sql',
-	'0013_preseed_retirement.sql'
+	'0013_preseed_retirement.sql',
+	'0016_org_player_experience.sql'
 ];
 
 const sql = postgres(url, { max: 1 });

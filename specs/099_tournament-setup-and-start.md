@@ -2,7 +2,7 @@
 
 ## Status
 
-**PROPOSED — REVIEWED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Reverses the "no draft state" decision in [050](./050_tournament-management.md) deliberately: creation and start become two distinct events.
+**IMPLEMENTED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Reverses the "no draft state" decision in [050](./050_tournament-management.md) deliberately: creation and start become two distinct events.
 
 ## Problem
 

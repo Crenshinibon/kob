@@ -2,7 +2,7 @@
 
 ## Status
 
-**PROPOSED — REVIEWED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). **Optional** — an organizer can skip this page and run on court QRs only. Schema additions (`player.token`, `checkedInAt`, `checkInSource`, `tournament.checkInClosedAt`) are in the shared migration `0016` described there. The page players land on after scanning is specified in [098_player-page.md](./098_player-page.md).
+**IMPLEMENTED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). **Optional** — an organizer can skip this page and run on court QRs only. Schema additions (`player.token`, `checkedInAt`, `checkInSource`, `tournament.checkInClosedAt`) are in the shared migration `0016` described there. The page players land on after scanning is specified in [098_player-page.md](./098_player-page.md).
 
 ## Problem
 

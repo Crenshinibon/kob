@@ -2,7 +2,7 @@
 
 ## Status
 
-**PROPOSED — REVIEWED.** Index for the organizer back-office and player-facing pages. 096 / 097 / 098 / 099 have no remaining open questions. Ready for implementation.
+**IMPLEMENTED.** Index for the organizer back-office and player-facing pages. 096 / 097 / 098 / 099 have no remaining open questions.
 
 ## Motivation
 
@@ -62,7 +62,7 @@ Existing tournaments stay `active` / `completed` — no status backfill. New row
 
 Backfill for `player.token`: add nullable → `UPDATE player SET token = encode(gen_random_bytes(16), 'hex')` (pgcrypto is available on Neon; fallback `md5(random()::text || id::text)`) → `SET NOT NULL` + unique index. New rows get `crypto.randomBytes(16).toString('hex')` at insert, same as `court.token`.
 
-`040_database-schema.md` is updated when the migration lands, not before.
+`040_database-schema.md` is updated to match migration `0016`.
 
 ### Shared code to extract first
 

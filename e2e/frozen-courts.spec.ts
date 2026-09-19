@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { ensureTournamentStarted } from './helpers';
 
 test.describe('Preseed Frozen Courts (20 players, 5 courts)', () => {
 	test.setTimeout(240000);
@@ -67,6 +68,7 @@ test.describe('Preseed Frozen Courts (20 players, 5 courts)', () => {
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 		await page.waitForSelector('.court-card');
 		const m = page.url().match(/\/tournament\/(\d+)/);
 		expect(m).toBeTruthy();

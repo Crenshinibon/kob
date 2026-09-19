@@ -4,26 +4,16 @@ import { error } from '@sveltejs/kit';
 import { redirectLocalized } from '$lib/i18n/redirect';
 import { form, getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
-import { tournament, player, courtRotation, match, court } from '$lib/server/db/schema';
-import crypto from 'crypto';
-import {
-	getCourtConfiguration,
-	calculateRoundCount,
-	createInitialState,
-	addPlayers,
-	startRound,
-	generateAllMatchesForAssignment,
-	getMaxSets,
-	assignSeedRanks,
-	type FormatType
-} from '$lib/server/tournament-logic';
+import { tournament, player } from '$lib/server/db/schema';
+import { assignSeedRanks, type FormatType } from '$lib/server/tournament-logic';
+import { newPlayerToken } from '$lib/server/tournament-orchestration';
 import { parsePlayerLine, type ParsedPlayer } from '$lib/parse-players';
 
 export const createTournamentForm = form(
 	v.object({
 		name: v.pipe(v.string(), v.minLength(1)),
 		formatType: v.picklist(['random-seed', 'preseed']),
-		names: v.pipe(v.string(), v.minLength(1)),
+		names: v.optional(v.string(), ''),
 		physicalCourts: v.pipe(v.number(), v.minValue(1), v.maxValue(16)),
 		scoringMode: v.picklist(['single-21', 'best-of-3', 'custom']),
 		pointsToWin: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(50))),
@@ -72,14 +62,10 @@ export const createTournamentForm = form(
 			decidingSetPoints = decidingSetPointsRaw ?? 15;
 		}
 
-		const lines: string[] = namesText
+		const lines: string[] = (namesText ?? '')
 			.split('\n')
 			.map((l: string) => l.trim())
 			.filter((l: string) => l.length > 0);
-
-		if (lines.length < 8) {
-			error(400, m.err_min_players({ count: 8, entered: lines.length }));
-		}
 
 		if (lines.length > 64) {
 			error(400, m.err_max_players({ count: 64, entered: lines.length }));
@@ -96,22 +82,13 @@ export const createTournamentForm = form(
 		}
 
 		const playerCount: number = parsed.length;
-		const config = getCourtConfiguration(playerCount);
-		const courtSizes: number[] = config.bottomCourtSize
-			? [...Array(config.standardCourts).fill(4), config.bottomCourtSize]
-			: Array(config.totalCourts).fill(4);
-
-		const numRounds: number =
-			formatType === 'preseed'
-				? calculateRoundCount(config.totalCourts, formatType)
-				: submittedNumRounds;
 
 		const [newTournament] = await db
 			.insert(tournament)
 			.values({
 				orgId: user.id,
 				name,
-				numRounds,
+				numRounds: submittedNumRounds,
 				formatType,
 				scoringMode,
 				pointsToWin,
@@ -123,104 +100,28 @@ export const createTournamentForm = form(
 				preseedRetirementPolicy:
 					formatType === 'preseed' ? (preseedRetirementPolicy ?? 'cascade') : 'cascade',
 				physicalCourtCount,
-				courtSizes: JSON.stringify(courtSizes),
-				status: 'active',
-				currentRound: 1
+				courtSizes: null,
+				status: 'setup',
+				currentRound: 0
 			})
 			.returning();
 
-		const ranked = assignSeedRanks(parsed.map((p, listIndex) => ({ ...p, listIndex })));
-		const inListOrder = [...ranked].sort((a, b) => a.listIndex - b.listIndex);
+		if (parsed.length > 0) {
+			const ranked = assignSeedRanks(parsed.map((p, listIndex) => ({ ...p, listIndex })));
+			const inListOrder = [...ranked].sort((a, b) => a.listIndex - b.listIndex);
 
-		const insertedPlayers = [];
-		for (const p of inListOrder) {
-			const [row] = await db
-				.insert(player)
-				.values({
+			for (const p of inListOrder) {
+				await db.insert(player).values({
 					tournamentId: newTournament.id,
 					name: p.name,
 					seedPoints: p.seedPoints,
-					seedRank: p.seedRank
-				})
-				.returning();
-			if (row) insertedPlayers.push(row);
-		}
-
-		const allPlayers = insertedPlayers;
-
-		const initState = createInitialState({
-			tournamentId: newTournament.id,
-			formatType: formatType as FormatType,
-			playerCount,
-			numRounds,
-			physicalCourtCount
-		});
-
-		const players = allPlayers.map((p) => ({
-			id: p.id,
-			name: p.name,
-			seedPoints: p.seedPoints,
-			seedRank: p.seedRank
-		}));
-
-		const stateWithPlayers = addPlayers(initState, players);
-		const startedState = startRound(stateWithPlayers);
-		const assignments = startedState.currentAssignments;
-
-		for (let courtNum = 0; courtNum < assignments.length; courtNum++) {
-			const assignment = assignments[courtNum];
-			const size = courtSizes[courtNum] ?? 4;
-
-			const token = crypto.randomBytes(16).toString('hex');
-			const [newCourt] = await db
-				.insert(court)
-				.values({
-					tournamentId: newTournament.id,
-					courtNumber: assignment.courtNumber,
-					token,
-					isActive: true
-				})
-				.returning();
-
-			const roundToken = crypto.randomBytes(16).toString('hex');
-			const [rotation] = await db
-				.insert(courtRotation)
-				.values({
-					courtId: newCourt.id,
-					tournamentId: newTournament.id,
-					roundNumber: 1,
-					courtNumber: assignment.courtNumber,
-					token: roundToken,
-					courtSize: size,
-					player1Id: assignment.playerIds[0],
-					player2Id: assignment.playerIds[1],
-					player3Id: assignment.playerIds.length > 2 ? assignment.playerIds[2] : null,
-					player4Id: assignment.playerIds.length > 3 ? assignment.playerIds[3] : null,
-					player5Id: size >= 5 ? assignment.playerIds[4] : null,
-					player6Id: size >= 6 ? assignment.playerIds[5] : null
-				})
-				.returning();
-
-			const allMatchesForCourt = generateAllMatchesForAssignment(assignment, courtSizes);
-
-			const maxSets = getMaxSets(newTournament.setsToWin);
-
-			for (let mi = 0; mi < allMatchesForCourt.length; mi++) {
-				const m = allMatchesForCourt[mi];
-				for (let setNum = 1; setNum <= maxSets; setNum++) {
-					await db.insert(match).values({
-						courtRotationId: rotation.id,
-						matchNumber: mi + 1,
-						setNumber: setNum,
-						teamAPlayer1Id: m.teamAPlayer1Id,
-						teamAPlayer2Id: m.teamAPlayer2Id,
-						teamBPlayer1Id: m.teamBPlayer1Id,
-						teamBPlayer2Id: m.teamBPlayer2Id
-					});
-				}
+					seedRank: p.seedRank,
+					token: newPlayerToken()
+				});
 			}
 		}
 
+		void (formatType as FormatType);
 		redirectLocalized(303, `/tournament/${newTournament.id}`, getRequestEvent());
 	}
 );

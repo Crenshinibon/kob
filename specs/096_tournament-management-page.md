@@ -2,7 +2,7 @@
 
 ## Status
 
-**PROPOSED — REVIEWED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Schema additions are in the shared migration `0016` described there.
+**IMPLEMENTED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Schema additions are in the shared migration `0016` described there.
 
 ## Problem
 

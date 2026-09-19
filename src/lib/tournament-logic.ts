@@ -192,7 +192,7 @@ export function getCourtConfiguration(playerCount: number): {
 	standardCourts: number;
 	bottomCourtSize: number | null;
 } {
-	if (playerCount < 8) throw new Error(`Player count must be at least 8, got ${playerCount}`);
+	if (playerCount < 4) throw new Error(`Player count must be at least 4, got ${playerCount}`);
 	if (playerCount > 64) throw new Error(`Player count must be at most 64, got ${playerCount}`);
 
 	const leftover = playerCount % 4;
@@ -220,17 +220,18 @@ export function calculateCourtSizes(playerCount: number): number[] {
 // ============================================================================
 
 export function calculateRoundCount(courtCount: number, formatType: FormatType): number {
-	if (courtCount < 2) throw new Error(`Court count must be at least 2, got ${courtCount}`);
+	if (courtCount < 1) throw new Error(`Court count must be at least 1, got ${courtCount}`);
+	if (courtCount === 1) return 1;
 	if (formatType === 'preseed') return Math.floor(Math.log2(courtCount - 1)) + 2;
-	return 4;
+	return Math.min(courtCount, 4);
 }
 
 // ============================================================================
 // Tournament Initialization
 // ============================================================================
 
-/** Minimum players required to create a tournament or voluntarily retire below this count. */
-export const MIN_TOURNAMENT_PLAYERS = 8;
+/** Minimum players required to start a tournament (one 4p court). */
+export const MIN_TOURNAMENT_PLAYERS = 4;
 /** Minimum active players that must remain after voluntary retirement (not replacement). */
 export const MIN_ACTIVE_PLAYERS_AFTER_RETIREMENT = 2;
 
@@ -246,7 +247,7 @@ export type CreateTournamentOpts = {
 	setsToWin?: number;
 	decidingSetPoints?: number;
 	tieBreakConfig?: TieBreakConfig;
-	/** When set (e.g. after retirement), skips calculateCourtSizes and the 8-player minimum. */
+	/** When set (e.g. after retirement), skips calculateCourtSizes and the 4-player minimum. */
 	courtSizes?: readonly number[];
 };
 
@@ -272,7 +273,7 @@ export function createInitialState(opts: CreateTournamentOpts): TournamentState 
 			throw new Error(`Court sizes sum to ${sum}, expected ${playerCount}`);
 		}
 	} else if (playerCount < MIN_TOURNAMENT_PLAYERS || playerCount > 64) {
-		throw new Error(`Player count must be 8-64, got ${playerCount}`);
+		throw new Error(`Player count must be 4-64, got ${playerCount}`);
 	}
 	return {
 		config: {

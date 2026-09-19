@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { ensureTournamentStarted } from './helpers';
 
 async function enterSingleSet(
 	page: Page,
@@ -117,6 +118,7 @@ test.describe('Best-of-3 Round Transition', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 		const tournamentUrl = page.url();
 
 		// Score round 1 — all 4 courts
@@ -136,6 +138,7 @@ test.describe('Best-of-3 Round Transition', () => {
 		// Go back to tournament and close round
 		await page.goto(tournamentUrl);
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 		await page.waitForTimeout(5000); // Let polling refresh
 
 		const closeBtn = page.locator('button:has-text("Close Round")').first();
@@ -166,6 +169,7 @@ test.describe('Best-of-3 Round Transition', () => {
 		// Finalize tournament
 		await page.goto(tournamentUrl);
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 		await page.waitForTimeout(5000);
 
 		const finalizeBtn = page.locator('button:has-text("Finalize")').first();

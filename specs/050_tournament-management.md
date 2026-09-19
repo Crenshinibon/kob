@@ -2,12 +2,10 @@
 
 ## Flow
 
-1. **Create Tournament** (`setup`) → Name, format, rules; 0–64 players optional. No courts yet. See **[099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md)** (proposed).
+1. **Create Tournament** (`setup`) → Name, format, rules; 0–64 players optional. No courts yet. See **[099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md)**.
 2. **Start Tournament** → Requires **4–64** players; generates round 1. **Always two steps** — there is no "Create & start".
 3. **Run Rounds** → Players enter scores (court page and/or player page), admin closes rounds (reopen last closed round: [096](./096_tournament-management-page.md))
 4. **Finish** → Final standings displayed on Total Standings page
-
-**Note (current implementation):** Tournaments are still created as `active` with Round 1 immediately generated, and start still requires 8. Spec 099 proposes splitting create and start and lowering the start minimum to 4.
 
 ## Pages
 
@@ -20,7 +18,7 @@ Shows user's tournaments organized in sections:
 - All ongoing tournaments (status: active)
 - Shows round progress: "Round 2 of 3"
 
-**Setup Tournaments** (proposed — [099](./099_tournament-setup-and-start.md))
+**Setup Tournaments** ([099](./099_tournament-setup-and-start.md))
 
 - Created but not started (`status: setup`)
 - Shows player count: "14 players · not started"
