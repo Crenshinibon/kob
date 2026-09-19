@@ -84,13 +84,15 @@ test.describe('Player check-in (097)', () => {
 		names.push(name);
 		const id = await createSetupTournament(page, name, 16, 2);
 		await page.goto(`/tournament/${id}/check-in`);
+		await expect(page.locator('[data-testid^="checkin-row-"]')).toHaveCount(16, { timeout: 15000 });
 		const rowIds = await page
 			.locator('[data-testid^="checkin-row-"]')
 			.evaluateAll((els) =>
 				els
 					.map((el) => el.getAttribute('data-testid')?.replace('checkin-row-', '') ?? '')
-					.filter(Boolean)
+					.filter((id) => id && id !== 'undefined')
 			);
+		expect(rowIds.length).toBe(16);
 		for (let i = 0; i < 12; i++) {
 			await page.getByTestId(`checkin-row-${rowIds[i]}`).click();
 			await expect(page.getByTestId('checkin-progress')).toContainText(String(i + 1), {

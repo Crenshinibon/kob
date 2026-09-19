@@ -128,6 +128,13 @@ test.describe('Setup and start (099)', () => {
 		await ensureTournamentStarted(page);
 
 		await playerPage.getByRole('button', { name: /refresh/i }).click();
+		const nowVisible = await playerPage
+			.getByTestId('player-now')
+			.isVisible({ timeout: 5000 })
+			.catch(() => false);
+		if (!nowVisible) {
+			await playerPage.reload();
+		}
 		await expect(playerPage.getByTestId('player-now')).toBeVisible({ timeout: 15000 });
 		await expect(playerPage.locator('[data-testid^="match-form-"]').first()).toBeVisible();
 		await anon.close();

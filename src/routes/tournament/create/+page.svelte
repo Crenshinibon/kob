@@ -525,6 +525,9 @@
 				<input type="hidden" name="n:numRounds" value={effectiveRounds} />
 			{:else}
 				<div class="rounds-config">
+					{#if courtSizes.length === 1}
+						<input type="hidden" name="n:numRounds" value="1" />
+					{/if}
 					<input
 						type="number"
 						id="numRounds"

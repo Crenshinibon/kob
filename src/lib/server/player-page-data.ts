@@ -333,6 +333,7 @@ export async function fetchPlayerPageData(token: string) {
 	}
 
 	for (const rotation of rotations) {
+		if (!rotationPlayerIds(rotation).includes(row.id)) continue;
 		const rows = historyByRotation.get(rotation.id) ?? [];
 		if (rows.length === 0) continue;
 		const views = playerMatchesView(rows.map(toMatchData), row.id, rotation.courtSize, names);

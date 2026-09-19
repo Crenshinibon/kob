@@ -155,6 +155,32 @@ describe('player match views', () => {
 		expect(matchRun(3, 5)).toBe(2);
 		expect(matchRun(1, 4)).toBe(1);
 	});
+
+	it('marks matches the player is not in as sit-out', () => {
+		const names = new Map([
+			[5, 'E'],
+			[6, 'F'],
+			[7, 'G'],
+			[8, 'H']
+		]);
+		const views = playerMatchesView(
+			[
+				match({
+					teamAPlayer1Id: 5,
+					teamAPlayer2Id: 6,
+					teamBPlayer1Id: 7,
+					teamBPlayer2Id: 8,
+					teamAScore: 21,
+					teamBScore: 15
+				})
+			],
+			1,
+			4,
+			names
+		);
+		expect(views[0].sitOut).toBe(true);
+		expect(views[0].diffForGame).toBeNull();
+	});
 });
 
 describe('waitClock and places', () => {

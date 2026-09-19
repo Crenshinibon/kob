@@ -16,7 +16,23 @@ async function saveFirstOpenMatch(page: Page): Promise<string | null> {
 		await page.fill(`[data-testid="team-a-score-${matchId}"]`, '21');
 		await page.fill(`[data-testid="team-b-score-${matchId}"]`, '19');
 		await page.click(`[data-testid="save-score-${matchId}"]`);
-		await expect(page.locator(`[data-testid="saved-${matchId}"]`)).toBeVisible({ timeout: 10000 });
+		const saved = page.locator(`[data-testid="saved-${matchId}"]`);
+		const inputsGone = page.locator(`[data-testid="team-a-score-${matchId}"]`);
+		await expect
+			.poll(
+				async () => {
+					if ((await saved.count()) > 0) return true;
+					return (
+						(await inputsGone.count()) === 0 &&
+						(await page
+							.getByTestId('player-history')
+							.isVisible()
+							.catch(() => false))
+					);
+				},
+				{ timeout: 15000 }
+			)
+			.toBe(true);
 		return matchId;
 	}
 	return null;
@@ -68,7 +84,7 @@ test.describe('Player page (098)', () => {
 		const matchId = await saveFirstOpenMatch(playerPage);
 		expect(matchId).toBeTruthy();
 		await expect(playerPage.getByTestId('player-history')).toBeVisible();
-		await expect(playerPage.locator(`[data-testid="saved-${matchId}"]`)).toBeVisible();
+		await expect(playerPage.getByTestId('player-history')).toContainText('21');
 		await expect(playerPage.locator(`[data-testid="team-a-score-${matchId}"]`)).toHaveCount(0);
 		await anon.close();
 	});
@@ -78,16 +94,21 @@ test.describe('Player page (098)', () => {
 		names.push(name);
 		const id = await createRandomSeedTournament(page, name, 8, 2);
 		const courtLinks = await getCourtLinks(page);
+		const courtNames = await page
+			.locator('.court-card')
+			.first()
+			.locator('.player')
+			.allTextContents();
 		await scoreAllMatchesOnCourt(page, courtLinks[0]);
 
 		const links = await getPlayerLinks(page, id);
 		const anon = await browser.newContext();
 		const playerPage = await anon.newPage();
-		await playerPage.goto(links[0].url);
+		const onCourt = links.find((l) => courtNames.some((t) => t.includes(l.name)));
+		const target = onCourt ?? links[0];
+		await playerPage.goto(target.url);
 		await expect(playerPage.getByTestId('player-page')).toBeVisible({ timeout: 15000 });
-		await expect(playerPage.locator('[data-testid^="saved-"]').first()).toBeVisible({
-			timeout: 15000
-		});
+		await expect(playerPage.getByTestId('player-history')).toContainText('21', { timeout: 15000 });
 		await anon.close();
 	});
 

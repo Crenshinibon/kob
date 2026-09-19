@@ -105,6 +105,11 @@
 		return state === 'active' || state === 'injured';
 	}
 
+	async function refreshNow(): Promise<void> {
+		await playerQuery.refresh();
+		lastUpdated = new Date();
+	}
+
 	async function handleSave(
 		form: { submit: () => Promise<unknown> },
 		matchId: number
@@ -495,7 +500,7 @@
 	{/if}
 
 	<footer>
-		<button type="button" class="btn-secondary" onclick={() => playerQuery.refresh()}>
+		<button type="button" class="btn-secondary" onclick={refreshNow}>
 			{msg.player_refresh()}
 		</button>
 		<p class="hint">

@@ -31,10 +31,11 @@ test.describe('Manage page (096)', () => {
 		await page.goto(`/tournament/${id}/manage`);
 		const first = page.locator('[data-testid^="manage-player-"]').first();
 		const playerId = (await first.getAttribute('data-testid'))?.replace('manage-player-', '') ?? '';
+		const row = page.getByTestId(`manage-player-${playerId}`);
 		await page.getByTestId(`rename-${playerId}`).click();
 		await page.getByTestId(`rename-input-${playerId}`).fill('RenamedAce');
-		await first.getByRole('button', { name: /rename/i }).click();
-		await expect(first).toContainText('RenamedAce');
+		await row.getByRole('button', { name: /rename/i }).click();
+		await expect(row).toContainText('RenamedAce');
 
 		await page.goto(`/tournament/${id}`);
 		const card = page.locator('.court-card', { hasText: 'RenamedAce' });
@@ -69,6 +70,9 @@ test.describe('Manage page (096)', () => {
 		await page.goto(`/tournament/${id}/manage`);
 		page.once('dialog', (d) => d.accept());
 		await page.locator('[data-testid^="remove-"]').first().click();
+		await expect(page.locator('[data-testid^="manage-player-"]')).toHaveCount(15, {
+			timeout: 15000
+		});
 		page.once('dialog', (d) => d.accept());
 		await page.locator('[data-testid^="remove-"]').first().click();
 		await expect(page.locator('[data-testid^="manage-player-"]')).toHaveCount(14, {
