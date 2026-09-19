@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test';
 import {
 	createSetupTournament,
 	deleteTournament,
-	ensureTournamentStarted,
 	getPlayerLinks,
 	login,
 	startTournamentFromSetup
@@ -125,7 +124,9 @@ test.describe('Setup and start (099)', () => {
 		await expect(playerPage.getByTestId('player-not-started')).toContainText('8');
 
 		await page.goto(`/tournament/${id}`);
-		await ensureTournamentStarted(page);
+		await expect(page.getByTestId('setup-panel')).toBeVisible({ timeout: 15000 });
+		await startTournamentFromSetup(page);
+		await expect(page.locator('.court-card')).toHaveCount(2);
 
 		await playerPage.getByRole('button', { name: /refresh/i }).click();
 		const nowVisible = await playerPage

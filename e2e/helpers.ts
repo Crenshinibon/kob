@@ -96,9 +96,12 @@ export async function startTournamentFromSetup(page: Page): Promise<void> {
 
 /** After Create, start if the setup panel is showing. Safe to call when already started. */
 export async function ensureTournamentStarted(page: Page): Promise<void> {
+	await page
+		.locator('[data-testid="start-tournament"], .court-card, .qr-link a')
+		.first()
+		.waitFor({ state: 'visible', timeout: 20000 });
 	const start = page.getByTestId('start-tournament');
-	const visible = await start.isVisible({ timeout: 1500 }).catch(() => false);
-	if (visible) {
+	if (await start.isVisible().catch(() => false)) {
 		await startTournamentFromSetup(page);
 	}
 }
