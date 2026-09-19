@@ -681,17 +681,52 @@ If Neon load is still a concern after measuring, fall back to computing `placeme
 ## Open Questions
 
 1. **Score entry is in** (required) on the player page, **and** on the court page. Remaining detail: a player token can save any match on that court, including sit-outs / parallel games (proposed — so a player who only has their personal QR can still score the game they are watching). Alternative: only matches the player is in; parallel sit-out games are then scored on the court page (always available).
+
+Answer: a player can only enter scores he is playing (part of as a player) via his page. On the court page all results of all games can be entered.
+
 2. **Poll interval**: 5 s while `active` / `waiting` / `injured` (proposed, same as today's court page) and 10 s once the court is done. 64 players at 5 s is more load than the earlier read-only 10 s plan; the `(tournamentId, lastActivityAt)` cache is what makes it acceptable.
+
+Answer: Yes 5 s for an active court is sufficient, for the finished court 10 s is fine also. Not all players will have their page open always. So the polling is not much more. Make sure to start and stop polling when the page goes in the "background"
+
 3. **"Likely next" hint**: include (proposed, rule-based only) or drop to avoid arguments when the organizer's tie-break changes it?
+
+Answer: No show it. When the Org changes tie-break rules mid tournament, he should communicate that accordingly.
+
 4. **Current place is live including the current round** (required). The `(tournamentId, lastActivityAt)` cache is the proposed way to make that cheap. OK to ship without the cache first and measure?
+
+Answer: Yes.
+
 5. **History = closed rounds only** (proposed, because Now / Played / Up next is the current round). Fine, or also keep an in-progress history card?
+
+Answer: History should contain matches that are completed during the current round. Bascially all finished games are in History. One game is the current game (if there is one) and the list of known upcoming games.
+
 6. **Tone**: second person ("You finished 2nd") — proposed; the standings page is third person. Fine for a personal page?
+
+Answer: Yes, use second person for personal page.
+
 7. **Range bar**: keep the visual bar (proposed) or text only? On 64-player tournaments the bar has 64 segments — still readable at phone width as a plain gradient, but worth a look.
+
+Answer: No, don't do a visual bar. Text is enough: best achievable place: 5th and: save place: 17th
+
 8. Should the range also be shown on the **standings page** per row (organizer/spectator view)? Cheap once the function exists; proposed as a follow-up, not part of this spec.
+
+Answer: no, this adds nothing.
+
 9. Round 1 vertical seeding with **partial** scores on _other_ courts: `nextCourt` from live `verticalSeeding` can jump as those courts report. Acceptable (it is current position) vs. only project once this court has scores but ignore other courts' incompleteness?
+
+Answer: incompleteness and the resulting jumping is a feature. This way the players are interested in other courts and how those progress.
+
 10. **5p/6p totals**: raw points/diff on the record strip (proposed) vs. also showing the normalized total used in tie-break.
+
+Answer: I guess the normalized value is more important, since it dictates the position on the court and potential next court.
+
 11. **Up next score fields**: compact inputs on every remaining match (proposed, so courts can play out of order) vs. names only until a match becomes NOW.
+
+Answer: Yes. compact inputs for remaining matches is great.
+
 12. After `court_done`, can players still **Edit** a score on the player page until the round closes (proposed: no — use the court page) or yes, until `closeRound`?
+
+Answer: No. Players can not edit their entries, must talk to Org to change once entered scores.
 
 ## Related Specs
 

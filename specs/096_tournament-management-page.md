@@ -396,13 +396,29 @@ Answer: whole-round lock might be sufficient.
 
 Answer: late joiner are optional and should not be part of v1.
 
-3. **Roster minimum after removing no-shows**: allow down to 6 with warning (proposed), or keep the hard 8? In `setup` ([099](./099_tournament-setup-and-start.md)) the roster can be 0; the 8-player floor is a **start** condition.
+3. **Roster minimum after removing no-shows**: allow down to 4 with warning (proposed), or keep the hard 8? In `setup` ([099](./099_tournament-setup-and-start.md)) the roster can be 0; the 8-player floor is a **start** condition.
+
+Answer: Allow down to 4 players, which results in one court and one round. We actually should allow tournaments with 4 players only to be started as well. We should update other specs in this regard.
 
 4. **Achievements** on the standings page for late joiners: exclude (proposed) or include with fewer rounds?
+
+Answer: Don't bother late joiners, which is a not a part of the current phase (and probably won't ever be).
+
 5. **One page or two?** Proposed: operations view + manage page. Alternative: fold the operations view into the manage page as a fifth "Round" tab.
+
+Answer: 2 pages.
+
 6. **Finish early with partial scores**: "use as final with cancel & average" default (proposed) vs. "discard" default.
+
+Answer: I would always do the cancel and average option.
+
 7. Should **scoring mode** changes be allowed mid-round for **unscored courts** only (per-court like swap/move)? Proposed: no — one rule set per round.
+
+Answer: No. Scoring mode can only be changed at the start of a round.
+
 8. Reopen while round `r` has scores: block (proposed) vs. also discard those scores after a second confirm?
+
+Answer: No. Don't allow reopening when scores are entered, scores must be discarded one by one, before reopening the previous round.
 
 ## Related Specs
 
