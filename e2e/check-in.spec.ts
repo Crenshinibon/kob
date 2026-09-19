@@ -44,7 +44,12 @@ test.describe('Player check-in (097)', () => {
 		names.push(name);
 		const id = await createSetupTournament(page, name, 8, 2);
 		await page.goto(`/tournament/${id}/check-in`);
-		const row = page.locator('[data-testid^="checkin-row-"]').first();
+		const testId = await page
+			.locator('[data-testid^="checkin-row-"]')
+			.first()
+			.getAttribute('data-testid');
+		expect(testId).toBeTruthy();
+		const row = page.getByTestId(testId!);
 		await row.click();
 		await expect(page.getByTestId('checkin-progress')).toContainText('1', { timeout: 10000 });
 		await expect(row).toContainText('by you');
@@ -79,24 +84,35 @@ test.describe('Player check-in (097)', () => {
 		names.push(name);
 		const id = await createSetupTournament(page, name, 16, 2);
 		await page.goto(`/tournament/${id}/check-in`);
-		const rows = page.locator('[data-testid^="checkin-row-"]');
+		const rowIds = await page
+			.locator('[data-testid^="checkin-row-"]')
+			.evaluateAll((els) =>
+				els
+					.map((el) => el.getAttribute('data-testid')?.replace('checkin-row-', '') ?? '')
+					.filter(Boolean)
+			);
 		for (let i = 0; i < 12; i++) {
-			await rows.nth(i).click();
+			await page.getByTestId(`checkin-row-${rowIds[i]}`).click();
+			await expect(page.getByTestId('checkin-progress')).toContainText(String(i + 1), {
+				timeout: 10000
+			});
 		}
-		await expect(page.getByTestId('checkin-progress')).toContainText('12', { timeout: 15000 });
-		const allLinks = await getPlayerLinks(page, id);
-		const unchecked = allLinks.slice(12);
+		const uncheckedToken = await page
+			.locator('li:not(.checked) [data-player-token]')
+			.first()
+			.getAttribute('data-player-token');
+		expect(uncheckedToken).toBeTruthy();
 
 		await page.getByTestId('close-checkin').click();
 		await expect(page.getByTestId('close-checkin-dialog')).toBeVisible();
 		await page.getByTestId('confirm-close-checkin').click();
-		await page.waitForURL(/\/tournament\/\d+|\/check-in/, { timeout: 20000 });
+		await expect(page.getByTestId('close-checkin-dialog')).toBeHidden({ timeout: 20000 });
 		await page.goto(`/tournament/${id}`);
 		await expect(page.locator('.court-card')).toHaveCount(3, { timeout: 30000 });
 
 		const anon = await browser.newContext();
 		const gone = await anon.newPage();
-		const res = await gone.goto(unchecked[0].url);
+		const res = await gone.goto(`/player/${uncheckedToken}`);
 		expect(res?.status()).toBe(404);
 		await anon.close();
 	});

@@ -33,14 +33,14 @@ test.describe('Manage page (096)', () => {
 		const playerId = (await first.getAttribute('data-testid'))?.replace('manage-player-', '') ?? '';
 		await page.getByTestId(`rename-${playerId}`).click();
 		await page.getByTestId(`rename-input-${playerId}`).fill('RenamedAce');
-		await page
-			.getByRole('button', { name: /rename/i })
-			.first()
-			.click();
+		await first.getByRole('button', { name: /rename/i }).click();
 		await expect(first).toContainText('RenamedAce');
 
 		await page.goto(`/tournament/${id}`);
-		const courtHref = await page.locator('.qr-link a').first().getAttribute('href');
+		const card = page.locator('.court-card', { hasText: 'RenamedAce' });
+		await expect(card).toBeVisible({ timeout: 15000 });
+		const courtHref = await card.locator('.qr-link a').getAttribute('href');
+		expect(courtHref).toBeTruthy();
 		await page.goto(courtHref!);
 		await expect(page.locator('body')).toContainText('RenamedAce');
 	});
