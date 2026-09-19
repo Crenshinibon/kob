@@ -6,7 +6,7 @@
 	import QRCode from 'qrcode';
 	import * as msg from '$lib/paraglide/messages';
 
-	import { saveScore, saveSetScore } from './scores.remote';
+	import { saveScore, saveSetScore, clearScore } from './scores.remote';
 	import { getCourtData } from './court-data.remote';
 	import type { CourtPageData } from '$lib/server/court-page-data';
 	import { createScoreSchema, createSetScoreSchema } from './scoreSchema';
@@ -90,9 +90,22 @@
 	let editingMatches = $state<Set<number>>(new Set());
 	let savedScores = new SvelteMap<number, { teamAScore: number; teamBScore: number }>();
 	let formErrors = new SvelteMap<number, string[]>();
+	let scoreFocused = $state(false);
+	let pageHidden = $state(false);
 
 	$effect(() => {
-		if (savingMatches.size > 0) return;
+		if (!browser) return;
+		const onVis = () => {
+			pageHidden = document.hidden;
+			if (!document.hidden) courtQuery.refresh().catch(() => {});
+		};
+		document.addEventListener('visibilitychange', onVis);
+		pageHidden = document.hidden;
+		return () => document.removeEventListener('visibilitychange', onVis);
+	});
+
+	$effect(() => {
+		if (savingMatches.size > 0 || scoreFocused || pageHidden) return;
 		const interval = setInterval(() => {
 			courtQuery.refresh().catch(() => {});
 		}, 5000);
@@ -442,6 +455,8 @@
 					min="0"
 					required
 					disabled={savingMatches.has(matchId)}
+					onfocus={() => (scoreFocused = true)}
+					onblur={() => (scoreFocused = false)}
 					{...formObj.fields.teamAScore}
 				/>
 			</div>
@@ -455,6 +470,8 @@
 					min="0"
 					required
 					disabled={savingMatches.has(matchId)}
+					onfocus={() => (scoreFocused = true)}
+					onblur={() => (scoreFocused = false)}
 					{...formObj.fields.teamBScore}
 				/>
 			</div>
@@ -638,7 +655,7 @@
 													<span class="saved" data-testid="saved-{setMatch.id}"
 														>{msg.court_saved()}</span
 													>
-													{#if data.isAuthenticated && data.isEditable}
+													{#if data.isEditable}
 														<button
 															class="btn-edit"
 															onclick={() =>
@@ -646,6 +663,23 @@
 														>
 															{msg.edit_btn()}
 														</button>
+														<form
+															class="inline-clear"
+															{...clearScore.for(setMatch.id).enhance(async ({ submit }) => {
+																await submit();
+																savedScores.delete(setMatch.id);
+																await courtQuery.refresh();
+															})}
+														>
+															<input type="hidden" name="token" value={page.params.token} />
+															<input type="hidden" name="matchId" value={setMatch.id} />
+															<button
+																type="submit"
+																class="btn-edit"
+																data-testid="clear-score-{setMatch.id}"
+																>{msg.court_clear_score()}</button
+															>
+														</form>
 													{/if}
 												</div>
 											{:else if data.isEditable}
@@ -709,7 +743,7 @@
 												</p>
 												<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span
 												>
-												{#if data.isAuthenticated && data.isEditable}
+												{#if data.isEditable}
 													<button
 														class="btn-edit"
 														onclick={() =>
@@ -717,6 +751,22 @@
 													>
 														{msg.edit_btn()}
 													</button>
+													<form
+														class="inline-clear"
+														{...clearScore.for(match.id).enhance(async ({ submit }) => {
+															await submit();
+															savedScores.delete(match.id);
+															await courtQuery.refresh();
+														})}
+													>
+														<input type="hidden" name="token" value={page.params.token} />
+														<input type="hidden" name="matchId" value={match.id} />
+														<button
+															type="submit"
+															class="btn-edit"
+															data-testid="clear-score-{match.id}">{msg.court_clear_score()}</button
+														>
+													</form>
 												{/if}
 											</div>
 										{:else if data.isEditable}
@@ -773,13 +823,29 @@
 										<strong>{getSavedScore(match)?.teamBScore}</strong>
 									</p>
 									<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span>
-									{#if data.isAuthenticated && data.isEditable}
+									{#if data.isEditable}
 										<button
 											class="btn-edit"
 											onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
 										>
 											{msg.edit_btn()}
 										</button>
+										<form
+											class="inline-clear"
+											{...clearScore.for(match.id).enhance(async ({ submit }) => {
+												await submit();
+												savedScores.delete(match.id);
+												await courtQuery.refresh();
+											})}
+										>
+											<input type="hidden" name="token" value={page.params.token} />
+											<input type="hidden" name="matchId" value={match.id} />
+											<button
+												type="submit"
+												class="btn-edit"
+												data-testid="clear-score-{match.id}">{msg.court_clear_score()}</button
+											>
+										</form>
 									{/if}
 								</div>
 							{:else if data.isEditable}

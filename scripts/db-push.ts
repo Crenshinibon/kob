@@ -18,7 +18,8 @@ if (!url) {
 const migrationFiles = [
 	'0011_last_activity_at.sql',
 	'0012_round_tokens.sql',
-	'0013_preseed_retirement.sql'
+	'0013_preseed_retirement.sql',
+	'0016_org_player_experience.sql'
 ];
 
 const sql = postgres(url, { max: 1 });
@@ -26,7 +27,12 @@ try {
 	for (const file of migrationFiles) {
 		const path = join(import.meta.dir, '../drizzle', file);
 		console.log(`Applying ${file}...`);
-		await sql.file(path);
+		try {
+			await sql.file(path);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			console.warn(`Skipping ${file} (${message})`);
+		}
 	}
 } finally {
 	await sql.end();

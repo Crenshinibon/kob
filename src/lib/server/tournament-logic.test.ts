@@ -278,8 +278,31 @@ describe('getCourtConfiguration', () => {
 		expect(getCourtConfiguration(players)).toEqual(expected);
 	});
 
-	it('throws <8 or >64', () => {
-		expect(() => getCourtConfiguration(7)).toThrow();
+	it('4–7 players use leftover court math', () => {
+		expect(getCourtConfiguration(4)).toEqual({
+			totalCourts: 1,
+			standardCourts: 1,
+			bottomCourtSize: null
+		});
+		expect(getCourtConfiguration(5)).toEqual({
+			totalCourts: 1,
+			standardCourts: 0,
+			bottomCourtSize: 5
+		});
+		expect(getCourtConfiguration(6)).toEqual({
+			totalCourts: 1,
+			standardCourts: 0,
+			bottomCourtSize: 6
+		});
+		expect(getCourtConfiguration(7)).toEqual({
+			totalCourts: 2,
+			standardCourts: 1,
+			bottomCourtSize: 3
+		});
+	});
+
+	it('throws <4 or >64', () => {
+		expect(() => getCourtConfiguration(3)).toThrow();
 		expect(() => getCourtConfiguration(65)).toThrow();
 	});
 });
@@ -328,7 +351,10 @@ describe('calculateRoundCount', () => {
 		[9, 'preseed', 5],
 		[10, 'preseed', 5],
 		[16, 'preseed', 5],
-		[2, 'random-seed', 4],
+		[1, 'random-seed', 1],
+		[1, 'preseed', 1],
+		[2, 'random-seed', 2],
+		[3, 'random-seed', 3],
 		[4, 'random-seed', 4],
 		[5, 'random-seed', 4],
 		[8, 'random-seed', 4],
@@ -1868,7 +1894,8 @@ describe('Random seed multi-round progression', () => {
 		let s = createInitialState({
 			tournamentId: 1,
 			formatType: 'random-seed',
-			playerCount
+			playerCount,
+			numRounds: 4
 		});
 		s = addPlayers(
 			s,
@@ -2732,7 +2759,12 @@ describe('Full 16-player preseed tournament', () => {
 
 describe('Full 8-player random seed tournament', () => {
 	it('completes 4 rounds', () => {
-		let s = createInitialState({ tournamentId: 2, formatType: 'random-seed', playerCount: 8 });
+		let s = createInitialState({
+			tournamentId: 2,
+			formatType: 'random-seed',
+			playerCount: 8,
+			numRounds: 4
+		});
 		s = addPlayers(
 			s,
 			Array.from({ length: 8 }, (_, i) => mockPlayer(i + 1))
@@ -5781,9 +5813,15 @@ describe('createInitialState with courtSizes override (code review finding 2)', 
 			createInitialState({
 				tournamentId: 1,
 				formatType: 'random-seed',
-				playerCount: 7
+				playerCount: 3
 			})
-		).toThrow(/at least 8/);
-		expect(MIN_TOURNAMENT_PLAYERS).toBe(8);
+		).toThrow(/4-64|at least 4/);
+		expect(MIN_TOURNAMENT_PLAYERS).toBe(4);
+		const seven = createInitialState({
+			tournamentId: 1,
+			formatType: 'random-seed',
+			playerCount: 7
+		});
+		expect(seven.config.courtSizes).toEqual([4, 3]);
 	});
 });

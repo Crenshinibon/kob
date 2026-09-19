@@ -8,7 +8,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const user = locals.user;
 
 	if (!user) {
-		return { user: null, active: [], finished: [], archived: [] };
+		return { user: null, setup: [], active: [], finished: [], archived: [] };
 	}
 
 	// Get all tournaments for this user
@@ -19,9 +19,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.orderBy(desc(tournament.createdAt));
 
 	// Split by status
+	const setup = allTournaments.filter((t) => t.status === 'setup');
 	const active = allTournaments.filter((t) => t.status === 'active');
 	const finished = allTournaments.filter((t) => t.status === 'completed');
 	const archived = allTournaments.filter((t) => t.status === 'archived').slice(0, 5);
 
-	return { user, active, finished, archived };
+	return { user, setup, active, finished, archived };
 };

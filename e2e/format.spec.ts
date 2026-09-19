@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { ensureTournamentStarted } from './helpers';
 
 test.describe('Tournament Format Selection', () => {
 	const testTournamentNames: string[] = [];
@@ -97,6 +98,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			await expect(page.locator('text=Round 1 of 2')).toBeVisible();
 
@@ -126,6 +128,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			await expect(page.locator('text=Round 1 of 3')).toBeVisible();
 		});
@@ -146,6 +149,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			await expect(page.locator('text=Round 1 of 4')).toBeVisible();
 
@@ -205,6 +209,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			// Verify tournament was created and started
 			await expect(page.getByText('Round 1 of')).toBeVisible();
@@ -321,6 +326,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('.court-card');
 
 			// Should have 3 courts (2×4p + 1×3p)
@@ -357,6 +363,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('.court-card');
 
 			// Should have 5 courts (4×4p + 1×5p)
@@ -393,6 +400,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('.court-card');
 
 			// Should have 5 courts (4×4p + 1×6p)
@@ -431,21 +439,39 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			await page.waitForSelector('.court-card');
 			const courtCards = await page.locator('.court-card').count();
 			expect(courtCards).toBe(2);
 		});
 
-		test('below 8 players shows minimum warning and button is disabled', async ({ page }) => {
+		test('7 players can be created and started as two courts', async ({ page }) => {
+			const tournamentName = `SevenPlayers ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
 			await page.click('text=+ New Tournament');
-
-			// Enter 7 players on the create page
+			await page.fill('input[name="name"]', tournamentName);
 			const players = Array.from({ length: 7 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
+			await expect(page.locator('button[type="submit"]')).toBeEnabled();
+			await page.click('button[type="submit"]');
+			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
+			await page.waitForSelector('.court-card');
+			expect(await page.locator('.court-card').count()).toBe(2);
+		});
 
-			await expect(page.locator('.warn:has-text("Minimum 8 players")')).toBeVisible();
-			await expect(page.locator('button[type="submit"]')).toBeDisabled();
+		test('3 players can be created but start stays disabled', async ({ page }) => {
+			const tournamentName = `ThreePlayers ${Date.now()}`;
+			testTournamentNames.push(tournamentName);
+			await page.click('text=+ New Tournament');
+			await page.fill('input[name="name"]', tournamentName);
+			const players = Array.from({ length: 3 }, (_, i) => `Player${i + 1}`);
+			await page.fill('textarea[name="names"]', players.join('\n'));
+			await page.click('button[type="submit"]');
+			await page.waitForURL(/\/tournament\/\d+/);
+			await expect(page.getByTestId('setup-panel')).toBeVisible();
+			await expect(page.getByTestId('start-tournament')).toBeDisabled();
 		});
 
 		test('64 players creates 16 courts', async ({ page }) => {
@@ -465,6 +491,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			await page.waitForSelector('.court-card');
 			const courtCards = await page.locator('.court-card').count();

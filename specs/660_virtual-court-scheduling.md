@@ -120,6 +120,8 @@ function getBatchShifts(virtualCourtCount: number, physicalCourtCount: number): 
 
 ### Player Waiting View
 
+Player-facing wait lives on `/player/[token]` ([098](./098_player-page.md)): a **conservative clock time** ("Be at court at 10:15"), not `Est. wait: ~45 min`. The operations view can keep a duration estimate for the organizer.
+
 ```
 ┌─────────────────────────────────────────────┐
 │ Virtual Court 2 — Round 2                    │
@@ -137,6 +139,8 @@ function getBatchShifts(virtualCourtCount: number, physicalCourtCount: number): 
 │   Player D                                   │
 └─────────────────────────────────────────────┘
 ```
+
+> **Proposed (098):** replace the minute count on the **player page** with `beAtCourtAt` (facts-updated timestamp + conservative remaining). Organizer tournament view may keep `~45 min`.
 
 ## Edge Cases
 

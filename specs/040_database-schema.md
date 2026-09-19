@@ -9,11 +9,11 @@
   id: serial().primaryKey(),
   orgId: text().notNull(), // user.id from Better Auth
   name: text().notNull(),
-  status: text().notNull().default('active'), // 'active', 'completed'
+  status: text().notNull().default('setup'), // 'setup' | 'active' | 'completed' (099)
   currentRound: integer().default(0),
   numRounds: integer().notNull().default(3),
   formatType: text().notNull().default('random-seed'), // 'random-seed' | 'preseed'
-  playerCount: integer().notNull().default(16),         // 8-64
+  playerCount: integer().notNull().default(16),         // 4-64 at start (099)
   // Scoring
   scoringMode: text().default('single-21'),              // 'single-21' | 'best-of-3' | 'custom'
   pointsToWin: integer().default(21),
@@ -31,9 +31,16 @@
   avgRallyDurationSeconds: integer().default(35),
   timeBetweenRalliesSeconds: integer().default(8),
   timeBetweenMatchesMinutes: integer().default(3),
+  lastActivityAt: timestamp().defaultNow(),
+  startedAt: timestamp(),            // 099
+  checkInClosedAt: timestamp(),      // 097
+  completedAt: timestamp(),          // 096 — set on normal completion and finish-early
+  finishedEarly: boolean().notNull().default(false), // 096
   createdAt: timestamp().defaultNow()
 }
 ```
+
+Migration `0016_org_player_experience.sql` adds the 095–099 columns. Existing rows stay `active` / `completed` — no status backfill. New rows default to `setup`.
 
 ### player
 
@@ -42,6 +49,7 @@
   id: serial().primaryKey(),
   tournamentId: integer().notNull(),
   name: text().notNull(),
+  token: text().notNull().unique(), // 32-hex personal page URL (097/098). Backfilled for existing rows.
   seedPoints: integer(), // Optional numeric seed (WVV points, etc.). Omitted/0 are equal.
   seedRank: integer(),   // 1-based seed: higher seedPoints first; omitted/tied points keep name-list order (first name = seed 1). Stored for both formats — random-seed still shuffles round 1; seedRank is the initial_order tie-break.
   // Retirement
@@ -49,7 +57,13 @@
   retiredRound: integer(),       // Which round they retired after
   retiredCourt: integer(),       // Court number when retired
   retirementReason: text(),      // Optional: 'injury'|'schedule'|'personal'|'disqualified'|'other'
-  finalStanding: integer()       // Set when tournament completes
+  finalStanding: integer(),      // Set when tournament completes
+  injuredAt: timestamp(),
+  replacesPlayerId: integer(),
+  replacedByPlayerId: integer(),
+  checkedInAt: timestamp(),      // 097
+  checkInSource: text(),         // 'scan' | 'org' | null (097)
+  joinedRound: integer()         // null = original roster; N = added before round N (096)
 }
 ```
 
@@ -62,13 +76,20 @@
   tournamentId: integer().notNull(),
   roundNumber: integer().notNull(),
   courtNumber: integer().notNull(), // 1-N (depends on player count)
+  token: text().notNull().unique(),
   courtSize: integer().default(4),  // 3, 4, 5, or 6
   player1Id: integer().notNull(),
   player2Id: integer(),             // nullable for 3p courts
   player3Id: integer(),             // nullable
   player4Id: integer(),             // nullable
   player5Id: integer(),             // nullable, for 5p/6p courts
-  player6Id: integer()              // nullable, for 6p courts
+  player6Id: integer(),             // nullable, for 6p courts
+  manualRankOrder: jsonb(),
+  tieBreakConfigSnapshot: jsonb(),
+  standingsSnapshot: jsonb(),
+  diceRolls: jsonb(),
+  roundClosedAt: timestamp(),
+  manualAdjustedAt: timestamp()     // set by swap/move (096)
 }
 ```
 

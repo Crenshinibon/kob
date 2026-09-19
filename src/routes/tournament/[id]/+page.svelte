@@ -3,7 +3,9 @@
 	import * as m from '$lib/paraglide/messages';
 	import { localizeHref } from '$lib/paraglide/runtime';
 	import {
+		startTournamentForm,
 		closeRoundForm,
+		reopenLastRoundForm,
 		deleteTournamentForm,
 		updateScoringOverrides,
 		updateTieBreakConfig,
@@ -16,6 +18,9 @@
 	} from './tournament-actions.remote';
 	import { resolve } from '$app/paths';
 	import {
+		calculateCourtSizes,
+		calculateRoundCount,
+		estimateTournamentDuration,
 		getEffectiveScoring,
 		getMinPointsForSet,
 		getScoringLabel,
@@ -59,6 +64,7 @@
 	let closingRound = $state(false);
 	let retireSubmitting = $state(false);
 	let injurySubmitting = $state(false);
+	let startCheckedInOnly = $state(false);
 
 	const tournamentQuery = $derived(
 		getTournamentData({
@@ -368,6 +374,15 @@
 	{@const shifts = state?.shifts ?? []}
 	{@const roundDuration = state?.roundDuration ?? 0}
 	{@const isActive = tournament?.status === 'active'}
+	{@const isSetup = tournament?.status === 'setup'}
+	{@const checkedInCount = state?.checkedInCount ?? 0}
+	{@const checkInUsed = state?.checkInUsed ?? false}
+	{@const setupActiveCount = state?.activePlayerCount ?? 0}
+	{@const setupCourtSizes = setupActiveCount >= 4 ? calculateCourtSizes(setupActiveCount) : []}
+	{@const setupCanStartCheckedIn =
+		checkInUsed && checkedInCount > 0 && checkedInCount < setupActiveCount}
+	{@const setupStartCount =
+		setupCanStartCheckedIn && startCheckedInOnly ? checkedInCount : setupActiveCount}
 	{@const virtualCourtCount = courtSizes.length}
 	{@const allCourtsComplete = state?.allCourtsComplete ?? false}
 	{@const frozenCourts = state?.frozenCourts ?? []}
@@ -407,18 +422,109 @@
 			<header>
 				<a href={localizeHref(resolve('/'))}>{m.dashboard_btn()}</a>
 				<h1>{tournament.name}</h1>
-				{#if isActive}
+				{#if isSetup}
+					<p class="status-setup">{m.status_setup()}</p>
+				{:else if isActive}
 					<p>{m.round_label({ current: currentRound, total: tournament.numRounds })}</p>
 				{:else}
 					<p class="status-completed">{m.completed()}</p>
 				{/if}
+				<a
+					href={localizeHref(resolve('/tournament/[id]/manage', { id: String(tournament.id) }))}
+					class="standings-link">{m.manage_title()}</a
+				>
+				<a
+					href={localizeHref(resolve('/tournament/[id]/check-in', { id: String(tournament.id) }))}
+					class="standings-link">{m.checkin_title()}</a
+				>
 				<a
 					href={localizeHref(resolve('/tournament/[id]/standings', { id: String(tournament.id) }))}
 					class="standings-link">{m.view_standings()}</a
 				>
 			</header>
 
-			{#if totalRounds > 0}
+			{#if isSetup}
+				<section class="setup-panel" data-testid="setup-panel">
+					<p class="status-setup">{m.status_setup()}</p>
+					<p>{m.setup_player_count({ count: setupActiveCount })}</p>
+					{#if checkInUsed}
+						<p>{m.setup_checked_in_count({ checked: checkedInCount, total: setupActiveCount })}</p>
+					{/if}
+					{#if setupCourtSizes.length > 0}
+						<p>
+							{m.setup_courts_at_start({
+								layout: setupCourtSizes.map((s) => `${s}p`).join(' + '),
+								courts: setupCourtSizes.length
+							})}
+						</p>
+						<p>
+							{m.setup_rounds_duration({
+								rounds:
+									tournament.formatType === 'preseed'
+										? calculateRoundCount(setupCourtSizes.length, 'preseed')
+										: setupCourtSizes.length === 1
+											? 1
+											: tournament.numRounds
+							})}
+						</p>
+					{:else}
+						<p>{m.setup_start_needs_players({ count: 4 })}</p>
+					{/if}
+					<p>
+						<a
+							href={localizeHref(resolve('/tournament/[id]/manage', { id: String(tournament.id) }))}
+							>{m.setup_manage_link()}</a
+						>
+						·
+						<a
+							href={localizeHref(
+								resolve('/tournament/[id]/check-in', { id: String(tournament.id) })
+							)}>{m.setup_checkin_link()}</a
+						>
+					</p>
+					<form {...startTournamentForm}>
+						<input type="hidden" name="n:tournamentId" value={tournament.id} />
+						{#if setupCanStartCheckedIn}
+							<label>
+								<input
+									type="radio"
+									name="b:checkedInOnly"
+									value="false"
+									checked={!startCheckedInOnly}
+									onchange={() => (startCheckedInOnly = false)}
+								/>
+								{m.setup_start_all({ count: setupActiveCount })}
+							</label>
+							<label>
+								<input
+									type="radio"
+									name="b:checkedInOnly"
+									value="true"
+									data-testid="start-checked-in-only"
+									checked={startCheckedInOnly}
+									onchange={() => (startCheckedInOnly = true)}
+								/>
+								{m.setup_start_checked_in_only({ count: checkedInCount })}
+							</label>
+							<p class="hint">
+								{m.setup_start_removes_note({ count: setupActiveCount - checkedInCount })}
+							</p>
+						{:else}
+							<input type="hidden" name="b:checkedInOnly" value="false" />
+						{/if}
+						<button
+							type="submit"
+							class="btn-primary"
+							data-testid="start-tournament"
+							disabled={setupStartCount < 4 || !!startTournamentForm.pending}
+						>
+							{m.setup_start_button()}
+						</button>
+					</form>
+				</section>
+			{/if}
+
+			{#if !isSetup && totalRounds > 0}
 				<nav class="round-stepper" aria-label={m.round_stepper_label()}>
 					{#each Array.from({ length: totalRounds }, (_, i) => i + 1) as roundNum (roundNum)}
 						{@const isFuture = isActive && roundNum > currentRound}
@@ -495,6 +601,11 @@
 									{getCourtSizeLabel(court.courtSize)}
 								</span>
 								<span class="matches">{getMatchStatus(court.matches)}</span>
+								{#if court.manualAdjustedAt}
+									<span class="adjusted-badge" data-testid="adjusted-{court.courtNumber}">
+										{m.manage_adjusted_badge()}
+									</span>
+								{/if}
 								{#if court.shift && court.totalShifts && court.totalShifts > 1}
 									<span
 										class="shift-badge"
@@ -648,6 +759,22 @@
 							>
 						{/if}
 					</form>
+				{/if}
+
+				{#if (isActive && currentRound >= 2 && isViewingCurrentRound && !hasScores) || tournament?.status === 'completed'}
+					<form
+						{...reopenLastRoundForm.enhance(async ({ submit }) => {
+							await submit();
+							await tournamentQuery.refresh();
+						})}
+					>
+						<input {...reopenLastRoundForm.fields.tournamentId.as('hidden', tournament.id)} />
+						<button type="submit" class="btn-secondary" data-testid="reopen-last-round">
+							{m.manage_reopen_round()}
+						</button>
+					</form>
+				{:else if isActive && currentRound >= 2 && hasScores && isViewingCurrentRound}
+					<p class="hint">{m.manage_reopen_clear_scores_first()}</p>
 				{/if}
 
 				{#if tournament.status !== 'completed'}
@@ -1339,6 +1466,26 @@
 	main {
 		max-width: 1200px;
 		margin: 0 auto;
+	}
+
+	.setup-panel {
+		margin: var(--spacing-lg) 0;
+		padding: var(--spacing-md);
+		background: var(--bg-secondary);
+		border-radius: var(--radius-md);
+	}
+
+	.setup-panel form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-md);
+	}
+
+	.status-setup {
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
 	}
 
 	.courts {

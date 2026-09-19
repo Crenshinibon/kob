@@ -48,6 +48,7 @@ export interface CourtDisplayData {
 	isComplete: boolean;
 	courtId: number;
 	rotationId: number;
+	manualAdjustedAt: Date | null;
 	manualRankOrder: number[] | null;
 	manualTieGroups: ManualTieGroupDisplay[];
 	standings: ExplainedCourtStanding[];
@@ -80,6 +81,8 @@ export interface TournamentDisplayData {
 	}[];
 	allCourtsComplete: boolean;
 	frozenCourts: FrozenCourt[];
+	checkedInCount: number;
+	checkInUsed: boolean;
 	error?: string;
 }
 
@@ -98,6 +101,38 @@ async function fetchTournamentData(
 
 	if (!tourney) error(404, m.tournament_not_found());
 
+	const dbPlayersEarly = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
+	const checkedInCount = dbPlayersEarly.filter((p) => p.checkedInAt).length;
+	const checkInUsed =
+		!!tourney.checkInClosedAt ||
+		dbPlayersEarly.some((p) => p.checkedInAt != null || p.checkInSource != null);
+
+	if (tourney.status === 'setup') {
+		return {
+			tournament: tourney,
+			courts: [],
+			canCloseRound: false,
+			isFinalRound: false,
+			hasScores: false,
+			courtSizes: [],
+			currentRound: 0,
+			viewRound: 0,
+			isViewingPastRound: false,
+			isViewingCurrentRound: false,
+			totalRounds: tourney.numRounds,
+			physicalCourtCount: tourney.physicalCourtCount ?? 4,
+			shifts: [],
+			roundDuration: 0,
+			currentPlayerCount: dbPlayersEarly.length,
+			activePlayerCount: dbPlayersEarly.filter((p) => !p.retiredAt).length,
+			retiredPlayers: [],
+			allCourtsComplete: false,
+			frozenCourts: [],
+			checkedInCount,
+			checkInUsed
+		};
+	}
+
 	const currentRound = tourney.currentRound || 0;
 	let courtSizes: number[] = parseStoredCourtSizes(tourney);
 	const totalRounds = tourney.numRounds;
@@ -110,7 +145,7 @@ async function fetchTournamentData(
 	const isViewingPastRound = currentRound > 0 && viewRound < currentRound;
 	const isViewingCurrentRound = viewRound === currentRound && tourney.status === 'active';
 
-	const dbPlayers = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
+	const dbPlayers = dbPlayersEarly;
 	const players = dbPlayers.map((p) => ({
 		id: p.id,
 		name: p.name,
@@ -298,6 +333,7 @@ async function fetchTournamentData(
 			label: access[0]?.label ?? null,
 			courtId: access[0]?.id ?? rotation.courtId,
 			rotationId: rotation.id,
+			manualAdjustedAt: rotation.manualAdjustedAt ?? null,
 			manualRankOrder: rotation.manualRankOrder ?? null,
 			manualTieGroups,
 			players: rotationPlayers,
@@ -368,7 +404,9 @@ async function fetchTournamentData(
 		activePlayerCount,
 		retiredPlayers,
 		allCourtsComplete,
-		frozenCourts
+		frozenCourts,
+		checkedInCount,
+		checkInUsed
 	};
 }
 

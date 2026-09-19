@@ -3,6 +3,7 @@ import {
 	closeRoundOrFetch,
 	clickRetireSubmit,
 	dismissCookieNotice,
+	ensureTournamentStarted,
 	reloadForCourtStandings,
 	scoreAllOpenMatches,
 	waitForCourtCardCount
@@ -125,6 +126,7 @@ test.describe('Tournament Integration Tests', () => {
 
 		// Tournament is already started, verify it shows courts
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 		await page.waitForSelector('text=Round 1 of 2');
 		const courtCards = await page.locator('.court-card').count();
 		expect(courtCards).toBe(4);
@@ -188,6 +190,7 @@ test.describe('Tournament Integration Tests', () => {
 		await page.goto('/');
 		await page.click(`text=${tournamentName}`);
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 		await page.waitForSelector('button:has-text("Close Round & Advance")', { timeout: 20000 });
 		await page.click('button:has-text("Close Round & Advance")');
 
@@ -259,6 +262,7 @@ test.describe('Tournament Integration Tests', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 
 		// Get court URL
 		const courtLink = await page.locator('.qr-link a').first();
@@ -313,6 +317,7 @@ test.describe('Tournament Integration Tests', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 
 		// Go back to dashboard
 		await page.goto('/');
@@ -426,6 +431,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			// Navigate to 5p court
 			const courtLink = page.locator('.qr-link a').last();
@@ -452,6 +458,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('.qr-link a');
 
 			// Go to first court
@@ -553,6 +560,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('.qr-link a');
 
 			const courtUrl = await page.locator('.qr-link a').first().getAttribute('href');
@@ -595,6 +603,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('.qr-link a');
 
 			// Navigate to 5p court (last one)
@@ -635,6 +644,7 @@ test.describe('Tournament Integration Tests', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 		await page.waitForSelector('.qr-link a');
 
 		const courtUrl = await page.locator('.qr-link a').first().getAttribute('href');
@@ -732,6 +742,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('.court-card', { timeout: 10000 });
 
 			// Set label on first court
@@ -762,6 +773,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('.qr-link a', { timeout: 10000 });
 
 			const courtLink = page.locator('.qr-link a').first();
@@ -787,6 +799,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1');
 
 			// Set up dialog handler BEFORE clicking delete
@@ -817,6 +830,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			// Set up dialog handler BEFORE clicking delete
 			page.on('dialog', (dialog) => dialog.dismiss());
@@ -848,6 +862,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 			const tournamentUrl = page.url();
 
@@ -970,6 +985,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 			const tournamentUrl = page.url();
 
@@ -1049,6 +1065,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 			const tournamentUrl = page.url();
 
@@ -1141,6 +1158,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 			const tournamentUrl = page.url();
 
@@ -1242,6 +1260,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 			const tournamentUrl = page.url();
 
@@ -1341,6 +1360,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 			const tournamentUrl = page.url();
 
@@ -1442,6 +1462,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 			const tournamentUrl = page.url();
 
@@ -1561,6 +1582,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 
 			await page.click('summary:has-text("Retire a Player")');
@@ -1598,6 +1620,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 
 			await page.click('summary:has-text("Retire a Player")');
@@ -1628,6 +1651,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 
 			// Override 5p court scoring: change pointsToWin from 15 to 10
@@ -1688,6 +1712,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 
 			// Override 3p to best-of-3

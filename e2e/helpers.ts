@@ -30,19 +30,26 @@ export async function login(page: Page): Promise<void> {
 	await dismissCookieNotice(page);
 }
 
-export async function createRandomSeedTournament(
+export async function createSetupTournament(
 	page: Page,
 	name: string,
 	playerCount: number,
-	numRounds = 2
+	numRounds = 2,
+	formatType: 'random-seed' | 'preseed' = 'random-seed'
 ): Promise<string> {
 	await page.goto('/');
 	await page.waitForSelector('text=+ New Tournament');
 	await page.click('text=+ New Tournament');
 	await page.fill('input[name="name"]', name);
-	await page.fill('input[name="n:numRounds"]', String(numRounds));
-	const players = Array.from({ length: playerCount }, (_, i) => `P${i + 1}`);
-	await page.fill('textarea[name="names"]', players.join('\n'));
+	if (formatType === 'preseed') {
+		await page.click('input[value="preseed"]');
+	} else {
+		await page.fill('input[name="n:numRounds"]', String(numRounds));
+	}
+	if (playerCount > 0) {
+		const players = Array.from({ length: playerCount }, (_, i) => `P${i + 1}`);
+		await page.fill('textarea[name="names"]', players.join('\n'));
+	}
 	await page.click('button[type="submit"]');
 	await page.waitForURL(/\/tournament\/\d+/);
 	const match = page.url().match(/\/tournament\/(\d+)/);
@@ -50,7 +57,57 @@ export async function createRandomSeedTournament(
 	return match![1];
 }
 
+export async function createRandomSeedTournament(
+	page: Page,
+	name: string,
+	playerCount: number,
+	numRounds = 2
+): Promise<string> {
+	const id = await createSetupTournament(page, name, playerCount, numRounds);
+	await startTournamentFromSetup(page);
+	return id;
+}
+
+export type PlayerLink = { id: string; name: string; token: string; url: string };
+
+export async function getPlayerLinks(page: Page, tournamentId: string): Promise<PlayerLink[]> {
+	await page.goto(`/tournament/${tournamentId}/check-in`);
+	await page.waitForSelector('[data-testid="checkin-page"]');
+	await page.waitForSelector('[data-player-token]', { timeout: 15000 });
+	return page.locator('[data-player-token]').evaluateAll((els) =>
+		els.map((el) => {
+			const token = el.getAttribute('data-player-token') ?? '';
+			return {
+				id: el.getAttribute('data-player-id') ?? '',
+				name: el.getAttribute('data-player-name') ?? '',
+				token,
+				url: `/player/${token}`
+			};
+		})
+	);
+}
+
+export async function startTournamentFromSetup(page: Page): Promise<void> {
+	const start = page.getByTestId('start-tournament');
+	await expect(start).toBeEnabled({ timeout: 15000 });
+	await start.click();
+	await expect(page.locator('.court-card, .qr-link a').first()).toBeVisible({ timeout: 30000 });
+}
+
+/** After Create, start if the setup panel is showing. Safe to call when already started. */
+export async function ensureTournamentStarted(page: Page): Promise<void> {
+	await page
+		.locator('[data-testid="start-tournament"], .court-card, .qr-link a')
+		.first()
+		.waitFor({ state: 'visible', timeout: 20000 });
+	const start = page.getByTestId('start-tournament');
+	if (await start.isVisible().catch(() => false)) {
+		await startTournamentFromSetup(page);
+	}
+}
+
 export async function getCourtLinks(page: Page): Promise<string[]> {
+	await ensureTournamentStarted(page);
 	await page.waitForSelector('.qr-link a');
 	return page
 		.locator('.qr-link a')

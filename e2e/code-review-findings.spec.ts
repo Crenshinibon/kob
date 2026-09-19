@@ -12,6 +12,7 @@ import {
 	enableRetireReplacement,
 	selectRetirePlayer,
 	waitForCourtCardCount,
+	ensureTournamentStarted,
 	waitForLiveQuerySettle,
 	waitForRetireFormClosed,
 	waitForTournamentPlayer,
@@ -46,6 +47,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 
 		await page.click('summary:has-text("Retire a Player")');
 		await page.waitForSelector('.retire-form');
@@ -216,6 +218,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 		const tid = page.url().match(/\/tournament\/(\d+)/)![1];
 
 		const links = await getCourtLinks(page);

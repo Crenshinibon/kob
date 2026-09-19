@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { ensureTournamentStarted } from './helpers';
 
 /**
  * Tests for promotion and relegation logic
@@ -83,6 +84,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 		await page.waitForSelector('.court-card');
 
 		// Capture tournament ID for later navigation
@@ -130,6 +132,7 @@ test.describe('Promotion and Relegation', () => {
 		// Navigate to tournament page and close Round 1
 		await page.goto(`/tournament/${tournamentId}`);
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 		// Wait for the tournament page to fully render
 		await page.waitForSelector('h1');
 		await page.waitForSelector('.court-card');
@@ -188,6 +191,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 
 		// Capture tournament ID for later navigation
 		const tournamentUrl = page.url();
@@ -274,6 +278,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 		await page.waitForSelector('.qr-link a');
 
 		// Capture tournament ID for later navigation
@@ -350,6 +355,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 
 		// Capture tournament ID for later navigation
 		const tournamentUrl = page.url();
@@ -428,6 +434,7 @@ test.describe('Promotion and Relegation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			// Store tournament ID before navigating to courts
 			const tournamentIdMatch = page.url().match(/\/tournament\/(\d+)/);
@@ -499,6 +506,7 @@ test.describe('Promotion and Relegation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			const tournamentIdMatch = page.url().match(/\/tournament\/(\d+)/);
 			const tournamentId = tournamentIdMatch ? tournamentIdMatch[1] : null;
 
@@ -570,6 +578,7 @@ test.describe('Promotion and Relegation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			const tournamentIdMatch = page.url().match(/\/tournament\/(\d+)/);
 			const tournamentId = tournamentIdMatch ? tournamentIdMatch[1] : null;
 

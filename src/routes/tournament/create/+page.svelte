@@ -28,8 +28,9 @@
 	let preseedRetirementPolicy = $state<'cascade' | 'shrink'>('cascade');
 	let textareaEl: HTMLTextAreaElement | undefined = $state();
 
-	const minPlayers = 8;
+	const minPlayers = 4;
 	const maxPlayers = 64;
+	let roundsTouched = $state(false);
 
 	const computedPlayerCount = $derived(playerNames.split('\n').filter((n) => n.trim()).length);
 	const leftoverCount = $derived(computedPlayerCount % 4);
@@ -153,8 +154,17 @@
 
 	$effect(() => {
 		if (formatType === 'preseed' && computedPlayerCount >= minPlayers) {
-			const courtCount = Math.ceil(computedPlayerCount / 4);
+			const courtCount = calculateCourtSizes(computedPlayerCount).length;
 			numRounds = calculateRoundCount(courtCount, 'preseed');
+			return;
+		}
+		if (formatType === 'random-seed' && computedPlayerCount >= minPlayers) {
+			const courtCount = calculateCourtSizes(computedPlayerCount).length;
+			if (courtCount === 1) {
+				numRounds = 1;
+			} else if (!roundsTouched) {
+				numRounds = calculateRoundCount(courtCount, 'random-seed');
+			}
 		}
 	});
 
@@ -409,8 +419,8 @@
 				rows="10"
 				placeholder={formatType === 'preseed'
 					? m.create_names_placeholder_preseed()
-					: m.create_names_placeholder_random()}
-				required></textarea>
+					: m.create_names_placeholder_random()}></textarea>
+			<p class="hint">{m.create_players_optional_hint()}</p>
 			<p class="hint">
 				{#if formatType === 'preseed'}
 					{m.create_names_seed_order_hint_preseed()}<br />
@@ -441,8 +451,10 @@
 				{/if}
 			</details>
 			<p class="count">{m.create_names_entered({ count: computedPlayerCount })}</p>
-			{#if computedPlayerCount > 0 && computedPlayerCount < minPlayers}
-				<p class="info warn">{m.create_min_required({ count: minPlayers })}</p>
+			{#if computedPlayerCount === 0}
+				<p class="info">{m.create_add_players_to_see_layout()}</p>
+			{:else if computedPlayerCount > 0 && computedPlayerCount < minPlayers}
+				<p class="info warn">{m.setup_start_needs_players({ count: minPlayers })}</p>
 			{:else if computedPlayerCount > maxPlayers}
 				<p class="info warn">
 					{m.create_max_exceeded({ count: maxPlayers, excess: computedPlayerCount - maxPlayers })}
@@ -509,10 +521,13 @@
 		<div class="field">
 			<span class="label">Number of Rounds</span>
 			{#if formatType === 'preseed'}
-				<span class="info-text">{m.create_auto_calculated({ count: effectiveRounds })}</span>
+				<span class="info-text">{m.create_rounds_computed_at_start()}</span>
 				<input type="hidden" name="n:numRounds" value={effectiveRounds} />
 			{:else}
 				<div class="rounds-config">
+					{#if courtSizes.length === 1}
+						<input type="hidden" name="n:numRounds" value="1" />
+					{/if}
 					<input
 						type="number"
 						id="numRounds"
@@ -521,6 +536,8 @@
 						min="1"
 						max="10"
 						class="rounds-input"
+						disabled={courtSizes.length === 1}
+						oninput={() => (roundsTouched = true)}
 					/>
 					<span class="rounds-hint">{m.create_rounds_flexible()}</span>
 				</div>
@@ -564,7 +581,7 @@
 		<button
 			type="submit"
 			class="btn-primary"
-			disabled={computedPlayerCount < minPlayers ||
+			disabled={!tournamentName.trim() ||
 				computedPlayerCount > maxPlayers ||
 				!!createTournamentForm.pending}
 		>

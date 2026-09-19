@@ -72,7 +72,7 @@ Current Standings:
 - Per-court-type scoring overrides from tournament config applied via `getEffectiveScoring()`
 - Save button per set (saves individual set)
 - On save: show "Saved" confirmation
-- Edit after save for anyone who can save (court token today; player token on 098). Last write wins.
+- Edit after save: **court page** still allows anyone with the court token to edit (how the organizer corrects a write-once player-page save — 095 Open Question 1). The **player page** (098) does not: first write of matches that player is in, then read-only.
 
 ### Closed Round
 

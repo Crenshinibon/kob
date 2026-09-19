@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { reloadForCourtStandings } from './helpers';
+import { reloadForCourtStandings, ensureTournamentStarted } from './helpers';
 
 test.describe('Standings Calculation', () => {
 	const testTournamentNames: string[] = [];
@@ -76,6 +76,7 @@ test.describe('Standings Calculation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 
 		const courtLink = await page.locator('.qr-link a').first();
 		const courtUrl = await courtLink.getAttribute('href');
@@ -111,6 +112,7 @@ test.describe('Standings Calculation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 
 		const courtLink = await page.locator('.qr-link a').first();
 		const courtUrl = await courtLink.getAttribute('href');
@@ -148,6 +150,7 @@ test.describe('Standings Calculation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 
 		const courtLink = await page.locator('.qr-link a').first();
 		const courtUrl = await courtLink.getAttribute('href');
@@ -180,6 +183,7 @@ test.describe('Standings Calculation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 
 		const courtLink = await page.locator('.qr-link a').first();
 		const courtUrl = await courtLink.getAttribute('href');
@@ -223,6 +227,7 @@ test.describe('Standings Calculation', () => {
 		await page.click('button[type="submit"]');
 
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 
 		await page.waitForSelector('.qr-link a');
 		const courtLink = await page.locator('.qr-link a').first();
@@ -278,6 +283,7 @@ test.describe('Standings Calculation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			// Navigate to 3p court
 			const courtLink = page.locator('.qr-link a').last();
@@ -311,6 +317,7 @@ test.describe('Standings Calculation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			// Navigate to 5p court
 			const courtLink = page.locator('.qr-link a').last();
@@ -344,6 +351,7 @@ test.describe('Standings Calculation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			// Navigate to 6p court
 			const courtLink = page.locator('.qr-link a').last();
@@ -377,6 +385,7 @@ test.describe('Standings Calculation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			// Navigate to 3p court
 			const courtLink = page.locator('.qr-link a').last();
@@ -430,6 +439,7 @@ test.describe('Standings Calculation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			// Navigate to 5p court
 			const courtLink = page.locator('.qr-link a').last();
@@ -473,6 +483,7 @@ test.describe('Standings Calculation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 			await page.waitForSelector('.court-card');
 			const tournamentUrl = page.url();
 			const tournamentIdMatch = tournamentUrl.match(/\/tournament\/(\d+)/);
@@ -553,6 +564,7 @@ test.describe('Standings Calculation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			// Navigate to 5p court
 			const courtLink = page.locator('.qr-link a').last();
@@ -589,6 +601,7 @@ test.describe('Standings Calculation', () => {
 			await page.click('button[type="submit"]');
 
 			await page.waitForURL(/\/tournament\/\d+/);
+			await ensureTournamentStarted(page);
 
 			// Navigate to 3p court
 			const courtLink = page.locator('.qr-link a').last();

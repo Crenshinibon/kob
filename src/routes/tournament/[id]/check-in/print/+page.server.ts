@@ -1,0 +1,24 @@
+import { error, redirect } from '@sveltejs/kit';
+import * as m from '$lib/paraglide/messages';
+import { localizeHref } from '$lib/paraglide/runtime';
+import { db } from '$lib/server/db';
+import { tournament, player } from '$lib/server/db/schema';
+import { eq, and } from 'drizzle-orm';
+import type { PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const user = locals.user;
+	if (!user) throw redirect(302, localizeHref('/login'));
+	const tournamentId = parseInt(params.id);
+	const [tourney] = await db
+		.select()
+		.from(tournament)
+		.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
+	if (!tourney) throw error(404, m.tournament_not_found());
+	const players = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
+	const active = players
+		.filter((p) => !p.retiredAt)
+		.sort((a, b) => a.name.localeCompare(b.name))
+		.map((p) => ({ id: p.id, name: p.name, token: p.token }));
+	return { tournamentId, tournamentName: tourney.name, players: active };
+};

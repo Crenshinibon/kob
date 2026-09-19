@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { ensureTournamentStarted } from './helpers';
 
 test.describe('Preseed Tournament', () => {
 	test.setTimeout(180000);
@@ -71,6 +72,7 @@ test.describe('Preseed Tournament', () => {
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 		await page.waitForURL(/\/tournament\/\d+/);
+		await ensureTournamentStarted(page);
 		await page.waitForSelector('.court-card');
 		const m = page.url().match(/\/tournament\/(\d+)/);
 		expect(m).toBeTruthy();
