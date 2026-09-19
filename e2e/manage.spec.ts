@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
+	closeRoundOrFetch,
 	createRandomSeedTournament,
 	createSetupTournament,
 	deleteTournament,
@@ -7,6 +8,7 @@ import {
 	getCourtLinks,
 	getPlayerLinks,
 	login,
+	scoreAllOpenMatches,
 	startTournamentFromSetup
 } from './helpers';
 
@@ -161,5 +163,37 @@ test.describe('Manage page (096)', () => {
 			timeout: 15000
 		});
 		await anon.close();
+	});
+
+	test('finish early after round 1 then reopen last round', async ({ page }) => {
+		test.setTimeout(90000);
+		const name = `ManageFinish ${Date.now()}`;
+		names.push(name);
+		const id = await createRandomSeedTournament(page, name, 8, 2);
+		await scoreAllOpenMatches(page);
+		await page.goto(`/tournament/${id}`);
+		await expect(page.locator('button:has-text("Close Round")')).toBeEnabled({ timeout: 20000 });
+		await closeRoundOrFetch(page, id);
+		await expect(page.getByText('Round 2 of 2')).toBeVisible({ timeout: 30000 });
+
+		await page.goto(`/tournament/${id}/manage`);
+		await expect(page.getByTestId('manage-page')).toBeVisible();
+		await expect(page.getByTestId('lock-indicator')).toContainText(/round 2/i, { timeout: 15000 });
+		await page.getByTestId('tab-tournament').click();
+		await expect(page.getByTestId('tournament-tab')).toBeVisible();
+		page.once('dialog', (d) => d.accept());
+		await page.getByTestId('finish-early').click();
+		await expect(page.getByTestId('lock-indicator')).toContainText(/completed/i, {
+			timeout: 15000
+		});
+
+		page.once('dialog', (d) => d.accept());
+		await page.getByTestId('reopen-round').click();
+		await expect(page.getByTestId('lock-indicator')).not.toContainText(/completed/i, {
+			timeout: 15000
+		});
+		await page.goto(`/tournament/${id}`);
+		await expect(page.locator('.round-stepper')).toBeVisible();
+		await expect(page.getByTestId('setup-panel')).toHaveCount(0);
 	});
 });
