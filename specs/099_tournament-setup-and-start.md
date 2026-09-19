@@ -101,13 +101,13 @@ This is the second half of today's `createTournamentForm`, extracted into `start
 
 `MIN_TOURNAMENT_PLAYERS` becomes **4**. `getCourtConfiguration` / `calculateCourtSizes` must accept 4–7 (today they throw below 8):
 
-| Players | Courts        | Rounds                                      |
-| ------- | ------------- | ------------------------------------------- |
-| 4       | `[4]`         | 1 (final = that court)                      |
-| 5       | `[5]`         | 1                                           |
-| 6       | `[6]`         | 1                                           |
-| 7       | `[4, 3]`      | preseed: 2; random-seed: stored (see OQ 1)  |
-| 8–64    | as today      | as today                                    |
+| Players | Courts   | Rounds                                     |
+| ------- | -------- | ------------------------------------------ |
+| 4       | `[4]`    | 1 (final = that court)                     |
+| 5       | `[5]`    | 1                                          |
+| 6       | `[6]`    | 1                                          |
+| 7       | `[4, 3]` | preseed: 2; random-seed: stored (see OQ 1) |
+| 8–64    | as today | as today                                   |
 
 ## Effects on Other Pages and Specs
 
@@ -120,7 +120,7 @@ This is the second half of today's `createTournamentForm`, extracted into `start
 | **Court pages**                                              | No `court` rows exist in `setup` — court URLs 404. After start, court QRs on the operations view work as today. Players may score there **or** on `/player/[token]` (098).                                                                                                                                                                 |
 | **Cleanup cron** ([1010](./archive/1010_cleanup-cronjob.md)) | Stale rule (no activity for 31 days) already covers `setup` tournaments that were never started; no change.                                                                                                                                                                                                                                |
 | **050 / 030**                                                | "No draft state" note and the dashboard description are updated when this lands.                                                                                                                                                                                                                                                           |
-| **610 / 670**                                                | Start minimum 4 does **not** change mid-tournament retirement floors (670 can continue down to 3). 610's "cancel below 8" is the older incomplete-roster note — not the start rule.                                                                                                          |
+| **610 / 670**                                                | Start minimum 4 does **not** change mid-tournament retirement floors (670 can continue down to 3). 610's "cancel below 8" is the older incomplete-roster note — not the start rule.                                                                                                                                                        |
 
 ## Data Layer
 
@@ -128,8 +128,8 @@ Schema (shared migration `0016`, see 095):
 
 ```typescript
 // tournament
-status: text('status').notNull().default('setup'); // 'setup' | 'active' | 'completed'
-startedAt: timestamp('started_at');
+status: text("status").notNull().default("setup"); // 'setup' | 'active' | 'completed'
+startedAt: timestamp("started_at");
 ```
 
 Existing rows are all `active` or `completed` — no backfill needed. Any code path that checks `status !== 'active'` to reject mutations keeps working; paths that assume `currentRound ≥ 1` implies a running tournament must treat `setup` explicitly (dashboard, operations view, player page, court page 404 path).
@@ -182,6 +182,8 @@ Remote functions:
 ## Open Questions
 
 1. **7 players (two courts, `[4, 3]`).** Preseed already yields 2 rounds. For random-seed, keep the stored/default round count (today 4) or force a smaller default (2)? Proposed: default 2 when `courtCount === 2`, organizer can still raise it.
+
+Answer: I guess it would be sensible to default the number of rounds of a random tournament to the number of courts, up to a max of 4 rounds. The Org can overwrite.
 
 ## Related Specs
 

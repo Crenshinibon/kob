@@ -197,14 +197,14 @@ See [Record and history](#record-and-history) — always below placement (or bel
 
 **NOW** is the first incomplete match-group that involves the player **or** that the player sits out while parallel games in the same run are still open:
 
-| Situation                                     | Hero                                                               | Score fields                                         |
-| --------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------- |
-| Player is in the next incomplete match        | That matchup (YOU on the left)                                     | That match, if it has no score yet                   |
+| Situation                                     | Hero                                                               | Score fields                                           |
+| --------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------ |
+| Player is in the next incomplete match        | That matchup (YOU on the left)                                     | That match, if it has no score yet                     |
 | Player sits out this run; parallel games open | "You sit out this game" + **On court now** (the parallel matchups) | **none** — parallel games are scored on the court page |
-| Player is in one of two parallel games        | The player's own matchup; the other game under **Also on court**   | The player's game only (the other is read-only)      |
-| All of the player's matches complete          | — (state is `court_done`)                                          | none                                                 |
-| Shift not playing                             | — (state is `waiting`; upcoming list only)                         | none                                                 |
-| Match canceled                                | "canceled — averaged"; skip to the next group                      | none on that group                                   |
+| Player is in one of two parallel games        | The player's own matchup; the other game under **Also on court**   | The player's game only (the other is read-only)        |
+| All of the player's matches complete          | — (state is `court_done`)                                          | none                                                   |
+| Shift not playing                             | — (state is `waiting`; upcoming list only)                         | none                                                   |
+| Match canceled                                | "canceled — averaged"; skip to the next group                      | none on that group                                     |
 
 "Incomplete" means at least one required set has no saved score (same `isMatchComplete` as 060 / 930). Best-of-3 deciding set appears only when sets 1 and 2 are saved and split, same as the court page.
 
@@ -268,12 +268,12 @@ Always visible once the tournament has started (`status = 'active'` or `complete
 └────────────────────────────────────────────────┘
 ```
 
-| Field       | Source                                                                                                                                                                                                                                           | Notes                                                                                                                                                                                                                                                                                              |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Seed**    | `player.seedRank` + `seedPoints`                                                                                                                                                                                                                 | Preseed: Rank 1 = highest seed (points, then **name-list order** — first name = seed 1 when no points; same order as round-1 snake). Hidden for random seed; instead: "Random seed · started on Court k" once round 1 exists. Random-seed still stores `seedRank` for the Seeding tie-break (094). |
+| Field       | Source                                                                                                                                                                                                                                                                                  | Notes                                                                                                                                                                                                                                                                                              |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Seed**    | `player.seedRank` + `seedPoints`                                                                                                                                                                                                                                                        | Preseed: Rank 1 = highest seed (points, then **name-list order** — first name = seed 1 when no points; same order as round-1 snake). Hidden for random seed; instead: "Random seed · started on Court k" once round 1 exists. Random-seed still stores `seedRank` for the Seeding tie-break (094). |
 | **Points**  | Ranking total used for standings: sum of per-round **total_points** contributions (094). Standard 4p rounds add raw points; each 5p/6p round adds `roundRawPoints / 3`. Unplayed / canceled matches do not add. Injured-with-substitute matches add **0** for the injured player (092). |
-| **Diff**    | Ranking differential: same per-round rule as `total_diff` / average diff per game on 5p/6p (094).                                                                                                                                              |
-| **Matches** | Count of completed, non-canceled matches the player actually played (not sit-outs).                                                                                                                                                              |
+| **Diff**    | Ranking differential: same per-round rule as `total_diff` / average diff per game on 5p/6p (094).                                                                                                                                                                                       |
+| **Matches** | Count of completed, non-canceled matches the player actually played (not sit-outs).                                                                                                                                                                                                     |
 
 These are the numbers that dictate court rank and the next court — not the raw rally totals. Per-game rows in History still show the actual scores (21–18). If any round was 5p/6p or had canceled matches, a one-line note under the strip: "5-player / 6-player rounds use averages to rank — totals here match ranking." Do **not** also show a raw-points line.
 
@@ -311,9 +311,9 @@ After a save, that match leaves NOW / Up next and appears on the current-round h
 
 #### Per-round header
 
-| Field                                           | Meaning                                                                                                                               |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Round, court number, physical label, court size | From `court_rotation` / `court.label`                                                                                                 |
+| Field                                           | Meaning                                                                                                               |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Round, court number, physical label, court size | From `court_rotation` / `court.label`                                                                                 |
 | Rank on court, round points, round diff         | Snapshot for closed rounds; live ranking totals for the current round once the court is done, else omitted until then |
 | Movement                                        | Previous court → next court. Same `up` / `down` / `same` arrows as the main card. Shown after `closeRound`.           |
 | **Why**                                         | One sentence from the format + this rank — see [Movement copy](#movement-copy). After `closeRound` only.              |
@@ -350,16 +350,16 @@ A collapsible **How courts change** under the first history card explains the to
 
 ### Edge cases
 
-| Case                     | History                                                                          |
-| ------------------------ | -------------------------------------------------------------------------------- |
-| Best-of-3                | One row per match, all played sets, diff = sum of set diffs                      |
-| 5p/6p sit-out            | Row with no score: "You sat out (parallel games)"                                |
-| Canceled (injury B)      | Row: "canceled — not counted"                                                    |
-| Substitute (injury A)    | Row with score; injured player 0 pts; tag "sub"                                  |
-| Reopened round (096)     | That round's card stays; scores remain until the organizer edits them on the court page. Player-page rows stay read-only. Hero shows remaining empty matches. |
-| Current round, some games done | Top history card is this round (no movement/why yet); finished games listed; NOW + Up next are the rest |
-| `not_started`            | No history                                                                       |
-| Player sat a whole shift | Still a round card after the round closes; wait/shift was on the main card       |
+| Case                           | History                                                                                                                                                       |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Best-of-3                      | One row per match, all played sets, diff = sum of set diffs                                                                                                   |
+| 5p/6p sit-out                  | Row with no score: "You sat out (parallel games)"                                                                                                             |
+| Canceled (injury B)            | Row: "canceled — not counted"                                                                                                                                 |
+| Substitute (injury A)          | Row with score; injured player 0 pts; tag "sub"                                                                                                               |
+| Reopened round (096)           | That round's card stays; scores remain until the organizer edits them on the court page. Player-page rows stay read-only. Hero shows remaining empty matches. |
+| Current round, some games done | Top history card is this round (no movement/why yet); finished games listed; NOW + Up next are the rest                                                       |
+| `not_started`                  | No history                                                                                                                                                    |
+| Player sat a whole shift       | Still a round card after the round closes; wait/shift was on the main card                                                                                    |
 
 ## Placement
 
@@ -435,16 +435,16 @@ The worst unconstrained case matches the retirement formula already in 670 (`wor
 
 **Example — 16 players, 4 courts, 4 rounds:**
 
-| Round | Court | Live rank on court   | `nextCourt`    | Reachable courts | Best – Safe    |
-| ----- | ----- | -------------------- | -------------- | ---------------- | -------------- |
-| 1     | 3     | none (0–0)           | —              | 1–4              | 1st – 16th     |
-| 1     | 3     | 1st (1 of 3 matches) | Court 1        | 1–3 (then ±2)    | 1st – 12th     |
-| 2     | 3     | none                 | —              | 1–4 (t = 2)      | 1st – 16th     |
-| 2     | 3     | 2nd (partial)        | Court 2 (up)   | 1–3 (then ±1)    | 1st – 12th     |
-| 2     | 3     | 3rd (partial)        | Court 4 (down) | 3–4 (then ±1)    | 9th – 16th     |
-| 3     | 3     | 2nd                  | Court 2, t−1=0 | 2                | 5th – 8th      |
-| 4     | 2     | none                 | —              | 2                | 5th – 8th      |
-| 4     | 2     | 3rd                  | exact          | 2                | Final place 7  |
+| Round | Court | Live rank on court   | `nextCourt`    | Reachable courts | Best – Safe   |
+| ----- | ----- | -------------------- | -------------- | ---------------- | ------------- |
+| 1     | 3     | none (0–0)           | —              | 1–4              | 1st – 16th    |
+| 1     | 3     | 1st (1 of 3 matches) | Court 1        | 1–3 (then ±2)    | 1st – 12th    |
+| 2     | 3     | none                 | —              | 1–4 (t = 2)      | 1st – 16th    |
+| 2     | 3     | 2nd (partial)        | Court 2 (up)   | 1–3 (then ±1)    | 1st – 12th    |
+| 2     | 3     | 3rd (partial)        | Court 4 (down) | 3–4 (then ±1)    | 9th – 16th    |
+| 3     | 3     | 2nd                  | Court 2, t−1=0 | 2                | 5th – 8th     |
+| 4     | 2     | none                 | —              | 2                | 5th – 8th     |
+| 4     | 2     | 3rd                  | exact          | 2                | Final place 7 |
 
 A score that flips the player from 2nd to 3rd on Court 3 in round 2 moves Best/Safe from 1st–12th to 9th–16th on the next poll.
 
@@ -461,14 +461,14 @@ A player's future is bounded by their **bracket group**: `getBracketGroups(C, r 
 
 **Example — 16 players, 4 courts, 3 rounds (082):**
 
-| Round | Court | Live rank / group | Reachable courts    | Best – Safe    |
-| ----- | ----- | ----------------- | ------------------- | -------------- |
-| 1     | 3     | none              | 1–4                 | 1st – 16th     |
-| 1     | 3     | 2nd (partial)     | 1–2 (winners' half) | 1st – 8th      |
-| 1     | 3     | 3rd (partial)     | 3–4 (losers' half)  | 9th – 16th     |
-| 2     | 2     | none              | 1–2                 | 1st – 8th      |
-| 2     | 2     | 3rd               | 2 (L(W))            | 5th – 8th      |
-| 3     | 2     | 2nd               | exact               | Final place 6  |
+| Round | Court | Live rank / group | Reachable courts    | Best – Safe   |
+| ----- | ----- | ----------------- | ------------------- | ------------- |
+| 1     | 3     | none              | 1–4                 | 1st – 16th    |
+| 1     | 3     | 2nd (partial)     | 1–2 (winners' half) | 1st – 8th     |
+| 1     | 3     | 3rd (partial)     | 3–4 (losers' half)  | 9th – 16th    |
+| 2     | 2     | none              | 1–2                 | 1st – 8th     |
+| 2     | 2     | 3rd               | 2 (L(W))            | 5th – 8th     |
+| 3     | 2     | 2nd               | exact               | Final place 6 |
 
 **Example — 20 players (083), Court 5 frozen after round 2:** a player on Court 5 in round 2 shows 17th – 20th while playing and the exact place once the court is done; nothing changes for them in rounds 3–4.
 
@@ -727,8 +727,16 @@ Do **not** fall back to closed-round-only current place — live including this 
 ## Open Questions
 
 1. **Wait-clock conservatism.** Proposed: `beAtCourtAt = factsUpdatedAt + 0.75 × remainingEstimate`, displayed in the **device's local timezone**, never in the past. Alternatives: a fixed buffer (subtract 5 minutes), or remaining of the fastest still-playing court. Is 0.75 / local timezone OK?
+
+Answer: Yes I guess, that sounds good. We have to collect experience with this formula and adjust/refine in a later version.
+
 2. **"Safe place" wording.** Proposed label for the worst still-reachable final place (the review note said "save place"). OK, or "Worst still possible" / "Guaranteed no worse than"?
+
+Answer: Exactly, it should be clear what each means. For the lower end, it's the place that the player is getting regardless of, if he basically stops playing and gets no more points. The upper bound is the place he might reach if he is promoted the current and every following round and then the highest place on the last round. If we are on the last round, we can dial in closer. For the first game of a round he can reach the top place of that court/bracket and the lowest place. After having played one game, two games, there might be places that are theoretically not achievable anymore even if the player wins 21:0.
+
 3. **Current-round history card.** Proposed: finished games of this round sit in a top history card (rank/movement/why filled in after close). Alternative: a flat list of games under History with no per-round header until close.
+
+Answer: We don't need a current round history card, just move the games after inserting results to the overall history. Which always has the latest games on top. Keep a label for the group and also the round each game belonged to. You might want to highlight past games of the current round, but only subtle.
 
 ## Related Specs
 
