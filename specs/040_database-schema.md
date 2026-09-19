@@ -9,11 +9,11 @@
   id: serial().primaryKey(),
   orgId: text().notNull(), // user.id from Better Auth
   name: text().notNull(),
-  status: text().notNull().default('active'), // 'active', 'completed'
+  status: text().notNull().default('active'), // 'active', 'completed' today; proposed default 'setup' (099)
   currentRound: integer().default(0),
   numRounds: integer().notNull().default(3),
   formatType: text().notNull().default('random-seed'), // 'random-seed' | 'preseed'
-  playerCount: integer().notNull().default(16),         // 8-64
+  playerCount: integer().notNull().default(16),         // 8-64 today; proposed start range 4-64 (099)
   // Scoring
   scoringMode: text().default('single-21'),              // 'single-21' | 'best-of-3' | 'custom'
   pointsToWin: integer().default(21),
@@ -34,6 +34,8 @@
   createdAt: timestamp().defaultNow()
 }
 ```
+
+Proposed additions (`startedAt`, `checkInClosedAt`, `completedAt`, `finishedEarly`, `status` default `'setup'`) ship in migration `0016` — see [095](./095_org-player-experience-index.md). This file updates when that migration lands.
 
 ### player
 

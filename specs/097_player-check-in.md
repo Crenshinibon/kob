@@ -2,7 +2,7 @@
 
 ## Status
 
-**PROPOSED — DRAFT FOR REVIEW.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). **Optional** — an organizer can skip this page and run on court QRs only. Schema additions (`player.token`, `checkedInAt`, `checkInSource`, `tournament.checkInClosedAt`) are in the shared migration `0016` described there. The page players land on after scanning is specified in [098_player-page.md](./098_player-page.md).
+**PROPOSED — REVIEWED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). **Optional** — an organizer can skip this page and run on court QRs only. Schema additions (`player.token`, `checkedInAt`, `checkInSource`, `tournament.checkInClosedAt`) are in the shared migration `0016` described there. The page players land on after scanning is specified in [098_player-page.md](./098_player-page.md).
 
 ## Problem
 
@@ -14,7 +14,7 @@ At the start of a tournament the organizer stands at a table with a phone and a 
 
 ## Goals
 
-1. Every player **can** get a **personal, stable URL** `/player/[token]` and a **QR code** for it, generated at creation for every player added to the tournament (and for replacements / late joiners). That URL is court + scores + placement for the whole tournament ([098](./098_player-page.md)). Handing it out is **optional**.
+1. Every player **can** get a **personal, stable URL** `/player/[token]` and a **QR code** for it, generated at creation for every player added to the tournament (and for replacements). That URL is court + scores + placement for the whole tournament ([098](./098_player-page.md)). Handing it out is **optional**. Late joiners after round 1 are out of v1 (096).
 2. **Check-in page** for the organizer who wants it: searchable list, tap to check in, full-screen QR per player, live counter, not-checked-in list.
 3. **Print sheet**: all players with name + QR on A4/Letter, for self-serve at the registration table.
 4. **Self check-in**: opening your own player page counts as checked in. Organizer can override.
@@ -50,7 +50,7 @@ Check-in path (optional)
 
 Check-in **before start** is available, not required ([099](./099_tournament-setup-and-start.md)). Courts do not exist yet in `setup`, so a player page opened early shows `not_started` until start.
 
-The reshuffle banner ("your court may change") only appears if check-in is still open **after** the tournament has started (rare: "Create & start", or reopen check-in). Closing check-in after start may still remove no-shows and rebuild round 1 if it has no scores (096). Check-in can be reopened. Skipping check-in entirely leaves `checkedInAt` null on every player; start uses the full roster.
+The reshuffle banner ("your court may change") only appears if check-in is still open **after** the tournament has started (rare: reopen check-in). Closing check-in after start may still remove no-shows and rebuild round 1 if it has no scores (096). Check-in can be reopened. Skipping check-in entirely leaves `checkedInAt` null on every player; start uses the full roster.
 
 ## UI
 
@@ -78,7 +78,7 @@ The reshuffle banner ("your court may change") only appears if check-in is still
 - Sort: not checked in first, then alphabetical (toggle to alphabetical only).
 - **Tap the row** → toggles check-in (`checkInSource = 'org'`). Toggling off keeps `checkInSource = 'org'` so a later scan does not silently re-check the player (see Self check-in).
 - **QR button** → full-screen modal: name (large), QR ≥ 240 px, tournament name, hint "Scan for your court and scores", buttons **Copy link** and **Share** (Web Share API when available, hidden otherwise). Useful when the organizer walks up to a player with the phone.
-- **Counter** `12/16` counts active (non-retired) players only. Replacements and late joiners appear in the list; retirees are hidden.
+- **Counter** `12/16` counts active (non-retired) players only. Replacements appear in the list; retirees are hidden. **Do not** show round-1 court numbers — after start, each player sees their court on the player page (098).
 - Polling: `getCheckInData` refreshed every **5 s** so self check-ins pop up on the organizer's screen; paused while `document.hidden`.
 - After check-in is closed the page stays usable (late arrival scanning still checks in) but shows a "Check-in closed at 10:02 · [Reopen]" banner instead of the Close button.
 
@@ -97,7 +97,7 @@ Close check-in and start?
 [Start tournament]  [Cancel]
 ```
 
-Delegates to `startTournamentForm({ checkedInOnly })` (099) and sets `checkInClosedAt`. Start still requires ≥ 8 players in the chosen set.
+Delegates to `startTournamentForm({ checkedInOnly })` (099) and sets `checkInClosedAt`. Start still requires ≥ **4** players in the chosen set.
 
 **After the tournament has started** (round 1 exists):
 
@@ -149,12 +149,12 @@ then set checkedInAt = now(), checkInSource = 'scan'
 
 ```typescript
 // player
-token: text("token").notNull().unique();
-checkedInAt: timestamp("checked_in_at");
-checkInSource: text("check_in_source"); // 'scan' | 'org' | null
+token: text('token').notNull().unique();
+checkedInAt: timestamp('checked_in_at');
+checkInSource: text('check_in_source'); // 'scan' | 'org' | null
 
 // tournament
-checkInClosedAt: timestamp("check_in_closed_at");
+checkInClosedAt: timestamp('check_in_closed_at');
 ```
 
 Token generation: `crypto.randomBytes(16).toString('hex')` on every `player` insert — `createTournamentForm`, replacement inserts in `retirePlayer` / `reportInjury`, `addPlayer` (096). A shared `newPlayerToken()` helper in `tournament-orchestration.ts` keeps this in one place.
@@ -196,27 +196,17 @@ All organizer-only (same guard as the operations view). `regeneratePlayerToken` 
 7. Reopen check-in after start → banner appears on player page (098).
 8. Skip check-in entirely → Start with all 16 → operations view shows court QRs; scores via `/court/[token]` work; player pages still exist if a URL is opened.
 
+## Decisions (from review)
+
+1. **Self check-in on scan stays.** Opening `/player/[token]` checks the player in when the organizer has not touched that row.
+2. **Closing check-in is not required** before start or before scores. Soft banner only if check-in was opened and is still open after start.
+3. **Print layout: 3-column cards** on A4/Letter.
+4. **Regenerate player link** is in v1 (096 ⋯ menu + QR modal).
+5. Check-in list does **not** show round-1 court. After start, the player page is the place for "which court".
+
 ## Open Questions
 
-1. **Self check-in on scan** — keep (proposed), or make check-in a strictly organizer action?
-
-Answer: Keep self-checkin on scan
-
-2. Should **closing check-in be required** before start / before scores can be saved? **No** — check-in itself is optional. Soft banner only if check-in was opened and is still open after start.
-
-Answer: correct. closing check-in is not required
-
-3. Print layout: **cards, 3 columns** (proposed) vs. a dense table with small QRs (more per page, harder to scan).
-
-Answer: 3 column cards is good.
-
-4. **Regenerate link** per player when a QR was shared: included via 096 (proposed). Needed for v1?
-
-Answer: allow regenrate.
-
-5. Should the check-in page show each player's **round-1 court**? Hidden in `setup` (no courts yet). After start: as a small suffix (proposed).
-
-Answer: No. When the tournament is explicitly started, the players see their first court on their player page.
+None remaining for this spec. Court-page vs organizer-only score correction is in [095](./095_org-player-experience-index.md).
 
 ## Related Specs
 

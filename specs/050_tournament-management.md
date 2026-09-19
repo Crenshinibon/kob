@@ -3,11 +3,11 @@
 ## Flow
 
 1. **Create Tournament** (`setup`) → Name, format, rules; 0–64 players optional. No courts yet. See **[099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md)** (proposed).
-2. **Start Tournament** → Requires 8–64 players; generates round 1. Optional "Create & start" on the creation form.
-3. **Run Rounds** → Players enter scores, admin closes rounds (reopen last closed round: [096](./096_tournament-management-page.md))
+2. **Start Tournament** → Requires **4–64** players; generates round 1. **Always two steps** — there is no "Create & start".
+3. **Run Rounds** → Players enter scores (court page and/or player page), admin closes rounds (reopen last closed round: [096](./096_tournament-management-page.md))
 4. **Finish** → Final standings displayed on Total Standings page
 
-**Note (current implementation):** Tournaments are still created as `active` with Round 1 immediately generated. Spec 099 proposes splitting create and start.
+**Note (current implementation):** Tournaments are still created as `active` with Round 1 immediately generated, and start still requires 8. Spec 099 proposes splitting create and start and lowering the start minimum to 4.
 
 ## Pages
 
@@ -44,18 +44,17 @@ Combined form with:
 
 - Tournament name (required)
 - Format: Random Seed or Pre-Seed (radio buttons)
-- Player count: 8-64 players (entered via player names)
+- Player names textarea (optional on create; 0–64; smart paste with comma/semicolon splitting, tab-separated name+points from spreadsheets). **List order is the seeding** when no points are entered (first name = seed 1). The same `seedRank` is the default last tie-break (`initial_order`).
+- Player count: **4–64 at start** (create allows 0). One court (4–6 players) → one round.
 - **Scoring mode**: Radio buttons for "Single Set to 21", "Best of 3 to 15", "Custom"
 - Custom scoring: match format (single/best-of-3), win-by (1 or 2 radio), points to win, deciding set points
 - **Leftover player handling**: Shows court configuration preview (5p/6p/3p bottom court), "Kick leftovers" options
 - Physical courts: slider (1-16)
 - **Duration estimation**: Live display with round-by-round breakdown
 - Number of rounds (auto-calculated for preseed, configurable 1-10 for random seed)
-- Player names textarea (supports smart paste with comma/semicolon splitting, tab-separated name+points from spreadsheets). **List order is the seeding** when no points are entered (first name = seed 1). The same `seedRank` is the default last tie-break (`initial_order`).
 - For preseed: names + optional seed points. Higher points = better seed; omitted or tied points keep list order.
 - CSV file upload: Upload WVV Setzliste CSV directly (extracts `spieler1` and `wvv` columns, auto-switches to preseed format)
-- [Create] button — saves as `setup` (proposed 099); today still starts immediately
-- [Create & start] — proposed 099, same as today's Create when ≥ 8 names are pasted
+- [Create] button — saves as `setup` (proposed 099); today still starts immediately. **No "Create & start"** — always two steps.
 
 ### Tournament View (`/tournament/[id]`)
 
