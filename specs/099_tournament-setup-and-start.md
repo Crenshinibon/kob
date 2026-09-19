@@ -52,7 +52,7 @@ The existing form, with the player section made optional:
 
 - Name, format, scoring mode, custom scoring, tie-break, preseed retirement policy, physical courts, timing — unchanged.
 - **Players** textarea / CSV upload: optional. The court-layout preview, duration estimate and rounds input keep updating live from the pasted count; with 0 names they show "Add players to see the court layout". **The order of names is the seeding** when no points are entered (first name = seed 1). Omitted or tied seed points keep that list order. The same `seedRank` is the default last tie-break (`initial_order`, [094](./094_configurable-tie-breaking.md)). For random-seed the same order is editable later as **Order** on the manage Players tab (096).
-- `numRounds` (random seed) is stored as entered except when the roster yields **one court** (4–6 players): then `numRounds = 1` (that round is the final). For preseed it is derived at **start** (depends on court count); the form shows "computed at start".
+- `numRounds` (random seed) **defaults to `min(courtCount, 4)`**, live from the pasted roster (`4` courts → 4 rounds, `2` courts → 2, `5+` courts → 4). One court (4–6 players) → **1**. The organizer can overwrite (1–10). If they edit the field, that stored value is kept even if the roster later changes, except it is still **forced to 1** when there is only one court. For preseed, rounds are derived at **start** (depends on court count); the form shows "computed at start".
 - One submit button: **Create** → `status = 'setup'`, players inserted with tokens (097), redirect to `/tournament/[id]` (setup view, below). **No "Create & start".**
 
 Max 64 is enforced at creation and at every add; min **4** only at start.
@@ -80,7 +80,7 @@ The operations view renders a **start panel** instead of court cards:
 └──────────────────────────────────────────────────┘
 ```
 
-- Court layout, rounds and duration come from the existing pure functions (`getCourtConfiguration`, `calculateRoundCount`, `estimateTournamentDuration`) on the current roster count. **One court (4–6 players) → one round.**
+- Court layout, rounds and duration come from the existing pure functions (`getCourtConfiguration`, `calculateRoundCount`, `estimateTournamentDuration`) on the current roster count. **One court (4–6 players) → one round.** Random-seed rounds default to **`min(courtCount, 4)`** unless the organizer already overwrote `numRounds`.
 - "Checked-in only" option appears **only** when check-in has at least one check-in and at least one player is not checked in. It **removes** the unchecked players (hard delete, same as 096 Remove) before starting. If check-in was never used, Start uses the full roster.
 - The Start button is disabled below 4 (or below 4 checked-in when that option is selected) with the reason shown.
 - Round stepper and close round are hidden in `setup`. Court QRs appear after start on the operations view. Personal QRs live on the optional check-in page (097).
@@ -91,7 +91,7 @@ The operations view renders a **start panel** instead of court cards:
 
 1. Optional: delete players not checked in (`checkedInOnly`).
 2. Validate **4** ≤ active players ≤ 64 → else `err_min_players` / `err_max_players` (existing keys; copy becomes "at least 4").
-3. `courtSizes = calculateCourtSizes(count)` — **4–6 players = one court** (4p / 5p / 6p). `assignSeedRanks` on the roster in insertion order (`ORDER BY player.id`): higher `seedPoints` first; omitted or tied points keep that **name-list order** (first name = seed 1). Persist `seedRank` for **both** formats (random-seed still shuffles round 1 when there is more than one court; `seedRank` is the `initial_order` tie-break). **Rounds:** if `courtSizes.length === 1` then `numRounds = 1`. Else preseed: `numRounds = calculateRoundCount(courtCount, 'preseed')` (extend that function so `courtCount === 1` returns 1 instead of throwing). Random seed: `numRounds` as stored (1–10), except forced to 1 on a one-court roster.
+3. `courtSizes = calculateCourtSizes(count)` — **4–6 players = one court** (4p / 5p / 6p). `assignSeedRanks` on the roster in insertion order (`ORDER BY player.id`): higher `seedPoints` first; omitted or tied points keep that **name-list order** (first name = seed 1). Persist `seedRank` for **both** formats (random-seed still shuffles round 1 when there is more than one court; `seedRank` is the `initial_order` tie-break). **Rounds:** if `courtSizes.length === 1` then `numRounds = 1`. Else preseed: `numRounds = calculateRoundCount(courtCount, 'preseed')` (extend that function so `courtCount === 1` returns 1 instead of throwing). Random seed: `numRounds` as stored (1–10), except forced to 1 on a one-court roster. The **default** at create / when the rounds field is untouched is `calculateRoundCount(courtCount, 'random-seed') = min(courtCount, 4)` (and 1 when `courtCount === 1`).
 4. `ensureCourtsExist` (095) creates the stable `court` rows with tokens.
 5. Round 1 assignments (`createInitialState` → `addPlayers` → `startRound`) and match rows via `rebuildCurrentRound` (095) for round 1.
 6. `UPDATE tournament SET status = 'active', currentRound = 1, numRounds, courtSizes, playerCount, startedAt = now(), lastActivityAt = now() WHERE id = ? AND status = 'setup'` — the conditional update is the double-submit guard.
@@ -101,13 +101,14 @@ This is the second half of today's `createTournamentForm`, extracted into `start
 
 `MIN_TOURNAMENT_PLAYERS` becomes **4**. `getCourtConfiguration` / `calculateCourtSizes` must accept 4–7 (today they throw below 8):
 
-| Players | Courts   | Rounds                                     |
-| ------- | -------- | ------------------------------------------ |
-| 4       | `[4]`    | 1 (final = that court)                     |
-| 5       | `[5]`    | 1                                          |
-| 6       | `[6]`    | 1                                          |
-| 7       | `[4, 3]` | preseed: 2; random-seed: stored (see OQ 1) |
-| 8–64    | as today | as today                                   |
+| Players | Courts   | Rounds                                                                 |
+| ------- | -------- | ---------------------------------------------------------------------- |
+| 4       | `[4]`    | 1 (final = that court)                                                 |
+| 5       | `[5]`    | 1                                                                      |
+| 6       | `[6]`    | 1                                                                      |
+| 7       | `[4, 3]` | preseed: 2; random-seed **default 2** (`min(2, 4)`), organizer can raise |
+| 8–16    | 2–4      | preseed: as today; random-seed **default = court count** (max 4)       |
+| 17–64   | 5–16     | preseed: as today; random-seed **default 4**, organizer can raise      |
 
 ## Effects on Other Pages and Specs
 
@@ -128,8 +129,8 @@ Schema (shared migration `0016`, see 095):
 
 ```typescript
 // tournament
-status: text("status").notNull().default("setup"); // 'setup' | 'active' | 'completed'
-startedAt: timestamp("started_at");
+status: text('status').notNull().default('setup'); // 'setup' | 'active' | 'completed'
+startedAt: timestamp('started_at');
 ```
 
 Existing rows are all `active` or `completed` — no backfill needed. Any code path that checks `status !== 'active'` to reject mutations keeps working; paths that assume `currentRound ≥ 1` implies a running tournament must treat `setup` explicitly (dashboard, operations view, player page, court page 404 path).
@@ -153,7 +154,8 @@ Remote functions:
 
 - `assignSeedRanks` — no points → list order (first = seed 1); points desc then list order among ties; null and 0 treated equal.
 - `orderPlayerIdsForRound1('preseed')` uses persisted `seedRank` when present, otherwise `assignSeedRanks`.
-- `startTournament()` with **4, 5, 6, 7**, 8, 17, 64 players → court sizes, `numRounds` (1 court → 1 round; preseed derived, random as stored otherwise), `seedRank` (points then name-list order; first name = seed 1 when no points), `court` rows + round-1 rotations + match rows, `status/currentRound/startedAt`.
+- `startTournament()` with **4, 5, 6, 7**, 8, 17, 64 players → court sizes, `numRounds` (1 court → 1 round; preseed derived; random-seed default `min(courtCount, 4)` unless overwritten), `seedRank` (points then name-list order; first name = seed 1 when no points), `court` rows + round-1 rotations + match rows, `status/currentRound/startedAt`.
+- `calculateRoundCount(n, 'random-seed')` → `1` for 1 court, `2` for 2, `3` for 3, `4` for 4+.
 - `startTournament()` with 3 → `err_min_players`; with `checkedInOnly` and 9 of 14 checked in → 5 deleted, 9 assigned.
 - Double start (second call after status flipped) → 409.
 
@@ -178,12 +180,11 @@ Remote functions:
 5. A tournament in `setup` **is visible** on the player page (`not_started`). Court URLs 404 until start.
 6. **Start minimum is 4 players** (one court, one round). Same floor as post-start roster minimum (096).
 7. **Existing tournaments** created under the 8-player minimum are left as-is. No migration. Only new starts use 4.
+8. **Random-seed default rounds = `min(courtCount, 4)`** (and 1 on a one-court roster). Organizer can overwrite (1–10), except one court stays 1.
 
 ## Open Questions
 
-1. **7 players (two courts, `[4, 3]`).** Preseed already yields 2 rounds. For random-seed, keep the stored/default round count (today 4) or force a smaller default (2)? Proposed: default 2 when `courtCount === 2`, organizer can still raise it.
-
-Answer: I guess it would be sensible to default the number of rounds of a random tournament to the number of courts, up to a max of 4 rounds. The Org can overwrite.
+None remaining for this spec.
 
 ## Related Specs
 

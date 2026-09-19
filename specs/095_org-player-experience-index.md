@@ -2,7 +2,7 @@
 
 ## Status
 
-**PROPOSED — REVIEWED.** Index for the organizer back-office and player-facing pages. Nothing in this group is implemented yet. Remaining blanks are in **Open Questions** at the end of each sub-spec.
+**PROPOSED — REVIEWED.** Index for the organizer back-office and player-facing pages. Nothing in this group is implemented yet. 097 / 098 / 099 have no remaining open questions. **096** still has four proposed UX defaults (refill, Order UI, Clear score, Reset after preseed overwrite) — they do not block starting implementation of steps 0–3.
 
 ## Motivation
 
@@ -143,11 +143,12 @@ Steps 1–3 do not touch the redistribution engine except `startTournament`. Ste
 6. **Start minimum is 4 players** (one 4p court, one round). Same floor after removing no-shows. See 099 / 096.
 7. **Late joiners after round 1 are out of v1.**
 8. **Player-page scores are write-once** for matches the player is in. Corrections go through the court page / organizer.
+9. **Whole-round assignment lock** includes unstarted shifts: any score in the round locks every court (096).
+10. **Court-page score correction stays anonymous in v1** (court token, same as today). Organizer-session-only is a later option if leaked court QRs become a problem.
 
 ## Open Questions
 
-1. **Who can correct a saved score on the court page?** Today anyone with the court QR can edit. Players cannot edit on their personal page (098). Keep court-page edits anonymous (proposed — that is how the organizer fixes a score without logging in on the sand), or require the organizer session?
-2. **Whole-round assignment lock vs later shifts.** Once any score exists in the round, no swap/move/DnD on **any** court — including shift 2 that has not started. Confirm this is acceptable on the beach (simpler than per-court lock).
+None on this index. Four proposed UX defaults remain on [096](./096_tournament-management-page.md) (refill algorithm, Order UI, Clear score, Reset after preseed overwrite). They do not block steps 0–3.
 
 ## Related Specs
 

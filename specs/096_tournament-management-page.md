@@ -146,7 +146,7 @@ Player names are tiles. **Long-press** (touch) or pointer-down (desktop) picks u
 - **Refill** button: pack players top-to-bottom into `calculateCourtSizes(playerCount)` so only the bottom court is uneven. Proposed algorithm: flatten current assignment in court order (then slot order), then snake/fill into canonical sizes. Confirm in Open Questions.
 - **Reset to computed** / **Reshuffle round 1** stay as today (see below).
 
-Whole-round lock: once **any** score exists in the round, tiles are not draggable (095 OQ 2).
+Whole-round lock: once **any** score exists in the round, tiles are not draggable (including later shifts).
 
 ### Validation (server-side, blocking)
 

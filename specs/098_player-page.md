@@ -2,7 +2,7 @@
 
 ## Status
 
-**PROPOSED — REVIEWED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Depends on `player.token` from the shared migration `0016`; optional QR codes that lead here are produced by [097_player-check-in.md](./097_player-check-in.md). The page also works if someone opens the URL without using check-in. Remaining blanks are in **Open Questions** at the end.
+**PROPOSED — REVIEWED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Depends on `player.token` from the shared migration `0016`; optional QR codes that lead here are produced by [097_player-check-in.md](./097_player-check-in.md). The page also works if someone opens the URL without using check-in. Ready for implementation.
 
 ## Problem
 
@@ -14,7 +14,7 @@ Players have no personal view of the tournament. The court QR (060) is still a v
 2. Always answers, as the **hero of the page**: **which court, which game is on now, who plays whom** — and lets the player **enter that score** (same validation as today's court page; **write-once** — no Edit after save).
 3. Shows **upcoming games** this round under the current one, each with **compact score inputs** (play order on the sand does not matter). A player may save a match **once**; after that, corrections go through the court page / organizer.
 4. Always shows **placement** as text: **current place**, **best achievable place**, and **safe place** (worst still theoretically achievable). No range bar. See [Placement](#placement).
-5. Always shows a **record**: seed (if any), **ranking** totals (normalized on 5p/6p), and a **game-by-game history of every finished match** — including completed games in the current round. The hero is only the current game plus upcoming. See [Record and history](#record-and-history).
+5. Always shows a **record**: seed (if any), **ranking** totals (normalized on 5p/6p), and a **game-by-game history of every finished match** — including completed games in the current round — **newest game first**. The hero is only the current game plus upcoming. See [Record and history](#record-and-history).
 6. **Works alongside the court page (060), not instead of it.** The organizer chooses how to drive scoring: court QRs on the operations view, personal player QRs via optional check-in ([097](./097_player-check-in.md)), or both. Scores saved on either page last-write-wins and show up on the other.
 7. **Updates itself** after close round, a score saved by anyone on the court (player page or court page), retirement, manual moves (096), round-1 rebuilds — via polling, no reload.
 8. Covers every player state: check-in unused or open, not started, waiting (shift), current game, sit-out, court done, frozen, eliminated, retired / injured, completed, unknown token.
@@ -219,7 +219,7 @@ beAtCourtAt = factsUpdatedAt + conservativeRemaining
 ```
 
 - **`factsUpdatedAt`**: the latest timestamp the remaining estimate is based on — `max(shiftStartedAt, lastActivityAt of any playing-shift court)`. If no scores have landed yet this shift, that is when the shift (or round) became the playing shift.
-- **`conservativeRemaining`**: remaining duration of the **current playing shift** from [650](./650_game-rules-and-duration.md) / [660](./660_virtual-court-scheduling.md) (unscored matches × estimated match duration + configured transition), then scaled by a **fast-round factor** so a quicker-than-average shift does not leave players late. Proposed factor: **0.75** (Open Question 1).
+- **`conservativeRemaining`**: remaining duration of the **current playing shift** from [650](./650_game-rules-and-duration.md) / [660](./660_virtual-court-scheduling.md) (unscored matches × estimated match duration + configured transition), then scaled by a **fast-round factor of 0.75** so a quicker-than-average shift does not leave players late. Revisit the factor after real tournaments; do not block v1 on it.
 - Display `beAtCourtAt` as a **clock time in the viewing device's local timezone** (e.g. "Be at court at 10:15"). Never show a duration ("~45 min"). Never show a time in the past — if `beAtCourtAt` ≤ now, the line is **"Be at the court now"**.
 - The clock time does **not** slide later just because wall time passed without new scores. It only moves when facts change (a score is saved, a court completes, the shift starts). It may jump **earlier** as courts finish faster than the mean — that is intended.
 - When the playing shift is complete: "Your shift is next — be at the court now."
@@ -227,13 +227,13 @@ beAtCourtAt = factsUpdatedAt + conservativeRemaining
 
 ## Score entry
 
-This page is a scoring surface **in parallel with** `/court/[token]`. Rules, validation, and last-write-wins are **the same as [060](./060_court-operations.md)**. The UI is extracted into `ScoreEntry.svelte` and reused on the court page so the two cannot drift. A score saved here appears on the court page (and vice versa) on the next poll.
+This page is a scoring surface **in parallel with** `/court/[token]`. Validation is **the same as [060](./060_court-operations.md)**. The UI is extracted into `ScoreEntry.svelte` and reused on the court page so the two cannot drift. A score saved here appears on the court page (and vice versa) on the next poll. Writes differ: this page is first-write of matches the player is in; the court page can edit.
 
 - **Single set**: one score pair + Save.
 - **Best-of-3**: Set 1, Set 2, Set 3 (Deciding) cards; deciding set only when 1–1; each set has its own save/edit/cancel.
 - Validation via `getEffectiveScoring()` / `isValidFinalScore()` (target, win-by, 5p/6p 15, no cap). Blowout / deuce rules from 870.
 - On save: "Saved" confirmation; `lastActivityAt` bumped; other players on the court see the score on their next poll.
-- **Write-once on this page.** After a score exists on a set/match (saved by this player, a teammate, or the court page), the player page shows it read-only. There is no Edit. To change it, talk to the organizer — they use the **court page**, which still allows edit / clear (095 Open Question 1: whether that court-page edit stays anonymous).
+- **Write-once on this page.** After a score exists on a set/match (saved by this player, a teammate, or the court page), the player page shows it read-only. There is no Edit. To change it, talk to the organizer — they use the **court page**, which still allows edit / clear (095: v1 keeps today's anonymous court-token edits).
 - Canceled matches: no form.
 - Last write wins **on the court page**. Two phones submitting the same empty match from **player pages** is expected (the first save wins; the second gets `err_score_already_saved`).
 - Inputs while focused pause polling so a refresh cannot wipe digits being typed (court page today only pauses while a save is in flight — this is stricter, and the court page should do the same).
@@ -281,42 +281,39 @@ These are the numbers that dictate court rank and the next court — not the raw
 
 ### History
 
-One **round card** per round that has at least one **finished** match for this player, **newest first**. **Every finished game is in History**, including completed matches in the **current** round. The hero is only the current game (if there is one) plus upcoming games.
+**Every finished game is in History**, including completed matches in the **current** round. There is **no** in-progress round card. After a save, that match leaves NOW / Up next and is prepended to this list. The hero is only the current game (if there is one) plus upcoming games.
 
-After a save, that match leaves NOW / Up next and appears on the current-round history card. After `closeRound`, that card gains the snapshot rank / movement / why line. Closed rounds use `standingsSnapshot` (094) for rank/points/diff so they do not move on reload; match rows come from the `match` table (historical scores are immutable unless the organizer reopens the round — 096). The current-round card uses live scores until close.
+The list is **newest game first**. Each row is labelled with the **round** and the **group** (court number, physical label, size). Closed-round rows also carry rank / movement / why on that label. Current-round rows get a **subtle** highlight (left edge or muted “this round” badge) — not a separate card.
+
+Closed rounds use `standingsSnapshot` (094) for rank/points/diff on the group label so they do not move on reload; match rows come from the `match` table (historical scores are immutable unless the organizer reopens the round — 096).
 
 ```
 ┌────────────────────────────────────────────────┐
-│ Round 2 · Court 3 (Beach B) · 4p                │
-│ You finished 2nd · 42 pts · +7                  │
-│ ▲ from Court 4  →  Court 2 next                 │
-│ Promoted: rank 1–2 move up one court            │
-│ (ladder, 2 up / 2 down)                         │
+│ History                                         │
 │                                                 │
-│ You + Ben     vs  Carla + Dan    21–18   +3     │
-│ You + Carla   vs  Ben + Dan      21–19   +2     │
 │ You + Dan     vs  Ben + Carla    21–16   +5     │
-├────────────────────────────────────────────────┤
-│ Round 1 · Court 4 · 4p                          │
-│ You finished 1st · 63 pts · +12                 │
-│ Started here  →  Court 3                        │
-│ Vertical seeding: 1st-place tier fills Court 1, │
-│ then Court 2, … — you went to Court 3 because   │
-│ two other 1sts ranked above you on points.      │
-│                                                 │
+│   Round 2 · Court 3 (Beach B)                   │  ← subtle current-round
+│ You + Carla   vs  Ben + Dan      21–19   +2     │
+│   Round 2 · Court 3 (Beach B)                   │
 │ You + Eva     vs  Finn + Gita    21–15   +6     │
+│   Round 1 · Court 4 · You finished 1st          │
+│   Started here → Court 3                        │
+│   Vertical seeding: 1st-place tier fills        │
+│   Court 1, then Court 2, …                      │
 │ …                                               │
 └────────────────────────────────────────────────┘
 ```
 
-#### Per-round header
+Movement / why copy is shown on **closed-round** rows (once per round, on the newest game of that round, not repeated on every game). Current-round rows show only round + court until `closeRound`.
 
-| Field                                           | Meaning                                                                                                               |
-| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Round, court number, physical label, court size | From `court_rotation` / `court.label`                                                                                 |
-| Rank on court, round points, round diff         | Snapshot for closed rounds; live ranking totals for the current round once the court is done, else omitted until then |
-| Movement                                        | Previous court → next court. Same `up` / `down` / `same` arrows as the main card. Shown after `closeRound`.           |
-| **Why**                                         | One sentence from the format + this rank — see [Movement copy](#movement-copy). After `closeRound` only.              |
+#### Group label
+
+| Field                                           | Meaning                                                                                                    |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Round, court number, physical label, court size | From `court_rotation` / `court.label` — on every row                                                       |
+| Rank on court, round points, round diff         | Snapshot for closed rounds; omitted on current-round rows                                                  |
+| Movement                                        | Previous court → next court. Shown after `closeRound`, once per round (on that round's newest game).       |
+| **Why**                                         | One sentence from the format + this rank — see [Movement copy](#movement-copy). After `closeRound` only.   |
 
 #### Per-game rows
 
@@ -346,7 +343,7 @@ Short, format-specific, derived from the same rules as `reachableFinalPlaceRange
 | Manual move (096)      | —                  | "The organizer moved you onto this court." (if `manualAdjustedAt` is set on the rotation you arrived on)                                           |
 | Late joiner (096)      | —                  | "You joined in round {n} (entered at the bottom court)."                                                                                           |
 
-A collapsible **How courts change** under the first history card explains the tournament's format in three lines (random: R1 vertical, then 2 up / 2 down; preseed: group split by rank). No diagrams. Link to `/docs` if that page already covers it.
+A collapsible **How courts change** under the history list explains the tournament's format in three lines (random: R1 vertical, then 2 up / 2 down; preseed: group split by rank). No diagrams. Link to `/docs` if that page already covers it.
 
 ### Edge cases
 
@@ -356,21 +353,23 @@ A collapsible **How courts change** under the first history card explains the to
 | 5p/6p sit-out                  | Row with no score: "You sat out (parallel games)"                                                                                                             |
 | Canceled (injury B)            | Row: "canceled — not counted"                                                                                                                                 |
 | Substitute (injury A)          | Row with score; injured player 0 pts; tag "sub"                                                                                                               |
-| Reopened round (096)           | That round's card stays; scores remain until the organizer edits them on the court page. Player-page rows stay read-only. Hero shows remaining empty matches. |
-| Current round, some games done | Top history card is this round (no movement/why yet); finished games listed; NOW + Up next are the rest                                                       |
+| Reopened round (096)     | Finished games stay in the list, read-only; hero shows remaining empty matches. Organizer edits on the court page. |
+| Current round, some games done | Those games sit at the top of History with a subtle highlight; no movement/why until closeRound                    |
 | `not_started`                  | No history                                                                                                                                                    |
 | Player sat a whole shift       | Still a round card after the round closes; wait/shift was on the main card                                                                                    |
 
 ## Placement
 
-Every state except `not_started` shows three numbers as **text** (no bar, no gradient): **current place**, **best achievable place**, **safe place**.
+Every state except `not_started` shows three numbers as **text** (no bar, no gradient): **current place**, **best achievable place**, **safe place**. The two bounds mean different things — they are not “the live rank, plus leftover courts”:
 
-- **Current place is live and includes the current round.** It uses the same ordering as the standings page (070 / 090 / 094): court position of the **current** round first (from live court standings, including partial scores), then the configured tie-break factors. Unplayed matches count as 0 so far. Label: "Currently 7th of 16" where 16 = active players (retirees are excluded from `total` but keep their fixed final place). This is **not** "after the last closed round".
-- **Achievable range follows the projected next court** from that live court rank: if the player would promote or relegate _if the round closed now_, the first redistribution step is treated as already decided, then remaining rounds are free movement around that court. See [Reachable court range](#reachable-court-range).
-- The range is recomputed on every poll **and after every score save**, so a saved score that changes the player's rank on their court immediately moves the range (and the "Currently" number).
+- **Current place** is live and includes the current round. Same ordering as the standings page (070 / 090 / 094): court position of the **current** round first (from live court standings, including partial scores), then the configured tie-break factors. Unplayed matches count as 0 so far. Label: "Currently 7th of 16" where 16 = active players (retirees are excluded from `total` but keep their fixed final place). This is **not** "after the last closed round".
+- **Best achievable place** is the highest final place still possible: this player **wins every remaining match they play** (configured target, win-by 2, opponents at the minimum legal losing score), which yields the best rank still reachable on this court — after one or two games that may already rule out 1st even with 21–0. Then they **promote every remaining round** (ladder: up each time, clamped at Court 1; preseed: winners' half each time) and take **rank 1** on that final court. On the last round there is no further promotion: best is that still-possible rank on this court, converted to a place.
+- **Safe place** is the floor they cannot fall below if they **score no more points**: remaining matches they play count as a 0–target loss for them (already-saved scores stand). That yields a court rank, then they **relegate every remaining round** (ladder: down each time, clamped at the bottom court; preseed: losers' half each time) and take **last** on that final court. On the last round, safe is that stop-playing rank as a place.
+- Other courts stay at **live** standings (unplayed = 0). Jumping as those courts report is still a feature — we do not game-tree other courts' remaining matches.
+- The numbers are recomputed on every poll **and after every score save**.
 - **No range bar.** Copy is two lines under current place:
   - `Best achievable place: {best}`
-  - `Safe place: {worst}` — the worst final place still theoretically reachable given current position. (Confirm wording in Open Question 2.)
+  - `Safe place: {worst}`
 - **Not shown on the standings page.** Placement range is player-page only.
 - **Terminal states** (`completed`, `retired`, `eliminated`, `frozen` with court done): best = worst = final place; the block reads "**Final place 5**".
 - A one-line hint when the court is not done: "Remaining matches can still change this."
@@ -392,61 +391,62 @@ With the canonical layout (only the bottom court non-standard) this is `4·(k−
 
 ### Reachable court range
 
-The core is a pure function that returns the set of courts the player can still be on in the **final round**, `[minCourt, maxCourt]`, then maps to `{ best: bestPlace(minCourt), worst: worstPlace(maxCourt) }`.
+Two pure functions. First, remaining matches on **this court** (this player only):
+
+```typescript
+reachableRanksOnCourt(playerId, matches, scoring): { bestRank: number; safeRank: number };
+```
+
+- **bestRank:** recompute `calculateCourtStandings` after filling every remaining match **this player is in** with a legal win (team at `pointsToWin`, opponent at `pointsToWin - winBy`, no cap). Matches they sit out stay as-is (0–0 if unscored).
+- **safeRank:** the same, but those matches are a **0–target loss** for this player (no more points). Already-saved scores stand.
+- Other courts are not in this function.
+
+Then map each rank along a **one-way** path of remaining redistributions (`t = N − r`):
 
 ```typescript
 reachableFinalPlaceRange(ctx: {
 	formatType: FormatType;
-	currentRound: number; // r
-	numRounds: number; // N
-	courtNumber: number; // k, player's current court
+	currentRound: number;
+	numRounds: number;
+	courtNumber: number;
 	courtSizes: readonly number[];
-	projectedRank: number | null; // live rank on this court when it has ≥ 1 score; else null
-	liveRoundResults: CourtResult[] | null; // live standings of every current-round court (partial scores ok)
+	bestRankOnCourt: number | null; // null when this court has no scores yet → treat as 1
+	safeRankOnCourt: number | null; // null when no scores yet → treat as courtSize
+	liveRoundResults: CourtResult[] | null;
 	frozenCourtNumbers: ReadonlySet<number>;
-}): { best: number; worst: number; minCourt: number; maxCourt: number; nextCourt: number | null };
+}): { best: number; worst: number; minCourt: number; maxCourt: number };
 ```
 
-Let `t = N − r` be the number of redistributions still to come. When `t = 0` (final round) the range is the current court: `[k, k]`, tightened to the exact live rank once `projectedRank` is known.
+- **Best path:** from `bestRankOnCourt`, each remaining step takes the **best legal destination** (ladder: up if rank ≤ 2, otherwise the forced down; then assume rank 1 on that court for further steps so they keep promoting). Finish **rank 1** on the court they land on. Last round (`t = 0`): `place(k, bestRankOnCourt)`.
+- **Safe path:** from `safeRankOnCourt`, each remaining step takes the **worst legal destination** (ladder: down if rank ≥ 3, otherwise the forced stay/up; then assume last on that court for further steps). Finish **last** on the court they land on. Last round: `place(k, safeRankOnCourt)`.
+- **Preseed:** best path = winners' half each time that rank still qualifies (≤ half the court); otherwise the forced losers' half, then winners' from there. Safe path is the mirror.
+- **Round 1 random (vertical seeding):** best path uses the 1sts tier (or the best tier `bestRank` still allows) in `verticalSeeding` on live results of other courts; safe path uses the worst still-possible tier. Other courts stay live (unplayed = 0); jumping as they report is a feature.
+- When this court has **no scores yet**, `bestRank = 1` and `safeRank = courtSize` (full court). Do not pretend a 0–0 ranking is a result.
 
-**Projected next court.** Whenever the player's court has at least one saved (or canceled) score, `projectedRank` is their live rank from `calculateCourtStandings` (same numbers as the court page). If the round closed _now_, they would promote or relegate according to that rank. Compute `nextCourt` by running the **real** redistribution on `liveRoundResults`:
-
-| Format / round         | Function                                        | `nextCourt`                                                          |
-| ---------------------- | ----------------------------------------------- | -------------------------------------------------------------------- |
-| Random seed, round 1   | `verticalSeeding(liveRoundResults, …)`          | the court the player is assigned to                                  |
-| Random seed, round ≥ 2 | `ladderRedistribute(liveRoundResults, …)`       | the court the player is assigned to (rank 1–2 up, ≥ 3 down, clamped) |
-| Preseed                | `processPreseedTransition(liveRoundResults, …)` | the court after this group's split                                   |
-
-Then `t − 1` remaining redistributions fan out around `nextCourt` (ladder: ± `(t−1)` courts; preseed: the **next** bracket group that contains `nextCourt`).
-
-Other courts' live standings are included even if incomplete (0 points so far, ordered by the configured tie-break). That is what "based on current position" means tournament-wide, not only on this court.
-
-When the player's court has **no scores yet**, `projectedRank` is null: do not pretend a 0–0 ranking is a result. Use the unconstrained bound from the current court (below).
+`bestPlace(k) = place(k, 1)`, `worstPlace(k) = place(k, courtSizes[k])`. The two paths yield `minCourt` / `maxCourt` and the two place numbers.
 
 #### Random seed (080, `ladderRedistribute` / `verticalSeeding`)
 
-| Situation                                 | Rule                                                                                                                                                                                                |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No scores on this court yet               | `t` free ladder steps from `k`: `[max(1, k − t), min(C, k + t)]`. Round 1 with no scores: `[1, C]` (vertical seeding can send anyone anywhere).                                                     |
-| Live rank ρ (any number of matches saved) | First step = `nextCourt` from the table above. Then `t − 1` free steps around it. Ladder: ρ ≤ 2 → up (Court 1 stays); ρ ≥ 3 → down (bottom stays, including ranks 3..size on a 5p/6p bottom court). |
-| Court fully done                          | Same as live rank — the projection is now stable for this court (other courts may still move `nextCourt` in round 1 vertical seeding until they finish).                                            |
+| Situation                    | Best path                                                                 | Safe path                                                                |
+| ---------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| No scores on this court yet  | Rank 1 every remaining step (R1: `[1, C]` until a score exists)           | Last on the bottom court every remaining step                            |
+| Some matches saved           | `bestRankOnCourt` as above, then best legal destination each remaining step | `safeRankOnCourt` as above, then worst legal destination each step     |
+| Court fully done             | Rank is fixed for this court; remaining steps still one-way from that rank | Same                                                                     |
 
-The worst unconstrained case matches the retirement formula already in 670 (`worstCourt = min(currentCourt + remainingRounds, totalCourts)`); the best case is its mirror image.
+**Example — 16 players, 4 courts, 4 rounds (always-promote / always-relegate, not ± leftover courts):**
 
-**Example — 16 players, 4 courts, 4 rounds:**
+| Round | Court | Still-possible ranks | Best path        | Safe path         | Best – Safe   |
+| ----- | ----- | -------------------- | ---------------- | ----------------- | ------------- |
+| 1     | 3     | 1–4 (no scores)      | → Court 1 rank 1 | → Court 4 last    | 1st – 16th    |
+| 1     | 3     | 1–4 (1 match saved)  | 1sts tier → C1   | 4ths tier → C4    | 1st – 16th    |
+| 2     | 3     | 1–4                  | C2 then C1 rank 1 | C4 last          | 1st – 16th    |
+| 2     | 3     | 1–2 only             | C2 then C1 rank 1 | C2 last (forced up, then last) | 1st – 8th |
+| 2     | 3     | 3–4 only             | C4 then C3 rank 1 | C4 last          | 9th – 16th    |
+| 3     | 3     | 2                    | C2 rank 1        | C2 last           | 5th – 8th     |
+| 4     | 2     | 1–4                  | 5th              | 8th               | 5th – 8th     |
+| 4     | 2     | 3 only               | Final place 7    | Final place 7     | Final place 7 |
 
-| Round | Court | Live rank on court   | `nextCourt`    | Reachable courts | Best – Safe   |
-| ----- | ----- | -------------------- | -------------- | ---------------- | ------------- |
-| 1     | 3     | none (0–0)           | —              | 1–4              | 1st – 16th    |
-| 1     | 3     | 1st (1 of 3 matches) | Court 1        | 1–3 (then ±2)    | 1st – 12th    |
-| 2     | 3     | none                 | —              | 1–4 (t = 2)      | 1st – 16th    |
-| 2     | 3     | 2nd (partial)        | Court 2 (up)   | 1–3 (then ±1)    | 1st – 12th    |
-| 2     | 3     | 3rd (partial)        | Court 4 (down) | 3–4 (then ±1)    | 9th – 16th    |
-| 3     | 3     | 2nd                  | Court 2, t−1=0 | 2                | 5th – 8th     |
-| 4     | 2     | none                 | —              | 2                | 5th – 8th     |
-| 4     | 2     | 3rd                  | exact          | 2                | Final place 7 |
-
-A score that flips the player from 2nd to 3rd on Court 3 in round 2 moves Best/Safe from 1st–12th to 9th–16th on the next poll.
+After two games, if 1st on this court is already impossible even with 21–0, `bestRankOnCourt` is 2 (or worse) and Best drops accordingly.
 
 #### Preseed (080 / 087 / 091, `getBracketGroups`, `processPreseedTransition`)
 
@@ -477,7 +477,7 @@ A player's future is bounded by their **bracket group**: `getBracketGroups(C, r 
 | Case                                             | Placement block                                                                                                                  |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
 | Retired / injured (past round)                   | `finalStanding` from `computeRetirementFinalStanding` — fixed. "Final place 14".                                                 |
-| Injured this round with substitute (092 Phase 1) | Ranks last on the court this round; range computed with `projectedRank = courtSize`; forward retirement makes it final on close. |
+| Injured this round with substitute (092 Phase 1) | Ranks last on the court this round; range computed with `safeRankOnCourt = courtSize`; forward retirement makes it final on close. |
 | Eliminated in final round (670)                  | Fixed place from `getFinalRoundCourtConfig` ordering.                                                                            |
 | Late joiner (096)                                | Same rules from the round they joined; `total` counts them.                                                                      |
 | Roster shrinks (retirement elsewhere)            | `total` and court sizes change; range recomputed on next poll. Ranges may _widen_ slightly (e.g. a 5p bottom court becoming 4p). |
@@ -486,7 +486,7 @@ A player's future is bounded by their **bracket group**: `getBracketGroups(C, r 
 
 ### Why not simulate every future result?
 
-The **first** redistribution is projected from live standings (real `ladderRedistribute` / `verticalSeeding` / `processPreseedTransition`). Remaining rounds still have unknown results, so the ladder ±`(t−1)` bound and the next preseed bracket group are the tight envelope around that projected court. The range is honest given current position and can still move if remaining matches change the rank (the hint says so).
+Remaining **other courts'** matches stay at live standings (unplayed = 0). Remaining **this player's** matches are bounded (max legal win / 0–target loss), then each future round is one-way (always promote vs always relegate). That is the envelope of Best / Safe. We do not enumerate every combination of future opponents.
 
 ## Live Updates
 
@@ -569,29 +569,29 @@ type PlayerPageData = {
   history: {
     round: number;
     closed: boolean;
+    isCurrentRound: boolean; // subtle highlight
     courtNumber: number;
     label: string | null;
     courtSize: number;
+    groupLabel: string; // "Round 2 · Court 3"
+    showWhy: boolean; // newest closed-round game of that round
     rank: number | null;
-    points: number | null; // ranking totals; null while the current-round court is still in progress
+    points: number | null;
     diff: number | null;
     fromCourt: number | null;
     toCourt: number | null;
     movement: "up" | "down" | "same" | null;
-    whyKey: string | null; // i18n key id for Movement copy; null until closeRound
+    whyKey: string | null;
     whyParams: Record<string, string | number> | null;
-    manualAdjusted: boolean;
-    matches: {
-      matchNumber: number;
-      partnerName: string | null;
-      opponentNames: string[];
-      solo: boolean;
-      sitOut: boolean;
-      sets: { a: number | null; b: number | null }[];
-      diff: number | null;
-      isCanceled: boolean;
-      hasSubstitute: boolean;
-    }[];
+    matchNumber: number;
+    partnerName: string | null;
+    opponentNames: string[];
+    solo: boolean;
+    sitOut: boolean;
+    sets: { a: number | null; b: number | null }[];
+    diffForGame: number | null;
+    isCanceled: boolean;
+    hasSubstitute: boolean;
   }[];
   record: {
     seedRank: number | null;
@@ -608,7 +608,7 @@ type PlayerPageData = {
     best: number;
     worst: number;
     isFinal: boolean;
-    nextCourt: number | null; // projected from live rank
+    nextCourt: number | null; // likely-next from live rank (hint), not the Best/Safe path
     minCourt: number | null;
     maxCourt: number | null;
     rankCanStillChange: boolean;
@@ -618,7 +618,7 @@ type PlayerPageData = {
 
 Queries per request: player by token → tournament → all rotations of the tournament (needed for history, movement, progress) → matches of the current round (all courts — needed for live standings, `liveRoundResults`, round progress) → players of the tournament (names) → standings. `court.token` is read from the `court` table via `rotation.courtId` so a player-page save can refresh `getCourtData`.
 
-`placement.current` comes from the shared standings computation (`standings-service.ts`, 095) **including the current round's live court standings**. `placement.best/worst/nextCourt` come from `reachableFinalPlaceRange` with `projectedRank` and `liveRoundResults`. `record` uses ranking totals (094). `history` is derived from the same rotations + matches already loaded (`playerMatchesView` per round that has finished games for this player, including the current round). No extra round-trip.
+`placement.current` comes from the shared standings computation (`standings-service.ts`, 095) **including the current round's live court standings**. `placement.best/worst` come from `reachableRanksOnCourt` + `reachableFinalPlaceRange`. `record` uses ranking totals (094). `history` is a newest-first list of finished games (current round included) derived from the same rotations + matches. No extra round-trip.
 
 ### `src/routes/player/[token]/player-data.remote.ts`
 
@@ -653,7 +653,7 @@ Do **not** fall back to closed-round-only current place — live including this 
 - Closed-round copy on the court page: "This round is closed. Check with the organizer for your next court — or open your personal player page if you have one."
 - Score UI becomes `ScoreEntry.svelte`; court-token `saveScore` / `saveSetScore` keep working and share `$lib/server/save-score.ts` with the player forms.
 - Pause-on-focus polling (above) is applied here too. Pause while `document.hidden` as well.
-- Court page **keeps Edit / Clear** after save (correction path for write-once player-page scores). 095 Open Question 1: anonymous vs organizer-only.
+- Court page **keeps Edit / Clear** after save (correction path for write-once player-page scores). v1: anyone with the court token, same as today (095).
 - Existing E2E that scores via `/court/[token]` stays the court-QR path; new player-page E2E covers the optional personal path. A mixed test saves on one surface and asserts the other updates (player save → court shows it; court edit → player shows it read-only).
 
 ## i18n Keys (new)
@@ -673,16 +673,14 @@ Do **not** fall back to closed-round-only current place — live including this 
 - `waitClock(factsUpdatedAt, remainingMs, now, factor)` — returns ISO clock; past → null ("now"); factor 0.75 shortens remaining.
 - `movementWhy(format, round, rank, courtNumber, courtCount, …)` — one key per row of the Movement copy table.
 - `placeForCourtRank(courtSizes, k, r)` — canonical `[4,4,4,4]`, non-standard bottom `[4,4,4,5]` (Court 4 rank 5 → 17), manual layout `[4,3,5,4]`.
+- `reachableRanksOnCourt` — 4p after match 1: a player far behind cannot reach rank 1 even at 21–0; a leader cannot fall to last if remaining points cannot catch them. Sit-out matches are left as-is.
 - `reachableFinalPlaceRange` — every row of both example tables above, plus:
-  - live rank 2 vs 3 on Court 3 in round 2 of 16p: up → 1st–12th, down → 9th–16th.
-  - random seed R1 with live rank 1 (partial scores) → nextCourt 1, then ±(t−1).
-  - random seed 5p bottom court live rank 5 → stays on bottom court.
-  - random seed Court 1 live rank 1 with `t = 3` → `[1, 3]`; bottom court rank 4 with `t = 1` → bottom only.
-  - preseed live rank 2 on Court 3 in R1 → winners' half (1st–8th) even before other courts finish.
-  - preseed 20p (083): Court 5 frozen → `[5, 5]`.
-  - `t = 0` + live rank → `best === worst ===` that place.
-  - no scores on player's court → unconstrained bound, `nextCourt === null`.
-  - `numRounds` reduced → range shrinks accordingly.
+  - still-possible ranks 1–2 on Court 3 in round 2 of 16p → Best 1st, Safe 8th (forced up, then last on C2).
+  - still-possible ranks 3–4 only → Best 9th, Safe 16th.
+  - last round Court 2 ranks 1–4 still possible → 5th – 8th; only rank 3 left → Final place 7.
+  - preseed live rank 2 on Court 3 in R1 → winners' half; rank 3 → losers' half.
+  - preseed 20p (083): Court 5 frozen → exact court.
+  - no scores on player's court → bestRank 1 / safeRank size.
 
 ### Unit (`src/lib/server/save-score.test.ts`)
 
@@ -698,7 +696,7 @@ Do **not** fall back to closed-round-only current place — live including this 
 2. Save the first match from the player page → "Saved"; History lists that game; NOW is match 2; no Edit on the saved row; standings page row matches; Best/Safe may narrow; hint "Remaining matches can still change this." Saving the same match again is rejected.
 3. Open a second player on the same court (anonymous) → they see the saved score within one poll (or Refresh), read-only. Saving match 2 from the second phone updates the first phone's History.
 4. Score all matches on that court from player pages → state `court_done`; inputs gone; range uses the now-stable rank; **Likely next** shown.
-5. Score all courts, close round → within one poll interval (use the Refresh button in the test) the page shows the new court as NOW and a movement arrow; history Round 1 card has three game rows (partner names, scores, diffs) plus why/movement; record strip ranking totals match; "Currently" matches the player's row on the standings page.
+5. Score all courts, close round → within one poll interval (use the Refresh button in the test) the page shows the new court as NOW and a movement arrow; History is a newest-first game list (round + court label on each row; why/movement on the closed Round 1 games; current-round games were already at the top before close); record strip ranking totals match; "Currently" matches the player's row on the standings page.
    5b. In the final round with the court done → placement shows a single "Final place N" equal to the standings page.
 6. Set a court label on the manage page → label appears on the player page.
 7. Swap this player with another (096) → court number / matchup change without reload.
@@ -716,27 +714,17 @@ Do **not** fall back to closed-round-only current place — live including this 
 2. **Poll** 5 s while the court is active / waiting / injured, 10 s when the court is done or the state is terminal. Start and stop with page visibility (`document.hidden`).
 3. **"Likely next" is shown.** If the organizer changes a tie-break mid-tournament, they communicate that; the hint is not hidden to avoid arguments.
 4. **Ship live current place without the standings cache first**; add `(tournamentId, lastActivityAt)` if measured load requires it.
-5. **History = every finished game**, including the current round. Hero = current game + upcoming. Second person ("You finished 2nd").
-6. **No range bar.** Text only: current place, **Best achievable place**, **Safe place**. Not shown on the standings page.
-7. **Jumping `nextCourt` from incomplete other courts is a feature.**
+5. **History = every finished game**, newest first, including the current round. No in-progress round card. Each row is labelled with round + group (court). Subtle highlight for current-round games. Why/movement on closed-round rows. Hero = current game + upcoming. Second person ("You finished 2nd").
+6. **No range bar.** Text only: current place, **Best achievable place** (win remaining + promote every round + rank 1 on that court), **Safe place** (no more points + relegate every round + last on that court). Remaining matches on this court can already rule out ranks (even 21–0). Not shown on the standings page.
+7. **Jumping `nextCourt` from incomplete other courts is a feature.** Other courts are not game-treed.
 8. **Record strip shows ranking totals** (5p/6p averages / ÷3), not raw rally sums. Per-game history rows still show actual scores.
 9. **Compact score inputs on upcoming matches.** Play-out-of-order is supported.
 10. **Write-once.** Players cannot edit after a score exists; they talk to the organizer, who uses the court page.
-11. **Wait clock** is a conservative clock time ("Be at court at 10:15"), not a minute count. See Open Question 1.
+11. **Wait clock:** `beAtCourtAt = factsUpdatedAt + 0.75 × remainingEstimate`, device-local timezone, never a past time. Revisit the factor after real tournaments.
 
 ## Open Questions
 
-1. **Wait-clock conservatism.** Proposed: `beAtCourtAt = factsUpdatedAt + 0.75 × remainingEstimate`, displayed in the **device's local timezone**, never in the past. Alternatives: a fixed buffer (subtract 5 minutes), or remaining of the fastest still-playing court. Is 0.75 / local timezone OK?
-
-Answer: Yes I guess, that sounds good. We have to collect experience with this formula and adjust/refine in a later version.
-
-2. **"Safe place" wording.** Proposed label for the worst still-reachable final place (the review note said "save place"). OK, or "Worst still possible" / "Guaranteed no worse than"?
-
-Answer: Exactly, it should be clear what each means. For the lower end, it's the place that the player is getting regardless of, if he basically stops playing and gets no more points. The upper bound is the place he might reach if he is promoted the current and every following round and then the highest place on the last round. If we are on the last round, we can dial in closer. For the first game of a round he can reach the top place of that court/bracket and the lowest place. After having played one game, two games, there might be places that are theoretically not achievable anymore even if the player wins 21:0.
-
-3. **Current-round history card.** Proposed: finished games of this round sit in a top history card (rank/movement/why filled in after close). Alternative: a flat list of games under History with no per-round header until close.
-
-Answer: We don't need a current round history card, just move the games after inserting results to the overall history. Which always has the latest games on top. Keep a label for the group and also the round each game belonged to. You might want to highlight past games of the current round, but only subtle.
+None remaining for this spec.
 
 ## Related Specs
 
@@ -757,7 +745,7 @@ Answer: We don't need a current round history card, just move the games after in
 - `src/lib/server/player-page-data.ts`
 - `src/lib/server/save-score.ts` — shared write + validation for court-token and player-token saves
 - `src/lib/server/standings-service.ts` (extracted from `standings/standings-data.remote.ts`, 095)
-- `src/lib/tournament-logic.ts` — `derivePlayerRoundState`, `movementFor`, `nextHintFor`, `playerMatchesView`, `splitPlayerMatches`, `orientMatchForPlayer`, `movementWhy`, `placeForCourtRank`, `reachableFinalPlaceRange`, `waitClock`
+- `src/lib/tournament-logic.ts` — `derivePlayerRoundState`, `movementFor`, `nextHintFor`, `playerMatchesView`, `splitPlayerMatches`, `orientMatchForPlayer`, `movementWhy`, `placeForCourtRank`, `reachableRanksOnCourt`, `reachableFinalPlaceRange`, `waitClock`
 - `src/lib/components/player/PlacementCard.svelte` (current / best / safe text; no bar)
 - `src/lib/components/player/RecordStrip.svelte`, `HistoryList.svelte`, `NowCard.svelte`
 - `src/lib/components/ScoreEntry.svelte` — extracted from `src/routes/court/[token]/+page.svelte`
