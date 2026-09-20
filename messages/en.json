@@ -644,6 +644,7 @@
 	"manage_order_bottom": "Move to bottom",
 	"manage_regenerate_link": "Regenerate player link",
 	"manage_regenerate_short": "New QR",
+	"manage_regenerate_done": "New player QR created",
 	"manage_badge_replacement_for": "replacement for {name}",
 	"manage_badge_eliminated": "eliminated",
 	"manage_refill": "Refill",

@@ -15,6 +15,7 @@
 	} from '$lib/manage-logic';
 	import { flip } from 'svelte/animate';
 	import { quintOut } from 'svelte/easing';
+	import { scale } from 'svelte/transition';
 	import { getManageData } from './manage-data.remote';
 	import {
 		addPlayer,
@@ -53,6 +54,9 @@
 	let draggingId = $state<number | null>(null);
 	let pendingOrderIds = $state<number[] | null>(null);
 	let orderGen = 0;
+	let regenBusyIds = $state<number[]>([]);
+	let regenDoneIds = $state<number[]>([]);
+	const REGEN_COOLDOWN_MS = 2500;
 
 	$effect(() => {
 		if (!browser) return;
@@ -178,6 +182,28 @@
 			}
 		} finally {
 			if (gen === orderGen) pendingOrderIds = null;
+		}
+	}
+
+	function regenLocked(playerId: number): boolean {
+		return regenBusyIds.includes(playerId) || regenDoneIds.includes(playerId);
+	}
+
+	async function regenerateQr(playerId: number): Promise<void> {
+		if (regenLocked(playerId)) return;
+		regenBusyIds = [...regenBusyIds, playerId];
+		errorMsg = '';
+		try {
+			await regeneratePlayerToken({ playerId });
+			await query.refresh();
+			regenBusyIds = regenBusyIds.filter((id) => id !== playerId);
+			regenDoneIds = [...regenDoneIds, playerId];
+			setTimeout(() => {
+				regenDoneIds = regenDoneIds.filter((id) => id !== playerId);
+			}, REGEN_COOLDOWN_MS);
+		} catch (err) {
+			errorMsg = err instanceof Error ? err.message : String(err);
+			regenBusyIds = regenBusyIds.filter((id) => id !== playerId);
 		}
 	}
 </script>
@@ -407,10 +433,39 @@
 								<button
 									type="button"
 									class="btn-compact btn-secondary"
-									aria-label={m.manage_regenerate_link()}
-									onclick={() => run(() => regeneratePlayerToken({ playerId: p.id }))}
-									>{m.manage_regenerate_short()}</button
+									class:is-busy={regenBusyIds.includes(p.id)}
+									class:is-done={regenDoneIds.includes(p.id)}
+									data-testid="regen-{p.id}"
+									aria-busy={regenBusyIds.includes(p.id)}
+									aria-label={regenDoneIds.includes(p.id)
+										? m.manage_regenerate_done()
+										: m.manage_regenerate_link()}
+									disabled={regenLocked(p.id)}
+									onclick={() => regenerateQr(p.id)}
 								>
+									{#if regenBusyIds.includes(p.id)}
+										<span class="regen-busy" data-testid="regen-busy-{p.id}"></span>
+									{:else if regenDoneIds.includes(p.id)}
+										<svg
+											class="regen-check"
+											data-testid="regen-check-{p.id}"
+											viewBox="0 0 16 16"
+											aria-hidden="true"
+											in:scale={{ duration: 200, start: 0.4, easing: quintOut }}
+										>
+											<path
+												d="M2.8 8.4 6.3 11.8 13.2 3.6"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2.2"
+												stroke-linecap="round"
+												stroke-linejoin="round"
+											/>
+										</svg>
+									{:else}
+										{m.manage_regenerate_short()}
+									{/if}
+								</button>
 							</div>
 						</div>
 						{#if canReorder}
@@ -915,6 +970,9 @@
 		min-height: 32px;
 		padding: 0.2rem 0.4rem;
 		box-sizing: border-box;
+		color: var(--text-input);
+		background: var(--bg-input);
+		caret-color: var(--accent-primary);
 	}
 
 	.row-actions {
@@ -951,6 +1009,39 @@
 		border-color: var(--accent-primary);
 	}
 
+	.row-actions .btn-compact.is-busy {
+		opacity: 0.7;
+		transform: scale(0.96);
+	}
+
+	.row-actions .btn-compact.is-done {
+		color: var(--accent-success);
+		border-color: var(--accent-success);
+		background: rgba(0, 255, 65, 0.14);
+	}
+
+	.regen-busy {
+		width: 12px;
+		height: 12px;
+		display: block;
+		border: 2px solid currentColor;
+		border-right-color: transparent;
+		border-radius: 50%;
+		animation: regen-spin 0.55s linear infinite;
+	}
+
+	.regen-check {
+		width: 14px;
+		height: 14px;
+		display: block;
+	}
+
+	@keyframes regen-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
 	.seed-compact {
 		width: 3.25rem;
 		min-width: 3.25rem;
@@ -966,14 +1057,14 @@
 		justify-content: space-between;
 		align-items: stretch;
 		flex-shrink: 0;
-		width: 44px;
+		width: 36px;
 		align-self: stretch;
 	}
 
 	.order-btn {
-		width: 44px;
-		height: 44px;
-		min-height: 44px;
+		width: 36px;
+		height: 36px;
+		min-height: 36px;
 		padding: 0;
 		display: inline-flex;
 		align-items: center;
@@ -1005,8 +1096,8 @@
 	}
 
 	.order-icon {
-		width: 18px;
-		height: 18px;
+		width: 16px;
+		height: 16px;
 		fill: currentColor;
 	}
 

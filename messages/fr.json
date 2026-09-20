@@ -644,6 +644,7 @@
 	"manage_order_bottom": "Tout en bas",
 	"manage_regenerate_link": "Régénérer le lien joueur",
 	"manage_regenerate_short": "Nouveau QR",
+	"manage_regenerate_done": "Nouveau QR joueur créé",
 	"manage_badge_replacement_for": "remplaçant de {name}",
 	"manage_badge_eliminated": "éliminé",
 	"manage_refill": "Répartir",

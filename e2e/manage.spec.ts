@@ -35,7 +35,10 @@ test.describe('Manage page (096)', () => {
 		const playerId = (await first.getAttribute('data-testid'))?.replace('manage-player-', '') ?? '';
 		const row = page.getByTestId(`manage-player-${playerId}`);
 		await page.getByTestId(`rename-${playerId}`).click();
-		await page.getByTestId(`rename-input-${playerId}`).fill('RenamedAce');
+		const renameInput = page.getByTestId(`rename-input-${playerId}`);
+		const renameColor = await renameInput.evaluate((el) => getComputedStyle(el).color);
+		expect(renameColor.replace(/\s/g, '')).toMatch(/^rgb\(0,0,0\)$/);
+		await renameInput.fill('RenamedAce');
 		await row.getByRole('button', { name: /rename/i }).click();
 		await expect(row).toContainText('RenamedAce');
 
@@ -346,8 +349,10 @@ test.describe('Manage page (096)', () => {
 		expect(Math.abs(nameBox!.y - renameBox!.y)).toBeLessThan(16);
 		expect(renameBox!.x).toBeGreaterThan(nameBox!.x);
 		expect(renameBox!.height).toBeLessThan(36);
-		expect(upBox!.width).toBeGreaterThanOrEqual(40);
-		expect(upBox!.height).toBeGreaterThanOrEqual(40);
+		expect(upBox!.width).toBeGreaterThanOrEqual(34);
+		expect(upBox!.width).toBeLessThanOrEqual(38);
+		expect(upBox!.height).toBeGreaterThanOrEqual(34);
+		expect(upBox!.height).toBeLessThanOrEqual(38);
 		expect(topBox!.x + topBox!.width).toBeGreaterThan(cardBox!.x + cardBox!.width - 8);
 		expect(topBox!.y).toBeLessThan(cardBox!.y + 6);
 		expect(bottomBox!.y + bottomBox!.height).toBeGreaterThan(cardBox!.y + cardBox!.height - 6);
@@ -369,5 +374,12 @@ test.describe('Manage page (096)', () => {
 		await expect(rows.nth(7)).toContainText('P1', { timeout: 10000 });
 		await expect(page.getByTestId(`order-down-${p1Id}`)).toBeDisabled();
 		await expect(page.getByTestId(`order-bottom-${p1Id}`)).toBeDisabled();
+
+		const regen = page.getByTestId(`regen-${p1Id}`);
+		await regen.click();
+		await expect(page.getByTestId(`regen-check-${p1Id}`)).toBeVisible({ timeout: 10000 });
+		await expect(regen).toBeDisabled();
+		await expect(regen).toBeEnabled({ timeout: 5000 });
+		await expect(regen).toContainText('New QR');
 	});
 });
