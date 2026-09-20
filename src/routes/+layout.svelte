@@ -193,4 +193,28 @@
 		border-top: 1px solid var(--border-default);
 		background-color: var(--bg-secondary);
 	}
+
+	@media print {
+		.v1-banner,
+		.top-nav,
+		.site-footer,
+		:global(.cookie-notice) {
+			display: none !important;
+		}
+
+		.app-container {
+			display: block;
+			min-height: 0;
+			background: #fff;
+			color: #000;
+		}
+
+		main {
+			flex: none;
+		}
+
+		.site-footer {
+			position: static;
+		}
+	}
 </style>

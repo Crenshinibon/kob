@@ -20,9 +20,10 @@ import {
 	minRoundCount,
 	refillToCanonical,
 	renumberSeedOrder,
+	sortCourts,
 	type ManualAssignmentCourt
 } from '$lib/manage-logic';
-import { parsePlayerLine } from '$lib/parse-players';
+import { parsePastedText, parsePlayerLine } from '$lib/parse-players';
 import { newPlayerToken } from '$lib/server/tournament-orchestration';
 import {
 	applyAssignmentInPlace,
@@ -187,10 +188,7 @@ export const addPlayersBulk = command(
 		if (tourney.status !== 'setup') error(400, m.err_add_player_phase());
 		const existing = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
 		const taken = new Set(existing.filter((p) => !p.retiredAt).map((p) => p.name.toLowerCase()));
-		const lines = names
-			.split('\n')
-			.map((l) => l.trim())
-			.filter(Boolean);
+		const lines = parsePastedText(names);
 		for (const line of lines) {
 			const parsed = parsePlayerLine(line, tourney.formatType as FormatType);
 			if (taken.has(parsed.name.toLowerCase())) continue;
@@ -273,7 +271,7 @@ export const applyAssignmentCommand = command(
 			courtNumber: r.courtNumber,
 			playerIds: rotationPlayerIds(r)
 		}));
-		const after: ManualAssignmentCourt[] = courts;
+		const after: ManualAssignmentCourt[] = sortCourts(courts);
 		const result = applyAssignment(before, after, {
 			roundHasScores: false,
 			isFinalRound: currentRound >= tourney.numRounds,
@@ -319,7 +317,7 @@ export const previewAssignmentChange = command(
 			courtNumber: r.courtNumber,
 			playerIds: rotationPlayerIds(r)
 		}));
-		return applyAssignment(before, courts, {
+		return applyAssignment(before, sortCourts(courts), {
 			roundHasScores: matches.some((x) => x.teamAScore != null),
 			isFinalRound: currentRound >= tourney.numRounds,
 			formatType: tourney.formatType as FormatType,
@@ -481,7 +479,9 @@ export const updateRoundCount = command(
 	}),
 	async ({ tournamentId, numRounds }) => {
 		const { tourney } = await requireOrganizerTournament(tournamentId);
-		if (tourney.formatType === 'preseed') error(400, m.manage_rounds_preseed_fixed());
+		if (tourney.formatType === 'preseed' && tourney.status !== 'setup') {
+			error(400, m.manage_rounds_preseed_fixed());
+		}
 		const { matches } = await currentRoundMatches(tournamentId, tourney.currentRound || 0);
 		const min = minRoundCount(
 			tourney.currentRound || 0,

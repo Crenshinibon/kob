@@ -67,6 +67,10 @@ test.describe('Player page (098)', () => {
 		await expect(playerPage.getByTestId('player-placement')).toContainText('1');
 		await expect(playerPage.getByRole('link', { name: /open court/i })).toHaveCount(0);
 		await anon.close();
+
+		await page.goto(links[0].url);
+		await expect(page.getByTestId('player-now')).toBeVisible({ timeout: 15000 });
+		await expect(page.locator('.lang-switcher')).toHaveCount(1);
 	});
 
 	test('write-once save appears in history and is read-only for the player', async ({

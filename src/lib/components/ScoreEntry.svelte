@@ -146,27 +146,57 @@
 
 <style>
 	.teams {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+		align-items: end;
+		gap: var(--spacing-md);
 	}
 
 	.team {
-		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+	}
+
+	.team p {
+		margin: 0;
+		font-size: var(--font-size-sm);
+		font-weight: 600;
 	}
 
 	.team input {
 		width: 100%;
+		min-height: 48px;
+		box-sizing: border-box;
+		transform: none;
+	}
+
+	.team input:focus {
+		transform: none;
 	}
 
 	.vs {
 		font-weight: 700;
+		padding-bottom: 0.85rem;
+	}
+
+	form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+		margin: var(--spacing-sm) 0;
 	}
 
 	.form-actions {
 		display: flex;
+		flex-wrap: wrap;
 		gap: var(--spacing-sm);
-		margin-top: var(--spacing-sm);
+		margin-top: var(--spacing-xs);
+	}
+
+	.form-actions .btn-primary {
+		flex: 1 1 100%;
 	}
 
 	.compact .teams,

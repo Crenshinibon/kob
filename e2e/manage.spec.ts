@@ -196,4 +196,73 @@ test.describe('Manage page (096)', () => {
 		await expect(page.locator('.round-stepper')).toBeVisible();
 		await expect(page.getByTestId('setup-panel')).toHaveCount(0);
 	});
+
+	test('mass-enter comma-separated names on manage in setup', async ({ page }) => {
+		const name = `ManagePaste ${Date.now()}`;
+		names.push(name);
+		const id = await createSetupTournament(page, name, 0);
+		await page.goto(`/tournament/${id}/manage`);
+		await expect(page.getByTestId('add-many-panel')).toBeVisible();
+		await expect(page.getByTestId('add-one-panel')).toBeVisible();
+		await expect(page.getByTestId('search-panel')).toBeVisible();
+		await page.getByTestId('bulk-names').fill('Ada, Beau, Cara, Dee, Eve, Fay, Gus, Hal');
+		await page.getByTestId('bulk-add').click();
+		await expect(page.locator('[data-testid^="manage-player-"]')).toHaveCount(8, {
+			timeout: 15000
+		});
+		await expect(page.getByTestId('player-name-import')).toBeVisible();
+		await expect(page.getByTestId('add-player-name')).toBeVisible();
+		await expect(page.getByTestId('manage-search')).toBeVisible();
+	});
+
+	test('rounds and physical courts are editable in setup', async ({ page }) => {
+		const name = `ManageSetupRules ${Date.now()}`;
+		names.push(name);
+		const id = await createSetupTournament(page, name, 16, 2);
+		await page.goto(`/tournament/${id}/manage`);
+		await page.getByTestId('tab-rules').click();
+		await expect(page.getByTestId('num-rounds')).toBeVisible();
+		await page.getByTestId('num-rounds').fill('3');
+		await page.getByTestId('physical-courts').fill('2');
+		await expect(page.getByTestId('num-rounds')).toHaveValue('3', { timeout: 10000 });
+		await expect(page.getByTestId('physical-courts')).toHaveValue('2');
+
+		await page.goto(`/tournament/${id}`);
+		await expect(page.getByTestId('setup-num-rounds')).toHaveValue('3', { timeout: 15000 });
+		await expect(page.getByTestId('setup-physical-courts')).toHaveValue('2');
+		await page.getByTestId('setup-num-rounds').fill('4');
+		await startTournamentFromSetup(page);
+		await expect(page.locator('.round-stepper')).toContainText('Round 4');
+		await expect(page.getByTestId('ops-physical-courts')).toHaveValue('2');
+		await page.getByTestId('ops-physical-courts').fill('4');
+		await expect(page.getByTestId('ops-physical-courts')).toHaveValue('4', { timeout: 10000 });
+	});
+
+	test('moving 4p to 4p keeps courts in number order as 3p and 5p', async ({ page }) => {
+		const name = `ManageMoveOrder ${Date.now()}`;
+		names.push(name);
+		const id = await createRandomSeedTournament(page, name, 16, 2);
+		await page.goto(`/tournament/${id}/manage`);
+		await page.getByTestId('tab-courts').click();
+		const court1 = page.getByTestId('manage-court-1');
+		const pid =
+			(
+				await court1.locator('[data-testid^="player-tile-"]').first().getAttribute('data-testid')
+			)?.replace('player-tile-', '') ?? '';
+		expect(pid).toBeTruthy();
+		await page.getByTestId(`move-${pid}`).selectOption('2');
+		await expect(
+			page.getByTestId('manage-court-2').locator(`[data-testid="player-tile-${pid}"]`)
+		).toBeVisible({ timeout: 10000 });
+		const order = await page
+			.locator('[data-testid^="manage-court-"]')
+			.evaluateAll((els) => els.map((el) => el.getAttribute('data-testid')));
+		expect(order).toEqual(['manage-court-1', 'manage-court-2', 'manage-court-3', 'manage-court-4']);
+		await expect(
+			page.getByTestId('manage-court-1').locator('[data-testid^="player-tile-"]')
+		).toHaveCount(3);
+		await expect(
+			page.getByTestId('manage-court-2').locator('[data-testid^="player-tile-"]')
+		).toHaveCount(5);
+	});
 });

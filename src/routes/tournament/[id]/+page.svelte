@@ -16,6 +16,7 @@
 		undoInjury,
 		setCourtLabel
 	} from './tournament-actions.remote';
+	import { updateRoundCount, updateTournamentSettings } from './manage/manage-actions.remote';
 	import { resolve } from '$app/paths';
 	import {
 		calculateCourtSizes,
@@ -355,6 +356,22 @@
 		}
 		return { canUndoInjury: !hasProgressed, courtComplete: court.isComplete };
 	}
+
+	async function savePhysicalCourts(count: number): Promise<void> {
+		await updateTournamentSettings({
+			tournamentId: data.tournamentId,
+			physicalCourtCount: count
+		});
+		await tournamentQuery.refresh();
+	}
+
+	async function saveRoundCount(count: number): Promise<void> {
+		await updateRoundCount({
+			tournamentId: data.tournamentId,
+			numRounds: count
+		});
+		await tournamentQuery.refresh();
+	}
 </script>
 
 {#if tournamentQuery.current}
@@ -460,13 +477,42 @@
 						<p>
 							{m.setup_rounds_duration({
 								rounds:
-									tournament.formatType === 'preseed'
+									tournament.formatType === 'preseed' && tournament.status !== 'setup'
 										? calculateRoundCount(setupCourtSizes.length, 'preseed')
 										: setupCourtSizes.length === 1
 											? 1
 											: tournament.numRounds
 							})}
 						</p>
+						<div class="setup-fields">
+							{#if tournament.formatType === 'random-seed' || tournament.status === 'setup'}
+								<label>
+									{m.manage_rounds_label()}
+									<input
+										type="number"
+										min="1"
+										max="10"
+										value={tournament.numRounds}
+										data-testid="setup-num-rounds"
+										disabled={setupCourtSizes.length === 1}
+										onchange={(e) =>
+											saveRoundCount(Number((e.currentTarget as HTMLInputElement).value))}
+									/>
+								</label>
+							{/if}
+							<label>
+								{m.manage_physical_courts()}
+								<input
+									type="number"
+									min="1"
+									max="16"
+									value={physicalCourtCount}
+									data-testid="setup-physical-courts"
+									onchange={(e) =>
+										savePhysicalCourts(Number((e.currentTarget as HTMLInputElement).value))}
+								/>
+							</label>
+						</div>
 					{:else}
 						<p>{m.setup_start_needs_players({ count: 4 })}</p>
 					{/if}
@@ -571,6 +617,18 @@
 							shifts: Math.ceil(virtualCourtCount / physicalCourtCount)
 						})}
 					</p>
+					<label class="physical-courts-field">
+						{m.manage_physical_courts()}
+						<input
+							type="number"
+							min="1"
+							max="16"
+							value={physicalCourtCount}
+							data-testid="ops-physical-courts"
+							onchange={(e) =>
+								savePhysicalCourts(Number((e.currentTarget as HTMLInputElement).value))}
+						/>
+					</label>
 					{#if roundDuration}
 						<p class="round-dur">{m.est_round_duration({ minutes: roundDuration })}</p>
 					{/if}
@@ -1480,6 +1538,38 @@
 		flex-direction: column;
 		gap: var(--spacing-sm);
 		margin-top: var(--spacing-md);
+	}
+
+	.setup-fields,
+	.physical-courts-field {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--spacing-md);
+		margin: var(--spacing-md) 0;
+		align-items: start;
+	}
+
+	@media (min-width: 600px) {
+		.setup-fields {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	.setup-fields label,
+	.physical-courts-field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+	}
+
+	.setup-fields input,
+	.physical-courts-field input {
+		width: 100%;
+		min-height: 44px;
+		box-sizing: border-box;
 	}
 
 	.status-setup {

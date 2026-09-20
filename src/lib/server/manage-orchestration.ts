@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { court, courtRotation, match, player, tournament } from '$lib/server/db/schema';
 import {
@@ -70,7 +70,8 @@ export async function currentRoundMatches(tournamentId: number, roundNumber: num
 		.from(courtRotation)
 		.where(
 			and(eq(courtRotation.tournamentId, tournamentId), eq(courtRotation.roundNumber, roundNumber))
-		);
+		)
+		.orderBy(asc(courtRotation.courtNumber));
 	const ids = rotations.map((r) => r.id);
 	const matches =
 		ids.length > 0 ? await db.select().from(match).where(inArray(match.courtRotationId, ids)) : [];
@@ -111,7 +112,8 @@ export async function applyAssignmentInPlace(opts: {
 				eq(courtRotation.tournamentId, opts.tournamentId),
 				eq(courtRotation.roundNumber, opts.roundNumber)
 			)
-		);
+		)
+		.orderBy(asc(courtRotation.courtNumber));
 
 	const maxCourt = Math.max(...opts.assignments.map((a) => a.courtNumber), 0);
 	await ensureCourtsExist(opts.tournamentId, maxCourt);

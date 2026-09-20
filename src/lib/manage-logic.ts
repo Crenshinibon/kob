@@ -142,7 +142,39 @@ export function applyAssignment(
 		after,
 		...opts
 	});
-	return { ...validation, resultingCourts: [...after] };
+	return { ...validation, resultingCourts: sortCourts(after) };
+}
+
+export function sortCourts<T extends { courtNumber: number }>(courts: readonly T[]): T[] {
+	return [...courts].sort((a, b) => a.courtNumber - b.courtNumber);
+}
+
+export function proposedMove(
+	courts: readonly ManualAssignmentCourt[],
+	playerId: number,
+	toCourt: number
+): ManualAssignmentCourt[] {
+	const next = courts.map((c) => ({
+		courtNumber: c.courtNumber,
+		playerIds: c.playerIds.filter((id) => id !== playerId),
+		isFrozen: c.isFrozen
+	}));
+	const target = next.find((c) => c.courtNumber === toCourt);
+	if (target) target.playerIds = [...target.playerIds, playerId];
+	return sortCourts(next);
+}
+
+export function isValidPlayerMove(
+	courts: readonly ManualAssignmentCourt[],
+	playerId: number,
+	toCourt: number
+): boolean {
+	const from = courts.find((c) => c.playerIds.includes(playerId));
+	if (!from || from.courtNumber === toCourt) return false;
+	const to = courts.find((c) => c.courtNumber === toCourt);
+	if (!to || to.isFrozen || from.isFrozen) return false;
+	const after = proposedMove(courts, playerId, toCourt);
+	return after.every((c) => c.playerIds.length >= 3 && c.playerIds.length <= 6);
 }
 
 export function renumberSeedOrder(

@@ -57,8 +57,11 @@
 		border: 1px solid #ccc;
 		padding: 8px;
 		text-align: center;
-		page-break-inside: avoid;
+		background: #fff;
+		color: #111;
 		break-inside: avoid;
+		page-break-inside: avoid;
+		-webkit-column-break-inside: avoid;
 	}
 
 	.card h2 {
@@ -72,11 +75,40 @@
 	}
 
 	@media print {
-		.no-print {
-			display: none;
+		:global(.v1-banner),
+		:global(.top-nav),
+		:global(.site-footer),
+		:global(.cookie-notice) {
+			display: none !important;
 		}
+
+		:global(.app-container),
+		:global(body),
+		:global(html) {
+			background: #fff !important;
+			color: #000 !important;
+		}
+
+		:global(.site-footer) {
+			position: static !important;
+		}
+
+		.no-print {
+			display: none !important;
+		}
+
+		main {
+			padding: 0;
+		}
+
 		.grid {
 			gap: 8px;
+		}
+
+		.card {
+			break-inside: avoid;
+			page-break-inside: avoid;
+			-webkit-column-break-inside: avoid;
 		}
 	}
 </style>

@@ -2,9 +2,9 @@ import { query } from '$app/server';
 import * as v from 'valibot';
 import { db } from '$lib/server/db';
 import { player, court, courtRotation, match } from '$lib/server/db/schema';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
+import { deriveLockState, minRoundCount, sortCourts } from '$lib/manage-logic';
 import { requireOrganizerTournament } from '$lib/server/org-guard';
-import { deriveLockState, minRoundCount } from '$lib/manage-logic';
 import { checkInWasUsed } from '$lib/player-page-logic';
 import { getFrozenCourts, getBracketGroups, type FormatType } from '$lib/tournament-logic';
 import { parseStoredCourtSizes, bracketCourtSizes } from '$lib/server/court-size-config';
@@ -30,6 +30,7 @@ export const getManageData = query(idSchema, async ({ tournamentId }) => {
 							eq(courtRotation.roundNumber, currentRound)
 						)
 					)
+					.orderBy(asc(courtRotation.courtNumber))
 			: [];
 	const rotIds = rotations.map((r) => r.id);
 	const matches =
@@ -136,22 +137,24 @@ export const getManageData = query(idSchema, async ({ tournamentId }) => {
 				canUndoUntil
 			};
 		}),
-		courts: rotations.map((rotation) => {
-			const rotMatches = matchesByRotation.get(rotation.id) ?? [];
-			const group = groups.find((g) => g.includes(rotation.courtNumber));
-			return {
-				courtNumber: rotation.courtNumber,
-				label: courts.find((c) => c.id === rotation.courtId)?.label ?? null,
-				courtId: rotation.courtId,
-				rotationId: rotation.id,
-				courtSize: rotation.courtSize,
-				hasScores: rotMatches.some((x) => x.teamAScore != null),
-				isFrozen: frozenNumbers.has(rotation.courtNumber),
-				bracketRole: group ? `courts ${Math.min(...group)}–${Math.max(...group)}` : null,
-				manualAdjustedAt: rotation.manualAdjustedAt,
-				playerIds: rotationPlayerIds(rotation),
-				token: courts.find((c) => c.id === rotation.courtId)?.token ?? null
-			};
-		})
+		courts: sortCourts(
+			rotations.map((rotation) => {
+				const rotMatches = matchesByRotation.get(rotation.id) ?? [];
+				const group = groups.find((g) => g.includes(rotation.courtNumber));
+				return {
+					courtNumber: rotation.courtNumber,
+					label: courts.find((c) => c.id === rotation.courtId)?.label ?? null,
+					courtId: rotation.courtId,
+					rotationId: rotation.id,
+					courtSize: rotation.courtSize,
+					hasScores: rotMatches.some((x) => x.teamAScore != null),
+					isFrozen: frozenNumbers.has(rotation.courtNumber),
+					bracketRole: group ? `courts ${Math.min(...group)}–${Math.max(...group)}` : null,
+					manualAdjustedAt: rotation.manualAdjustedAt,
+					playerIds: rotationPlayerIds(rotation),
+					token: courts.find((c) => c.id === rotation.courtId)?.token ?? null
+				};
+			})
+		)
 	};
 });

@@ -3,6 +3,8 @@
 	import * as m from '$lib/paraglide/messages';
 	import { localizeHref } from '$lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
+	import PlayerNameImport from '$lib/components/PlayerNameImport.svelte';
+	import { isValidPlayerMove, proposedMove, sortCourts } from '$lib/manage-logic';
 	import { getManageData } from './manage-data.remote';
 	import {
 		addPlayer,
@@ -63,6 +65,23 @@
 		)
 	);
 	const nameById = $derived(new Map((page?.players ?? []).map((p) => [p.id, p.name])));
+	const sortedCourts = $derived(sortCourts(page?.courts ?? []));
+	const validDropCourts = $derived.by(() => {
+		const ids = new Set<number>();
+		if (!page || draggingId == null) return ids;
+		for (const court of page.courts) {
+			if (isValidPlayerMove(page.courts, draggingId, court.courtNumber)) {
+				ids.add(court.courtNumber);
+			}
+		}
+		return ids;
+	});
+	const canEditRounds = $derived(
+		!!page &&
+			(page.tournament.formatType === 'random-seed' || page.tournament.status === 'setup') &&
+			page.tournament.status !== 'completed'
+	);
+	const canEditPhysicalCourts = $derived(!!page && page.tournament.status !== 'completed');
 
 	async function run(fn: () => Promise<unknown>) {
 		errorMsg = '';
@@ -76,19 +95,38 @@
 
 	async function movePlayer(playerId: number, toCourt: number) {
 		if (!page) return;
-		const next = page.courts.map((c) => ({
+		if (!isValidPlayerMove(page.courts, playerId, toCourt)) return;
+		const next = proposedMove(page.courts, playerId, toCourt).map((c) => ({
 			courtNumber: c.courtNumber,
-			playerIds: c.playerIds.filter((id) => id !== playerId)
+			playerIds: c.playerIds
 		}));
-		const target = next.find((c) => c.courtNumber === toCourt);
-		if (target) target.playerIds = [...target.playerIds, playerId];
 		await run(() => applyAssignmentCommand({ tournamentId: data.tournamentId, courts: next }));
 	}
 
-	async function dropOnCourt(courtNumber: number) {
-		if (draggingId == null) return;
+	function handleDragStart(e: DragEvent, pid: number) {
+		draggingId = pid;
+		e.dataTransfer?.setData('text/plain', String(pid));
+		if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+	}
+
+	function handleDragEnd() {
+		draggingId = null;
+	}
+
+	function handleCourtDragOver(e: DragEvent, courtNumber: number) {
+		if (draggingId == null || !validDropCourts.has(courtNumber)) {
+			if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
+			return;
+		}
+		e.preventDefault();
+		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+	}
+
+	async function handleCourtDrop(e: DragEvent, courtNumber: number) {
+		e.preventDefault();
 		const id = draggingId;
 		draggingId = null;
+		if (id == null) return;
 		await movePlayer(id, courtNumber);
 	}
 </script>
@@ -157,49 +195,79 @@
 	{/if}
 
 	{#if page && tab === 'players'}
-		<section data-testid="players-tab">
-			<input type="search" placeholder={m.manage_search_players()} bind:value={search} />
-			<form
-				class="add"
-				onsubmit={(e) => {
-					e.preventDefault();
-					run(() =>
-						addPlayer({
-							tournamentId: data.tournamentId,
-							name: addName,
-							seedPoints: addPoints ? Number(addPoints) : null
-						})
-					).then(() => {
-						addName = '';
-						addPoints = '';
-					});
-				}}
-			>
+		<section data-testid="players-tab" class="stack">
+			<div class="panel search-panel" data-testid="search-panel">
+				<h2>{m.manage_search_heading()}</h2>
 				<input
-					name="name"
-					bind:value={addName}
-					placeholder={m.manage_add_player()}
-					data-testid="add-player-name"
-					required
+					type="search"
+					placeholder={m.manage_search_players()}
+					bind:value={search}
+					data-testid="manage-search"
 				/>
-				{#if page.tournament.formatType === 'preseed'}
-					<input name="seed" bind:value={addPoints} placeholder={m.manage_seed_points()} />
-				{/if}
-				<button type="submit" class="btn-primary" data-testid="add-player"
-					>{m.manage_add_player()}</button
+			</div>
+
+			<div class="panel add-one-panel" data-testid="add-one-panel">
+				<h2>{m.manage_add_one_heading()}</h2>
+				<form
+					class="stack-form"
+					onsubmit={(e) => {
+						e.preventDefault();
+						run(() =>
+							addPlayer({
+								tournamentId: data.tournamentId,
+								name: addName,
+								seedPoints: addPoints ? Number(addPoints) : null
+							})
+						).then(() => {
+							addName = '';
+							addPoints = '';
+						});
+					}}
 				>
-			</form>
-			<textarea bind:value={bulkNames} placeholder="Paste names" data-testid="bulk-names"
-			></textarea>
-			<button
-				type="button"
-				class="btn-secondary"
-				data-testid="bulk-add"
-				onclick={() =>
-					run(() => addPlayersBulk({ tournamentId: data.tournamentId, names: bulkNames })).then(
-						() => (bulkNames = '')
-					)}>{m.manage_add_player()}</button
-			>
+					<label>
+						{m.manage_add_player()}
+						<input
+							name="name"
+							bind:value={addName}
+							placeholder={m.manage_add_player()}
+							data-testid="add-player-name"
+							required
+						/>
+					</label>
+					{#if page.tournament.formatType === 'preseed'}
+						<label>
+							{m.manage_seed_points()}
+							<input name="seed" bind:value={addPoints} placeholder={m.manage_seed_points()} />
+						</label>
+					{/if}
+					<button type="submit" class="btn-primary" data-testid="add-player"
+						>{m.manage_add_player()}</button
+					>
+				</form>
+			</div>
+
+			{#if page.tournament.status === 'setup'}
+				<div class="panel add-many-panel" data-testid="add-many-panel">
+					<h2>{m.manage_add_many_heading()}</h2>
+					<PlayerNameImport
+						bind:names={bulkNames}
+						formatType={page.tournament.formatType}
+						textareaId="manage-bulk-names"
+						testId="bulk-names"
+					/>
+					<button
+						type="button"
+						class="btn-primary"
+						data-testid="bulk-add"
+						disabled={!bulkNames.trim()}
+						onclick={() =>
+							run(() => addPlayersBulk({ tournamentId: data.tournamentId, names: bulkNames })).then(
+								() => (bulkNames = '')
+							)}>{m.manage_add_many()}</button
+					>
+				</div>
+			{/if}
+
 			{#if page.checkInUsed}
 				<button
 					type="button"
@@ -216,19 +284,24 @@
 			<ul class="roster">
 				{#each players as p (p.id)}
 					<li data-testid="manage-player-{p.id}">
-						<strong>{p.name}</strong>
-						<span>
-							{#if p.courtNumber}Court {p.courtNumber}{/if}
-							{#if p.seedRank}
-								· {m.manage_order()} {p.seedRank}{/if}
-							{#if page.checkInUsed}
-								· {p.checkedInAt ? '✓' : '○'}{/if}
-							{#if p.status !== 'active'}
-								· {p.status}{/if}
-						</span>
+						<div class="player-heading">
+							<strong>{p.name}</strong>
+							<span class="player-meta">
+								{#if p.courtNumber}Court {p.courtNumber}{/if}
+								{#if p.seedRank}
+									· {m.manage_order()} {p.seedRank}{/if}
+								{#if page.checkInUsed}
+									· {p.checkedInAt ? '✓' : '○'}{/if}
+								{#if p.status !== 'active'}
+									· {p.status}{/if}
+							</span>
+						</div>
 						<div class="row-actions">
 							{#if renameId === p.id}
-								<input bind:value={renameValue} data-testid="rename-input-{p.id}" />
+								<label>
+									{m.manage_rename()}
+									<input bind:value={renameValue} data-testid="rename-input-{p.id}" />
+								</label>
 								<button
 									type="button"
 									class="btn-primary"
@@ -249,38 +322,44 @@
 								>
 							{/if}
 							{#if page.tournament.formatType === 'preseed' && !page.lock.roundHasScores}
-								<input
-									type="number"
-									value={p.seedPoints ?? ''}
-									data-testid="seed-{p.id}"
-									onchange={(e) =>
-										run(() =>
-											updatePlayerSeed({
-												playerId: p.id,
-												seedPoints: Number((e.currentTarget as HTMLInputElement).value)
-											})
-										)}
-								/>
+								<label>
+									{m.manage_seed_points()}
+									<input
+										type="number"
+										value={p.seedPoints ?? ''}
+										data-testid="seed-{p.id}"
+										onchange={(e) =>
+											run(() =>
+												updatePlayerSeed({
+													playerId: p.id,
+													seedPoints: Number((e.currentTarget as HTMLInputElement).value)
+												})
+											)}
+									/>
+								</label>
 							{/if}
 							{#if page.tournament.formatType === 'random-seed' && !page.lock.roundHasScores}
-								<input
-									type="number"
-									min="1"
-									value={p.seedRank ?? ''}
-									data-testid="order-{p.id}"
-									onchange={(e) => {
-										const rank = Number((e.currentTarget as HTMLInputElement).value);
-										const ids = [...page.players]
-											.filter((x) => !x.retiredAt)
-											.sort((a, b) => (a.seedRank ?? 999) - (b.seedRank ?? 999))
-											.map((x) => x.id)
-											.filter((id) => id !== p.id);
-										ids.splice(Math.max(0, rank - 1), 0, p.id);
-										run(() =>
-											updatePlayerOrder({ tournamentId: data.tournamentId, playerIds: ids })
-										);
-									}}
-								/>
+								<label>
+									{m.manage_order()}
+									<input
+										type="number"
+										min="1"
+										value={p.seedRank ?? ''}
+										data-testid="order-{p.id}"
+										onchange={(e) => {
+											const rank = Number((e.currentTarget as HTMLInputElement).value);
+											const ids = [...page.players]
+												.filter((x) => !x.retiredAt)
+												.sort((a, b) => (a.seedRank ?? 999) - (b.seedRank ?? b.id))
+												.map((x) => x.id)
+												.filter((id) => id !== p.id);
+											ids.splice(Math.max(0, rank - 1), 0, p.id);
+											run(() =>
+												updatePlayerOrder({ tournamentId: data.tournamentId, playerIds: ids })
+											);
+										}}
+									/>
+								</label>
 							{/if}
 							<button
 								type="button"
@@ -308,7 +387,7 @@
 	{/if}
 
 	{#if page && tab === 'courts'}
-		<section data-testid="courts-tab">
+		<section data-testid="courts-tab" class="stack">
 			{#if page.tournament.status === 'setup'}
 				<p>{m.manage_not_started_courts()}</p>
 			{:else}
@@ -339,20 +418,30 @@
 						>
 					{/if}
 				</div>
+				{#if draggingId != null}
+					<p class="drop-hint">{m.manage_drop_hint()}</p>
+				{/if}
 				<div class="court-grid">
-					{#each page.courts as court (court.courtNumber)}
+					{#each sortedCourts as court (court.courtNumber)}
+						{@const size = court.playerIds.length}
 						<div
 							class="court-card"
-							class:uneven={court.courtSize !== 4 &&
-								page.courts.filter((c) => c.courtSize !== 4).length > 1}
+							class:uneven={size !== 4}
+							class:drop-ok={draggingId != null && validDropCourts.has(court.courtNumber)}
+							class:drop-blocked={draggingId != null &&
+								!validDropCourts.has(court.courtNumber) &&
+								!court.playerIds.includes(draggingId)}
 							data-testid="manage-court-{court.courtNumber}"
+							data-drop-valid={draggingId != null && validDropCourts.has(court.courtNumber)
+								? 'true'
+								: 'false'}
 							role="group"
-							ondragover={(e) => e.preventDefault()}
-							ondrop={() => dropOnCourt(court.courtNumber)}
+							ondragover={(e) => handleCourtDragOver(e, court.courtNumber)}
+							ondrop={(e) => handleCourtDrop(e, court.courtNumber)}
 						>
 							<h3>
 								Court {court.courtNumber}
-								<span class="size">{court.courtSize}p</span>
+								<span class="size">{size}p</span>
 								{#if court.manualAdjustedAt}<span>{m.manage_adjusted_badge()}</span>{/if}
 								{#if court.isFrozen}🔒{/if}
 							</h3>
@@ -362,19 +451,24 @@
 									draggable={!page.lock.roundHasScores}
 									data-testid="player-tile-{pid}"
 									role="listitem"
-									ondragstart={() => (draggingId = pid)}
+									ondragstart={(e) => handleDragStart(e, pid)}
+									ondragend={handleDragEnd}
+									ondragover={(e) => handleCourtDragOver(e, court.courtNumber)}
+									ondrop={(e) => handleCourtDrop(e, court.courtNumber)}
 								>
 									{nameById.get(pid) ?? pid}
 									{#if !page.lock.roundHasScores}
 										<select
 											data-testid="move-{pid}"
+											value={court.courtNumber}
 											onchange={(e) =>
 												movePlayer(pid, Number((e.currentTarget as HTMLSelectElement).value))}
 										>
-											{#each page.courts as c (c.courtNumber)}
+											{#each sortedCourts as c (c.courtNumber)}
 												<option
 													value={c.courtNumber}
-													selected={c.courtNumber === court.courtNumber}
+													disabled={!isValidPlayerMove(page.courts, pid, c.courtNumber) &&
+														c.courtNumber !== court.courtNumber}
 												>
 													{c.courtNumber}
 												</option>
@@ -391,118 +485,136 @@
 	{/if}
 
 	{#if page && tab === 'rules'}
-		<section data-testid="rules-tab">
+		<section data-testid="rules-tab" class="stack">
 			{#if page.lock.roundHasScores}
 				<p>{m.manage_rules_scoring_locked()}</p>
 			{/if}
-			<form
-				onsubmit={(e) => {
-					e.preventDefault();
-					const fd = new FormData(e.currentTarget);
-					run(() =>
-						updateScoringRules({
-							tournamentId: data.tournamentId,
-							scoringMode: String(fd.get('scoringMode')) as 'single-21' | 'best-of-3' | 'custom',
-							pointsToWin: Number(fd.get('pointsToWin')),
-							winBy: Number(fd.get('winBy')),
-							setsToWin: Number(fd.get('setsToWin')),
-							decidingSetPoints: Number(fd.get('decidingSetPoints'))
-						})
-					);
-				}}
-			>
-				<label
-					>Scoring
-					<select
-						name="scoringMode"
-						value={page.tournament.scoringMode}
-						disabled={page.lock.roundHasScores}
-					>
-						<option value="single-21">single-21</option>
-						<option value="best-of-3">best-of-3</option>
-						<option value="custom">custom</option>
-					</select>
-				</label>
-				<label
-					>Points <input
-						name="pointsToWin"
-						type="number"
-						value={page.tournament.pointsToWin}
-						disabled={page.lock.roundHasScores}
-					/></label
-				>
-				<label
-					>Win by <input
-						name="winBy"
-						type="number"
-						value={page.tournament.winBy}
-						disabled={page.lock.roundHasScores}
-					/></label
-				>
-				<label
-					>Sets <input
-						name="setsToWin"
-						type="number"
-						value={page.tournament.setsToWin}
-						disabled={page.lock.roundHasScores}
-					/></label
-				>
-				<label
-					>Deciding <input
-						name="decidingSetPoints"
-						type="number"
-						value={page.tournament.decidingSetPoints}
-						disabled={page.lock.roundHasScores}
-					/></label
-				>
-				<button type="submit" class="btn-primary" disabled={page.lock.roundHasScores}
-					>Save scoring</button
-				>
-			</form>
-			{#if page.tournament.formatType === 'random-seed'}
-				<label>
-					Rounds
-					<input
-						type="number"
-						min={page.minRounds}
-						max="10"
-						value={page.tournament.numRounds}
-						data-testid="num-rounds"
-						onchange={(e) =>
-							run(() =>
-								updateRoundCount({
-									tournamentId: data.tournamentId,
-									numRounds: Number((e.currentTarget as HTMLInputElement).value)
-								})
-							)}
-					/>
-					<span class="hint">{m.manage_rounds_min_hint({ min: page.minRounds })}</span>
-				</label>
-			{:else}
-				<p>{m.manage_rounds_preseed_fixed()}</p>
-			{/if}
-			<label>
-				Physical courts
-				<input
-					type="number"
-					min="1"
-					max="16"
-					value={page.tournament.physicalCourtCount}
-					onchange={(e) =>
+			<div class="panel">
+				<h2>{m.manage_scoring_heading()}</h2>
+				<form
+					class="scoring-grid"
+					onsubmit={(e) => {
+						e.preventDefault();
+						const fd = new FormData(e.currentTarget);
 						run(() =>
-							updateTournamentSettings({
+							updateScoringRules({
 								tournamentId: data.tournamentId,
-								physicalCourtCount: Number((e.currentTarget as HTMLInputElement).value)
+								scoringMode: String(fd.get('scoringMode')) as 'single-21' | 'best-of-3' | 'custom',
+								pointsToWin: Number(fd.get('pointsToWin')),
+								winBy: Number(fd.get('winBy')),
+								setsToWin: Number(fd.get('setsToWin')),
+								decidingSetPoints: Number(fd.get('decidingSetPoints'))
 							})
-						)}
-				/>
-			</label>
+						);
+					}}
+				>
+					<label
+						>Scoring
+						<select
+							name="scoringMode"
+							value={page.tournament.scoringMode}
+							disabled={page.lock.roundHasScores}
+						>
+							<option value="single-21">single-21</option>
+							<option value="best-of-3">best-of-3</option>
+							<option value="custom">custom</option>
+						</select>
+					</label>
+					<label
+						>Points <input
+							name="pointsToWin"
+							type="number"
+							value={page.tournament.pointsToWin}
+							disabled={page.lock.roundHasScores}
+						/></label
+					>
+					<label
+						>Win by <input
+							name="winBy"
+							type="number"
+							value={page.tournament.winBy}
+							disabled={page.lock.roundHasScores}
+						/></label
+					>
+					<label
+						>Sets <input
+							name="setsToWin"
+							type="number"
+							value={page.tournament.setsToWin}
+							disabled={page.lock.roundHasScores}
+						/></label
+					>
+					<label
+						>Deciding <input
+							name="decidingSetPoints"
+							type="number"
+							value={page.tournament.decidingSetPoints}
+							disabled={page.lock.roundHasScores}
+						/></label
+					>
+					<button type="submit" class="btn-primary" disabled={page.lock.roundHasScores}
+						>Save scoring</button
+					>
+				</form>
+			</div>
+			<div class="panel">
+				<h2>{m.manage_layout_heading()}</h2>
+				<div class="layout-grid">
+					{#if canEditRounds}
+						<label>
+							{m.manage_rounds_label()}
+							<input
+								type="number"
+								min={page.minRounds}
+								max="10"
+								value={page.tournament.numRounds}
+								data-testid="num-rounds"
+								onchange={(e) =>
+									run(() =>
+										updateRoundCount({
+											tournamentId: data.tournamentId,
+											numRounds: Number((e.currentTarget as HTMLInputElement).value)
+										})
+									)}
+							/>
+							<span class="hint">
+								{#if page.tournament.formatType === 'preseed'}
+									{m.manage_rounds_preseed_setup()}
+								{:else}
+									{m.manage_rounds_min_hint({ min: page.minRounds })}
+								{/if}
+							</span>
+						</label>
+					{:else if page.tournament.formatType === 'preseed'}
+						<p>{m.manage_rounds_preseed_fixed()}</p>
+					{/if}
+					{#if canEditPhysicalCourts}
+						<label>
+							{m.manage_physical_courts()}
+							<input
+								type="number"
+								min="1"
+								max="16"
+								value={page.tournament.physicalCourtCount}
+								data-testid="physical-courts"
+								onchange={(e) =>
+									run(() =>
+										updateTournamentSettings({
+											tournamentId: data.tournamentId,
+											physicalCourtCount: Number((e.currentTarget as HTMLInputElement).value)
+										})
+									)}
+							/>
+						</label>
+					{/if}
+				</div>
+			</div>
 		</section>
 	{/if}
 
 	{#if page && tab === 'tournament'}
-		<section data-testid="tournament-tab">
-			<label>
+		<section data-testid="tournament-tab" class="stack">
+			<label class="full-label">
 				Name
 				<input
 					value={page.tournament.name}
@@ -585,28 +697,128 @@
 		color: var(--accent-primary);
 	}
 
+	.stack {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-lg);
+	}
+
+	.panel {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-md);
+		padding: var(--spacing-md);
+		border: 2px solid var(--border-default);
+		border-radius: var(--radius-md);
+		background: var(--bg-card);
+	}
+
+	.search-panel {
+		border-color: var(--border-default);
+	}
+
+	.add-one-panel {
+		border-color: var(--accent-info);
+	}
+
+	.add-many-panel {
+		border-color: var(--accent-primary);
+	}
+
+	.panel h2 {
+		margin: 0;
+		font-size: var(--font-size-sm);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		border-bottom: 2px solid currentColor;
+		padding-bottom: var(--spacing-xs);
+	}
+
+	.stack-form,
+	.scoring-grid,
+	.layout-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--spacing-md);
+		align-items: start;
+	}
+
+	@media (min-width: 700px) {
+		.scoring-grid,
+		.layout-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	label,
+	.full-label {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: var(--spacing-xs);
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		font-weight: 600;
+	}
+
+	label :global(input),
+	label :global(select),
+	.full-label input {
+		width: 100%;
+		min-height: 44px;
+		box-sizing: border-box;
+	}
+
 	.roster {
 		list-style: none;
 		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-md);
 	}
 
 	.roster li {
-		border-bottom: 1px solid var(--border-default);
-		padding: var(--spacing-sm) 0;
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-md);
+		padding: var(--spacing-md);
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+	}
+
+	.player-heading {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.player-meta {
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
 	}
 
 	.row-actions,
-	.add,
 	.court-actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--spacing-xs);
-		margin-top: var(--spacing-xs);
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--spacing-sm);
+	}
+
+	@media (min-width: 700px) {
+		.row-actions {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			align-items: end;
+		}
+
+		.court-actions {
+			grid-template-columns: repeat(auto-fit, minmax(160px, auto));
+		}
 	}
 
 	.court-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 		gap: var(--spacing-sm);
 	}
 
@@ -615,10 +827,22 @@
 		border-radius: var(--radius-md);
 		padding: var(--spacing-sm);
 		min-height: 120px;
+		transition:
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast);
 	}
 
 	.court-card.uneven {
 		border-color: var(--accent-warning);
+	}
+
+	.court-card.drop-ok {
+		border-color: var(--accent-success, #3c3);
+		box-shadow: 0 0 0 3px rgba(0, 255, 65, 0.35);
+	}
+
+	.court-card.drop-blocked {
+		opacity: 0.45;
 	}
 
 	.tile {
@@ -629,7 +853,20 @@
 		cursor: grab;
 		display: flex;
 		justify-content: space-between;
-		gap: 4px;
+		align-items: center;
+		gap: var(--spacing-sm);
+	}
+
+	.tile select {
+		width: auto;
+		min-width: 3.5rem;
+		padding: var(--spacing-xs);
+	}
+
+	.drop-hint {
+		color: var(--accent-success, #3c3);
+		font-weight: 600;
+		margin: 0;
 	}
 
 	.error {
@@ -642,7 +879,8 @@
 		padding-top: var(--spacing-md);
 	}
 
-	.lock {
+	.lock,
+	.hint {
 		font-size: var(--font-size-sm);
 		color: var(--text-secondary);
 	}

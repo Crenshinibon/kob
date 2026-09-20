@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
 	applyAssignment,
 	deriveLockState,
+	isValidPlayerMove,
 	minRoundCount,
+	proposedMove,
 	refillToCanonical,
 	renumberSeedOrder,
+	sortCourts,
 	validateManualAssignment
 } from './manage-logic';
 import { calculateCourtSizes } from './tournament-logic';
@@ -132,6 +135,48 @@ describe('validateManualAssignment / applyAssignment', () => {
 		);
 		expect(result.warnings).toContain('manage_warn_uneven');
 		expect(result.warnings).toContain('manage_warn_ladder_jump');
+	});
+});
+
+describe('proposedMove / isValidPlayerMove', () => {
+	const courts = [
+		{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
+		{ courtNumber: 2, playerIds: [5, 6, 7, 8] },
+		{ courtNumber: 3, playerIds: [9, 10, 11, 12] },
+		{ courtNumber: 4, playerIds: [13, 14, 15, 16] }
+	];
+
+	it('4p to 4p becomes 3p + 5p and stays numbered 1–N', () => {
+		const next = proposedMove(courts, 4, 2);
+		expect(next.map((c) => c.courtNumber)).toEqual([1, 2, 3, 4]);
+		expect(next.map((c) => c.playerIds.length)).toEqual([3, 5, 4, 4]);
+		expect(next[1].playerIds).toContain(4);
+		expect(next[0].playerIds).not.toContain(4);
+		expect(isValidPlayerMove(courts, 4, 2)).toBe(true);
+	});
+
+	it('rejects a move onto a 6p court', () => {
+		const leftover = [
+			{ courtNumber: 1, playerIds: [1, 2, 3, 4] },
+			{ courtNumber: 2, playerIds: [5, 6, 7, 8, 9, 10] }
+		];
+		expect(isValidPlayerMove(leftover, 1, 2)).toBe(false);
+	});
+
+	it('rejects emptying a 3p court', () => {
+		const leftover = [
+			{ courtNumber: 1, playerIds: [1, 2, 3] },
+			{ courtNumber: 2, playerIds: [4, 5, 6, 7] }
+		];
+		expect(isValidPlayerMove(leftover, 1, 2)).toBe(false);
+	});
+
+	it('sortCourts restores numeric order', () => {
+		expect(
+			sortCourts([{ courtNumber: 5 }, { courtNumber: 1 }, { courtNumber: 2 }]).map(
+				(c) => c.courtNumber
+			)
+		).toEqual([1, 2, 5]);
 	});
 });
 

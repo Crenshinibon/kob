@@ -33,6 +33,13 @@ test.describe('Player check-in (097)', () => {
 		await page.goto(`/tournament/${id}/check-in/print`);
 		await expect(page.getByTestId('checkin-print')).toBeVisible();
 		await expect(page.locator('[data-player-url]')).toHaveCount(16);
+		await page.emulateMedia({ media: 'print' });
+		await expect
+			.poll(async () => page.locator('.top-nav').evaluate((el) => getComputedStyle(el).display))
+			.toBe('none');
+		await expect
+			.poll(async () => page.locator('.site-footer').evaluate((el) => getComputedStyle(el).display))
+			.toBe('none');
 		const urls = await page
 			.locator('[data-player-url]')
 			.evaluateAll((els) => els.map((el) => el.getAttribute('data-player-url') ?? ''));
@@ -51,8 +58,8 @@ test.describe('Player check-in (097)', () => {
 		expect(testId).toBeTruthy();
 		const row = page.getByTestId(testId!);
 		await row.click();
-		await expect(page.getByTestId('checkin-progress')).toContainText('1', { timeout: 10000 });
-		await expect(row).toContainText('by you');
+		await expect(page.locator('.list li').last()).toHaveClass(/checked/);
+		await expect(page.locator('.list li').first()).not.toHaveClass(/checked/);
 		await row.click();
 		await expect(page.getByTestId('checkin-progress')).toContainText('0', { timeout: 10000 });
 	});

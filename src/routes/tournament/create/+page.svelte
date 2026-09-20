@@ -1,4 +1,9 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import { localizeHref } from '$lib/paraglide/runtime';
+	import * as m from '$lib/paraglide/messages';
+	import PlayerNameImport from '$lib/components/PlayerNameImport.svelte';
+	import { parsePlayerLine } from '$lib/parse-players';
 	import {
 		calculateCourtSizes,
 		calculateRoundCount,
@@ -6,14 +11,9 @@
 		estimateRoundDurationMinutes,
 		type DurationConfig
 	} from '$lib/tournament-logic';
-	import * as m from '$lib/paraglide/messages';
-	import { resolve } from '$app/paths';
-	import { localizeHref } from '$lib/paraglide/runtime';
-	import { parsePastedText, parseCsvText, parsePlayerLine } from '$lib/parse-players';
 	import { createTournamentForm } from './create.remote';
 
 	let createError = $state('');
-	let csvUploadError = $state('');
 
 	let tournamentName = $state('');
 	let formatType = $state<'random-seed' | 'preseed'>('random-seed');
@@ -26,70 +26,12 @@
 	let decidingSetPoints = $state(15);
 	let numRounds = $state(3);
 	let preseedRetirementPolicy = $state<'cascade' | 'shrink'>('cascade');
-	let textareaEl: HTMLTextAreaElement | undefined = $state();
-
 	const minPlayers = 4;
 	const maxPlayers = 64;
 	let roundsTouched = $state(false);
 
 	const computedPlayerCount = $derived(playerNames.split('\n').filter((n) => n.trim()).length);
 	const leftoverCount = $derived(computedPlayerCount % 4);
-
-	function handlePaste(e: ClipboardEvent) {
-		const pastedText = e.clipboardData?.getData('text') || '';
-		if (!textareaEl || !pastedText) return;
-
-		const needsProcessing = /[,;\t]/.test(pastedText);
-		if (!needsProcessing) return;
-
-		e.preventDefault();
-
-		const names = parsePastedText(pastedText);
-		const formattedNames = names.join('\n');
-
-		const start = textareaEl.selectionStart;
-		const end = textareaEl.selectionEnd;
-		const before = playerNames.substring(0, start);
-		const after = playerNames.substring(end);
-
-		playerNames = before + formattedNames + (after ? '\n' + after : '');
-
-		setTimeout(() => {
-			if (textareaEl)
-				textareaEl.selectionStart = textareaEl.selectionEnd = start + formattedNames.length;
-		}, 0);
-	}
-
-	function handleCsvUpload(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
-
-		csvUploadError = '';
-		const reader = new FileReader();
-		reader.onload = () => {
-			const text = reader.result as string;
-			const result = parseCsvText(text);
-			if (!result.ok) {
-				csvUploadError = m.create_csv_no_spieler1();
-				return;
-			}
-			if (result.lines.length === 0) {
-				csvUploadError = m.create_csv_error();
-				return;
-			}
-			const newNames = result.lines.join('\n');
-			playerNames = playerNames.trim() ? playerNames.trim() + '\n' + newNames : newNames;
-			if (result.hasWvvPoints) {
-				formatType = 'preseed';
-			}
-		};
-		reader.onerror = () => {
-			csvUploadError = m.create_csv_error();
-		};
-		reader.readAsText(file);
-		input.value = '';
-	}
 
 	function removeLastPlayers() {
 		const lines = playerNames.split('\n');
@@ -410,47 +352,13 @@
 
 		<div class="field">
 			<label for="names">{m.create_player_names()}</label>
-			<textarea
-				id="names"
-				name="names"
-				bind:value={playerNames}
-				bind:this={textareaEl}
-				onpaste={handlePaste}
-				rows="10"
-				placeholder={formatType === 'preseed'
-					? m.create_names_placeholder_preseed()
-					: m.create_names_placeholder_random()}></textarea>
-			<p class="hint">{m.create_players_optional_hint()}</p>
-			<p class="hint">
-				{#if formatType === 'preseed'}
-					{m.create_names_seed_order_hint_preseed()}<br />
-					<code>{m.create_player_example()}</code>
-				{:else}
-					{m.create_names_seed_order_hint_random()}
-				{/if}
-			</p>
-			<details class="import-tip">
-				<summary class="import-tip-summary">{m.create_wvv_summary()}</summary>
-				<p class="import-tip-text">
-					{m.create_wvv_tip()}
-				</p>
-				<div class="csv-upload">
-					<label class="btn-small csv-upload-btn" for="csv-upload">
-						{m.create_csv_upload()}
-					</label>
-					<input
-						id="csv-upload"
-						type="file"
-						accept=".csv,.txt"
-						onchange={handleCsvUpload}
-						class="csv-file-input"
-					/>
-				</div>
-				{#if csvUploadError}
-					<p class="info warn">{csvUploadError}</p>
-				{/if}
-			</details>
-			<p class="count">{m.create_names_entered({ count: computedPlayerCount })}</p>
+			<PlayerNameImport
+				bind:names={playerNames}
+				{formatType}
+				textareaName="names"
+				textareaId="names"
+				onHasWvvPoints={() => (formatType = 'preseed')}
+			/>
 			{#if computedPlayerCount === 0}
 				<p class="info">{m.create_add_players_to_see_layout()}</p>
 			{:else if computedPlayerCount > 0 && computedPlayerCount < minPlayers}
@@ -717,86 +625,11 @@
 		color: var(--text-secondary);
 	}
 
-	textarea {
-		padding: var(--spacing-sm);
-		font-size: var(--font-size-base);
-		background-color: var(--bg-input);
-		color: var(--text-input);
-		border: var(--border-thickness) solid var(--border-strong);
-		border-radius: var(--radius-sm);
-		font-family: inherit;
-		min-height: 150px;
-		resize: vertical;
-		font-weight: 500;
-	}
-
-	textarea:focus {
-		outline: none;
-		border-color: var(--border-focus);
-		box-shadow: var(--shadow-focus);
-		transform: scale(1.02);
-	}
-
-	.count {
-		margin: 0;
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
-		font-weight: 600;
-	}
-
 	.info {
 		font-size: var(--font-size-sm);
 		color: var(--text-muted);
 		font-style: italic;
 		margin-top: var(--spacing-xs);
-	}
-
-	.hint {
-		margin: var(--spacing-xs) 0 0 0;
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
-		line-height: 1.5;
-	}
-
-	.hint code {
-		background-color: var(--bg-secondary);
-		padding: 1px 6px;
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
-	}
-
-	.import-tip {
-		margin-top: var(--spacing-xs);
-	}
-
-	.import-tip-summary {
-		font-size: var(--font-size-sm);
-		color: var(--accent-primary);
-		cursor: pointer;
-		font-weight: 500;
-	}
-
-	.import-tip-text {
-		margin: var(--spacing-xs) 0 0 0;
-		padding: var(--spacing-sm);
-		background-color: var(--bg-secondary);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-		line-height: 1.5;
-	}
-
-	.csv-upload {
-		margin-top: var(--spacing-sm);
-	}
-
-	.csv-upload-btn {
-		display: inline-block;
-		cursor: pointer;
-	}
-
-	.csv-file-input {
-		display: none;
 	}
 
 	.field-hint {

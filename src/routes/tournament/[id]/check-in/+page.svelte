@@ -12,7 +12,6 @@
 
 	const query = $derived(getCheckInData({ tournamentId: data.tournamentId }));
 	let search = $state('');
-	let sortAlpha = $state(false);
 	let qrPlayer = $state<{ id: number; name: string; token: string } | null>(null);
 	let copied = $state(false);
 	let showClose = $state(false);
@@ -41,17 +40,12 @@
 		if (!page) return [];
 		const q = search.trim().toLowerCase();
 		let list = page.players.filter((p) => !q || p.name.toLowerCase().includes(q));
-		if (!sortAlpha) {
-			list = [...list].sort((a, b) => {
-				const ac = a.checkedInAt ? 1 : 0;
-				const bc = b.checkedInAt ? 1 : 0;
-				if (ac !== bc) return ac - bc;
-				return a.name.localeCompare(b.name);
-			});
-		} else {
-			list = [...list].sort((a, b) => a.name.localeCompare(b.name));
-		}
-		return list;
+		return [...list].sort((a, b) => {
+			const ac = a.checkedInAt ? 1 : 0;
+			const bc = b.checkedInAt ? 1 : 0;
+			if (ac !== bc) return ac - bc;
+			return a.name.localeCompare(b.name);
+		});
 	});
 
 	const unchecked = $derived(page?.players.filter((p) => !p.checkedInAt) ?? []);
@@ -124,9 +118,6 @@
 			bind:value={search}
 			data-testid="checkin-search"
 		/>
-		<button type="button" class="btn-secondary" onclick={() => (sortAlpha = !sortAlpha)}>
-			{sortAlpha ? m.checkin_sort_status() : m.checkin_sort_alpha()}
-		</button>
 		<a
 			class="btn-secondary"
 			href={localizeHref(
@@ -318,6 +309,14 @@
 		text-align: left;
 		padding: var(--spacing-sm) 0;
 		cursor: pointer;
+	}
+
+	.list li.checked .name {
+		color: var(--text-muted);
+	}
+
+	.list li.checked .row {
+		color: var(--text-muted);
 	}
 
 	.mark {

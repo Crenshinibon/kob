@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as msg from '$lib/paraglide/messages';
+	import { page as appPage } from '$app/state';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import ScoreEntry from '$lib/components/ScoreEntry.svelte';
 	import { formatDiff, formatPoints } from '$lib/i18n/format';
@@ -134,6 +135,7 @@
 	}
 
 	const scoringSchema = $derived(createScoreSchema(21, 2));
+	const hasSession = $derived(!!appPage.data.user);
 </script>
 
 <svelte:document onvisibilitychange={onVisibilityChange} />
@@ -152,7 +154,9 @@
 				</p>
 			{/if}
 		</div>
-		<LanguageSwitcher />
+		{#if !hasSession}
+			<LanguageSwitcher />
+		{/if}
 	</header>
 
 	{#if page.tournament.checkInOpen && state !== 'not_started'}
@@ -545,11 +549,28 @@
 		border: 2px solid var(--border-default);
 		border-radius: var(--radius-md);
 		padding: var(--spacing-md);
-		margin-bottom: var(--spacing-md);
+		margin-bottom: var(--spacing-lg);
 	}
 
 	.now {
 		border-color: var(--accent-primary);
+	}
+
+	.hero h2,
+	.hero h3,
+	.placement h2,
+	.record h2,
+	.history h2,
+	.court-standings h3 {
+		margin: 0 0 var(--spacing-md);
+		padding-bottom: var(--spacing-xs);
+		border-bottom: 2px solid var(--accent-primary);
+	}
+
+	.hero h3,
+	.court-standings h3 {
+		margin-top: var(--spacing-lg);
+		border-bottom-color: var(--border-strong);
 	}
 
 	.kicker {
@@ -570,9 +591,11 @@
 	}
 
 	.upcoming {
-		border-top: 1px solid var(--border-default);
-		padding-top: var(--spacing-sm);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		padding: var(--spacing-sm);
 		margin-top: var(--spacing-sm);
+		background: var(--bg-secondary);
 	}
 
 	.court-standings li.you {
