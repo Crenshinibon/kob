@@ -137,7 +137,7 @@ const keys: Record<string, { en: string; de: string; fr: string; es: string }> =
 	manage_seed_points: { en: 'Seed points', de: 'Setzpunkte', fr: 'Points de tête de série', es: 'Puntos de semilla' },
 	manage_order: { en: 'Order', de: 'Reihenfolge', fr: 'Ordre', es: 'Orden' },
 	manage_regenerate_link: { en: 'Regenerate player link', de: 'Spieler-Link neu erzeugen', fr: 'Régénérer le lien joueur', es: 'Regenerar enlace del jugador' },
-	manage_regenerate_short: { en: 'Link', de: 'Link', fr: 'Lien', es: 'Enlace' },
+	manage_regenerate_short: { en: 'New QR', de: 'Neuer QR', fr: 'Nouveau QR', es: 'Nuevo QR' },
 	manage_badge_replacement_for: { en: 'replacement for {name}', de: 'Ersatz für {name}', fr: 'remplaçant de {name}', es: 'sustituto de {name}' },
 	manage_badge_eliminated: { en: 'eliminated', de: 'ausgeschieden', fr: 'éliminé', es: 'eliminado' },
 	manage_refill: { en: 'Refill', de: 'Auffüllen', fr: 'Répartir', es: 'Rellenar' },

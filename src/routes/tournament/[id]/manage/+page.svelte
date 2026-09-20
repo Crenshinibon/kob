@@ -966,14 +966,14 @@
 		justify-content: space-between;
 		align-items: stretch;
 		flex-shrink: 0;
-		width: 26px;
+		width: 44px;
 		align-self: stretch;
 	}
 
 	.order-btn {
-		width: 26px;
-		height: 22px;
-		min-height: 0;
+		width: 44px;
+		height: 44px;
+		min-height: 44px;
 		padding: 0;
 		display: inline-flex;
 		align-items: center;
@@ -1005,8 +1005,8 @@
 	}
 
 	.order-icon {
-		width: 12px;
-		height: 12px;
+		width: 18px;
+		height: 18px;
 		fill: currentColor;
 	}
 

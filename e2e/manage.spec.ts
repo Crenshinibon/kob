@@ -333,16 +333,21 @@ test.describe('Manage page (096)', () => {
 		await expect(orderBtns.nth(3)).toHaveAttribute('data-testid', `order-bottom-${p1Id}`);
 		await expect(firstRow.locator('.player-meta')).toHaveCount(0);
 		await expect(firstRow.locator('.player-name')).toBeVisible();
+		await expect(firstRow.locator('.row-actions')).toContainText('New QR');
+		await expect(firstRow.locator('.row-actions')).not.toContainText(/^Link$/);
 
 		const cardBox = await firstRow.boundingBox();
 		const nameBox = await firstRow.locator('.player-name').boundingBox();
 		const renameBox = await page.getByTestId(`rename-${p1Id}`).boundingBox();
 		const topBox = await page.getByTestId(`order-top-${p1Id}`).boundingBox();
+		const upBox = await page.getByTestId(`order-up-${p1Id}`).boundingBox();
 		const bottomBox = await page.getByTestId(`order-bottom-${p1Id}`).boundingBox();
-		expect(cardBox && nameBox && renameBox && topBox && bottomBox).toBeTruthy();
+		expect(cardBox && nameBox && renameBox && topBox && upBox && bottomBox).toBeTruthy();
 		expect(Math.abs(nameBox!.y - renameBox!.y)).toBeLessThan(16);
 		expect(renameBox!.x).toBeGreaterThan(nameBox!.x);
 		expect(renameBox!.height).toBeLessThan(36);
+		expect(upBox!.width).toBeGreaterThanOrEqual(40);
+		expect(upBox!.height).toBeGreaterThanOrEqual(40);
 		expect(topBox!.x + topBox!.width).toBeGreaterThan(cardBox!.x + cardBox!.width - 8);
 		expect(topBox!.y).toBeLessThan(cardBox!.y + 6);
 		expect(bottomBox!.y + bottomBox!.height).toBeGreaterThan(cardBox!.y + cardBox!.height - 6);

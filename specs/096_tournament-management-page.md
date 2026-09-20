@@ -79,21 +79,21 @@ Roster list. **Default sort: `seedRank` then id** (list position _is_ the order)
 │ [paste / CSV …] [Add players]                    │
 │ [Remove all not checked in (2)]                  │
 │                                                  │
-│ Anna Müller          [Rename][Remove][Link]    ⤒ │
+│ Anna Müller          [Rename][Remove][New QR]  ⤒ │
 │                                                ▲ │
 │                                                ▼ │
 │                                                ⤓ │
 │ ─────────────────────────────────────────────── │
-│ Ben Otto             [Rename][Remove][Link]    ⤒ │
+│ Ben Otto             [Rename][Remove][New QR]  ⤒ │
 │                                                ▲ │
 │                                                ▼ │
 │                                                ⤓ │
 └──────────────────────────────────────────────────┘
 ```
 
-Each roster row is one line: **~65% name** (wraps if long), **~35% compact Rename / Remove / Link**. No second-line meta (no court · check-in `○` / `·` under the name). Order buttons sit on the **right edge** of the card, DOM and visual order **top → up → down → bottom**: top at the top-right corner, up/down in between, bottom at the bottom-right corner. Reorder uses Svelte `animate:flip` with an optimistic `pendingOrderIds` so the cards slide immediately.
+Each roster row is one line: **~65% name** (wraps if long), **~35% compact Rename / Remove / New QR**. No second-line meta (no court · check-in `○` / `·` under the name). Order buttons sit on the **right edge** of the card, DOM and visual order **top → up → down → bottom**: top at the top-right corner, up/down in between, bottom at the bottom-right corner. The four order buttons are **44×44** tap targets (cards grow with them) so they stay hittable on a phone. Reorder uses Svelte `animate:flip` with an optimistic `pendingOrderIds` so the cards slide immediately.
 
-No order-number field and no “Order N” label — position in the sorted list is the seed order. First-row up/to-top and last-row down/to-bottom are disabled. Visible regenerate label is short (`manage_regenerate_short` = “Link”); full `manage_regenerate_link` stays the `aria-label`.
+No order-number field and no “Order N” label — position in the sorted list is the seed order. First-row up/to-top and last-row down/to-bottom are disabled. Visible regenerate label is **New QR** (`manage_regenerate_short`) so organizers do not tap it when they only want to give a player their current link. Full `manage_regenerate_link` stays the `aria-label`.
 
 Badges (status, check-in, court) are **not** shown on the one-line roster row as shipped — that second line was the stray `·` / `○` under the name. Court and check-in state stay on the Courts tab and Check-in page (097).
 
