@@ -392,13 +392,6 @@
 											)}
 									/>
 								{/if}
-								<button
-									type="button"
-									class="btn-compact btn-secondary"
-									aria-label={m.manage_regenerate_link()}
-									onclick={() => run(() => regeneratePlayerToken({ playerId: p.id }))}
-									>{m.manage_regenerate_short()}</button
-								>
 								{#if !p.retiredAt && (page.tournament.status === 'setup' || (!page.lock.roundHasScores && page.tournament.currentRound === 1))}
 									<button
 										type="button"
@@ -411,6 +404,13 @@
 										}}>{m.manage_remove_player()}</button
 									>
 								{/if}
+								<button
+									type="button"
+									class="btn-compact btn-secondary"
+									aria-label={m.manage_regenerate_link()}
+									onclick={() => run(() => regeneratePlayerToken({ playerId: p.id }))}
+									>{m.manage_regenerate_short()}</button
+								>
 							</div>
 						</div>
 						{#if canReorder}
