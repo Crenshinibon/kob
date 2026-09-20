@@ -10,7 +10,11 @@
 	import type { OrientedMatchView } from '$lib/player-page-logic';
 
 	let { data: routeData } = $props<{
-		data: { token: string; playerPageData: PlayerPageData };
+		data: {
+			token: string;
+			playerPageData: PlayerPageData;
+			user?: { id: string } | null;
+		};
 	}>();
 
 	const playerQuery = $derived(getPlayerData({ token: routeData.token }));
@@ -135,7 +139,7 @@
 	}
 
 	const scoringSchema = $derived(createScoreSchema(21, 2));
-	const hasSession = $derived(!!appPage.data.user);
+	const hasSession = $derived(!!(routeData.user ?? appPage.data.user));
 </script>
 
 <svelte:document onvisibilitychange={onVisibilityChange} />
@@ -155,7 +159,9 @@
 			{/if}
 		</div>
 		{#if !hasSession}
-			<LanguageSwitcher />
+			<div data-testid="player-page-lang">
+				<LanguageSwitcher />
+			</div>
 		{/if}
 	</header>
 

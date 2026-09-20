@@ -50,12 +50,12 @@
 
 <div class="app-container">
 	{#if data?.user}
-		<div class="v1-banner">
+		<div class="v1-banner no-print">
 			{m.v1_banner()}
 		</div>
 	{/if}
 
-	<nav class="top-nav">
+	<nav class="top-nav no-print">
 		<div class="nav-links">
 			<a href={localizeHref('/docs')} data-sveltekit-preload>{m.nav_docs()}</a>
 			<a href={localizeHref('/faq')} data-sveltekit-preload>{m.nav_faq()}</a>
@@ -71,7 +71,7 @@
 		{@render children()}
 	</main>
 
-	<footer class="site-footer">
+	<footer class="site-footer no-print">
 		<a
 			href="https://buymeacoffee.com/accomade"
 			target="_blank"
@@ -195,10 +195,7 @@
 	}
 
 	@media print {
-		.v1-banner,
-		.top-nav,
-		.site-footer,
-		:global(.cookie-notice) {
+		:global(.no-print) {
 			display: none !important;
 		}
 

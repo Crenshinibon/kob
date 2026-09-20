@@ -202,7 +202,8 @@ test.describe('Manage page (096)', () => {
 		names.push(name);
 		const id = await createSetupTournament(page, name, 0);
 		await page.goto(`/tournament/${id}/manage`);
-		await expect(page.getByTestId('add-many-panel')).toBeVisible();
+		await expect(page.getByTestId('manage-page')).toBeVisible();
+		await expect(page.getByTestId('add-many-panel')).toBeVisible({ timeout: 15000 });
 		await expect(page.getByTestId('add-one-panel')).toBeVisible();
 		await expect(page.getByTestId('search-panel')).toBeVisible();
 		await page.getByTestId('bulk-names').fill('Ada, Beau, Cara, Dee, Eve, Fay, Gus, Hal');
@@ -221,8 +222,11 @@ test.describe('Manage page (096)', () => {
 		const id = await createSetupTournament(page, name, 16, 2);
 		await page.goto(`/tournament/${id}/manage`);
 		await page.getByTestId('tab-rules').click();
-		await expect(page.getByTestId('num-rounds')).toBeVisible();
+		await expect(page.getByTestId('rules-tab')).toBeVisible();
+		await expect(page.getByTestId('num-rounds')).toBeVisible({ timeout: 15000 });
 		await page.getByTestId('num-rounds').fill('3');
+		await page.getByTestId('num-rounds').blur();
+		await expect(page.getByTestId('physical-courts')).toBeVisible({ timeout: 15000 });
 		await page.getByTestId('physical-courts').fill('2');
 		await expect(page.getByTestId('num-rounds')).toHaveValue('3', { timeout: 10000 });
 		await expect(page.getByTestId('physical-courts')).toHaveValue('2');

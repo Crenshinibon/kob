@@ -70,7 +70,7 @@ test.describe('Player page (098)', () => {
 
 		await page.goto(links[0].url);
 		await expect(page.getByTestId('player-now')).toBeVisible({ timeout: 15000 });
-		await expect(page.locator('.lang-switcher')).toHaveCount(1);
+		await expect(page.getByTestId('player-page-lang')).toHaveCount(0);
 	});
 
 	test('write-once save appears in history and is read-only for the player', async ({

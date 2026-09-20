@@ -326,3 +326,21 @@ button:disabled {
 ::-webkit-scrollbar-thumb:hover {
 	background: var(--text-muted);
 }
+
+@media print {
+	.no-print,
+	.cookie-notice {
+		display: none !important;
+	}
+
+	.site-footer {
+		position: static !important;
+	}
+
+	html,
+	body,
+	.app-container {
+		background: #fff !important;
+		color: #000 !important;
+	}
+}
