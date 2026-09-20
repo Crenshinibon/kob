@@ -7,6 +7,7 @@ import {
 	proposedMove,
 	refillToCanonical,
 	movePlayerInOrder,
+	orderPlayersByIds,
 	renumberSeedOrder,
 	sortCourts,
 	sortPlayersBySeed,
@@ -214,5 +215,18 @@ describe('sortPlayersBySeed / movePlayerInOrder', () => {
 		expect(movePlayerInOrder([1, 2, 3], 1, 'top')).toEqual([1, 2, 3]);
 		expect(movePlayerInOrder([1, 2, 3], 3, 'down')).toEqual([1, 2, 3]);
 		expect(movePlayerInOrder([1, 2, 3], 3, 'bottom')).toEqual([1, 2, 3]);
+	});
+
+	it('orders a filtered roster by the pending id list', () => {
+		expect(
+			orderPlayersByIds(
+				[
+					{ id: 2, name: 'B' },
+					{ id: 1, name: 'A' },
+					{ id: 9, name: 'retired' }
+				],
+				[1, 2]
+			).map((p) => p.id)
+		).toEqual([1, 2, 9]);
 	});
 });

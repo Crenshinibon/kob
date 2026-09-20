@@ -324,6 +324,33 @@ test.describe('Manage page (096)', () => {
 		const p1Id =
 			(await rows.nth(0).getAttribute('data-testid'))?.replace('manage-player-', '') ?? '';
 		expect(p1Id).toBeTruthy();
+		const firstRow = page.getByTestId(`manage-player-${p1Id}`);
+		const orderBtns = firstRow.locator('.order-btn');
+		await expect(orderBtns).toHaveCount(4);
+		await expect(orderBtns.nth(0)).toHaveAttribute('data-testid', `order-top-${p1Id}`);
+		await expect(orderBtns.nth(1)).toHaveAttribute('data-testid', `order-up-${p1Id}`);
+		await expect(orderBtns.nth(2)).toHaveAttribute('data-testid', `order-down-${p1Id}`);
+		await expect(orderBtns.nth(3)).toHaveAttribute('data-testid', `order-bottom-${p1Id}`);
+		await expect(firstRow.locator('.player-meta')).toHaveCount(0);
+		await expect(firstRow.locator('.player-name')).toBeVisible();
+
+		const cardBox = await firstRow.boundingBox();
+		const nameBox = await firstRow.locator('.player-name').boundingBox();
+		const renameBox = await page.getByTestId(`rename-${p1Id}`).boundingBox();
+		const topBox = await page.getByTestId(`order-top-${p1Id}`).boundingBox();
+		const bottomBox = await page.getByTestId(`order-bottom-${p1Id}`).boundingBox();
+		expect(cardBox && nameBox && renameBox && topBox && bottomBox).toBeTruthy();
+		expect(Math.abs(nameBox!.y - renameBox!.y)).toBeLessThan(16);
+		expect(renameBox!.x).toBeGreaterThan(nameBox!.x);
+		expect(renameBox!.height).toBeLessThan(36);
+		expect(topBox!.x + topBox!.width).toBeGreaterThan(cardBox!.x + cardBox!.width - 8);
+		expect(topBox!.y).toBeLessThan(cardBox!.y + 6);
+		expect(bottomBox!.y + bottomBox!.height).toBeGreaterThan(cardBox!.y + cardBox!.height - 6);
+		const nameSize = await firstRow
+			.locator('.player-name')
+			.evaluate((el) => getComputedStyle(el).fontSize);
+		expect(parseFloat(nameSize)).toBeGreaterThanOrEqual(18);
+
 		await expect(page.getByTestId(`order-up-${p1Id}`)).toBeDisabled();
 		await expect(page.getByTestId(`order-top-${p1Id}`)).toBeDisabled();
 		await page.getByTestId(`order-down-${p1Id}`).click();

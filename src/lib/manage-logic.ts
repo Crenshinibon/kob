@@ -220,3 +220,23 @@ export function movePlayerInOrder(
 	ids.splice(to, 0, movedId);
 	return ids;
 }
+
+export function orderPlayersByIds<T extends { id: number }>(
+	players: readonly T[],
+	orderedIds: readonly number[]
+): T[] {
+	const byId = new Map(players.map((p) => [p.id, p]));
+	const seen = new Set<number>();
+	const result: T[] = [];
+	for (const id of orderedIds) {
+		const player = byId.get(id);
+		if (player) {
+			result.push(player);
+			seen.add(id);
+		}
+	}
+	for (const player of players) {
+		if (!seen.has(player.id)) result.push(player);
+	}
+	return result;
+}

@@ -7,10 +7,14 @@
 	import {
 		isValidPlayerMove,
 		movePlayerInOrder,
+		orderPlayersByIds,
 		proposedMove,
 		sortCourts,
-		sortPlayersBySeed
+		sortPlayersBySeed,
+		type SeedOrderMove
 	} from '$lib/manage-logic';
+	import { flip } from 'svelte/animate';
+	import { quintOut } from 'svelte/easing';
 	import { getManageData } from './manage-data.remote';
 	import {
 		addPlayer,
@@ -32,7 +36,6 @@
 		updateTournamentSettings
 	} from './manage-actions.remote';
 	import { deleteTournamentForm } from '../tournament-actions.remote';
-	import type { SeedOrderMove } from '$lib/manage-logic';
 
 	let { data } = $props<{
 		data: { tournamentId: number; tournamentName: string };
@@ -48,6 +51,8 @@
 	let renameValue = $state('');
 	let errorMsg = $state('');
 	let draggingId = $state<number | null>(null);
+	let pendingOrderIds = $state<number[] | null>(null);
+	let orderGen = 0;
 
 	$effect(() => {
 		if (!browser) return;
@@ -67,13 +72,17 @@
 
 	const page = $derived(query.current);
 	const orderedActiveIds = $derived(
-		sortPlayersBySeed((page?.players ?? []).filter((p) => !p.retiredAt)).map((p) => p.id)
+		pendingOrderIds ??
+			sortPlayersBySeed((page?.players ?? []).filter((p) => !p.retiredAt)).map((p) => p.id)
 	);
 	const players = $derived(
-		sortPlayersBySeed(
-			(page?.players ?? []).filter(
-				(p) => !search || p.name.toLowerCase().includes(search.toLowerCase())
-			)
+		orderPlayersByIds(
+			sortPlayersBySeed(
+				(page?.players ?? []).filter(
+					(p) => !search || p.name.toLowerCase().includes(search.toLowerCase())
+				)
+			),
+			orderedActiveIds
 		)
 	);
 	const nameById = $derived(new Map((page?.players ?? []).map((p) => [p.id, p.name])));
@@ -149,10 +158,27 @@
 		return m.manage_order_bottom();
 	}
 
+	function rosterFlipDuration(distance: number): number {
+		if (browser && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 0;
+		return Math.min(480, Math.max(240, distance * 0.55));
+	}
+
 	async function reorderPlayer(playerId: number, move: SeedOrderMove) {
 		const next = movePlayerInOrder(orderedActiveIds, playerId, move);
 		if (next.join(',') === orderedActiveIds.join(',')) return;
-		await run(() => updatePlayerOrder({ tournamentId: data.tournamentId, playerIds: next }));
+		pendingOrderIds = next;
+		const gen = ++orderGen;
+		errorMsg = '';
+		try {
+			await updatePlayerOrder({ tournamentId: data.tournamentId, playerIds: next });
+			await query.refresh();
+		} catch (err) {
+			if (gen === orderGen) {
+				errorMsg = err instanceof Error ? err.message : String(err);
+			}
+		} finally {
+			if (gen === orderGen) pendingOrderIds = null;
+		}
 	}
 </script>
 
@@ -314,27 +340,26 @@
 						!page.lock.roundHasScores &&
 						!p.retiredAt &&
 						orderIndex >= 0}
-					<li data-testid="manage-player-{p.id}">
+					<li
+						data-testid="manage-player-{p.id}"
+						animate:flip={{ duration: rosterFlipDuration, easing: quintOut }}
+					>
 						<div class="roster-body">
-							<div class="player-heading">
-								<strong>{p.name}</strong>
-								<span class="player-meta">
-									{#if p.courtNumber}Court {p.courtNumber}{/if}
-									{#if page.checkInUsed}
-										{p.courtNumber ? ' · ' : ''}{p.checkedInAt ? '✓' : '○'}{/if}
-									{#if p.status !== 'active'}
-										· {p.status}{/if}
-								</span>
-							</div>
+							{#if renameId === p.id}
+								<input
+									class="player-name-input"
+									bind:value={renameValue}
+									data-testid="rename-input-{p.id}"
+									aria-label={m.manage_rename()}
+								/>
+							{:else}
+								<strong class="player-name">{p.name}</strong>
+							{/if}
 							<div class="row-actions">
 								{#if renameId === p.id}
-									<label>
-										{m.manage_rename()}
-										<input bind:value={renameValue} data-testid="rename-input-{p.id}" />
-									</label>
 									<button
 										type="button"
-										class="btn-primary"
+										class="btn-compact btn-primary"
 										onclick={() =>
 											run(() => renamePlayer({ playerId: p.id, name: renameValue })).then(
 												() => (renameId = null)
@@ -343,7 +368,7 @@
 								{:else}
 									<button
 										type="button"
-										class="btn-secondary"
+										class="btn-compact btn-secondary"
 										data-testid="rename-{p.id}"
 										onclick={() => {
 											renameId = p.id;
@@ -352,32 +377,32 @@
 									>
 								{/if}
 								{#if page.tournament.formatType === 'preseed' && !page.lock.roundHasScores}
-									<label>
-										{m.manage_seed_points()}
-										<input
-											type="number"
-											value={p.seedPoints ?? ''}
-											data-testid="seed-{p.id}"
-											onchange={(e) =>
-												run(() =>
-													updatePlayerSeed({
-														playerId: p.id,
-														seedPoints: Number((e.currentTarget as HTMLInputElement).value)
-													})
-												)}
-										/>
-									</label>
+									<input
+										class="seed-compact"
+										type="number"
+										value={p.seedPoints ?? ''}
+										data-testid="seed-{p.id}"
+										aria-label={m.manage_seed_points()}
+										onchange={(e) =>
+											run(() =>
+												updatePlayerSeed({
+													playerId: p.id,
+													seedPoints: Number((e.currentTarget as HTMLInputElement).value)
+												})
+											)}
+									/>
 								{/if}
 								<button
 									type="button"
-									class="btn-secondary"
+									class="btn-compact btn-secondary"
+									aria-label={m.manage_regenerate_link()}
 									onclick={() => run(() => regeneratePlayerToken({ playerId: p.id }))}
-									>{m.manage_regenerate_link()}</button
+									>{m.manage_regenerate_short()}</button
 								>
 								{#if !p.retiredAt && (page.tournament.status === 'setup' || (!page.lock.roundHasScores && page.tournament.currentRound === 1))}
 									<button
 										type="button"
-										class="btn-danger"
+										class="btn-compact btn-danger"
 										data-testid="remove-{p.id}"
 										onclick={() => {
 											if (confirm(m.manage_remove_confirm({ name: p.name }))) {
@@ -390,6 +415,19 @@
 						</div>
 						{#if canReorder}
 							<div class="order-controls" role="group" aria-label={m.manage_order()}>
+								<button
+									type="button"
+									class="order-btn"
+									data-testid="order-top-{p.id}"
+									aria-label={orderLabel('top')}
+									disabled={orderIndex <= 0}
+									onclick={() => reorderPlayer(p.id, 'top')}
+								>
+									<svg class="order-icon" viewBox="0 0 16 16" aria-hidden="true">
+										<rect x="2" y="1.5" width="12" height="1.8" />
+										<path d="M8 5 14 13H2Z" />
+									</svg>
+								</button>
 								<button
 									type="button"
 									class="order-btn"
@@ -413,19 +451,6 @@
 									<svg class="order-icon" viewBox="0 0 16 16" aria-hidden="true"
 										><path d="M8 13.5 14 5.5H2Z" /></svg
 									>
-								</button>
-								<button
-									type="button"
-									class="order-btn"
-									data-testid="order-top-{p.id}"
-									aria-label={orderLabel('top')}
-									disabled={orderIndex <= 0}
-									onclick={() => reorderPlayer(p.id, 'top')}
-								>
-									<svg class="order-icon" viewBox="0 0 16 16" aria-hidden="true">
-										<rect x="2" y="1.5" width="12" height="1.8" />
-										<path d="M8 5 14 13H2Z" />
-									</svg>
 								</button>
 								<button
 									type="button"
@@ -851,47 +876,122 @@
 		margin: 0;
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-md);
+		gap: var(--spacing-sm);
 	}
 
 	.roster li {
 		border: 1px solid var(--border-default);
 		border-radius: var(--radius-md);
-		padding: var(--spacing-md);
+		padding: 0;
 		display: flex;
 		flex-direction: row;
 		align-items: stretch;
-		gap: var(--spacing-sm);
+		overflow: hidden;
+		background: var(--bg-card);
 	}
 
 	.roster-body {
 		flex: 1;
 		min-width: 0;
 		display: flex;
-		flex-direction: column;
+		flex-direction: row;
+		align-items: center;
 		gap: var(--spacing-sm);
+		padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) var(--spacing-md);
+	}
+
+	.player-name,
+	.player-name-input {
+		flex: 65 1 0;
+		min-width: 0;
+		font-size: var(--font-size-xl);
+		font-weight: 700;
+		line-height: 1.2;
+		overflow-wrap: anywhere;
+		color: var(--text-primary);
+	}
+
+	.player-name-input {
+		min-height: 32px;
+		padding: 0.2rem 0.4rem;
+		box-sizing: border-box;
+	}
+
+	.row-actions {
+		flex: 35 1 0;
+		min-width: 0;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		align-items: center;
+		gap: 4px;
+	}
+
+	.row-actions .btn-compact {
+		min-height: 0;
+		height: auto;
+		padding: 0.15rem 0.4rem;
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		line-height: 1.2;
+		background: var(--bg-secondary);
+		color: var(--text-primary);
+		border: 1px solid var(--border-default);
+	}
+
+	.row-actions .btn-compact.btn-danger {
+		color: var(--accent-error);
+		border-color: var(--accent-error);
+	}
+
+	.row-actions .btn-compact.btn-primary {
+		background: var(--accent-primary);
+		color: #111;
+		border-color: var(--accent-primary);
+	}
+
+	.seed-compact {
+		width: 3.25rem;
+		min-width: 3.25rem;
+		min-height: 28px;
+		padding: 0.15rem 0.25rem;
+		font-size: var(--font-size-xs);
+		box-sizing: border-box;
 	}
 
 	.order-controls {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		justify-content: space-between;
+		align-items: stretch;
 		flex-shrink: 0;
+		width: 26px;
+		align-self: stretch;
 	}
 
 	.order-btn {
-		width: 44px;
-		height: 44px;
-		min-height: 44px;
+		width: 26px;
+		height: 22px;
+		min-height: 0;
 		padding: 0;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		background: var(--bg-secondary);
 		color: var(--text-primary);
-		border: 2px solid var(--border-default);
-		border-radius: var(--radius-sm);
+		border: 1px solid var(--border-default);
+		border-right: none;
+		border-radius: 0;
 		cursor: pointer;
+	}
+
+	.order-btn:first-child {
+		border-top: none;
+	}
+
+	.order-btn:last-child {
+		border-bottom: none;
 	}
 
 	.order-btn:hover:not(:disabled) {
@@ -905,15 +1005,9 @@
 	}
 
 	.order-icon {
-		width: 18px;
-		height: 18px;
+		width: 12px;
+		height: 12px;
 		fill: currentColor;
-	}
-
-	.player-heading {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
 	}
 
 	.page-nav {
@@ -941,12 +1035,6 @@
 		text-decoration: none;
 	}
 
-	.player-meta {
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-	}
-
-	.row-actions,
 	.court-actions {
 		display: grid;
 		grid-template-columns: 1fr;
@@ -954,11 +1042,6 @@
 	}
 
 	@media (min-width: 700px) {
-		.row-actions {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			align-items: end;
-		}
-
 		.court-actions {
 			grid-template-columns: repeat(auto-fit, minmax(160px, auto));
 		}

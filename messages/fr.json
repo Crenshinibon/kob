@@ -643,6 +643,7 @@
 	"manage_order_top": "Tout en haut",
 	"manage_order_bottom": "Tout en bas",
 	"manage_regenerate_link": "Régénérer le lien joueur",
+	"manage_regenerate_short": "Lien",
 	"manage_badge_replacement_for": "remplaçant de {name}",
 	"manage_badge_eliminated": "éliminé",
 	"manage_refill": "Répartir",
