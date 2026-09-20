@@ -6,8 +6,10 @@ import {
 	minRoundCount,
 	proposedMove,
 	refillToCanonical,
+	movePlayerInOrder,
 	renumberSeedOrder,
 	sortCourts,
+	sortPlayersBySeed,
 	validateManualAssignment
 } from './manage-logic';
 import { calculateCourtSizes } from './tournament-logic';
@@ -186,5 +188,31 @@ describe('renumberSeedOrder', () => {
 		expect([...ranks.entries()].sort((a, b) => a[1] - b[1]).map(([id]) => id)).toEqual([
 			40, 10, 20, 30
 		]);
+	});
+});
+
+describe('sortPlayersBySeed / movePlayerInOrder', () => {
+	it('sorts by seedRank then id', () => {
+		expect(
+			sortPlayersBySeed([
+				{ id: 3, seedRank: 31 },
+				{ id: 1, seedRank: 1 },
+				{ id: 2, seedRank: 32 }
+			]).map((p) => p.id)
+		).toEqual([1, 3, 2]);
+	});
+
+	it('moves a player up, down, top, and bottom', () => {
+		expect(movePlayerInOrder([1, 2, 3, 4], 3, 'up')).toEqual([1, 3, 2, 4]);
+		expect(movePlayerInOrder([1, 2, 3, 4], 2, 'down')).toEqual([1, 3, 2, 4]);
+		expect(movePlayerInOrder([1, 2, 3, 4], 4, 'top')).toEqual([4, 1, 2, 3]);
+		expect(movePlayerInOrder([1, 2, 3, 4], 1, 'bottom')).toEqual([2, 3, 4, 1]);
+	});
+
+	it('is a no-op at the ends', () => {
+		expect(movePlayerInOrder([1, 2, 3], 1, 'up')).toEqual([1, 2, 3]);
+		expect(movePlayerInOrder([1, 2, 3], 1, 'top')).toEqual([1, 2, 3]);
+		expect(movePlayerInOrder([1, 2, 3], 3, 'down')).toEqual([1, 2, 3]);
+		expect(movePlayerInOrder([1, 2, 3], 3, 'bottom')).toEqual([1, 2, 3]);
 	});
 });

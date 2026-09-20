@@ -446,18 +446,22 @@
 				{:else}
 					<p class="status-completed">{m.completed()}</p>
 				{/if}
-				<a
-					href={localizeHref(resolve('/tournament/[id]/manage', { id: String(tournament.id) }))}
-					class="standings-link">{m.manage_title()}</a
-				>
-				<a
-					href={localizeHref(resolve('/tournament/[id]/check-in', { id: String(tournament.id) }))}
-					class="standings-link">{m.checkin_title()}</a
-				>
-				<a
-					href={localizeHref(resolve('/tournament/[id]/standings', { id: String(tournament.id) }))}
-					class="standings-link">{m.view_standings()}</a
-				>
+				<nav class="ops-nav" data-testid="ops-nav" aria-label={m.ops_nav_label()}>
+					<a
+						href={localizeHref(resolve('/tournament/[id]/manage', { id: String(tournament.id) }))}
+						class="ops-nav-link">{m.manage_title()}</a
+					>
+					<a
+						href={localizeHref(resolve('/tournament/[id]/check-in', { id: String(tournament.id) }))}
+						class="ops-nav-link">{m.checkin_title()}</a
+					>
+					<a
+						href={localizeHref(
+							resolve('/tournament/[id]/standings', { id: String(tournament.id) })
+						)}
+						class="ops-nav-link">{m.view_standings()}</a
+					>
+				</nav>
 			</header>
 
 			{#if isSetup}
@@ -1842,14 +1846,31 @@
 		margin-top: var(--spacing-sm);
 	}
 
-	.standings-link {
+	.ops-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-sm);
+		margin: var(--spacing-sm) 0 var(--spacing-md);
+	}
+
+	.ops-nav-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--spacing-xs) var(--spacing-md);
+		min-height: 44px;
+		border: 2px solid var(--border-default);
+		border-radius: var(--radius-sm);
 		font-size: var(--font-size-sm);
 		color: var(--accent-info);
 		text-decoration: none;
+		background: var(--bg-secondary);
 	}
 
-	.standings-link:hover {
-		text-decoration: underline;
+	.ops-nav-link:hover {
+		border-color: var(--accent-info);
+		color: var(--text-primary);
+		text-decoration: none;
 	}
 
 	.status-completed {

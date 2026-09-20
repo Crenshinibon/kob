@@ -4,7 +4,13 @@
 	import { localizeHref } from '$lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
 	import PlayerNameImport from '$lib/components/PlayerNameImport.svelte';
-	import { isValidPlayerMove, proposedMove, sortCourts } from '$lib/manage-logic';
+	import {
+		isValidPlayerMove,
+		movePlayerInOrder,
+		proposedMove,
+		sortCourts,
+		sortPlayersBySeed
+	} from '$lib/manage-logic';
 	import { getManageData } from './manage-data.remote';
 	import {
 		addPlayer,
@@ -26,6 +32,7 @@
 		updateTournamentSettings
 	} from './manage-actions.remote';
 	import { deleteTournamentForm } from '../tournament-actions.remote';
+	import type { SeedOrderMove } from '$lib/manage-logic';
 
 	let { data } = $props<{
 		data: { tournamentId: number; tournamentName: string };
@@ -59,9 +66,14 @@
 	}
 
 	const page = $derived(query.current);
+	const orderedActiveIds = $derived(
+		sortPlayersBySeed((page?.players ?? []).filter((p) => !p.retiredAt)).map((p) => p.id)
+	);
 	const players = $derived(
-		(page?.players ?? []).filter(
-			(p) => !search || p.name.toLowerCase().includes(search.toLowerCase())
+		sortPlayersBySeed(
+			(page?.players ?? []).filter(
+				(p) => !search || p.name.toLowerCase().includes(search.toLowerCase())
+			)
 		)
 	);
 	const nameById = $derived(new Map((page?.players ?? []).map((p) => [p.id, p.name])));
@@ -129,6 +141,19 @@
 		if (id == null) return;
 		await movePlayer(id, courtNumber);
 	}
+
+	function orderLabel(move: SeedOrderMove): string {
+		if (move === 'up') return m.manage_order_up();
+		if (move === 'down') return m.manage_order_down();
+		if (move === 'top') return m.manage_order_top();
+		return m.manage_order_bottom();
+	}
+
+	async function reorderPlayer(playerId: number, move: SeedOrderMove) {
+		const next = movePlayerInOrder(orderedActiveIds, playerId, move);
+		if (next.join(',') === orderedActiveIds.join(',')) return;
+		await run(() => updatePlayerOrder({ tournamentId: data.tournamentId, playerIds: next }));
+	}
 </script>
 
 <main data-testid="manage-page">
@@ -152,7 +177,7 @@
 				{/if}
 			</p>
 		{/if}
-		<nav>
+		<nav class="page-nav">
 			<a href={localizeHref(resolve('/tournament/[id]', { id: String(data.tournamentId) }))}
 				>{m.manage_operations_link()}</a
 			>
@@ -283,103 +308,140 @@
 
 			<ul class="roster">
 				{#each players as p (p.id)}
+					{@const orderIndex = orderedActiveIds.indexOf(p.id)}
+					{@const canReorder =
+						page.tournament.formatType === 'random-seed' &&
+						!page.lock.roundHasScores &&
+						!p.retiredAt &&
+						orderIndex >= 0}
 					<li data-testid="manage-player-{p.id}">
-						<div class="player-heading">
-							<strong>{p.name}</strong>
-							<span class="player-meta">
-								{#if p.courtNumber}Court {p.courtNumber}{/if}
-								{#if p.seedRank}
-									· {m.manage_order()} {p.seedRank}{/if}
-								{#if page.checkInUsed}
-									· {p.checkedInAt ? '✓' : '○'}{/if}
-								{#if p.status !== 'active'}
-									· {p.status}{/if}
-							</span>
-						</div>
-						<div class="row-actions">
-							{#if renameId === p.id}
-								<label>
-									{m.manage_rename()}
-									<input bind:value={renameValue} data-testid="rename-input-{p.id}" />
-								</label>
-								<button
-									type="button"
-									class="btn-primary"
-									onclick={() =>
-										run(() => renamePlayer({ playerId: p.id, name: renameValue })).then(
-											() => (renameId = null)
-										)}>{m.manage_rename()}</button
-								>
-							{:else}
+						<div class="roster-body">
+							<div class="player-heading">
+								<strong>{p.name}</strong>
+								<span class="player-meta">
+									{#if p.courtNumber}Court {p.courtNumber}{/if}
+									{#if page.checkInUsed}
+										{p.courtNumber ? ' · ' : ''}{p.checkedInAt ? '✓' : '○'}{/if}
+									{#if p.status !== 'active'}
+										· {p.status}{/if}
+								</span>
+							</div>
+							<div class="row-actions">
+								{#if renameId === p.id}
+									<label>
+										{m.manage_rename()}
+										<input bind:value={renameValue} data-testid="rename-input-{p.id}" />
+									</label>
+									<button
+										type="button"
+										class="btn-primary"
+										onclick={() =>
+											run(() => renamePlayer({ playerId: p.id, name: renameValue })).then(
+												() => (renameId = null)
+											)}>{m.manage_rename()}</button
+									>
+								{:else}
+									<button
+										type="button"
+										class="btn-secondary"
+										data-testid="rename-{p.id}"
+										onclick={() => {
+											renameId = p.id;
+											renameValue = p.name;
+										}}>{m.manage_rename()}</button
+									>
+								{/if}
+								{#if page.tournament.formatType === 'preseed' && !page.lock.roundHasScores}
+									<label>
+										{m.manage_seed_points()}
+										<input
+											type="number"
+											value={p.seedPoints ?? ''}
+											data-testid="seed-{p.id}"
+											onchange={(e) =>
+												run(() =>
+													updatePlayerSeed({
+														playerId: p.id,
+														seedPoints: Number((e.currentTarget as HTMLInputElement).value)
+													})
+												)}
+										/>
+									</label>
+								{/if}
 								<button
 									type="button"
 									class="btn-secondary"
-									data-testid="rename-{p.id}"
-									onclick={() => {
-										renameId = p.id;
-										renameValue = p.name;
-									}}>{m.manage_rename()}</button
+									onclick={() => run(() => regeneratePlayerToken({ playerId: p.id }))}
+									>{m.manage_regenerate_link()}</button
 								>
-							{/if}
-							{#if page.tournament.formatType === 'preseed' && !page.lock.roundHasScores}
-								<label>
-									{m.manage_seed_points()}
-									<input
-										type="number"
-										value={p.seedPoints ?? ''}
-										data-testid="seed-{p.id}"
-										onchange={(e) =>
-											run(() =>
-												updatePlayerSeed({
-													playerId: p.id,
-													seedPoints: Number((e.currentTarget as HTMLInputElement).value)
-												})
-											)}
-									/>
-								</label>
-							{/if}
-							{#if page.tournament.formatType === 'random-seed' && !page.lock.roundHasScores}
-								<label>
-									{m.manage_order()}
-									<input
-										type="number"
-										min="1"
-										value={p.seedRank ?? ''}
-										data-testid="order-{p.id}"
-										onchange={(e) => {
-											const rank = Number((e.currentTarget as HTMLInputElement).value);
-											const ids = [...page.players]
-												.filter((x) => !x.retiredAt)
-												.sort((a, b) => (a.seedRank ?? 999) - (b.seedRank ?? b.id))
-												.map((x) => x.id)
-												.filter((id) => id !== p.id);
-											ids.splice(Math.max(0, rank - 1), 0, p.id);
-											run(() =>
-												updatePlayerOrder({ tournamentId: data.tournamentId, playerIds: ids })
-											);
-										}}
-									/>
-								</label>
-							{/if}
-							<button
-								type="button"
-								class="btn-secondary"
-								onclick={() => run(() => regeneratePlayerToken({ playerId: p.id }))}
-								>{m.manage_regenerate_link()}</button
-							>
-							{#if !p.retiredAt && (page.tournament.status === 'setup' || (!page.lock.roundHasScores && page.tournament.currentRound === 1))}
+								{#if !p.retiredAt && (page.tournament.status === 'setup' || (!page.lock.roundHasScores && page.tournament.currentRound === 1))}
+									<button
+										type="button"
+										class="btn-danger"
+										data-testid="remove-{p.id}"
+										onclick={() => {
+											if (confirm(m.manage_remove_confirm({ name: p.name }))) {
+												run(() => removePlayer({ playerId: p.id }));
+											}
+										}}>{m.manage_remove_player()}</button
+									>
+								{/if}
+							</div>
+						</div>
+						{#if canReorder}
+							<div class="order-controls" role="group" aria-label={m.manage_order()}>
 								<button
 									type="button"
-									class="btn-danger"
-									data-testid="remove-{p.id}"
-									onclick={() => {
-										if (confirm(m.manage_remove_confirm({ name: p.name }))) {
-											run(() => removePlayer({ playerId: p.id }));
-										}
-									}}>{m.manage_remove_player()}</button
+									class="order-btn"
+									data-testid="order-up-{p.id}"
+									aria-label={orderLabel('up')}
+									disabled={orderIndex <= 0}
+									onclick={() => reorderPlayer(p.id, 'up')}
 								>
-							{/if}
-						</div>
+									<svg class="order-icon" viewBox="0 0 16 16" aria-hidden="true"
+										><path d="M8 2.5 14 10.5H2Z" /></svg
+									>
+								</button>
+								<button
+									type="button"
+									class="order-btn"
+									data-testid="order-down-{p.id}"
+									aria-label={orderLabel('down')}
+									disabled={orderIndex >= orderedActiveIds.length - 1}
+									onclick={() => reorderPlayer(p.id, 'down')}
+								>
+									<svg class="order-icon" viewBox="0 0 16 16" aria-hidden="true"
+										><path d="M8 13.5 14 5.5H2Z" /></svg
+									>
+								</button>
+								<button
+									type="button"
+									class="order-btn"
+									data-testid="order-top-{p.id}"
+									aria-label={orderLabel('top')}
+									disabled={orderIndex <= 0}
+									onclick={() => reorderPlayer(p.id, 'top')}
+								>
+									<svg class="order-icon" viewBox="0 0 16 16" aria-hidden="true">
+										<rect x="2" y="1.5" width="12" height="1.8" />
+										<path d="M8 5 14 13H2Z" />
+									</svg>
+								</button>
+								<button
+									type="button"
+									class="order-btn"
+									data-testid="order-bottom-{p.id}"
+									aria-label={orderLabel('bottom')}
+									disabled={orderIndex >= orderedActiveIds.length - 1}
+									onclick={() => reorderPlayer(p.id, 'bottom')}
+								>
+									<svg class="order-icon" viewBox="0 0 16 16" aria-hidden="true">
+										<path d="M8 11 14 3H2Z" />
+										<rect x="2" y="12.7" width="12" height="1.8" />
+									</svg>
+								</button>
+							</div>
+						{/if}
 					</li>
 				{/each}
 			</ul>
@@ -492,7 +554,7 @@
 			<div class="panel">
 				<h2>{m.manage_scoring_heading()}</h2>
 				<form
-					class="scoring-grid"
+					class="scoring-form"
 					onsubmit={(e) => {
 						e.preventDefault();
 						const fd = new FormData(e.currentTarget);
@@ -508,52 +570,57 @@
 						);
 					}}
 				>
-					<label
-						>Scoring
-						<select
-							name="scoringMode"
-							value={page.tournament.scoringMode}
-							disabled={page.lock.roundHasScores}
+					<div class="scoring-grid">
+						<label
+							>Scoring
+							<select
+								name="scoringMode"
+								value={page.tournament.scoringMode}
+								disabled={page.lock.roundHasScores}
+							>
+								<option value="single-21">single-21</option>
+								<option value="best-of-3">best-of-3</option>
+								<option value="custom">custom</option>
+							</select>
+						</label>
+						<label
+							>Points <input
+								name="pointsToWin"
+								type="number"
+								value={page.tournament.pointsToWin}
+								disabled={page.lock.roundHasScores}
+							/></label
 						>
-							<option value="single-21">single-21</option>
-							<option value="best-of-3">best-of-3</option>
-							<option value="custom">custom</option>
-						</select>
-					</label>
-					<label
-						>Points <input
-							name="pointsToWin"
-							type="number"
-							value={page.tournament.pointsToWin}
-							disabled={page.lock.roundHasScores}
-						/></label
-					>
-					<label
-						>Win by <input
-							name="winBy"
-							type="number"
-							value={page.tournament.winBy}
-							disabled={page.lock.roundHasScores}
-						/></label
-					>
-					<label
-						>Sets <input
-							name="setsToWin"
-							type="number"
-							value={page.tournament.setsToWin}
-							disabled={page.lock.roundHasScores}
-						/></label
-					>
-					<label
-						>Deciding <input
-							name="decidingSetPoints"
-							type="number"
-							value={page.tournament.decidingSetPoints}
-							disabled={page.lock.roundHasScores}
-						/></label
-					>
-					<button type="submit" class="btn-primary" disabled={page.lock.roundHasScores}
-						>Save scoring</button
+						<label
+							>Win by <input
+								name="winBy"
+								type="number"
+								value={page.tournament.winBy}
+								disabled={page.lock.roundHasScores}
+							/></label
+						>
+						<label
+							>Sets <input
+								name="setsToWin"
+								type="number"
+								value={page.tournament.setsToWin}
+								disabled={page.lock.roundHasScores}
+							/></label
+						>
+						<label
+							>Deciding <input
+								name="decidingSetPoints"
+								type="number"
+								value={page.tournament.decidingSetPoints}
+								disabled={page.lock.roundHasScores}
+							/></label
+						>
+					</div>
+					<button
+						type="submit"
+						class="btn-primary scoring-save"
+						data-testid="save-scoring"
+						disabled={page.lock.roundHasScores}>{m.save_scoring()}</button
 					>
 				</form>
 			</div>
@@ -735,12 +802,21 @@
 	}
 
 	.stack-form,
+	.scoring-form,
 	.scoring-grid,
 	.layout-grid {
 		display: grid;
 		grid-template-columns: 1fr;
 		gap: var(--spacing-md);
 		align-items: start;
+	}
+
+	.scoring-form {
+		align-items: stretch;
+	}
+
+	.scoring-save {
+		width: 100%;
 	}
 
 	@media (min-width: 700px) {
@@ -783,14 +859,86 @@
 		border-radius: var(--radius-md);
 		padding: var(--spacing-md);
 		display: flex;
+		flex-direction: row;
+		align-items: stretch;
+		gap: var(--spacing-sm);
+	}
+
+	.roster-body {
+		flex: 1;
+		min-width: 0;
+		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-sm);
+	}
+
+	.order-controls {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		flex-shrink: 0;
+	}
+
+	.order-btn {
+		width: 44px;
+		height: 44px;
+		min-height: 44px;
+		padding: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--bg-secondary);
+		color: var(--text-primary);
+		border: 2px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+	}
+
+	.order-btn:hover:not(:disabled) {
+		border-color: var(--accent-primary);
+		color: var(--accent-primary);
+	}
+
+	.order-btn:disabled {
+		opacity: 0.35;
+		cursor: not-allowed;
+	}
+
+	.order-icon {
+		width: 18px;
+		height: 18px;
+		fill: currentColor;
 	}
 
 	.player-heading {
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
+	}
+
+	.page-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-sm);
+		margin: var(--spacing-sm) 0;
+	}
+
+	.page-nav a {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--spacing-xs) var(--spacing-md);
+		min-height: 44px;
+		border: 2px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		color: var(--accent-info);
+		text-decoration: none;
+	}
+
+	.page-nav a:hover {
+		border-color: var(--accent-info);
+		color: var(--text-primary);
+		text-decoration: none;
 	}
 
 	.player-meta {

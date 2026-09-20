@@ -189,3 +189,34 @@ export function renumberSeedOrder(
 	without.forEach((id, i) => ranks.set(id, i + 1));
 	return ranks;
 }
+
+export type SeedOrderMove = 'up' | 'down' | 'top' | 'bottom';
+
+export function sortPlayersBySeed<T extends { id: number; seedRank: number | null }>(
+	players: readonly T[]
+): T[] {
+	return [...players].sort((a, b) => {
+		const ar = a.seedRank ?? a.id;
+		const br = b.seedRank ?? b.id;
+		if (ar !== br) return ar - br;
+		return a.id - b.id;
+	});
+}
+
+export function movePlayerInOrder(
+	playerIds: readonly number[],
+	movedId: number,
+	move: SeedOrderMove
+): number[] {
+	const ids = [...playerIds];
+	const from = ids.indexOf(movedId);
+	if (from < 0) return ids;
+	ids.splice(from, 1);
+	let to: number;
+	if (move === 'up') to = Math.max(0, from - 1);
+	else if (move === 'down') to = Math.min(ids.length, from + 1);
+	else if (move === 'top') to = 0;
+	else to = ids.length;
+	ids.splice(to, 0, movedId);
+	return ids;
+}

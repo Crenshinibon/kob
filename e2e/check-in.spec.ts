@@ -40,6 +40,10 @@ test.describe('Player check-in (097)', () => {
 		await expect
 			.poll(async () => page.locator('.site-footer').evaluate((el) => getComputedStyle(el).display))
 			.toBe('none');
+		await expect(page.getByTestId('print-player-name').first()).toBeVisible();
+		await expect(page.getByTestId('print-player-name').first()).toHaveCSS('color', 'rgb(0, 0, 0)');
+		const name = await page.getByTestId('print-player-name').first().innerText();
+		expect(name.trim().length).toBeGreaterThan(0);
 		const urls = await page
 			.locator('[data-player-url]')
 			.evaluateAll((els) => els.map((el) => el.getAttribute('data-player-url') ?? ''));

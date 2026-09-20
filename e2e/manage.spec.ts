@@ -275,4 +275,67 @@ test.describe('Manage page (096)', () => {
 			page.getByTestId('manage-court-2').locator('[data-testid^="player-tile-"]')
 		).toHaveCount(5);
 	});
+
+	test('operations header links are spaced apart', async ({ page }) => {
+		const name = `OpsNav ${Date.now()}`;
+		names.push(name);
+		const id = await createSetupTournament(page, name, 4);
+		await page.goto(`/tournament/${id}`);
+		const nav = page.getByTestId('ops-nav');
+		await expect(nav).toBeVisible();
+		await expect(nav.locator('a')).toHaveCount(3);
+		const gaps = await nav.locator('a').evaluateAll((els) => {
+			const boxes = els.map((el) => el.getBoundingClientRect());
+			return [boxes[1].left - boxes[0].right, boxes[2].left - boxes[1].right];
+		});
+		expect(gaps[0]).toBeGreaterThanOrEqual(8);
+		expect(gaps[1]).toBeGreaterThanOrEqual(8);
+	});
+
+	test('save scoring sits below the scoring fields', async ({ page }) => {
+		const name = `ManageScoringAlign ${Date.now()}`;
+		names.push(name);
+		const id = await createSetupTournament(page, name, 8, 2);
+		await page.goto(`/tournament/${id}/manage`);
+		await page.getByTestId('tab-rules').click();
+		await expect(page.getByTestId('rules-tab')).toBeVisible();
+		const grid = page.locator('.scoring-grid');
+		const btn = page.getByTestId('save-scoring');
+		await expect(grid).toBeVisible();
+		await expect(btn).toBeVisible();
+		const gridBox = await grid.boundingBox();
+		const btnBox = await btn.boundingBox();
+		expect(gridBox && btnBox).toBeTruthy();
+		expect(btnBox!.y).toBeGreaterThan(gridBox!.y + gridBox!.height - 4);
+		expect(Math.abs(btnBox!.x - gridBox!.x)).toBeLessThan(8);
+	});
+
+	test('roster is seed order and move buttons reorder players', async ({ page }) => {
+		const name = `ManageOrder ${Date.now()}`;
+		names.push(name);
+		const id = await createSetupTournament(page, name, 8);
+		await page.goto(`/tournament/${id}/manage`);
+		const rows = page.locator('[data-testid^="manage-player-"]');
+		await expect(rows).toHaveCount(8);
+		await expect(rows.nth(0)).toContainText('P1');
+		await expect(rows.nth(1)).toContainText('P2');
+		await expect(page.locator('input[data-testid^="order-"]')).toHaveCount(0);
+
+		const p1Id =
+			(await rows.nth(0).getAttribute('data-testid'))?.replace('manage-player-', '') ?? '';
+		expect(p1Id).toBeTruthy();
+		await expect(page.getByTestId(`order-up-${p1Id}`)).toBeDisabled();
+		await expect(page.getByTestId(`order-top-${p1Id}`)).toBeDisabled();
+		await page.getByTestId(`order-down-${p1Id}`).click();
+		await expect(rows.nth(0)).toContainText('P2', { timeout: 10000 });
+		await expect(rows.nth(1)).toContainText('P1');
+
+		await page.getByTestId(`order-top-${p1Id}`).click();
+		await expect(rows.nth(0)).toContainText('P1', { timeout: 10000 });
+
+		await page.getByTestId(`order-bottom-${p1Id}`).click();
+		await expect(rows.nth(7)).toContainText('P1', { timeout: 10000 });
+		await expect(page.getByTestId(`order-down-${p1Id}`)).toBeDisabled();
+		await expect(page.getByTestId(`order-bottom-${p1Id}`)).toBeDisabled();
+	});
 });
