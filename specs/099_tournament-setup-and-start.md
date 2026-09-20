@@ -2,7 +2,9 @@
 
 ## Status
 
-**IMPLEMENTED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Reverses the "no draft state" decision in [050](./050_tournament-management.md) deliberately: creation and start become two distinct events.
+**IMPLEMENTED** (2026-09). Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Reverses the "no draft state" decision in [050](./050_tournament-management.md) deliberately: creation and start become two distinct events.
+
+**As shipped:** the setup panel (and, after start, the operations schedule) lets the organizer edit **rounds** and **physical courts** without opening Manage. Preseed can set rounds in `setup`; after start those rounds stay derived from court count.
 
 ## Problem
 
@@ -51,7 +53,7 @@ Today `createTournamentForm` does everything at once: it needs ≥ 8 player name
 The existing form, with the player section made optional:
 
 - Name, format, scoring mode, custom scoring, tie-break, preseed retirement policy, physical courts, timing — unchanged.
-- **Players** textarea / CSV upload: optional. The court-layout preview, duration estimate and rounds input keep updating live from the pasted count; with 0 names they show "Add players to see the court layout". **The order of names is the seeding** when no points are entered (first name = seed 1). Omitted or tied seed points keep that list order. The same `seedRank` is the default last tie-break (`initial_order`, [094](./094_configurable-tie-breaking.md)). For random-seed the same order is editable later as **Order** on the manage Players tab (096).
+- **Players** textarea / CSV upload: optional. The court-layout preview, duration estimate and rounds input keep updating live from the pasted count; with 0 names they show "Add players to see the court layout". **The order of names is the seeding** when no points are entered (first name = seed 1). Omitted or tied seed points keep that list order. The same `seedRank` is the default last tie-break (`initial_order`, [094](./094_configurable-tie-breaking.md)). For random-seed the same order is editable later with **up / down / to-top / to-bottom** on the manage Players tab (096).
 - `numRounds` (random seed) **defaults to `min(courtCount, 4)`**, live from the pasted roster (`4` courts → 4 rounds, `2` courts → 2, `5+` courts → 4). One court (4–6 players) → **1**. The organizer can overwrite (1–10). If they edit the field, that stored value is kept even if the roster later changes, except it is still **forced to 1** when there is only one court. For preseed, rounds are derived at **start** (depends on court count); the form shows "computed at start".
 - One submit button: **Create** → `status = 'setup'`, players inserted with tokens (097), redirect to `/tournament/[id]` (setup view, below). **No "Create & start".**
 
@@ -81,6 +83,7 @@ The operations view renders a **start panel** instead of court cards:
 ```
 
 - Court layout, rounds and duration come from the existing pure functions (`getCourtConfiguration`, `calculateRoundCount`, `estimateTournamentDuration`) on the current roster count. **One court (4–6 players) → one round.** Random-seed rounds default to **`min(courtCount, 4)`** unless the organizer already overwrote `numRounds`.
+- **Rounds** and **physical courts** are number inputs on this panel (`setup-num-rounds`, `setup-physical-courts`) and again on the operations view after start (`ops-physical-courts`). Same values as Manage → Rules.
 - "Checked-in only" option appears **only** when check-in has at least one check-in and at least one player is not checked in. It **removes** the unchecked players (hard delete, same as 096 Remove) before starting. If check-in was never used, Start uses the full roster.
 - The Start button is disabled below 4 (or below 4 checked-in when that option is selected) with the reason shown.
 - Round stepper and close round are hidden in `setup`. Court QRs appear after start on the operations view. Personal QRs live on the optional check-in page (097).
@@ -189,7 +192,7 @@ None remaining for this spec.
 ## Related Specs
 
 - [095_org-player-experience-index.md](./095_org-player-experience-index.md)
-- [050_tournament-management.md](./050_tournament-management.md) — current create-and-start flow (to be updated)
+- [050_tournament-management.md](./050_tournament-management.md) — create → start two-step flow
 - [030_auth-and-users.md](./030_auth-and-users.md) — dashboard sections
 - [096](./096_tournament-management-page.md) — setup row in the locking matrix
 - [097](./097_player-check-in.md) — optional check-in; start does not require it

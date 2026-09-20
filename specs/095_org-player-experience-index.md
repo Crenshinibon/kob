@@ -2,7 +2,33 @@
 
 ## Status
 
-**IMPLEMENTED.** Index for the organizer back-office and player-facing pages. 096 / 097 / 098 / 099 have no remaining open questions.
+**IMPLEMENTED** (2026-09). Index for the organizer back-office and player-facing pages. 096 / 097 / 098 / 099 have no remaining open questions.
+
+Shared migration `0016` is in `drizzle/0016_org_player_experience.sql` and is applied by `scripts/db-push.ts` on deploy. Vercel preview deploys get an isolated Neon branch (`preview/<git-branch>`) cloned from production — each preview has its own `DATABASE_URL`; `db:push` mutates only that clone.
+
+### Implementation progress
+
+| Step | Spec | Shipped |
+| ---- | ---- | ------- |
+| 0    | this | `0016`; `QrCode.svelte`; `ScoreEntry.svelte`; `save-score.ts`; `standings-service.ts`; start extracted from create |
+| 1    | 098  | `/player/[token]` — NOW, write-once scores, upcoming, wait clock, history, placement |
+| 2    | 099  | `setup` status, optional players, start panel, dashboard Setup section, start ≥ 4 |
+| 3    | 097  | Optional check-in, print sheet, self check-in, close → start or remove no-shows |
+| 4–6  | 096  | Manage Players / Courts / Rules / Tournament: roster, court moves, scoring/rounds, finish early, reopen |
+
+**Try-out UX (follow-up, still 095–099):**
+
+- Manage Players: separate Search / Add one / Add many panels; mass-enter uses `PlayerNameImport` (same as Create).
+- Roster lists by `seedRank`. Random-seed order is a right-hand column of up / down / to-top / to-bottom icon buttons — no order-number field.
+- Courts tab: HTML5 drag-and-drop plus a court `<select>`; valid drop targets highlight; invalid courts dim; cards always sort by court number.
+- Setup and operations: rounds and physical-court count are editable (preseed rounds still derived at start except the organizer can set them before start).
+- Operations header: Manage / Check-in / View Standings are spaced chip links.
+- Manage Rules: Save scoring sits full-width below the fields (not in the 2-column grid).
+- Print sheet: site chrome hidden; cards `break-inside: avoid`; player names forced dark-on-white; QR chrome can use a light background.
+- Check-in list: checked-in rows sit at the bottom, muted.
+- Player page: underlined section headers; 3-column score grid with a full-width save; in-page language switcher hidden when the site header already shows one (logged-in session).
+
+**Still on the operations view** (096 originally moved these to Manage only): scoring-override editor, retire, injury, and delete. Manage has roster/rules/finish-early/reopen/delete; retire and injury forms were not relocated.
 
 ## Motivation
 
@@ -15,7 +41,7 @@ Two things were missing on the beach:
 
 | Spec                                                                         | Scope                                                                                                                                                                                                                         | Audience  |
 | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| **[096_tournament-management-page.md](./096_tournament-management-page.md)** | `/tournament/[id]/manage` — roster (add / remove / rename / re-seed / retire / injury), court assignments (swap / move), rules & config edits, finish early, **reopen last closed round**, delete. Slims the operations view. | Organizer |
+| **[096_tournament-management-page.md](./096_tournament-management-page.md)** | `/tournament/[id]/manage` — roster (add / remove / rename / re-seed / order buttons), court assignments (swap / move), rules & config edits, finish early, **reopen last closed round**, delete. Retire/injury forms remain on operations. | Organizer |
 | **[097_player-check-in.md](./097_player-check-in.md)**                       | `/tournament/[id]/check-in` — **optional**. Per-player token + QR, check-in list, print sheet, self check-in, close check-in → start (099) or remove no-shows. Does **not** replace court QRs.                                | Organizer |
 | **[098_player-page.md](./098_player-page.md)**                               | `/player/[token]` — **NOW** + write-once score entry for matches the player is in, compact upcoming inputs, live place + best/safe text, wait clock, history of finished games. Parallel to `/court/[token]`.             | Player    |
 | **[099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md)** | Create ≠ start. `setup` status with 0–64 players; explicit start at ≥ **4** generates round 1. No "Create & start". Dashboard Setup section. Reverses the "no draft" decision in 050.                                          | Organizer |
@@ -118,6 +144,8 @@ None of this requires check-in. "Remove all not checked in" is a shortcut that o
 Every new user-facing string gets a Paraglide key in all four locales (`messages/{en,de,fr,es}.json`). Key prefixes: `manage_*`, `checkin_*`, `player_*`, plus `err_*` for server errors. QR-encoded URLs stay locale-free so the scanning device picks its language (see `TO_FIX.md`, court links decision).
 
 ## Suggested Implementation Order
+
+**All steps below shipped (2026-09).** Original order kept for history.
 
 Ordered by player-facing value per unit of risk; each step is independently shippable.
 

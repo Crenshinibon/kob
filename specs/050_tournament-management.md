@@ -52,30 +52,33 @@ Combined form with:
 - Number of rounds (auto-calculated for preseed, configurable 1-10 for random seed)
 - For preseed: names + optional seed points. Higher points = better seed; omitted or tied points keep list order.
 - CSV file upload: Upload WVV Setzliste CSV directly (extracts `spieler1` and `wvv` columns, auto-switches to preseed format)
-- [Create] button — saves as `setup` (proposed 099); today still starts immediately. **No "Create & start"** — always two steps.
+- [Create] button — saves as `setup`. **No "Create & start"** — always two steps ([099](./099_tournament-setup-and-start.md)).
 
 ### Tournament View (`/tournament/[id]`)
 
+- **Header `ops-nav`:** spaced chip links to Manage, Check-in, and Standings.
+- **`setup`:** start panel instead of court cards — player count, optional checked-in start, editable rounds and physical courts, Start (≥ 4). See **[099](./099_tournament-setup-and-start.md)**.
 - **Round stepper** (full width): `Round 1 → Round 2 → …` — browse past rounds; court links work, past scores read-only. See **[093_round-history-stepper.md](./093_round-history-stepper.md)**.
 - Tournament name and status
 - Court cards showing:
   - Court number and size badge (3p/4p/5p/6p)
-  - **QR code at the top** - Players can scan to access the court page (**stable URL** — persists across rounds and player retirements). **Proposed (098/097):** court QRs stay. Optional personal QRs from check-in are a second path.
+  - **QR code at the top** — Players can scan to access the court page (**stable URL** — persists across rounds and player retirements). Court QRs stay. Optional personal QRs from check-in are a second path ([097](./097_player-check-in.md) / [098](./098_player-page.md)).
   - Player names
   - Matches completed (e.g., "2/3")
   - Shift badge (when virtual courts > physical courts)
   - Link to open court page
 - [Close Round] button (enabled when all matches done)
 - Progress: "Round 2 of 3"
-- Scoring overrides configuration (per court type, collapsible sections)
+- Scoring overrides configuration (per court type, collapsible sections) — also on Manage → Rules
 - Player retirement form (collapsible, between rounds only)
 - Injury reporting form (collapsible, during active rounds)
-- [Delete Tournament] button
-- **Live query**: Auto-updates court data every 3 seconds via `query.live()`
+- [Delete Tournament] button (also on Manage → Tournament)
+- After start: physical-court count on the schedule
+- Polling: `query()` + client interval while visible (not `query.live()` — [1020](./archive/1020_live-query-timeout.md))
 
-### Proposed: Manage (`/tournament/[id]/manage`) and Check-in (`/tournament/[id]/check-in`)
+### Manage (`/tournament/[id]/manage`) and Check-in (`/tournament/[id]/check-in`) — implemented
 
-Organizer back office (roster edits, swap/move players **before scores**, rules, finish early, reopen last round), **optional** player check-in (personal QRs alongside court QRs), player page as an additional scoring surface (current game + upcoming), and create ≠ start. Not implemented — see **[095_org-player-experience-index.md](./095_org-player-experience-index.md)**, [096](./096_tournament-management-page.md), [097](./097_player-check-in.md), [098](./098_player-page.md), [099](./099_tournament-setup-and-start.md).
+Organizer back office (roster edits, swap/move players **before scores**, rules, finish early, reopen last round), **optional** player check-in (personal QRs alongside court QRs), player page as an additional scoring surface (current game + upcoming), and create ≠ start. See **[095](./095_org-player-experience-index.md)**, [096](./096_tournament-management-page.md), [097](./097_player-check-in.md), [098](./098_player-page.md), [099](./099_tournament-setup-and-start.md).
 
 ### Total Standings (`/tournament/[id]/standings`)
 

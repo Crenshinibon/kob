@@ -10,7 +10,7 @@
 
 - **[050_tournament-management.md](./050_tournament-management.md)**: Flow: Create (`setup`, 0+ players) → Start (≥ 4) → Run rounds → Finish. Uses remote functions. Stable court tokens persist across rounds/retirements.
 
-- **[060_court-operations.md](./060_court-operations.md)**: Mobile-optimized score entry. Supports 3p/4p/5p/6p courts. Best-of-3 set-by-set scoring. No live query on court page. [PROPOSED] Player page (098) is an additional scoring surface; court QRs stay; check-in is optional.
+- **[060_court-operations.md](./060_court-operations.md)**: Mobile-optimized score entry. Supports 3p/4p/5p/6p courts. Best-of-3 set-by-set scoring. No live query on court page. Player page (098) is an additional scoring surface; court QRs stay; check-in is optional. [IMPLEMENTED]
 
 - **[070_scoring-and-standings.md](./070_scoring-and-standings.md)**: Points = your score each match. Tiebreakers: points → differential → seeding (`seedRank` from points then name-list order). 5p/6p use average points per game. Canceled matches use averages. Scoring modes: single-21, best-of-3, custom. Per-court-type overrides.
 
@@ -26,11 +26,11 @@
   - **[092_mid-round-injury-forward-retirement.md](./092_mid-round-injury-forward-retirement.md)**: Mid-round injury + forward retirement on closeRound — **PROPOSED**
   - **[093_round-history-stepper.md](./093_round-history-stepper.md)**: Round stepper on tournament admin view — browse past rounds, read-only historical scores
   - **[094_configurable-tie-breaking.md](./094_configurable-tie-breaking.md)**: Configurable tie-break factors (round/total points & diff, seeding from points then name-list order, dice, manual) for standings and redistribution
-- **[095_org-player-experience-index.md](./095_org-player-experience-index.md)**: Organizer back office + player-facing pages. Shared migration `0016`. Court QRs and optional player pages are parallel scoring surfaces; check-in is optional; start ≥ 4.
-  - **[096_tournament-management-page.md](./096_tournament-management-page.md)**: `/tournament/[id]/manage` — roster, drag-and-drop courts, rules, finish early, **reopen last closed round**, delete.
-  - **[097_player-check-in.md](./097_player-check-in.md)**: `/tournament/[id]/check-in` — **optional** per-player token + QR, searchable check-in list, full-screen QR, print sheet, self check-in on scan, close check-in → start or remove no-shows. Does not replace court QRs.
-  - **[098_player-page.md](./098_player-page.md)**: `/player/[token]` — current game + write-once score entry, upcoming compact inputs, live place + best/safe text, wait clock, history of finished games. Parallel to the court page.
-  - **[099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md)**: Create ≠ start. `setup` with 0–64 players; explicit start at ≥ 4 generates round 1. No "Create & start".
+- **[095_org-player-experience-index.md](./095_org-player-experience-index.md)**: [IMPLEMENTED] Organizer back office + player-facing pages. Shared migration `0016`. Court QRs and optional player pages are parallel scoring surfaces; check-in is optional; start ≥ 4. Try-out UX (nav chips, roster order buttons, print contrast) documented on the index.
+  - **[096_tournament-management-page.md](./096_tournament-management-page.md)**: [IMPLEMENTED] `/tournament/[id]/manage` — roster (seed-rank list + order icon buttons), court moves (HTML5 DnD + select), rules, finish early, **reopen last closed round**, delete.
+  - **[097_player-check-in.md](./097_player-check-in.md)**: [IMPLEMENTED] `/tournament/[id]/check-in` — **optional** per-player token + QR, searchable check-in list (checked-in muted at bottom), print sheet with dark-on-white names, self check-in on scan, close check-in → start or remove no-shows. Does not replace court QRs.
+  - **[098_player-page.md](./098_player-page.md)**: [IMPLEMENTED] `/player/[token]` — current game + write-once score entry (3-col grid), upcoming compact inputs, live place + best/safe text, wait clock, history of finished games. Parallel to the court page.
+  - **[099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md)**: [IMPLEMENTED] Create ≠ start. `setup` with 0–64 players; explicit start at ≥ 4 generates round 1. No "Create & start". Rounds and physical courts editable in setup.
 - **[087_preseed-frozen-courts.md](./087_preseed-frozen-courts.md)**: Preseed frozen courts — single-court bracket leaves freeze after their round-robin is complete. Covers all court counts 3–16 with cascade freeze points (e.g. 7 courts: C7 after R3, C1–C6 after R4). Implementation: `getFrozenCourts()` simulates bracket tree, returns freeze round per court.
 
 - **[090_total-standings.md](./090_total-standings.md)**: Cumulative standings across all rounds with podium view and achievement categories (Most Improved, Consistent Performer, Court Champion). Retirement section. [PARTIAL — no movement indicators, no PDF/CSV export] Sorted by court position (not total points), per spec 070.

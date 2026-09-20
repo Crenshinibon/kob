@@ -2,7 +2,9 @@
 
 ## Status
 
-**IMPLEMENTED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Depends on `player.token` from the shared migration `0016`; optional QR codes that lead here are produced by [097_player-check-in.md](./097_player-check-in.md). The page also works if someone opens the URL without using check-in.
+**IMPLEMENTED** (2026-09). Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Depends on `player.token` from the shared migration `0016`; optional QR codes that lead here are produced by [097_player-check-in.md](./097_player-check-in.md). The page also works if someone opens the URL without using check-in.
+
+**As shipped:** section headings are underlined. Score inputs sit on a **3-column grid** with a full-width save (`ScoreEntry.svelte`). The in-page `LanguageSwitcher` is shown only when there is **no logged-in session** (the site header already has one).
 
 ## Problem
 
@@ -49,7 +51,7 @@ Plus two orthogonal flags: `checkInOpen` (097 banner — only when check-in has 
 
 ## Layout
 
-Header: tournament name · **player name** · "Round 2 of 4". Language switcher (page is locale-free via QR, so the switcher matters here).
+Header: tournament name · **player name** · "Round 2 of 4". Language switcher **only for anonymous visitors** (QR is locale-free, so the scanning device still needs a switcher; a logged-in organizer already has one in the site header).
 
 The **Placement** block is present in every playing state (see [Placement](#placement)); in terminal states it collapses to a single final place. Hidden in `not_started`.
 

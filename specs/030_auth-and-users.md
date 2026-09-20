@@ -14,7 +14,7 @@ Simple auth system using Better Auth. Email and password only (no name field). P
 
 ### Player (Anonymous)
 
-- Enters scores via court URL and/or personal player URL (proposed, [098](./098_player-page.md)); check-in QR is optional ([097](./097_player-check-in.md))
+- Enters scores via court URL and/or personal player URL ([098](./098_player-page.md)); check-in QR is optional ([097](./097_player-check-in.md))
 - No login needed
 - Pages: Court score entry (public access via court token). Player page (public access via player token).
 

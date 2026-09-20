@@ -2,7 +2,9 @@
 
 ## Status
 
-**IMPLEMENTED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). **Optional** — an organizer can skip this page and run on court QRs only. Schema additions (`player.token`, `checkedInAt`, `checkInSource`, `tournament.checkInClosedAt`) are in the shared migration `0016` described there. The page players land on after scanning is specified in [098_player-page.md](./098_player-page.md).
+**IMPLEMENTED** (2026-09). Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). **Optional** — an organizer can skip this page and run on court QRs only. Schema additions (`player.token`, `checkedInAt`, `checkInSource`, `tournament.checkInClosedAt`) are in the shared migration `0016` described there. The page players land on after scanning is specified in [098_player-page.md](./098_player-page.md).
+
+**As shipped:** checked-in rows sit at the **bottom** of the list with muted text. Print sheet hides site header/footer/cookie chrome, keeps cards intact (`break-inside: avoid`), and forces **dark player names on white cards** (plus light QR chrome via `--qr-bg` / `--qr-fg`). QR modal is inline on the check-in page (no separate `PlayerQrModal.svelte`).
 
 ## Problem
 
@@ -75,7 +77,7 @@ The reshuffle banner ("your court may change") only appears if check-in is still
 └──────────────────────────────────────────────────┘
 ```
 
-- Sort: not checked in first, then alphabetical (toggle to alphabetical only).
+- Sort: not checked in first, then alphabetical (toggle to alphabetical only). **Checked-in rows stay at the bottom and use muted text.**
 - **Tap the row** → toggles check-in (`checkInSource = 'org'`). Toggling off keeps `checkInSource = 'org'` so a later scan does not silently re-check the player (see Self check-in).
 - **QR button** → full-screen modal: name (large), QR ≥ 240 px, tournament name, hint "Scan for your court and scores", buttons **Copy link** and **Share** (Web Share API when available, hidden otherwise). Useful when the organizer walks up to a player with the phone.
 - **Counter** `12/16` counts active (non-retired) players only. Replacements appear in the list; retirees are hidden. **Do not** show round-1 court numbers — after start, each player sees their court on the player page (098).
@@ -117,7 +119,7 @@ Close check-in?
 
 ### Print sheet `/tournament/[id]/check-in/print`
 
-- Grid of cards, **3 columns** on A4/Letter portrait (≈ 60 × 70 mm each): player name (bold, ~14 pt), QR ≈ 40 × 40 mm, tournament name (small), hint "Scan for your court and scores". Alphabetical. `page-break-inside: avoid`; `@media print` hides everything else; a **Print** button triggers `window.print()`.
+- Grid of cards, **3 columns** on A4/Letter portrait (≈ 60 × 70 mm each): player name (bold, ~14 pt, **forced `#111` / print `#000`** so global theme `h2` white does not wash out on the white card), QR ≈ 40 × 40 mm on a **light** background, tournament name (small, same dark ink), hint "Scan for your court and scores". Alphabetical. `page-break-inside: avoid` / `break-inside: avoid`. `@media print` hides `.top-nav`, `.v1-banner`, `.site-footer`, `.cookie-notice` (also `.no-print` in `static/global.css`). A **Print** button triggers `window.print()`.
 - Regenerating the sheet after roster changes is just reloading the page — tokens are stable per player.
 - QR content: locale-free absolute URL `${origin}/player/${token}` (device language decides, same rule as court QRs).
 - QR rendering: existing `qrcode` package, via the generic `QrCode.svelte` extracted from `CourtQRCode.svelte` (095).
@@ -221,7 +223,7 @@ None remaining for this spec. Court-page vs organizer-only score correction is i
 
 - `src/routes/tournament/[id]/check-in/+page.svelte`, `+page.server.ts`, `check-in.remote.ts`
 - `src/routes/tournament/[id]/check-in/print/+page.svelte`, `+page.server.ts`
-- `src/lib/components/QrCode.svelte` (extracted), `PlayerQrModal.svelte`
+- `src/lib/components/QrCode.svelte` (extracted; `--qr-bg` / `--qr-fg` for print)
 - `src/lib/server/tournament-orchestration.ts` — `newPlayerToken()`
 - `src/routes/tournament/create/create.remote.ts`, `tournament-actions.remote.ts` — token on insert
 - `src/routes/player/[token]/+page.server.ts` — self check-in (098)

@@ -1,6 +1,6 @@
 # Court Operations
 
-> **Proposed ([098](./098_player-page.md), [097](./097_player-check-in.md)):** `/court/[token]` stays a player-facing scoring URL. The organizer may keep handing out **court QRs** from the operations view, may additionally (or instead) hand out **personal player QRs** via optional check-in, or mix both. Score rules below still apply; the UI is extracted into `ScoreEntry.svelte` and reused on the player page. Last write wins across both surfaces.
+> **Shipped ([098](./098_player-page.md), [097](./097_player-check-in.md)):** `/court/[token]` stays a player-facing scoring URL. The organizer may keep handing out **court QRs** from the operations view, may additionally (or instead) hand out **personal player QRs** via optional check-in, or mix both. Score rules below still apply; the UI is extracted into `ScoreEntry.svelte` and reused on the player page. Court-page writes are last-write-wins (including edits). Player-page writes are first-write of matches that player is in.
 
 ## Player Interface (`/court/[token]`)
 
