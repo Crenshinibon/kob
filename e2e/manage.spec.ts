@@ -247,7 +247,9 @@ test.describe('Manage page (096)', () => {
 		names.push(name);
 		const id = await createRandomSeedTournament(page, name, 16, 2);
 		await page.goto(`/tournament/${id}/manage`);
+		await expect(page.getByTestId('manage-page')).toBeVisible();
 		await page.getByTestId('tab-courts').click();
+		await expect(page.getByTestId('manage-court-1')).toBeVisible({ timeout: 15000 });
 		const court1 = page.getByTestId('manage-court-1');
 		const pid =
 			(
