@@ -8,6 +8,7 @@ import {
 	openInjuryForm,
 	openRetireForm,
 	openManageSection,
+	confirmDeleteTournament,
 	gotoOps,
 	reloadForCourtStandings,
 	scoreAllOpenMatches,
@@ -784,11 +785,7 @@ test.describe('Tournament Integration Tests', () => {
 			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1');
 
-			// Set up dialog handler BEFORE clicking delete
-			page.on('dialog', (dialog) => dialog.accept());
-
-			// Click delete button
-			await page.click('button:has-text("Delete")');
+			await confirmDeleteTournament(page, true);
 
 			// Wait for redirect to dashboard
 			await page.waitForURL('/');
@@ -814,18 +811,10 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForURL(/\/tournament\/\d+/);
 			await ensureTournamentStarted(page);
 
-			// Set up dialog handler BEFORE clicking delete
-			page.on('dialog', (dialog) => dialog.dismiss());
+			await confirmDeleteTournament(page, false);
 
-			// Click delete button
-			await page.click('button:has-text("Delete")');
-
-			// Should stay on same page
-			await page.waitForTimeout(500);
-			await expect(page).toHaveURL(/\/tournament\/\d+/);
-
-			// Tournament should still exist
-			await expect(page.locator('h1', { hasText: tournamentName })).toBeVisible();
+			await expect(page).toHaveURL(/\/tournament\/\d+\/manage/);
+			await expect(page.getByText(tournamentName).first()).toBeVisible();
 		});
 	});
 
@@ -1702,14 +1691,16 @@ test.describe('Tournament Integration Tests', () => {
 			await page.goto(link3 || '');
 			await page.waitForSelector('[data-testid^="set-form-"]');
 
-			// Verify set 1 label appears (best-of-3 shows Set 1; Set 2/3
-			// appear dynamically after Set 1 scores are entered)
 			await expect(page.locator('text=Set 1').first()).toBeVisible();
-
-			// Enter score for set 1 of the first match
-			const forms = await page.locator('[data-testid^="set-form-"]').all();
-			expect(forms.length).toBe(3);
-			const firstTestId = await forms[0].getAttribute('data-testid');
+			await expect(page.locator('.match-run')).toHaveCount(3);
+			// Set 1 and Set 2 are visible per match; Set 3 appears after a 1–1 split.
+			await expect(page.locator('[data-testid^="set-form-"]')).toHaveCount(6);
+			const firstTestId = await page
+				.locator('.match-run')
+				.first()
+				.locator('[data-testid^="set-form-"]')
+				.first()
+				.getAttribute('data-testid');
 			const firstMatchId = firstTestId?.replace(/^(set|match)-form-/, '');
 			await page.fill(`[data-testid="team-a-score-${firstMatchId}"]`, '21');
 			await page.fill(`[data-testid="team-b-score-${firstMatchId}"]`, '19');

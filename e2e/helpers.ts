@@ -139,7 +139,28 @@ export async function ensureTournamentStarted(page: Page): Promise<void> {
 	}
 }
 
+/** Operations (court cards / QR links), not Manage / check-in / a court page. */
+export async function ensureOnOps(page: Page): Promise<void> {
+	const onOpsDetail =
+		/\/tournament\/\d+\/?(?:[?#]|$)/.test(page.url()) &&
+		!/\/tournament\/\d+\/(manage|check-in|standings)/.test(page.url());
+	if (
+		onOpsDetail &&
+		(await page
+			.locator(
+				'.court-card, .qr-link a, [data-testid="start-tournament"], [data-testid="setup-panel"]'
+			)
+			.first()
+			.isVisible()
+			.catch(() => false))
+	) {
+		return;
+	}
+	await gotoOps(page);
+}
+
 export async function getCourtLinks(page: Page): Promise<string[]> {
+	await ensureOnOps(page);
 	await ensureTournamentStarted(page);
 	await page.waitForSelector('.qr-link a');
 	return page
@@ -152,6 +173,7 @@ export async function waitForCourtCardCount(
 	count: number,
 	timeout = 30000
 ): Promise<void> {
+	await ensureOnOps(page);
 	await expect
 		.poll(
 			async () => {
@@ -286,6 +308,7 @@ export async function waitForTournamentPlayer(
 	namePattern: RegExp,
 	timeout = 30000
 ): Promise<void> {
+	await ensureOnOps(page);
 	await expect
 		.poll(
 			async () => {
@@ -520,23 +543,27 @@ export async function configureTieBreakFinal(
 		})
 		.catch(() => {});
 	await page.waitForTimeout(500);
+	await gotoOps(page);
+}
+
+export async function confirmDeleteTournament(page: Page, accept: boolean): Promise<void> {
+	await openManageSection(page, 'tournament');
+	page.once('dialog', (dialog) => {
+		if (accept) void dialog.accept();
+		else void dialog.dismiss();
+	});
+	await page.getByTestId('delete-tournament').click({ noWaitAfter: true });
 }
 
 export async function deleteTournament(page: Page, tournamentName: string): Promise<void> {
 	try {
 		await page.goto('/');
 		const card = page.locator(`.tournament-card:has-text("${tournamentName}")`).first();
-		if (await card.isVisible().catch(() => false)) {
-			await card.click();
-			const deleteButton = page.locator('button:has-text("Delete")');
-			if (await deleteButton.isVisible().catch(() => false)) {
-				await deleteButton.click();
-				const confirmButton = page.locator('button:has-text("Confirm")');
-				if (await confirmButton.isVisible().catch(() => false)) {
-					await confirmButton.click();
-				}
-			}
-		}
+		if (!(await card.isVisible().catch(() => false))) return;
+		await card.click();
+		await page.waitForURL(/\/tournament\/\d+/);
+		await confirmDeleteTournament(page, true);
+		await page.waitForURL('/', { timeout: 10000 }).catch(() => {});
 	} catch {
 		// ignore cleanup errors
 	}

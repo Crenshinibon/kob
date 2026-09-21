@@ -1047,9 +1047,16 @@
 			{/if}
 			<div class="danger">
 				<h3>{m.manage_danger_zone()}</h3>
-				<form {...deleteTournamentForm}>
+				<form
+					{...deleteTournamentForm.enhance(async ({ submit }) => {
+						if (!confirm(m.delete_tournament_confirm())) return;
+						await submit();
+					})}
+				>
 					<input {...deleteTournamentForm.fields.tournamentId.as('hidden', data.tournamentId)} />
-					<button type="submit" class="btn-danger">{m.delete_tournament()}</button>
+					<button type="submit" class="btn-danger" data-testid="delete-tournament"
+						>{m.delete_tournament()}</button
+					>
 				</form>
 			</div>
 		</section>

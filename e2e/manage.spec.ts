@@ -410,7 +410,7 @@ test.describe('Manage page (096)', () => {
 		await expect(page.locator('.retire-form')).toHaveCount(0);
 		await expect(page.locator('.injury-form')).toHaveCount(0);
 		await expect(page.getByRole('button', { name: /delete tournament/i })).toHaveCount(0);
-		await expect(page.getByRole('button', { name: /waiting for all scores/i })).toBeVisible();
+		await expect(page.getByTestId('waiting-scores')).toBeVisible();
 
 		await page.goto(`/tournament/${id}/manage#rules`);
 		await page.getByTestId('tab-rules').click();
