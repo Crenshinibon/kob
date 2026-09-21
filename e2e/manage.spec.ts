@@ -313,6 +313,37 @@ test.describe('Manage page (096)', () => {
 		expect(Math.abs(btnBox!.x - gridBox!.x)).toBeLessThan(8);
 	});
 
+	test('scoring rules use court-size tabs without a preset', async ({ page }) => {
+		const name = `ManageScoringTabs ${Date.now()}`;
+		names.push(name);
+		const id = await createSetupTournament(page, name, 8, 2);
+		await page.goto(`/tournament/${id}/manage`);
+		await page.getByTestId('tab-rules').click();
+		await expect(page.getByTestId('scoring-size-tabs')).toBeVisible();
+		await expect(page.locator('select[name="scoringMode"]')).toHaveCount(0);
+		await expect(page.getByTestId('scoring-tab-4')).toBeVisible();
+		await expect(page.getByTestId('scoring-tab-3')).toBeVisible();
+		await expect(page.getByTestId('scoring-tab-5')).toBeVisible();
+		await expect(page.getByTestId('scoring-tab-6')).toBeVisible();
+		await expect(page.getByTestId('scoring-points')).toHaveValue('21');
+		await expect(page.getByTestId('scoring-win-by')).toHaveValue('2');
+		await expect(page.getByTestId('scoring-sets')).toHaveValue('1');
+		await expect(page.getByTestId('scoring-deciding')).toHaveCount(0);
+		await expect(page.getByTestId('rules-tab')).toContainText('4-player courts');
+
+		await page.getByTestId('scoring-sets').fill('2');
+		await expect(page.getByTestId('scoring-deciding')).toHaveValue('15');
+
+		await page.getByTestId('scoring-tab-5').click();
+		await expect(page.getByTestId('scoring-points')).toHaveValue('15');
+		await page.getByTestId('scoring-points').fill('12');
+		await page.getByTestId('save-scoring').click();
+		await page.getByTestId('scoring-tab-4').click();
+		await expect(page.getByTestId('scoring-sets')).toHaveValue('2');
+		await page.getByTestId('scoring-tab-5').click();
+		await expect(page.getByTestId('scoring-points')).toHaveValue('12', { timeout: 10000 });
+	});
+
 	test('roster is seed order and move buttons reorder players', async ({ page }) => {
 		const name = `ManageOrder ${Date.now()}`;
 		names.push(name);

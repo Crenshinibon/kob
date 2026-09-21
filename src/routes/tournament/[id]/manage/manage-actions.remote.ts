@@ -2,15 +2,13 @@ import { command } from '$app/server';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { db } from '$lib/server/db';
-import { player, tournament, match, courtRotation } from '$lib/server/db/schema';
-import { and, eq, inArray } from 'drizzle-orm';
+import { player, tournament, match } from '$lib/server/db/schema';
+import { eq, inArray } from 'drizzle-orm';
 import * as m from '$lib/paraglide/messages';
 import { requireOrganizerTournament } from '$lib/server/org-guard';
 import {
 	assignSeedRanks,
-	calculateCourtSizes,
-	getMaxSets,
-	getEffectiveScoring,
+	inferScoringMode,
 	type CourtAssignment,
 	type FormatType,
 	type ScoringOverrides
@@ -414,25 +412,49 @@ export const updateTournamentSettings = command(
 export const updateScoringRules = command(
 	v.object({
 		tournamentId: v.pipe(v.number(), v.minValue(1)),
-		scoringMode: v.picklist(['single-21', 'best-of-3', 'custom']),
-		pointsToWin: v.pipe(v.number(), v.minValue(1)),
-		winBy: v.pipe(v.number(), v.minValue(1)),
-		setsToWin: v.pipe(v.number(), v.minValue(1)),
-		decidingSetPoints: v.pipe(v.number(), v.minValue(1))
+		pointsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(50)),
+		winBy: v.pipe(v.number(), v.minValue(1), v.maxValue(10)),
+		setsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(5)),
+		decidingSetPoints: v.pipe(v.number(), v.minValue(1), v.maxValue(50)),
+		scoringOverrides: v.optional(
+			v.record(
+				v.string(),
+				v.object({
+					pointsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(50)),
+					winBy: v.pipe(v.number(), v.minValue(1), v.maxValue(10)),
+					setsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(5)),
+					decidingSetPoints: v.pipe(v.number(), v.minValue(1), v.maxValue(50))
+				})
+			)
+		)
 	}),
 	async (input) => {
 		const { tourney } = await requireOrganizerTournament(input.tournamentId);
 		if (tourney.status === 'active') {
 			await assertRoundUnlocked(tourney.id, tourney.currentRound || 0);
 		}
+		const four = {
+			pointsToWin: input.pointsToWin,
+			winBy: input.winBy,
+			setsToWin: input.setsToWin,
+			decidingSetPoints: input.decidingSetPoints
+		};
+		const scoringMode = inferScoringMode(four);
+		const scoringOverrides: ScoringOverrides = {
+			...(input.scoringOverrides !== undefined
+				? input.scoringOverrides
+				: ((tourney.scoringOverrides as ScoringOverrides | null) ?? {}))
+		};
+		delete scoringOverrides['4'];
 		await db
 			.update(tournament)
 			.set({
-				scoringMode: input.scoringMode,
+				scoringMode,
 				pointsToWin: input.pointsToWin,
 				winBy: input.winBy,
 				setsToWin: input.setsToWin,
 				decidingSetPoints: input.decidingSetPoints,
+				scoringOverrides,
 				lastActivityAt: new Date()
 			})
 			.where(eq(tournament.id, tourney.id));
@@ -442,7 +464,6 @@ export const updateScoringRules = command(
 				courtNumber: r.courtNumber,
 				playerIds: rotationPlayerIds(r)
 			}));
-			const updated = { ...tourney, ...input };
 			const ids = rotations.map((r) => r.id);
 			if (ids.length > 0) {
 				await db.delete(match).where(inArray(match.courtRotationId, ids));
@@ -454,18 +475,11 @@ export const updateScoringRules = command(
 					assignment,
 					assignments.map((a) => a.playerIds.length),
 					rotation.id,
-					{
-						pointsToWin: input.pointsToWin,
-						setsToWin: input.setsToWin,
-						decidingSetPoints: input.decidingSetPoints,
-						winBy: input.winBy
-					},
-					updated.scoringOverrides as ScoringOverrides | null
+					four,
+					scoringOverrides
 				);
 				if (rows.length > 0) await db.insert(match).values(rows);
 			}
-			void getMaxSets;
-			void getEffectiveScoring;
 		}
 		await refreshAll(tourney.id);
 		return { success: true };

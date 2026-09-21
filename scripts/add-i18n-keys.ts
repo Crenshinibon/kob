@@ -280,6 +280,28 @@ const keys: Record<string, { en: string; de: string; fr: string; es: string }> =
 		de: 'Diese Runde ist geschlossen. Frag den Organisator nach deinem nächsten Platz — oder öffne deine persönliche Seite.',
 		fr: 'Ce tour est fermé. Demande à l’organisateur ton prochain terrain — ou ouvre ta page personnelle.',
 		es: 'Esta ronda está cerrada. Pregunta al organizador tu siguiente pista — o abre tu página personal.'
+	},
+	manage_scoring_size_tab: { en: '{size}p', de: '{size}er', fr: '{size}p', es: '{size}p' },
+	manage_scoring_4p_hint: {
+		en: 'These are the rules for 4-player courts. Use the other tabs if 3p, 5p or 6p courts should score differently.',
+		de: 'Das sind die Regeln für 4er-Felder. Andere Tabs, wenn 3er, 5er oder 6er anders zählen sollen.',
+		fr: 'Règles des terrains à 4 joueurs. Utilisez les autres onglets si 3, 5 ou 6 joueurs doivent compter autrement.',
+		es: 'Estas son las reglas para pistas de 4. Usa las otras pestañas si 3p, 5p o 6p deben puntuar distinto.'
+	},
+	manage_points_per_set: { en: 'Points per Set', de: 'Punkte pro Satz', fr: 'Points par set', es: 'Puntos por set' },
+	manage_win_by: { en: 'Win by', de: 'Gewinnabstand', fr: 'Écart pour gagner', es: 'Ventaja para ganar' },
+	manage_sets_to_win: { en: 'Sets to Win', de: 'Sätze zum Sieg', fr: 'Sets pour gagner', es: 'Sets para ganar' },
+	manage_sets_to_win_hint: {
+		en: '1 = one set. 2 = best of 3.',
+		de: '1 = ein Satz. 2 = Best of 3.',
+		fr: '1 = un set. 2 = meilleur des 3.',
+		es: '1 = un set. 2 = al mejor de 3.'
+	},
+	manage_deciding_set_points: {
+		en: 'Points for Deciding Set',
+		de: 'Punkte im Entscheidungssatz',
+		fr: 'Points du set décisif',
+		es: 'Puntos del set decisivo'
 	}
 };
 

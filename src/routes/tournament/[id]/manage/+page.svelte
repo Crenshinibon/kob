@@ -14,6 +14,13 @@
 		sortPlayersBySeed,
 		type SeedOrderMove
 	} from '$lib/manage-logic';
+	import {
+		SCORING_COURT_SIZES,
+		scoringDraftFromConfig,
+		type CourtScoringRules,
+		type ScoringCourtSize,
+		type ScoringOverrides
+	} from '$lib/tournament-logic';
 	import { flip } from 'svelte/animate';
 	import { quintOut } from 'svelte/easing';
 	import { scale } from 'svelte/transition';
@@ -58,6 +65,9 @@
 	let regenBusyIds = $state<number[]>([]);
 	let regenDoneIds = $state<number[]>([]);
 	const REGEN_COOLDOWN_MS = 2500;
+	let scoringTab = $state<ScoringCourtSize>(4);
+	let scoringEdits = $state<Record<string, CourtScoringRules> | null>(null);
+	let scoringEditSnap = $state('');
 
 	afterNavigate(() => {
 		const fromHash = window.location.hash.replace('#', '') || 'players';
@@ -187,6 +197,81 @@
 		} finally {
 			if (gen === orderGen) pendingOrderIds = null;
 		}
+	}
+
+	const scoringSnapshot = $derived(
+		page?.tournament
+			? JSON.stringify({
+					p: page.tournament.pointsToWin,
+					w: page.tournament.winBy,
+					s: page.tournament.setsToWin,
+					d: page.tournament.decidingSetPoints,
+					o: page.tournament.scoringOverrides
+				})
+			: ''
+	);
+	const serverScoringDraft = $derived.by((): Record<string, CourtScoringRules> | null => {
+		if (!scoringSnapshot) return null;
+		const parsed = JSON.parse(scoringSnapshot) as {
+			p: number;
+			w: number;
+			s: number;
+			d: number;
+			o: ScoringOverrides | null;
+		};
+		return scoringDraftFromConfig(
+			{
+				pointsToWin: parsed.p,
+				winBy: parsed.w,
+				setsToWin: parsed.s,
+				decidingSetPoints: parsed.d
+			},
+			parsed.o
+		);
+	});
+	const scoringDraft = $derived(
+		scoringEdits !== null && scoringEditSnap === scoringSnapshot ? scoringEdits : serverScoringDraft
+	);
+	const currentScoring = $derived(scoringDraft?.[String(scoringTab)] ?? null);
+
+	function patchScoring(
+		size: ScoringCourtSize,
+		field: keyof CourtScoringRules,
+		value: number
+	): void {
+		const draft = scoringDraft;
+		if (!draft || !Number.isFinite(value)) return;
+		const key = String(size);
+		const current = draft[key];
+		if (!current) return;
+		scoringEditSnap = scoringSnapshot;
+		scoringEdits = {
+			...draft,
+			[key]: { ...current, [field]: value }
+		};
+	}
+
+	function saveScoring(): void {
+		const draft = scoringDraft;
+		const four = draft?.['4'];
+		const three = draft?.['3'];
+		const five = draft?.['5'];
+		const six = draft?.['6'];
+		if (!four || !three || !five || !six) return;
+		run(() =>
+			updateScoringRules({
+				tournamentId: data.tournamentId,
+				pointsToWin: four.pointsToWin,
+				winBy: four.winBy,
+				setsToWin: four.setsToWin,
+				decidingSetPoints: four.decidingSetPoints,
+				scoringOverrides: {
+					'3': three,
+					'5': five,
+					'6': six
+				}
+			})
+		);
 	}
 
 	function regenLocked(playerId: number): boolean {
@@ -639,76 +724,118 @@
 			{/if}
 			<div class="panel">
 				<h2>{m.manage_scoring_heading()}</h2>
-				<form
-					class="scoring-form"
-					onsubmit={(e) => {
-						e.preventDefault();
-						const fd = new FormData(e.currentTarget);
-						run(() =>
-							updateScoringRules({
-								tournamentId: data.tournamentId,
-								scoringMode: String(fd.get('scoringMode')) as 'single-21' | 'best-of-3' | 'custom',
-								pointsToWin: Number(fd.get('pointsToWin')),
-								winBy: Number(fd.get('winBy')),
-								setsToWin: Number(fd.get('setsToWin')),
-								decidingSetPoints: Number(fd.get('decidingSetPoints'))
-							})
-						);
-					}}
-				>
-					<div class="scoring-grid">
-						<label
-							>Scoring
-							<select
-								name="scoringMode"
-								value={page.tournament.scoringMode}
-								disabled={page.lock.roundHasScores}
-							>
-								<option value="single-21">single-21</option>
-								<option value="best-of-3">best-of-3</option>
-								<option value="custom">custom</option>
-							</select>
-						</label>
-						<label
-							>Points <input
-								name="pointsToWin"
-								type="number"
-								value={page.tournament.pointsToWin}
-								disabled={page.lock.roundHasScores}
-							/></label
-						>
-						<label
-							>Win by <input
-								name="winBy"
-								type="number"
-								value={page.tournament.winBy}
-								disabled={page.lock.roundHasScores}
-							/></label
-						>
-						<label
-							>Sets <input
-								name="setsToWin"
-								type="number"
-								value={page.tournament.setsToWin}
-								disabled={page.lock.roundHasScores}
-							/></label
-						>
-						<label
-							>Deciding <input
-								name="decidingSetPoints"
-								type="number"
-								value={page.tournament.decidingSetPoints}
-								disabled={page.lock.roundHasScores}
-							/></label
-						>
-					</div>
-					<button
-						type="submit"
-						class="btn-primary scoring-save"
-						data-testid="save-scoring"
-						disabled={page.lock.roundHasScores}>{m.save_scoring()}</button
+				{#if currentScoring}
+					<form
+						class="scoring-form"
+						onsubmit={(e) => {
+							e.preventDefault();
+							saveScoring();
+						}}
 					>
-				</form>
+						<div
+							class="scoring-size-tabs"
+							role="tablist"
+							aria-label={m.manage_scoring_heading()}
+							data-testid="scoring-size-tabs"
+						>
+							{#each SCORING_COURT_SIZES as size (size)}
+								<button
+									type="button"
+									role="tab"
+									class:active={scoringTab === size}
+									aria-selected={scoringTab === size}
+									data-testid="scoring-tab-{size}"
+									disabled={page.lock.roundHasScores}
+									onclick={() => (scoringTab = size)}
+								>
+									{m.manage_scoring_size_tab({ size })}
+								</button>
+							{/each}
+						</div>
+						{#if scoringTab === 4}
+							<p class="hint">{m.manage_scoring_4p_hint()}</p>
+						{/if}
+						<div class="scoring-grid" data-testid="scoring-fields">
+							<label
+								>{m.manage_points_per_set()}
+								<input
+									data-testid="scoring-points"
+									type="number"
+									min="9"
+									max="50"
+									value={currentScoring.pointsToWin}
+									disabled={page.lock.roundHasScores}
+									oninput={(e) =>
+										patchScoring(
+											scoringTab,
+											'pointsToWin',
+											Number((e.currentTarget as HTMLInputElement).value)
+										)}
+								/></label
+							>
+							<label
+								>{m.manage_win_by()}
+								<input
+									data-testid="scoring-win-by"
+									type="number"
+									min="1"
+									max="10"
+									value={currentScoring.winBy}
+									disabled={page.lock.roundHasScores}
+									oninput={(e) =>
+										patchScoring(
+											scoringTab,
+											'winBy',
+											Number((e.currentTarget as HTMLInputElement).value)
+										)}
+								/></label
+							>
+							<label
+								>{m.manage_sets_to_win()}
+								<input
+									data-testid="scoring-sets"
+									type="number"
+									min="1"
+									max="5"
+									value={currentScoring.setsToWin}
+									disabled={page.lock.roundHasScores}
+									oninput={(e) =>
+										patchScoring(
+											scoringTab,
+											'setsToWin',
+											Number((e.currentTarget as HTMLInputElement).value)
+										)}
+								/>
+								<span class="hint">{m.manage_sets_to_win_hint()}</span>
+							</label>
+							{#if currentScoring.setsToWin > 1}
+								<label
+									>{m.manage_deciding_set_points()}
+									<input
+										data-testid="scoring-deciding"
+										type="number"
+										min="9"
+										max="50"
+										value={currentScoring.decidingSetPoints}
+										disabled={page.lock.roundHasScores}
+										oninput={(e) =>
+											patchScoring(
+												scoringTab,
+												'decidingSetPoints',
+												Number((e.currentTarget as HTMLInputElement).value)
+											)}
+									/></label
+								>
+							{/if}
+						</div>
+						<button
+							type="submit"
+							class="btn-primary scoring-save"
+							data-testid="save-scoring"
+							disabled={page.lock.roundHasScores}>{m.save_scoring()}</button
+						>
+					</form>
+				{/if}
 			</div>
 			<div class="panel">
 				<h2>{m.manage_layout_heading()}</h2>
@@ -848,6 +975,35 @@
 	.tabs button.active {
 		border-color: var(--accent-primary);
 		color: var(--accent-primary);
+	}
+
+	.scoring-size-tabs {
+		display: flex;
+		gap: var(--spacing-xs);
+		flex-wrap: wrap;
+	}
+
+	.scoring-size-tabs button {
+		min-height: 44px;
+		min-width: 44px;
+		padding: 0.25rem 0.7rem;
+		font-size: var(--font-size-sm);
+		font-weight: 700;
+		background: var(--bg-secondary);
+		color: var(--text-primary);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+	}
+
+	.scoring-size-tabs button.active {
+		border-color: var(--accent-primary);
+		color: var(--accent-primary);
+	}
+
+	.scoring-size-tabs button:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
 	}
 
 	.stack {

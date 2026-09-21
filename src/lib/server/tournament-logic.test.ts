@@ -39,6 +39,9 @@ import {
 	getMinPointsForSet,
 	getScoringLabel,
 	getEffectiveScoring,
+	inferScoringMode,
+	displayedScoringForCourt,
+	scoringDraftFromConfig,
 	recalculateCourtConfigAfterRetirement,
 	computeRetirementFinalStanding,
 	buildRedistributionFromResults,
@@ -2983,6 +2986,51 @@ describe('Scoring logic', () => {
 		it('no override falls through to default', () => {
 			expect(getScoringLabel(baseConfig, 5)).toBe('1 set to 15');
 			expect(getScoringLabel(baseConfig, 4)).toBe('1 set to 21');
+		});
+	});
+
+	describe('inferScoringMode', () => {
+		it('maps default 4p rules to single-21', () => {
+			expect(
+				inferScoringMode({ pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 })
+			).toBe('single-21');
+		});
+		it('maps first-to-two with 21/15 to best-of-3', () => {
+			expect(
+				inferScoringMode({ pointsToWin: 21, winBy: 2, setsToWin: 2, decidingSetPoints: 15 })
+			).toBe('best-of-3');
+		});
+		it('everything else is custom', () => {
+			expect(
+				inferScoringMode({ pointsToWin: 15, winBy: 2, setsToWin: 1, decidingSetPoints: 15 })
+			).toBe('custom');
+			expect(
+				inferScoringMode({ pointsToWin: 21, winBy: 1, setsToWin: 1, decidingSetPoints: 15 })
+			).toBe('custom');
+		});
+	});
+
+	describe('displayedScoringForCourt and scoringDraftFromConfig', () => {
+		const base = { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
+
+		it('shows 15 points on 5p/6p when 4p is 21 with no override', () => {
+			expect(displayedScoringForCourt(5, base).pointsToWin).toBe(15);
+			expect(displayedScoringForCourt(6, base).pointsToWin).toBe(15);
+			expect(displayedScoringForCourt(3, base).pointsToWin).toBe(21);
+			expect(displayedScoringForCourt(4, base).pointsToWin).toBe(21);
+		});
+
+		it('uses an explicit 5p override', () => {
+			expect(displayedScoringForCourt(5, base, { '5': { pointsToWin: 12 } }).pointsToWin).toBe(12);
+		});
+
+		it('builds a 4/3/5/6 draft from 4p plus overrides', () => {
+			const draft = scoringDraftFromConfig(base, { '3': { setsToWin: 2, decidingSetPoints: 11 } });
+			expect(draft['4'].setsToWin).toBe(1);
+			expect(draft['3'].setsToWin).toBe(2);
+			expect(draft['3'].decidingSetPoints).toBe(11);
+			expect(draft['5'].pointsToWin).toBe(15);
+			expect(draft['6'].pointsToWin).toBe(15);
 		});
 	});
 });
