@@ -19,7 +19,7 @@ Shared migration `0016` is in `drizzle/0016_org_player_experience.sql` and is ap
 **Try-out UX (follow-up, still 095–099):**
 
 - Manage Players: separate Search / Add one / Add many panels; mass-enter uses `PlayerNameImport` (same as Create).
-- Roster lists by `seedRank`. Random-seed order is a right-hand column of up / down / to-top / to-bottom icon buttons — no order-number field.
+- Roster lists by `seedRank`. Random-seed order buttons (up / down / to-top / to-bottom) show only in **setup** or **round 1 before scores**. After that they are hidden, with a hint. Add / remove use the same gate.
 - Courts tab: pointer long-press drag-and-drop plus a court `<select>`; valid drop targets highlight; invalid courts dim; cards always sort by court number.
 - Setup and operations: rounds and physical-court count use the same **range sliders** as Create (rounds 1–10, physical courts 1–16).
 - Operations header: Manage / Check-in / View Standings are spaced chip links.

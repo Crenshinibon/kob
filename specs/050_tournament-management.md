@@ -9,7 +9,11 @@
 
 ## Pages
 
-### Dashboard (`/`)
+### Home (`/`)
+
+Signed-out visitors see the public landing page (format, features, sign up / log in). Signed-in organizers see the dashboard below.
+
+### Dashboard (signed in)
 
 Shows user's tournaments organized in sections:
 
@@ -33,8 +37,8 @@ Shows user's tournaments organized in sections:
 
 **Actions**
 
-- "Create Tournament" button (disabled if not logged in)
-- Click any tournament card to view/manage
+- "+ New Tournament" link (this dashboard is signed-in only)
+- Click any tournament card to open the operations view
 
 ### Create Tournament (`/tournament/create`)
 
@@ -67,18 +71,17 @@ Combined form with:
   - Matches completed (e.g., "2/3")
   - Shift badge (when virtual courts > physical courts)
   - Link to open court page
-- [Close Round] button (enabled when all matches done)
-- Progress: "Round 2 of 3"
-- Scoring overrides configuration (per court type, collapsible sections) — also on Manage → Rules
-- Player retirement form (collapsible, between rounds only)
-- Injury reporting form (collapsible, during active rounds)
-- [Delete Tournament] button (also on Manage → Tournament)
-- After start: physical-court count on the schedule
+- Close round / finalize when every match is done. Until then the action is a hint (`waiting-scores`), not a disabled button. Closing refreshes tournament data so the next round’s court cards and QR links appear immediately.
+- Progress: "Round 2 of 3" (`round-label`)
+- Manual tie-break rank dialog on a court card when that court is still tied after the statistical factors
+- One-line hint linking to Manage → Rules and Manage → Players. Scoring, tie-break editing, retire, injury, and delete are **not** on this page.
+- After start: physical-court count on the schedule (same range slider as Create)
+- Reopen last round when the current round has no scores (also on Manage → Tournament)
 - Polling: `query()` + client interval while visible (not `query.live()` — [1020](./archive/1020_live-query-timeout.md))
 
 ### Manage (`/tournament/[id]/manage`) and Check-in (`/tournament/[id]/check-in`) — implemented
 
-Organizer back office (roster edits, swap/move players **before scores**, rules, finish early, reopen last round), **optional** player check-in (personal QRs alongside court QRs), player page as an additional scoring surface (current game + upcoming), and create ≠ start. See **[095](./095_org-player-experience-index.md)**, [096](./096_tournament-management-page.md), [097](./097_player-check-in.md), [098](./098_player-page.md), [099](./099_tournament-setup-and-start.md).
+Organizer back office and optional check-in. Seed order, add, and remove are setup or round 1 before scores. Court moves are allowed in any round that has no scores yet. Delete asks for confirmation. Player page is a second scoring surface (write-once). See **[095](./095_org-player-experience-index.md)**, [096](./096_tournament-management-page.md), [097](./097_player-check-in.md), [098](./098_player-page.md), [099](./099_tournament-setup-and-start.md).
 
 ### Total Standings (`/tournament/[id]/standings`)
 
@@ -91,20 +94,19 @@ Organizer back office (roster edits, swap/move players **before scores**, rules,
 
 **tournament-data.remote.ts**
 
-- `getTournamentData(tournamentId)` — regular query
-- `getTournamentDataLive(tournamentId)` — live query with 3-second polling
+- `getTournamentData(tournamentId)` — query, refreshed on an interval by the page (current-round QR links use the stable `court.token`; a past round in the stepper uses that round’s `courtRotation.token`)
 
 **tournament-actions.remote.ts**
 
 - `closeRoundForm` — form: validates all matches scored, closes round, pre-computes next round assignments
-- `deleteTournamentForm` — form: cascades deletion through all related tables
+- `deleteTournamentForm` — form on Manage → Tournament: confirm, then cascade-delete and redirect home
 - `updateScoringOverrides` — command: per-court-type scoring overrides
 - `retirePlayer` — command: validates no scores exist, marks player retired, recalculates courts, regenerates current round
 - `reportInjury` — command: validates scores exist, cancels/marks injured matches, marks player retired
 
 **create.remote.ts** (on create page)
 
-- `createTournamentForm` — form: parses player names, validates count, calculates court config, creates tournament + players + round 1, redirects
+- `createTournamentForm` — form: parses player names, saves a `setup` tournament (no round 1). Start is `startTournamentForm`.
 
 **scores.remote.ts** (on court page; shared `$lib/server/save-score.ts` after 098)
 

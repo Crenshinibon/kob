@@ -530,18 +530,17 @@ The pure logic is excellently covered. Everything above escaped because the glue
 ### E2E test additions (in priority order)
 
 - [x] Round-1 retirement, 16→15 and 17→16 (finding 1) — **passing**
-- [ ] 8p tournament + injury → close round → completion (finding 2) — **failing**; see 1045
+- [x] 8p tournament + injury → close round → completion (finding 2) — **passing** (full suite, 2026-09-21)
 - [x] Score submission with wrong token rejected (finding 3) — **passing**
 - [x] Close-round rejected while a court is incomplete (finding 4) — **passing**
-- [ ] Replacement-player flow (`useReplacement`) — **failing**; see 1045
-- [ ] Tie-break configuration end-to-end: dice and manual rank flows — fix applied; re-verify full suite
-- [ ] Standings page after mid-tournament court-size change (finding 6) — **failing**; see 1045
+- [x] Replacement-player flow (`useReplacement`) — **passing**
+- [x] Tie-break configuration end-to-end: dice and manual rank flows — **passing**
+- [x] Standings page after mid-tournament court-size change (finding 6) — **passing**
 
 ### Notes
 
-- E2E requires `DATABASE_URL` (Neon) and Chromium at `/usr/bin/chromium`
-  (`playwright.config.ts`); neither is available in cloud-agent environments by default.
-- `bun run test:unit` and `bun run check` are the fast local gates; keep both green per finding.
+- The full Playwright suite was green locally on 2026-09-21 (`bun run test:e2e`, one worker).
+- `bun run test:unit` and `bun run check` are the fast local gates.
 
 ---
 

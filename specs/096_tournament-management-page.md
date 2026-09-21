@@ -353,8 +353,8 @@ Reused unchanged from `tournament-actions.remote.ts`: `retirePlayer`, `reportInj
 
 ### `closeRoundForm` checklist
 
-- [ ] Next-round `courtSizes` computed from **active player count**, not from `parseCourtSizes(tourney)` when the current round has `manualAdjustedAt` rotations.
-- [ ] Completion check keeps using `rotation.courtSize` (already the case).
+- [x] Next-round `courtSizes` computed from **active player count**, not from `parseCourtSizes(tourney)` when the current round has `manualAdjustedAt` rotations. (`closeRoundForm` recalculates when any rotation has `manualAdjustedAt` or the active count differs from `playerCount`.)
+- [x] Completion check keeps using `rotation.courtSize` (already the case).
 
 ---
 
