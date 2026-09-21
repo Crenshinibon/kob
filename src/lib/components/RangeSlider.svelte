@@ -27,12 +27,18 @@
 		onchange?: (value: number) => void;
 	} = $props();
 
+	const currentDisplay = $derived(
+		formatCurrent ? formatCurrent(value) : (currentLabel ?? String(value))
+	);
+	const currentTestId = $derived(testId ? `${testId}-value` : 'range-current');
+
 	function readValue(e: Event): number {
 		return Number((e.currentTarget as HTMLInputElement).value);
 	}
 </script>
 
 <div class="range-container">
+	<span class="range-current" data-testid={currentTestId}>{currentDisplay}</span>
 	<input
 		type="range"
 		{id}
@@ -48,7 +54,6 @@
 	/>
 	<div class="range-labels">
 		<span>{min}</span>
-		<span class="range-current">{formatCurrent ? formatCurrent(value) : currentLabel}</span>
 		<span>{max}</span>
 	</div>
 </div>
@@ -59,11 +64,18 @@
 		grid-template-columns: 1fr;
 	}
 
+	.range-current {
+		display: block;
+		text-align: center;
+		font-size: var(--font-size-lg);
+		font-weight: 700;
+		color: var(--text-primary);
+	}
+
 	.range-container input[type='range'] {
 		width: 100%;
 		accent-color: var(--accent-primary);
 		margin: var(--spacing-sm) 0;
-		grid-row: 1;
 	}
 
 	.range-container input[type='range']:disabled {
@@ -75,12 +87,5 @@
 		justify-content: space-between;
 		font-size: var(--font-size-sm);
 		color: var(--text-muted);
-		grid-row: 2;
-	}
-
-	.range-current {
-		text-align: center;
-		font-weight: 700;
-		color: var(--text-primary);
 	}
 </style>
