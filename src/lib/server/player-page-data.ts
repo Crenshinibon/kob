@@ -262,30 +262,51 @@ export async function fetchPlayerPageData(token: string) {
 			})
 		: null;
 
+	const explainedNow =
+		myRotation && courtSizes.length > 0
+			? resolveRotationStandings({
+					rotation: myRotation,
+					matchData: currentMatches,
+					playerIds: rotationPlayerIds(myRotation),
+					playerNames: names,
+					players,
+					completedRounds: completedByRound.slice(0, Math.max(0, currentRound - 1)),
+					courtSizes,
+					tourney,
+					useSnapshot: false,
+					includeUnscored: true
+				})
+			: null;
+
+	const courtSizeNow = myRotation?.courtSize ?? 4;
+	const youCourtRank = explainedNow?.standings.find((s) => s.playerId === row.id)?.rank ?? null;
+	const histRank =
+		myStanding?.roundHistory.find((h) => h.round === currentRound)?.rankOnCourt ?? null;
+	const rawLiveRank = youCourtRank ?? histRank ?? ranks?.bestRank ?? null;
 	const liveRank =
-		myStanding?.roundHistory.find((h) => h.round === currentRound)?.rankOnCourt ??
-		ranks?.bestRank ??
-		null;
+		rawLiveRank != null && rawLiveRank >= 1 && rawLiveRank <= courtSizeNow ? rawLiveRank : null;
 
 	const liveResults =
 		currentRotations.length > 0 && liveStandings
 			? currentRotations.map((r) => {
 					const rows = matchesByRotation.get(r.id) ?? [];
+					const complete = groupsComplete(rows, r.courtSize);
 					const hasScores = rows.some((m) => m.teamAScore != null);
-					return {
-						courtNumber: r.courtNumber,
-						standings: rotationPlayerIds(r).map((pid, i) => {
+					const standings = rotationPlayerIds(r)
+						.map((pid, i) => {
 							const s = liveStandings.find((st) => st.playerId === pid);
 							const hist = s?.roundHistory.find((h) => h.round === currentRound);
+							const ranked = complete || (hasScores && hist != null);
 							return {
 								playerId: pid,
-								rank: hasScores ? (hist?.rankOnCourt ?? i + 1) : i + 1,
-								points: hasScores ? (hist?.points ?? 0) : 0,
-								diff: hasScores ? (hist?.diff ?? 0) : 0,
-								matchCount: hasScores ? 1 : 0
+								rank: ranked ? (hist?.rankOnCourt ?? i + 1) : i + 1,
+								points: ranked ? (hist?.points ?? 0) : 0,
+								diff: ranked ? (hist?.diff ?? 0) : 0,
+								matchCount: ranked ? 1 : 0
 							};
 						})
-					};
+						.sort((a, b) => a.rank - b.rank);
+					return { courtNumber: r.courtNumber, standings };
 				})
 			: null;
 
@@ -304,7 +325,7 @@ export async function fetchPlayerPageData(token: string) {
 					courtSizes: placementSizes,
 					bestRankOnCourt: ranks?.bestRank ?? null,
 					safeRankOnCourt: ranks?.safeRank ?? null,
-					liveRankOnCourt: liveRank,
+					liveRankOnCourt: ranks ? (liveRank ?? youCourtRank) : null,
 					liveRoundResults: liveResults,
 					frozenCourtNumbers: frozenNumbers,
 					playerId: row.id
@@ -332,22 +353,6 @@ export async function fetchPlayerPageData(token: string) {
 	const courtsDone = currentRotations.filter((r) =>
 		groupsComplete(matchesByRotation.get(r.id) ?? [], r.courtSize)
 	).length;
-
-	const explainedNow =
-		myRotation && courtSizes.length > 0
-			? resolveRotationStandings({
-					rotation: myRotation,
-					matchData: currentMatches,
-					playerIds: rotationPlayerIds(myRotation),
-					playerNames: names,
-					players,
-					completedRounds: completedByRound.slice(0, Math.max(0, currentRound - 1)),
-					courtSizes,
-					tourney,
-					useSnapshot: false,
-					includeUnscored: true
-				})
-			: null;
 
 	const courtStandings =
 		explainedNow && explainedNow.standings.length > 0
@@ -506,19 +511,25 @@ export async function fetchPlayerPageData(token: string) {
 	if (courtSizes.length > 0) {
 		for (const rotation of rotations) {
 			if (!rotationPlayerIds(rotation).includes(row.id)) continue;
-			const rows = historyByRotation.get(rotation.id) ?? [];
-			const explained = resolveRotationStandings({
-				rotation,
-				matchData: rows.map(toMatchData),
-				playerIds: rotationPlayerIds(rotation),
-				playerNames: names,
-				players,
-				completedRounds: completedByRound.slice(0, Math.max(0, rotation.roundNumber - 1)),
-				courtSizes,
-				tourney,
-				useSnapshot: hasStandingsSnapshot(rotation),
-				includeUnscored: rotation.roundNumber === currentRound
-			});
+			const isCurrent = rotation.roundNumber === currentRound;
+			const matchData = isCurrent
+				? (matchesByRotation.get(rotation.id) ?? currentMatches)
+				: (historyByRotation.get(rotation.id) ?? []).map(toMatchData);
+			const explained =
+				isCurrent && explainedNow
+					? explainedNow
+					: resolveRotationStandings({
+							rotation,
+							matchData,
+							playerIds: rotationPlayerIds(rotation),
+							playerNames: names,
+							players,
+							completedRounds: completedByRound.slice(0, Math.max(0, rotation.roundNumber - 1)),
+							courtSizes,
+							tourney,
+							useSnapshot: hasStandingsSnapshot(rotation),
+							includeUnscored: isCurrent
+						});
 			if (explained.standings.length === 0) continue;
 			const sorted = [...explained.standings].sort((a, b) => a.rank - b.rank);
 			const index = sorted.findIndex((s) => s.playerId === row.id);
@@ -526,6 +537,7 @@ export async function fetchPlayerPageData(token: string) {
 			const self = sorted[index];
 			const above = sorted[index - 1] ?? null;
 			const below = sorted[index + 1] ?? null;
+			const pairFactor = explained.pairDecidingFactor;
 			recordRounds.push({
 				round: rotation.roundNumber,
 				courtNumber: rotation.courtNumber,
@@ -536,14 +548,16 @@ export async function fetchPlayerPageData(token: string) {
 				above: above
 					? {
 							name: above.name,
-							decidingFactor: neighborSeparatingFactor(above, self),
+							decidingFactor:
+								pairFactor(above.playerId, self.playerId) ?? neighborSeparatingFactor(above, self),
 							decidingOutcome: 'lost'
 						}
 					: null,
 				below: below
 					? {
 							name: below.name,
-							decidingFactor: neighborSeparatingFactor(self, below),
+							decidingFactor:
+								pairFactor(self.playerId, below.playerId) ?? neighborSeparatingFactor(self, below),
 							decidingOutcome: 'won'
 						}
 					: null
@@ -638,7 +652,11 @@ export async function fetchPlayerPageData(token: string) {
 			rounds: recordRounds
 		},
 		placement: {
-			current: range.current ?? myStanding?.overallRank ?? null,
+			current:
+				range.current ??
+				(tourney.formatType === 'random-seed' && currentRound === 1
+					? null
+					: (myStanding?.overallRank ?? null)),
 			total: activeTotal,
 			best: range.best,
 			worst: range.worst,

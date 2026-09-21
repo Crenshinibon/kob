@@ -548,7 +548,7 @@
 								/>
 							</p>
 							{#if round.above}
-								<p class="hint">
+								<p class="hint" data-testid="player-record-vs-above">
 									{msg.player_record_vs_above({ name: round.above.name })}
 									<TieBreakFactorIcons
 										tiedFactors={[]}
@@ -559,7 +559,7 @@
 								</p>
 							{/if}
 							{#if round.below}
-								<p class="hint">
+								<p class="hint" data-testid="player-record-vs-below">
 									{msg.player_record_vs_below({ name: round.below.name })}
 									<TieBreakFactorIcons
 										tiedFactors={[]}

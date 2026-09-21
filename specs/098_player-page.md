@@ -281,7 +281,7 @@ Always visible once the tournament has started (`status = 'active'` or `complete
 
 These are the numbers that dictate court rank and the next court — not the raw rally totals. Per-game rows in History still show the actual scores (21–18). If any round was 5p/6p or had canceled matches, a one-line note under the strip: "5-player / 6-player rounds use averages to rank — totals here match ranking." Do **not** also show a raw-points line.
 
-Under the totals, **every round** the player played lists court + rank plus the **tie-break decider** versus the player immediately above and below (`TieBreakFactorIcons`, same factors as court standings). The above/below icons are the factor that **separates those two players** (points if the neighbor has fewer points — not the seed factor that split a different tie). That is how they see why they ranked where they did, including after all scores are in.
+Under the totals, **every round** the player played lists court + rank plus the **tie-break decider** versus the player immediately above and below (`TieBreakFactorIcons`, same factors as court standings). The above/below icons are the factor that **separates those two players** — `explainPairTieBreak` / `pairDecidingFactor` on that pair (points if the neighbor has fewer points — not the seed `#` factor that split a different tie with the player above). Example: Isabella tied with YOU on P/±/Σ/Δ and split on seed (`#`); Derek below has fewer points, so Below: Derek shows **P**, not `#`.
 
 `not_started`: record strip hidden (no games yet). Seed may still be shown for preseed: "Seed 4 of 16 · 1250 pts · tournament not started."
 
@@ -427,7 +427,7 @@ reachableFinalPlaceRange(ctx: {
 - **Best path:** from `bestRankOnCourt`, each remaining step takes the **best legal destination** (ladder: up if rank ≤ 2, otherwise the forced down; then assume rank 1 on that court for further steps so they keep promoting). Finish **rank 1** on the court they land on. Last round (`t = 0`): `place(k, bestRankOnCourt)`.
 - **Safe path:** from `safeRankOnCourt`, each remaining step takes the **worst legal destination** (ladder: down if rank ≥ 3, otherwise the forced stay/up; then assume last on that court for further steps). Finish **last** on the court they land on. Last round: `place(k, safeRankOnCourt)`.
 - **Preseed:** best path = winners' half each time that rank still qualifies (≤ half the court); otherwise the forced losers' half, then winners' from there. Safe path is the mirror.
-- **Round 1 random (vertical seeding):** finishers of rank _ρ_ occupy a **tier band** of next courts (`verticalTierCourtRange` — on 8×4, 4ths → courts 7–8). **Current** is the first place in that tier (`verticalTierPlaceRange` — 4ths → 25th) while other courts are 0–0, because those unfinished courts have not produced 4ths yet. Best starts at the top of that band (then remaining promotes); safe starts at the bottom (then remaining relegations, last on that court). Do **not** treat 0–0 other courts as finished: neither `matchCount`/`matchesPlayed` nor slot-order ranks. That path produced **Currently 4 of 32** and **Safe 28** (dummy first-of-4ths pinned to court 7 last) after a court-1 4th. Safe is court 8 last (**32nd**). Once every other court has real non-zero scores, use live `verticalSeeding` (jumping as they report is still a feature).
+- **Round 1 random (vertical seeding):** finishers of rank _ρ_ occupy a **tier band** of next courts (`verticalTierCourtRange` — on 8×4, 4ths → courts 7–8, **1sts → courts 1–2**). **Current** is the first place in that tier (`verticalTierPlaceRange` — 4ths → 25th, **1sts → 1st**) while other courts are 0–0. A court-8 1st is **Currently 1st of 32**, not 29th (seed-court slot). Best starts at the top of that band (then remaining promotes); safe starts at the bottom (then remaining relegations, last on that court). **1st, 4 rounds, others unfinished:** land on court 2, then three remaining rounds of relegation, last of court 5 = **20th**. Do **not** treat 0–0 other courts as finished: neither `matchCount`/`matchesPlayed` nor slot-order ranks. That path produced **Currently 4 of 32** and **Safe 28** (dummy first-of-4ths pinned to court 7 last) after a court-1 4th, and **Currently 29 / Safe 4** after a court-8 1st. Safe for a 4th is court 8 last (**32nd**). Once every other court has real non-zero scores, use live `verticalSeeding` (jumping as they report is still a feature).
 - When this court has **no scores yet**, `bestRank = 1` and `safeRank = courtSize` (full court). Do not pretend a 0–0 ranking is a result.
 
 `bestPlace(k) = place(k, 1)`, `worstPlace(k) = place(k, courtSizes[k])`. The two paths yield `minCourt` / `maxCourt` and the two place numbers.
@@ -442,17 +442,18 @@ reachableFinalPlaceRange(ctx: {
 
 **Example — 16 players, 4 courts, 4 rounds (always-promote / always-relegate, not ± leftover courts):**
 
-| Round | Court | Still-possible ranks | Best path         | Safe path                      | Best – Safe   |
-| ----- | ----- | -------------------- | ----------------- | ------------------------------ | ------------- |
-| 1     | 3     | 1–4 (no scores)      | → Court 1 rank 1  | → Court 4 last                 | 1st – 16th    |
-| 1     | 3     | 1–4 (1 match saved)  | 1sts tier → C1    | 4ths tier → C4                 | 1st – 16th    |
-| 1     | 1     | 4 only (court done, others unfinished, 32p / 4 rounds; currently 25th) | 4ths band C7 then promote to C5 | 4ths band C8 last | 17th – 32nd |
-| 2     | 3     | 1–4                  | C2 then C1 rank 1 | C4 last                        | 1st – 16th    |
-| 2     | 3     | 1–2 only             | C2 then C1 rank 1 | C2 last (forced up, then last) | 1st – 8th     |
-| 2     | 3     | 3–4 only             | C4 then C3 rank 1 | C4 last                        | 9th – 16th    |
-| 3     | 3     | 2                    | C2 rank 1         | C2 last                        | 5th – 8th     |
-| 4     | 2     | 1–4                  | 5th               | 8th                            | 5th – 8th     |
-| 4     | 2     | 3 only               | Final place 7     | Final place 7                  | Final place 7 |
+| Round | Court | Still-possible ranks                                                     | Best path                              | Safe path                                     | Best – Safe   |
+| ----- | ----- | ------------------------------------------------------------------------ | -------------------------------------- | --------------------------------------------- | ------------- |
+| 1     | 3     | 1–4 (no scores)                                                          | → Court 1 rank 1                       | → Court 4 last                                | 1st – 16th    |
+| 1     | 3     | 1–4 (1 match saved)                                                      | 1sts tier → C1                         | 4ths tier → C4                                | 1st – 16th    |
+| 1     | 1     | 4 only (court done, others unfinished, 32p / 4 rounds; currently 25th)   | 4ths band C7 then three promotes to C4 | 4ths band C8 last                             | 13th – 32nd   |
+| 1     | 8     | 1 only (court done, 2 of 8 courts scored, 32p / 4 rounds; currently 1st) | 1sts band C1                           | 1sts band C2 then three ladder downs, C5 last | 1st – 20th    |
+| 2     | 3     | 1–4                                                                      | C2 then C1 rank 1                      | C4 last                                       | 1st – 16th    |
+| 2     | 3     | 1–2 only                                                                 | C2 then C1 rank 1                      | C2 last (forced up, then last)                | 1st – 8th     |
+| 2     | 3     | 3–4 only                                                                 | C4 then C3 rank 1                      | C4 last                                       | 9th – 16th    |
+| 3     | 3     | 2                                                                        | C2 rank 1                              | C2 last                                       | 5th – 8th     |
+| 4     | 2     | 1–4                                                                      | 5th                                    | 8th                                           | 5th – 8th     |
+| 4     | 2     | 3 only                                                                   | Final place 7                          | Final place 7                                 | Final place 7 |
 
 After two games, if 1st on this court is already impossible even with 21–0, `bestRankOnCourt` is 2 (or worse) and Best drops accordingly.
 
@@ -626,7 +627,7 @@ type PlayerPageData = {
 
 Queries per request: player by token → tournament → all rotations of the tournament (needed for history, movement, progress) → matches of the current round (all courts — needed for live standings, `liveRoundResults`, round progress) → players of the tournament (names) → standings. `court.token` is read from the `court` table via `rotation.courtId` so a player-page save can refresh `getCourtData`.
 
-`placement.current` in random-seed round 1 comes from `reachableFinalPlaceRange.current` (projected place after vertical seeding). After round 1, it matches the shared standings computation (`standings-service.ts`, 095). `placement.best/worst` come from `reachableRanksOnCourt` + `reachableFinalPlaceRange`. `record` uses ranking totals (094); above/below icons use `neighborSeparatingFactor`. `history` is a newest-first list of finished games (current round included) derived from the same rotations + matches. No extra round-trip.
+`placement.current` in random-seed round 1 comes from `reachableFinalPlaceRange.current` (projected place after vertical seeding) and must not fall back to seed-court `overallRank`. After round 1, it matches the shared standings computation (`standings-service.ts`, 095). `placement.best/worst` come from `reachableRanksOnCourt` + `reachableFinalPlaceRange`. `record` uses ranking totals (094); above/below icons use `pairDecidingFactor` / `neighborSeparatingFactor` (the factor that separates those two players, not the group's seed icon). `history` is a newest-first list of finished games (current round included) derived from the same rotations + matches. No extra round-trip.
 
 ### `src/routes/player/[token]/player-data.remote.ts`
 
@@ -689,8 +690,9 @@ Do **not** fall back to closed-round-only current place — live including this 
   - preseed live rank 2 on Court 3 in R1 → winners' half; rank 3 → losers' half.
   - preseed 20p (083): Court 5 frozen → exact court.
   - no scores on player's court → bestRank 1 / safeRank size.
-  - R1 court-done 4th, other courts 0–0 (including leaked `matchCount: 3`): Currently 25, Best 17, Safe 32 on 8×4; mixed `[5,4,4,4,4,4,4,3]` Best 14, Safe 32.
-- `neighborSeparatingFactor` — fewer points below → `round_points`, not the seed factor from a different tie.
+  - R1 court-done 4th, other courts 0–0 (including leaked `matchCount: 3`): Currently 25, Best 13, Safe 32 on 8×4; mixed `[5,4,4,4,4,4,4,3]` Best 10, Safe 32.
+  - R1 court-done **1st** on court 8, another court scored, others 0–0: Currently 1, Best 1, Safe 20 on 8×4 (not Currently 29 / Safe 4).
+- `neighborSeparatingFactor` — fewer points below → `round_points`, not the seed factor that split a different tie. Same points but the neighbor's singleton factor is points → still `round_points`.
 
 ### Unit (`src/lib/server/save-score.test.ts`)
 

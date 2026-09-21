@@ -350,9 +350,9 @@ describe('reachable ranks and range', () => {
 			playerId: 4
 		});
 		expect(range.current).toBe(25);
-		expect(range.best).toBe(17);
+		expect(range.best).toBe(13);
 		expect(range.worst).toBe(32);
-		expect(range.minCourt).toBe(5);
+		expect(range.minCourt).toBe(4);
 		expect(range.maxCourt).toBe(8);
 	});
 
@@ -382,10 +382,45 @@ describe('reachable ranks and range', () => {
 			playerId: 104
 		});
 		expect(range.current).toBe(25);
-		expect(range.best).toBe(14);
+		expect(range.best).toBe(10);
 		expect(range.worst).toBe(32);
-		expect(range.minCourt).toBe(4);
+		expect(range.minCourt).toBe(3);
 		expect(range.maxCourt).toBe(8);
+	});
+
+	it('random-seed round 1 court-8 1st is the 1sts band, not seed-court 29th', () => {
+		const sizes = Array(8).fill(4);
+		const dummyResults = sizes.map((_, i) => ({
+			courtNumber: i + 1,
+			standings: [1, 2, 3, 4].map((rank, j) => ({
+				playerId: i * 4 + j + 1,
+				rank,
+				points: i === 7 ? [60, 53, 53, 40][j]! : i === 0 ? [55, 50, 48, 42][j]! : 0,
+				diff: i === 7 ? [17, 3, 3, -23][j]! : i === 0 ? [10, 4, 0, -14][j]! : 0,
+				matchCount: i === 7 || i === 0 ? 3 : 0
+			}))
+		}));
+		const range = reachableFinalPlaceRange({
+			formatType: 'random-seed',
+			currentRound: 1,
+			numRounds: 4,
+			courtNumber: 8,
+			courtSizes: sizes,
+			bestRankOnCourt: 1,
+			safeRankOnCourt: 1,
+			liveRankOnCourt: 1,
+			liveRoundResults: dummyResults,
+			frozenCourtNumbers: new Set(),
+			playerId: 29
+		});
+		// 1sts occupy courts 1–2 after vertical. Current = first of that band (1st),
+		// not place(court 8, rank 1) = 29. Safe: land on court 2, then three remaining
+		// rounds of relegation → last of court 5 = 20th.
+		expect(range.current).toBe(1);
+		expect(range.best).toBe(1);
+		expect(range.worst).toBe(20);
+		expect(range.minCourt).toBe(1);
+		expect(range.maxCourt).toBe(5);
 	});
 });
 
@@ -399,6 +434,15 @@ describe('neighborSeparatingFactor', () => {
 		).toBe('round_points');
 	});
 
+	it('uses the neighbor pair factor when points look tied but seed was a different group', () => {
+		expect(
+			neighborSeparatingFactor(
+				{ points: 12.33, diff: -1, decidingFactor: 'initial_order' },
+				{ points: 12.33, diff: -1, decidingFactor: 'round_points' }
+			)
+		).toBe('round_points');
+	});
+
 	it('uses the shared deciding factor when points and diff match', () => {
 		expect(
 			neighborSeparatingFactor(
@@ -406,6 +450,15 @@ describe('neighborSeparatingFactor', () => {
 				{ points: 12.33, diff: -1, decidingFactor: 'initial_order' }
 			)
 		).toBe('initial_order');
+	});
+
+	it('uses rawPoints when averaged points match but sums do not', () => {
+		expect(
+			neighborSeparatingFactor(
+				{ points: 12, diff: -1, rawPoints: 37, decidingFactor: 'initial_order' },
+				{ points: 12, diff: -1, rawPoints: 35, decidingFactor: 'initial_order' }
+			)
+		).toBe('round_points');
 	});
 });
 

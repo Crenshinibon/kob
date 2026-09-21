@@ -558,12 +558,28 @@ export function verticalTierPlaceRange(
 	return { best: before + 1, worst: before + inTier };
 }
 
+export type NeighborStanding = {
+	points: number;
+	diff: number;
+	decidingFactor: TieBreakFactorId | null;
+	rawPoints?: number;
+	rawDiff?: number;
+};
+
 export function neighborSeparatingFactor(
-	better: { points: number; diff: number; decidingFactor: TieBreakFactorId | null },
-	worse: { points: number; diff: number; decidingFactor: TieBreakFactorId | null }
+	better: NeighborStanding,
+	worse: NeighborStanding
 ): TieBreakFactorId | null {
-	if (better.points !== worse.points) return 'round_points';
-	if (better.diff !== worse.diff) return 'round_diff';
+	const betterPoints = better.rawPoints ?? better.points;
+	const worsePoints = worse.rawPoints ?? worse.points;
+	if (better.points !== worse.points || betterPoints !== worsePoints) return 'round_points';
+	const betterDiff = better.rawDiff ?? better.diff;
+	const worseDiff = worse.rawDiff ?? worse.diff;
+	if (better.diff !== worse.diff || betterDiff !== worseDiff) return 'round_diff';
+	// Group icons (seed vs the player above) are not the factor that split this pair.
+	if (worse.decidingFactor && worse.decidingFactor !== better.decidingFactor) {
+		return worse.decidingFactor;
+	}
 	return better.decidingFactor ?? worse.decidingFactor;
 }
 
@@ -678,7 +694,7 @@ export function reachableFinalPlaceRange(ctx: ReachableFinalPlaceContext): {
 		if (ctx.bestRankOnCourt == null && ctx.safeRankOnCourt == null) {
 			return { best: 1, worst: lastPlace, minCourt: 1, maxCourt: courtCount, current: null };
 		}
-		const remainingAfterVertical = Math.max(0, t - 1);
+		const remainingAfterVertical = t;
 		const dummyOthers = otherCourtsUnscored(ctx.liveRoundResults, ctx.courtNumber);
 		const bestBand = verticalTierCourtRange(bestRank, ctx.courtSizes);
 		const safeBand = verticalTierCourtRange(safeRank, ctx.courtSizes);

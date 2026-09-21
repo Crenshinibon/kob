@@ -155,10 +155,50 @@ test.describe('Player page (098)', () => {
 			{ timeout: 20000 }
 		);
 		await expect(playerPage.getByTestId('player-placement-best')).toHaveText(
-			'Best achievable place: 17'
+			'Best achievable place: 13'
 		);
 		await expect(playerPage.getByTestId('player-placement-safe')).toHaveText('Safe place: 32');
 		await expect(playerPage.getByTestId('player-record-rounds')).toBeVisible();
+		await anon.close();
+	});
+
+	test('round-1 court-done 1st on last court is 1sts band, not seed-court 29th', async ({
+		page,
+		browser
+	}) => {
+		test.setTimeout(120000);
+		const name = `PlayerFirst ${Date.now()}`;
+		names.push(name);
+		const id = await createRandomSeedTournament(page, name, 32, 4);
+		const courtLinks = await getCourtLinks(page);
+		const lastCourt = courtLinks[courtLinks.length - 1];
+		await scoreAllMatchesOnCourt(page, lastCourt);
+		await expect(page.getByTestId('group-standings')).toBeVisible({ timeout: 15000 });
+		const firstName = (
+			await page
+				.locator('[data-testid="group-standings"] tbody tr')
+				.first()
+				.locator('td')
+				.nth(1)
+				.innerText()
+		).trim();
+		expect(firstName.length).toBeGreaterThan(0);
+
+		const links = await getPlayerLinks(page, id);
+		const target = links.find((l) => l.name === firstName);
+		expect(target).toBeTruthy();
+
+		const anon = await browser.newContext();
+		const playerPage = await anon.newPage();
+		await playerPage.goto(target!.url);
+		await expect(playerPage.getByTestId('player-placement-current')).toHaveText(
+			'Currently 1 of 32',
+			{ timeout: 20000 }
+		);
+		await expect(playerPage.getByTestId('player-placement-best')).toHaveText(
+			'Best achievable place: 1'
+		);
+		await expect(playerPage.getByTestId('player-placement-safe')).toHaveText('Safe place: 20');
 		await anon.close();
 	});
 
