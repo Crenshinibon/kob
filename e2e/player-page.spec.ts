@@ -122,6 +122,46 @@ test.describe('Player page (098)', () => {
 		await anon.close();
 	});
 
+	test('round-1 court-done 4th projects the 4ths band, not seed-court place', async ({
+		page,
+		browser
+	}) => {
+		test.setTimeout(120000);
+		const name = `PlayerPlace ${Date.now()}`;
+		names.push(name);
+		const id = await createRandomSeedTournament(page, name, 32, 4);
+		const courtLinks = await getCourtLinks(page);
+		await scoreAllMatchesOnCourt(page, courtLinks[0]);
+		await expect(page.getByTestId('group-standings')).toBeVisible({ timeout: 15000 });
+		const fourthName = (
+			await page
+				.locator('[data-testid="group-standings"] tbody tr')
+				.nth(3)
+				.locator('td')
+				.nth(1)
+				.innerText()
+		).trim();
+		expect(fourthName.length).toBeGreaterThan(0);
+
+		const links = await getPlayerLinks(page, id);
+		const target = links.find((l) => fourthName.includes(l.name) || l.name.includes(fourthName));
+		expect(target).toBeTruthy();
+
+		const anon = await browser.newContext();
+		const playerPage = await anon.newPage();
+		await playerPage.goto(target!.url);
+		await expect(playerPage.getByTestId('player-placement-current')).toHaveText(
+			'Currently 25 of 32',
+			{ timeout: 20000 }
+		);
+		await expect(playerPage.getByTestId('player-placement-best')).toHaveText(
+			'Best achievable place: 17'
+		);
+		await expect(playerPage.getByTestId('player-placement-safe')).toHaveText('Safe place: 32');
+		await expect(playerPage.getByTestId('player-record-rounds')).toBeVisible();
+		await anon.close();
+	});
+
 	test('unknown token is 404', async ({ page }) => {
 		const res = await page.goto('/player/ffffffffffffffffffffffffffffffff');
 		expect(res?.status()).toBe(404);

@@ -182,4 +182,21 @@ test.describe('Player check-in (097)', () => {
 			timeout: 3000
 		});
 	});
+
+	test('close check-in is not a primary action after round 1 scores', async ({ page }) => {
+		const name = `CheckinScores ${Date.now()}`;
+		names.push(name);
+		const id = await createRandomSeedTournament(page, name, 8, 2);
+		const courtLinks = await getCourtLinks(page);
+		await scoreAllMatchesOnCourt(page, courtLinks[0]);
+		await page.goto(`/tournament/${id}/check-in`);
+		await expect(page.getByTestId('checkin-page')).toBeVisible();
+		await expect(page.getByTestId('close-checkin')).toHaveClass(/btn-secondary/);
+		await page.getByTestId('close-checkin').click();
+		await expect(page.getByTestId('close-checkin-dialog')).toContainText(
+			'Round 1 already has scores'
+		);
+		await expect(page.getByTestId('confirm-close-checkin')).toHaveClass(/btn-secondary/);
+		await expect(page.getByTestId('confirm-close-checkin')).not.toHaveClass(/btn-primary/);
+	});
 });
