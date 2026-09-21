@@ -14,7 +14,9 @@ import {
 	matchCountForCourtSize,
 	type DurationConfig,
 	type MatchData,
-	type ScoringOverrides
+	type ScoringOverrides,
+	type TieBreakDecidingOutcome,
+	type TieBreakFactorId
 } from '$lib/tournament-logic';
 import {
 	checkInWasUsed,
@@ -31,6 +33,11 @@ import {
 } from '$lib/player-page-logic';
 import { fetchStandingsData, rotationPlayerIds } from '$lib/server/standings-service';
 import { bracketCourtSizes, parseStoredCourtSizes } from '$lib/server/court-size-config';
+import {
+	buildCompletedRoundsBefore,
+	hasStandingsSnapshot,
+	resolveRotationStandings
+} from '$lib/server/court-standings-service';
 
 export type PlayerPageData = Awaited<ReturnType<typeof fetchPlayerPageData>>;
 
@@ -207,15 +214,31 @@ export async function fetchPlayerPageData(token: string) {
 			)
 		: { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
 
+	const maxRound = Math.max(currentRound, ...rotations.map((r) => r.roundNumber), 0);
+	const completedByRound =
+		courtSizes.length > 0 && maxRound > 0
+			? await buildCompletedRoundsBefore(
+					tourney.id,
+					maxRound + 1,
+					courtSizes,
+					players.map((p) => ({
+						id: p.id,
+						name: p.name,
+						seedPoints: p.seedPoints,
+						seedRank: p.seedRank
+					})),
+					tourney.tieBreakConfig,
+					rotations
+				)
+			: [];
+
 	const standingsLive = await fetchStandingsData(tourney.id, { includeLiveCurrentRound: true });
-	const myStanding =
-		'standings' in standingsLive
-			? standingsLive.standings.find((s) => s.playerId === row.id)
-			: undefined;
+	const liveStandings = 'standings' in standingsLive ? standingsLive.standings : undefined;
+	const myStanding = liveStandings?.find((s) => s.playerId === row.id);
 	const rosterActive = players.filter((p) => !p.retiredAt).length;
 	const activeTotal =
-		tourney.status !== 'setup' && 'standings' in standingsLive && standingsLive.standings.length > 0
-			? standingsLive.standings.length
+		tourney.status !== 'setup' && liveStandings && liveStandings.length > 0
+			? liveStandings.length
 			: rosterActive;
 
 	const ranks = myRotation
@@ -226,11 +249,11 @@ export async function fetchPlayerPageData(token: string) {
 		: null;
 
 	const liveResults =
-		currentRotations.length > 0 && 'standings' in standingsLive
+		currentRotations.length > 0 && liveStandings
 			? currentRotations.map((r) => ({
 					courtNumber: r.courtNumber,
 					standings: rotationPlayerIds(r).map((pid, i) => {
-						const s = standingsLive.standings.find((st) => st.playerId === pid);
+						const s = liveStandings.find((st) => st.playerId === pid);
 						const hist = s?.roundHistory.find((h) => h.round === currentRound);
 						return {
 							playerId: pid,
@@ -279,19 +302,36 @@ export async function fetchPlayerPageData(token: string) {
 		groupsComplete(matchesByRotation.get(r.id) ?? [], r.courtSize)
 	).length;
 
-	const courtStandings =
-		myRotation && 'standings' in standingsLive
-			? rotationPlayerIds(myRotation).map((pid) => {
-					const s = standingsLive.standings.find((st) => st.playerId === pid);
-					const hist = s?.roundHistory.find((h) => h.round === currentRound);
-					return {
-						rank: hist?.rankOnCourt ?? 0,
-						name: names.get(pid) ?? '',
-						points: hist?.points ?? 0,
-						diff: hist?.diff ?? 0,
-						isYou: pid === row.id
-					};
+	const explainedNow =
+		myRotation && courtSizes.length > 0
+			? resolveRotationStandings({
+					rotation: myRotation,
+					matchData: currentMatches,
+					playerIds: rotationPlayerIds(myRotation),
+					playerNames: names,
+					players,
+					completedRounds: completedByRound.slice(0, Math.max(0, currentRound - 1)),
+					courtSizes,
+					tourney,
+					useSnapshot: false
 				})
+			: null;
+
+	const courtStandings =
+		explainedNow && explainedNow.standings.length > 0
+			? explainedNow.standings.map((s) => ({
+					id: s.playerId,
+					playerId: s.playerId,
+					rank: s.rank,
+					name: names.get(s.playerId) ?? s.name,
+					points: s.points,
+					diff: s.diff,
+					avgPoints: s.matchCount > 0 ? s.points : null,
+					tiedFactors: [...s.tiedFactors],
+					decidingFactor: s.decidingFactor,
+					decidingOutcome: s.decidingOutcome,
+					isYou: s.playerId === row.id
+				}))
 			: [];
 
 	const history: {
@@ -415,6 +455,70 @@ export async function fetchPlayerPageData(token: string) {
 		(r) => rotationPlayerIds(r).includes(row.id) && r.courtSize >= 5
 	);
 
+	type NeighborTieBreak = {
+		name: string;
+		decidingFactor: TieBreakFactorId | null;
+		decidingOutcome: TieBreakDecidingOutcome;
+	};
+	const recordRounds: {
+		round: number;
+		courtNumber: number;
+		rank: number;
+		tiedFactors: TieBreakFactorId[];
+		decidingFactor: TieBreakFactorId | null;
+		decidingOutcome: TieBreakDecidingOutcome;
+		above: NeighborTieBreak | null;
+		below: NeighborTieBreak | null;
+	}[] = [];
+
+	if (courtSizes.length > 0) {
+		for (const rotation of rotations) {
+			if (!rotationPlayerIds(rotation).includes(row.id)) continue;
+			const rows = historyByRotation.get(rotation.id) ?? [];
+			const explained = resolveRotationStandings({
+				rotation,
+				matchData: rows.map(toMatchData),
+				playerIds: rotationPlayerIds(rotation),
+				playerNames: names,
+				players,
+				completedRounds: completedByRound.slice(0, Math.max(0, rotation.roundNumber - 1)),
+				courtSizes,
+				tourney,
+				useSnapshot: hasStandingsSnapshot(rotation)
+			});
+			if (explained.standings.length === 0) continue;
+			const sorted = [...explained.standings].sort((a, b) => a.rank - b.rank);
+			const index = sorted.findIndex((s) => s.playerId === row.id);
+			if (index < 0) continue;
+			const self = sorted[index];
+			const above = sorted[index - 1] ?? null;
+			const below = sorted[index + 1] ?? null;
+			recordRounds.push({
+				round: rotation.roundNumber,
+				courtNumber: rotation.courtNumber,
+				rank: self.rank,
+				tiedFactors: [...self.tiedFactors],
+				decidingFactor: self.decidingFactor,
+				decidingOutcome: self.decidingOutcome,
+				above: above
+					? {
+							name: above.name,
+							decidingFactor: above.decidingFactor ?? self.decidingFactor,
+							decidingOutcome: above.decidingOutcome
+						}
+					: null,
+				below: below
+					? {
+							name: below.name,
+							decidingFactor: self.decidingFactor ?? below.decidingFactor,
+							decidingOutcome: self.decidingOutcome
+						}
+					: null
+			});
+		}
+		recordRounds.sort((a, b) => a.round - b.round);
+	}
+
 	return {
 		tournament: {
 			id: tourney.id,
@@ -477,6 +581,7 @@ export async function fetchPlayerPageData(token: string) {
 							myRotation.courtSize,
 							tourney.scoringOverrides as ScoringOverrides | null
 						),
+						scoring,
 						isComplete: courtComplete,
 						frozenAfterRound: isFrozen ? currentRound : null
 					}
@@ -496,7 +601,8 @@ export async function fetchPlayerPageData(token: string) {
 			totalPoints: myStanding?.totalPoints ?? 0,
 			totalDiff: myStanding?.totalDiff ?? 0,
 			matchesPlayed: myStanding?.matchesPlayed ?? 0,
-			usedAverages
+			usedAverages,
+			rounds: recordRounds
 		},
 		placement: {
 			current: myStanding?.overallRank ?? null,

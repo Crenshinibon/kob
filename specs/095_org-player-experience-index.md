@@ -20,15 +20,17 @@ Shared migration `0016` is in `drizzle/0016_org_player_experience.sql` and is ap
 
 - Manage Players: separate Search / Add one / Add many panels; mass-enter uses `PlayerNameImport` (same as Create).
 - Roster lists by `seedRank`. Random-seed order is a right-hand column of up / down / to-top / to-bottom icon buttons — no order-number field.
-- Courts tab: HTML5 drag-and-drop plus a court `<select>`; valid drop targets highlight; invalid courts dim; cards always sort by court number.
-- Setup and operations: rounds and physical-court count are editable (preseed rounds still derived at start except the organizer can set them before start).
+- Courts tab: pointer long-press drag-and-drop plus a court `<select>`; valid drop targets highlight; invalid courts dim; cards always sort by court number.
+- Setup and operations: rounds and physical-court count use the same **range sliders** as Create (rounds 1–10, physical courts 1–16).
 - Operations header: Manage / Check-in / View Standings are spaced chip links.
-- Manage Rules: Save scoring sits full-width below the fields (not in the 2-column grid).
+- Manage Rules: shared `ScoringRulesFields` (4p/3p/5p/6p tabs, 6–30, win-by / sets radios) plus **tie-break editor**. Save scoring sits full-width below the fields.
+- Manage Players: retire and injury reporting (moved off operations).
+- Courts tab: pointer long-press lift + ghost (not HTML5 DnD); court `<select>` uses the same flip/crossfade as seed-order buttons.
 - Print sheet: site chrome hidden; cards `break-inside: avoid`; player names forced dark-on-white; QR chrome can use a light background.
 - Check-in list: checked-in rows sit at the bottom, muted.
 - Player page: underlined section headers; 3-column score grid with a full-width save; in-page language switcher hidden when the site header already shows one (logged-in session).
 
-**Still on the operations view** (096 originally moved these to Manage only): scoring-override editor, retire, injury, and delete. Manage has roster/rules/finish-early/reopen/delete; retire and injury forms were not relocated.
+**Still on the operations view:** court QRs, close round / finalize, reopen, physical-court slider in the schedule block, and the manual tie-break rank dialog on court cards. Scoring, tie-break rules, retire, injury, and delete live on Manage.
 
 ## Motivation
 
@@ -39,12 +41,12 @@ Two things were missing on the beach:
 
 ## Sub-specs
 
-| Spec                                                                         | Scope                                                                                                                                                                                                                                      | Audience  |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
-| **[096_tournament-management-page.md](./096_tournament-management-page.md)** | `/tournament/[id]/manage` — roster (add / remove / rename / re-seed / order buttons), court assignments (swap / move), rules & config edits, finish early, **reopen last closed round**, delete. Retire/injury forms remain on operations. | Organizer |
-| **[097_player-check-in.md](./097_player-check-in.md)**                       | `/tournament/[id]/check-in` — **optional**. Per-player token + QR, check-in list, print sheet, self check-in, close check-in → start (099) or remove no-shows. Does **not** replace court QRs.                                             | Organizer |
-| **[098_player-page.md](./098_player-page.md)**                               | `/player/[token]` — **NOW** + write-once score entry for matches the player is in, compact upcoming inputs, live place + best/safe text, wait clock, history of finished games. Parallel to `/court/[token]`.                              | Player    |
-| **[099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md)** | Create ≠ start. `setup` status with 0–64 players; explicit start at ≥ **4** generates round 1. No "Create & start". Dashboard Setup section. Reverses the "no draft" decision in 050.                                                      | Organizer |
+| Spec                                                                         | Scope                                                                                                                                                                                                                                                | Audience  |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| **[096_tournament-management-page.md](./096_tournament-management-page.md)** | `/tournament/[id]/manage` — roster (add / remove / rename / re-seed / order buttons, **retire / injury**), court assignments (swap / move), rules (scoring tabs + **tie-break**) & config edits, finish early, **reopen last closed round**, delete. | Organizer |
+| **[097_player-check-in.md](./097_player-check-in.md)**                       | `/tournament/[id]/check-in` — **optional**. Per-player token + QR, check-in list, print sheet, self check-in, close check-in → start (099) or remove no-shows. Does **not** replace court QRs.                                                       | Organizer |
+| **[098_player-page.md](./098_player-page.md)**                               | `/player/[token]` — **NOW** + write-once score entry for matches the player is in, compact upcoming inputs, live place + best/safe text, wait clock, history of finished games. Parallel to `/court/[token]`.                                        | Player    |
+| **[099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md)** | Create ≠ start. `setup` status with 0–64 players; explicit start at ≥ **4** generates round 1. No "Create & start". Dashboard Setup section. Reverses the "no draft" decision in 050.                                                                | Organizer |
 
 ## Shared Decisions
 

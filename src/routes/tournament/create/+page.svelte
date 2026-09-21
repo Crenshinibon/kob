@@ -3,13 +3,19 @@
 	import { localizeHref } from '$lib/paraglide/runtime';
 	import * as m from '$lib/paraglide/messages';
 	import PlayerNameImport from '$lib/components/PlayerNameImport.svelte';
+	import RangeSlider from '$lib/components/RangeSlider.svelte';
+	import ScoringRulesFields from '$lib/components/ScoringRulesFields.svelte';
 	import { parsePlayerLine } from '$lib/parse-players';
 	import {
 		calculateCourtSizes,
 		calculateRoundCount,
 		estimateTournamentDuration,
 		estimateRoundDurationMinutes,
-		type DurationConfig
+		inferScoringMode,
+		scoringDraftFromConfig,
+		type CourtScoringRules,
+		type DurationConfig,
+		type ScoringCourtSize
 	} from '$lib/tournament-logic';
 	import { createTournamentForm } from './create.remote';
 
@@ -19,11 +25,8 @@
 	let formatType = $state<'random-seed' | 'preseed'>('random-seed');
 	let playerNames = $state('');
 	let physicalCourts = $state(4);
-	let scoringMode = $state<'single-21' | 'best-of-3' | 'custom'>('single-21');
-	let setsToWin = $state('1');
-	let pointsToWin = $state(21);
-	let winBy = $state('2');
-	let decidingSetPoints = $state(15);
+	let scoringTab = $state<ScoringCourtSize>(4);
+	let scoringDraft = $state<Record<string, CourtScoringRules>>(scoringDraftFromConfig(null, null));
 	let numRounds = $state(3);
 	let preseedRetirementPolicy = $state<'cascade' | 'shrink'>('cascade');
 	const minPlayers = 4;
@@ -116,10 +119,20 @@
 			: Math.max(1, numRounds)
 	);
 
-	const basePtTarget = $derived(scoringMode === 'custom' ? pointsToWin : 21);
-	const effectiveSetsToWin = $derived(
-		scoringMode === 'custom' ? parseInt(setsToWin) : scoringMode !== 'single-21' ? 2 : 1
-	);
+	const fourScoring = $derived(scoringDraft['4']);
+	const basePtTarget = $derived(fourScoring?.pointsToWin ?? 21);
+	const effectiveSetsToWin = $derived(fourScoring?.setsToWin ?? 1);
+	const scoringMode = $derived(fourScoring ? inferScoringMode(fourScoring) : 'single-21');
+
+	function patchScoring(
+		size: ScoringCourtSize,
+		field: keyof CourtScoringRules,
+		value: number
+	): void {
+		const current = scoringDraft[String(size)];
+		if (!current || !Number.isFinite(value)) return;
+		scoringDraft = { ...scoringDraft, [String(size)]: { ...current, [field]: value } };
+	}
 
 	const defaultDurationConfig: DurationConfig = {
 		setupTimeMinutes: 15,
@@ -247,107 +260,13 @@
 		{/if}
 
 		<div class="field">
-			<span class="label">{m.create_scoring_mode()}</span>
-			<div class="radio-group">
-				<label class="radio-label">
-					<div class="radio-wrapper">
-						<input type="radio" name="scoringMode" value="single-21" bind:group={scoringMode} />
-					</div>
-					<span class="radio-content">
-						<strong>{m.scoring_single_set()}</strong>
-						<small>{m.create_desc_single()}</small>
-					</span>
-				</label>
-				<label class="radio-label">
-					<div class="radio-wrapper">
-						<input type="radio" name="scoringMode" value="best-of-3" bind:group={scoringMode} />
-					</div>
-					<span class="radio-content">
-						<strong>{m.scoring_best_of_3()}</strong>
-						<small>{m.create_desc_bestof3()}</small>
-					</span>
-				</label>
-				<label class="radio-label">
-					<div class="radio-wrapper">
-						<input type="radio" name="scoringMode" value="custom" bind:group={scoringMode} />
-					</div>
-					<span class="radio-content">
-						<strong>{m.create_custom()}</strong>
-						<small>{m.create_desc_custom()}</small>
-					</span>
-				</label>
-			</div>
-		</div>
-
-		<div class="advanced-section" class:hidden={scoringMode !== 'custom'}>
-			<div class="field">
-				<span class="label">{m.create_match_format_label()}</span>
-				<div class="radio-group">
-					<label class="radio-label">
-						<input type="radio" name="n:setsToWin" value="1" bind:group={setsToWin} />
-						<span class="radio-text">{m.create_single_set_label()}</span>
-					</label>
-					<label class="radio-label">
-						<input type="radio" name="n:setsToWin" value="2" bind:group={setsToWin} />
-						<span class="radio-text">{m.create_best_of_3_label()}</span>
-					</label>
-				</div>
-			</div>
-			<div class="field">
-				<span class="label">Win By</span>
-				<div class="radio-group">
-					<label class="radio-label">
-						<input type="radio" name="n:winBy" value="2" bind:group={winBy} />
-						<span class="radio-text">2 points (deuce possible)</span>
-					</label>
-					<label class="radio-label">
-						<input type="radio" name="n:winBy" value="1" bind:group={winBy} />
-						<span class="radio-text">1 point (first to N wins)</span>
-					</label>
-				</div>
-				<p class="field-hint">
-					Points difference required to win a set (e.g., 21-19 with win-by-2)
-				</p>
-			</div>
-			{#if setsToWin === '1'}
-				<div class="field">
-					<label for="pointsToWin">{m.create_points_to_win()}</label>
-					<input
-						type="number"
-						id="pointsToWin"
-						name="n:pointsToWin"
-						min="9"
-						max="21"
-						bind:value={pointsToWin}
-						disabled={scoringMode !== 'custom'}
-					/>
-				</div>
-			{:else}
-				<div class="field">
-					<label for="pointsToWin">{m.create_regular_set_points()}</label>
-					<input
-						type="number"
-						id="pointsToWin"
-						name="n:pointsToWin"
-						min="9"
-						max="21"
-						bind:value={pointsToWin}
-						disabled={scoringMode !== 'custom'}
-					/>
-				</div>
-				<div class="field">
-					<label for="decidingSetPoints">{m.create_deciding_set_points()}</label>
-					<input
-						type="number"
-						id="decidingSetPoints"
-						name="n:decidingSetPoints"
-						min="9"
-						max="21"
-						bind:value={decidingSetPoints}
-						disabled={scoringMode !== 'custom'}
-					/>
-				</div>
-			{/if}
+			<span class="label">{m.manage_scoring_heading()}</span>
+			<ScoringRulesFields
+				bind:tab={scoringTab}
+				draft={scoringDraft}
+				submitHidden={true}
+				onPatch={patchScoring}
+			/>
 		</div>
 
 		<div class="field">
@@ -400,22 +319,15 @@
 
 		<div class="field">
 			<label for="physicalCourts">{m.create_physical_courts()}: {physicalCourts}</label>
-			<div class="range-container">
-				<input
-					type="range"
-					id="physicalCourts"
-					name="n:physicalCourts"
-					bind:value={physicalCourts}
-					min={1}
-					max={16}
-					step={1}
-				/>
-				<div class="range-labels">
-					<span>1</span>
-					<span class="range-current">{physicalCourts} courts</span>
-					<span>16</span>
-				</div>
-			</div>
+			<RangeSlider
+				id="physicalCourts"
+				name="n:physicalCourts"
+				bind:value={physicalCourts}
+				min={1}
+				max={16}
+				currentLabel={m.range_courts_value({ count: physicalCourts })}
+				formatCurrent={(n) => m.range_courts_value({ count: n })}
+			/>
 			{#if physicalCourts < Math.ceil(computedPlayerCount / 4)}
 				<p class="info">
 					{m.create_virtual_courts_desc({
@@ -436,15 +348,15 @@
 					{#if courtSizes.length === 1}
 						<input type="hidden" name="n:numRounds" value="1" />
 					{/if}
-					<input
-						type="number"
+					<RangeSlider
 						id="numRounds"
-						name="n:numRounds"
+						name={courtSizes.length === 1 ? undefined : 'n:numRounds'}
 						bind:value={numRounds}
-						min="1"
-						max="10"
-						class="rounds-input"
+						min={1}
+						max={10}
 						disabled={courtSizes.length === 1}
+						currentLabel={m.range_rounds_value({ count: numRounds })}
+						formatCurrent={(n) => m.range_rounds_value({ count: n })}
 						oninput={() => (roundsTouched = true)}
 					/>
 					<span class="rounds-hint">{m.create_rounds_flexible()}</span>
@@ -599,32 +511,6 @@
 		transform: scale(1.02);
 	}
 
-	.range-container {
-		display: grid;
-		grid-template-columns: 1fr;
-	}
-
-	.range-container input[type='range'] {
-		width: 100%;
-		accent-color: var(--accent-primary);
-		margin: var(--spacing-sm) 0;
-		grid-row: 1;
-	}
-
-	.range-labels {
-		display: flex;
-		justify-content: space-between;
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
-		grid-row: 2;
-	}
-
-	.range-current {
-		text-align: center;
-		font-weight: 600;
-		color: var(--text-secondary);
-	}
-
 	.info {
 		font-size: var(--font-size-sm);
 		color: var(--text-muted);
@@ -684,16 +570,6 @@
 		border: var(--border-thickness) solid var(--border-strong);
 		border-radius: var(--radius-sm);
 		cursor: pointer;
-	}
-
-	.radio-text {
-		color: var(--text-input);
-		font-weight: 500;
-	}
-
-	.radio-label:has(input:checked) .radio-text {
-		color: #ffffff;
-		font-weight: 600;
 	}
 
 	.radio-wrapper {
@@ -832,44 +708,6 @@
 		font-weight: 500;
 	}
 
-	.advanced-section {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-sm);
-		padding: var(--spacing-md);
-		border: 2px dashed var(--border-strong);
-		border-radius: var(--radius-md);
-		background-color: var(--bg-secondary);
-		overflow: hidden;
-	}
-
-	.advanced-section.hidden {
-		display: none;
-	}
-
-	.advanced-section .field {
-		gap: var(--spacing-xs);
-	}
-
-	.advanced-section input[type='number'] {
-		width: 80px;
-		min-height: 40px;
-		padding: var(--spacing-xs) var(--spacing-sm);
-		font-size: var(--font-size-base);
-		background-color: var(--bg-input);
-		color: var(--text-input);
-		border: var(--border-thickness) solid var(--border-strong);
-		border-radius: var(--radius-sm);
-		font-weight: 500;
-		text-align: center;
-	}
-
-	.advanced-section input[type='number']:focus {
-		outline: none;
-		border-color: var(--border-focus);
-		box-shadow: var(--shadow-focus);
-	}
-
 	.duration-estimate {
 		margin-top: var(--spacing-sm);
 	}
@@ -898,7 +736,8 @@
 
 	.rounds-config {
 		display: flex;
-		align-items: center;
+		flex-direction: column;
+		align-items: stretch;
 		gap: var(--spacing-sm);
 	}
 

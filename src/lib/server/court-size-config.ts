@@ -16,7 +16,10 @@ export function parseStoredCourtSizes(tourney: TourneyCourtConfig): number[] {
 }
 
 /** Bracket/frozen-court sizing when playerCount may have dropped below 8. */
-export function bracketCourtSizes(tourney: TourneyCourtConfig, virtualCourtCount: number): number[] {
+export function bracketCourtSizes(
+	tourney: TourneyCourtConfig,
+	virtualCourtCount: number
+): number[] {
 	const parsed = parseStoredCourtSizes(tourney);
 	if (parsed.length === virtualCourtCount) return parsed;
 	if (tourney.playerCount >= MIN_TOURNAMENT_PLAYERS) {

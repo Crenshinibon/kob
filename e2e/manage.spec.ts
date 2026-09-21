@@ -9,7 +9,8 @@ import {
 	getPlayerLinks,
 	login,
 	scoreAllOpenMatches,
-	startTournamentFromSetup
+	startTournamentFromSetup,
+	fillNumericLocator
 } from './helpers';
 
 test.describe('Manage page (096)', () => {
@@ -226,26 +227,22 @@ test.describe('Manage page (096)', () => {
 		await page.goto(`/tournament/${id}/manage`);
 		await page.getByTestId('tab-tournament').click();
 		await expect(page.getByTestId('tournament-tab')).toBeVisible();
-		await expect(page.getByTestId('num-rounds')).toBeVisible({ timeout: 15000 });
-		await page.getByTestId('num-rounds').fill('3');
-		await page.getByTestId('num-rounds').blur();
+		await page.getByTestId('num-rounds').waitFor({ timeout: 15000 });
+		await fillNumericLocator(page.getByTestId('num-rounds'), 3);
 		await expect(page.getByTestId('num-rounds')).toHaveValue('3', { timeout: 10000 });
 		await expect(page.getByTestId('physical-courts')).toBeVisible({ timeout: 15000 });
-		await page.getByTestId('physical-courts').fill('2');
-		await page.getByTestId('physical-courts').blur();
+		await fillNumericLocator(page.getByTestId('physical-courts'), 2);
 		await expect(page.getByTestId('physical-courts')).toHaveValue('2', { timeout: 10000 });
 
 		await page.goto(`/tournament/${id}`);
 		await expect(page.getByTestId('setup-num-rounds')).toHaveValue('3', { timeout: 15000 });
 		await expect(page.getByTestId('setup-physical-courts')).toHaveValue('2');
-		await page.getByTestId('setup-num-rounds').fill('4');
-		await page.getByTestId('setup-num-rounds').blur();
+		await fillNumericLocator(page.getByTestId('setup-num-rounds'), 4);
 		await expect(page.getByTestId('setup-num-rounds')).toHaveValue('4', { timeout: 10000 });
 		await startTournamentFromSetup(page);
 		await expect(page.locator('.round-stepper')).toContainText('Round 4');
 		await expect(page.getByTestId('ops-physical-courts')).toHaveValue('2');
-		await page.getByTestId('ops-physical-courts').fill('4');
-		await page.getByTestId('ops-physical-courts').blur();
+		await fillNumericLocator(page.getByTestId('ops-physical-courts'), 4);
 		await expect(page.getByTestId('ops-physical-courts')).toHaveValue('4', { timeout: 10000 });
 	});
 

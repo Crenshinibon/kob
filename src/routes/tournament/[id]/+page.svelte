@@ -7,14 +7,7 @@
 		startTournamentForm,
 		closeRoundForm,
 		reopenLastRoundForm,
-		deleteTournamentForm,
-		updateScoringOverrides,
-		updateTieBreakConfig,
 		updateManualRankOrder,
-		retirePlayer,
-		reportInjury,
-		undoRetirement,
-		undoInjury,
 		setCourtLabel
 	} from './tournament-actions.remote';
 	import { updateRoundCount, updateTournamentSettings } from './manage/manage-actions.remote';
@@ -22,21 +15,14 @@
 	import {
 		calculateCourtSizes,
 		calculateRoundCount,
-		estimateTournamentDuration,
-		getEffectiveScoring,
-		getMinPointsForSet,
-		getScoringLabel,
-		DEFAULT_TIE_BREAK_CONFIG,
-		DEFAULT_TIE_BREAK_FINAL_FACTOR,
-		TIE_BREAK_FINAL_FACTOR_IDS,
 		normalizeTieBreakConfig,
-		isStatisticalTieBreakFactor,
 		type TieBreakConfig,
 		type TieBreakFactorId,
 		type ManualTieGroupDisplay,
 		type PlayerTieBreakValues
 	} from '$lib/tournament-logic';
 	import CourtQRCode from '$lib/components/CourtQRCode.svelte';
+	import RangeSlider from '$lib/components/RangeSlider.svelte';
 	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
 	import { TIE_BREAK_OUTCOME_COLORS } from '$lib/court-colors';
 	import { formatDiff, formatPoints } from '$lib/i18n/format';
@@ -61,11 +47,7 @@
 	}>();
 
 	let viewRound = $state<number | null>(null);
-	let editingScoring = $state(false);
-	let editingTieBreak = $state(false);
 	let closingRound = $state(false);
-	let retireSubmitting = $state(false);
-	let injurySubmitting = $state(false);
 	let startCheckedInOnly = $state(false);
 
 	const tournamentQuery = $derived(
@@ -88,7 +70,7 @@
 	}
 
 	$effect(() => {
-		if (editingTieBreak || editingScoring || closingRound || retireSubmitting || injurySubmitting) {
+		if (closingRound) {
 			return;
 		}
 		const q = tournamentQuery;
@@ -97,31 +79,6 @@
 			q.refresh().catch(() => {});
 		}, ms);
 		return () => clearInterval(interval);
-	});
-
-	let localStatFactors = $state<{ id: TieBreakFactorId; enabled: boolean }[]>(
-		DEFAULT_TIE_BREAK_CONFIG.factors
-			.filter((f) => isStatisticalTieBreakFactor(f.id))
-			.map((f) => ({ id: f.id, enabled: f.enabled }))
-	);
-	let selectedFinalFactor = $state<TieBreakFactorId>(DEFAULT_TIE_BREAK_FINAL_FACTOR);
-
-	function applyTieBreakConfig(cfg: TieBreakConfig | null | undefined) {
-		const normalized = normalizeTieBreakConfig(cfg);
-		localStatFactors = normalized.factors
-			.filter((f) => isStatisticalTieBreakFactor(f.id))
-			.map((f) => ({ id: f.id, enabled: f.enabled }));
-		selectedFinalFactor =
-			normalized.factors.find((f) => f.enabled && !isStatisticalTieBreakFactor(f.id))?.id ??
-			DEFAULT_TIE_BREAK_FINAL_FACTOR;
-	}
-
-	$effect(() => {
-		const cfg = tournamentQuery.current?.tournament?.tieBreakConfig as
-			TieBreakConfig | null | undefined;
-		if (!editingTieBreak) {
-			applyTieBreakConfig(cfg);
-		}
 	});
 
 	function tieBreakFactorLabel(id: TieBreakFactorId): string {
@@ -145,37 +102,6 @@
 		outcome: CourtDisplayData['standings'][number]['decidingOutcome']
 	): string | null {
 		return outcome ? TIE_BREAK_OUTCOME_COLORS[outcome] : null;
-	}
-
-	function moveStatFactor(index: number, direction: -1 | 1) {
-		const next = index + direction;
-		if (next < 0 || next >= localStatFactors.length) return;
-
-		const copy = [...localStatFactors];
-		[copy[index], copy[next]] = [copy[next], copy[index]];
-		localStatFactors = copy;
-	}
-
-	function buildTieBreakConfigFromLocal(): TieBreakConfig {
-		return {
-			factors: [
-				...localStatFactors,
-				...TIE_BREAK_FINAL_FACTOR_IDS.map((id) => ({
-					id,
-					enabled: id === selectedFinalFactor
-				}))
-			]
-		};
-	}
-
-	async function saveTieBreakConfig(tournamentId: number) {
-		const normalized = normalizeTieBreakConfig(buildTieBreakConfigFromLocal());
-		applyTieBreakConfig(normalized);
-		await updateTieBreakConfig({
-			tournamentId,
-			factors: normalized.factors.map((f) => ({ id: f.id, enabled: f.enabled }))
-		});
-		editingTieBreak = false;
 	}
 
 	function formatFactorValue(factor: TieBreakFactorId, values: PlayerTieBreakValues): string {
@@ -288,32 +214,6 @@
 			(tournamentQuery.current?.tournament?.tieBreakConfig as TieBreakConfig | null) ?? null
 		).factors.some((f) => f.id === 'manual' && f.enabled)
 	);
-	let localOverrides = $state<
-		Record<
-			string,
-			{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
-		>
-	>({});
-	let retirePlayerId = $state(0);
-	let retireReason = $state('');
-	let retireUseReplacement = $state(false);
-	let replacementName = $state('');
-	let replacementSeedPoints = $state(0);
-	let injuryPlayerId = $state(0);
-	let injuryOption = $state<'substitute' | 'cancel' | ''>('');
-	let injuryUseReplacement = $state(false);
-	let injuryReplacementName = $state('');
-	let injuryReplacementSeedPoints = $state(0);
-	let retireDetailsOpen = $state(false);
-	let injuryDetailsOpen = $state(false);
-	let now = $state(Date.now());
-
-	$effect(() => {
-		const id = setInterval(() => {
-			now = Date.now();
-		}, 1000);
-		return () => clearInterval(id);
-	});
 
 	function getMatchStatus(matches: { teamAScore: number | null }[]): string {
 		const completed = matches.filter((m) => m.teamAScore !== null).length;
@@ -330,47 +230,11 @@
 		return 'var(--accent-info)';
 	}
 
-	function confirmDelete(e: Event) {
-		if (!confirm(m.delete_tournament_confirm())) {
-			e.preventDefault();
-		}
-	}
-
 	function handleLabelSave(courtId: number, value: string) {
 		setCourtLabel({ courtId, label: value });
 	}
 
 	let labelTimers = $state<Map<number, ReturnType<typeof setTimeout>>>(new Map());
-
-	function isUndoableRetirement(rp: { retiredAt: Date | null; injuredAt: Date | null }): boolean {
-		return (
-			!!rp.retiredAt && !rp.injuredAt && now - new Date(rp.retiredAt).getTime() < 5 * 60 * 1000
-		);
-	}
-
-	function computeInjuryUndo(
-		rp: { id: number; name: string; injuredAt: Date | null; retiredAt: Date | null },
-		courts: CourtDisplayData[]
-	): { canUndoInjury: boolean; courtComplete: boolean } {
-		const court = courts.find((c) => c.players.some((p) => p.id === rp.id));
-		if (!court) return { canUndoInjury: false, courtComplete: false };
-		// Determine injury type from match state:
-		// - Cancel: some matches are isCanceled on this court
-		// - Substitute: some matches have injuredPlayerIds for this player
-		const hasCanceled = court.matches.some((m) => m.isCanceled);
-		const hasInjuredFlag = court.matches.some((m) => (m.injuredPlayerIds ?? []).includes(rp.id));
-		let hasProgressed = false;
-		if (hasCanceled) {
-			// For cancel: a scored + canceled match means fresh scores (pre-injury scores are not canceled)
-			hasProgressed = court.matches.some((m) => m.teamAScore !== null && m.isCanceled);
-		} else if (hasInjuredFlag) {
-			// For substitute: a scored match with injuredPlayerIds means fresh scores
-			hasProgressed = court.matches.some(
-				(m) => m.teamAScore !== null && (m.injuredPlayerIds ?? []).includes(rp.id)
-			);
-		}
-		return { canUndoInjury: !hasProgressed, courtComplete: court.isComplete };
-	}
 
 	async function savePhysicalCourts(count: number): Promise<void> {
 		await updateTournamentSettings({
@@ -418,34 +282,7 @@
 	{@const setupStartCount =
 		setupCanStartCheckedIn && startCheckedInOnly ? checkedInCount : setupActiveCount}
 	{@const virtualCourtCount = courtSizes.length}
-	{@const allCourtsComplete = state?.allCourtsComplete ?? false}
 	{@const frozenCourts = state?.frozenCourts ?? []}
-	{@const retiredPlayers = state?.retiredPlayers ?? []}
-	{@const FIVE_MIN_MS = 5 * 60 * 1000}
-	{@const eligibleInjuryPlayers = (() => {
-		const result: { id: number; name: string; courtNumber: number }[] = [];
-		for (const court of courts) {
-			if (court.isComplete) continue;
-			for (const p of court.players) {
-				if (!p.retired) result.push({ id: p.id, name: p.name, courtNumber: court.courtNumber });
-			}
-		}
-		return result;
-	})()}
-	{@const undoableRetirements = retiredPlayers.filter(
-		(rp: { retiredAt: Date | null; injuredAt: Date | null }) => isUndoableRetirement(rp)
-	)}
-	{@const undoableInjuries = (() => {
-		return retiredPlayers
-			.filter(
-				(rp: { injuredAt: Date | null; retiredAt: Date | null }) =>
-					rp.injuredAt && rp.retiredAt && now - new Date(rp.injuredAt).getTime() < 5 * 60 * 1000
-			)
-			.map((rp: { id: number; name: string; injuredAt: Date | null; retiredAt: Date | null }) => {
-				const undo = computeInjuryUndo(rp, courts);
-				return { ...rp, ...undo };
-			});
-	})()}
 
 	{#if !tournament}
 		<div class="loading">{m.loading_tournament()}</div>
@@ -511,28 +348,28 @@
 							{#if tournament.formatType === 'random-seed' || tournament.status === 'setup'}
 								<label>
 									{m.manage_rounds_label()}
-									<input
-										type="number"
-										min="1"
-										max="10"
+									<RangeSlider
+										id="setup-num-rounds"
+										min={1}
+										max={10}
 										value={tournament.numRounds}
-										data-testid="setup-num-rounds"
+										testId="setup-num-rounds"
 										disabled={setupCourtSizes.length === 1}
-										onchange={(e) =>
-											saveRoundCount(Number((e.currentTarget as HTMLInputElement).value))}
+										formatCurrent={(n) => m.range_rounds_value({ count: n })}
+										onchange={(n) => saveRoundCount(n)}
 									/>
 								</label>
 							{/if}
 							<label>
 								{m.manage_physical_courts()}
-								<input
-									type="number"
-									min="1"
-									max="16"
+								<RangeSlider
+									id="setup-physical-courts"
+									min={1}
+									max={16}
 									value={physicalCourtCount}
-									data-testid="setup-physical-courts"
-									onchange={(e) =>
-										savePhysicalCourts(Number((e.currentTarget as HTMLInputElement).value))}
+									testId="setup-physical-courts"
+									formatCurrent={(n) => m.range_courts_value({ count: n })}
+									onchange={(n) => savePhysicalCourts(n)}
 								/>
 							</label>
 						</div>
@@ -642,14 +479,14 @@
 					</p>
 					<label class="physical-courts-field">
 						{m.manage_physical_courts()}
-						<input
-							type="number"
-							min="1"
-							max="16"
+						<RangeSlider
+							id="ops-physical-courts"
+							min={1}
+							max={16}
 							value={physicalCourtCount}
-							data-testid="ops-physical-courts"
-							onchange={(e) =>
-								savePhysicalCourts(Number((e.currentTarget as HTMLInputElement).value))}
+							testId="ops-physical-courts"
+							formatCurrent={(n) => m.range_courts_value({ count: n })}
+							onchange={(n) => savePhysicalCourts(n)}
 						/>
 					</label>
 					{#if roundDuration}
@@ -858,562 +695,23 @@
 					<p class="hint">{m.manage_reopen_clear_scores_first()}</p>
 				{/if}
 
-				{#if tournament.status !== 'completed'}
-					<form
-						{...deleteTournamentForm.enhance(async ({ submit }) => {
-							try {
-								await submit();
-							} catch {
-								// redirect happens on server
-							}
-						})}
-						class="delete-form"
-					>
-						<input {...deleteTournamentForm.fields.tournamentId.as('hidden', tournament.id)} />
-						<button type="submit" class="btn-danger" onclick={confirmDelete}
-							>{m.delete_tournament()}</button
+				{#if isActive}
+					<p class="ops-back-office" data-testid="ops-back-office">
+						{m.ops_back_office_hint()}
+						<a
+							href={localizeHref(
+								resolve('/tournament/[id]/manage', { id: String(tournament.id) })
+							) + '#rules'}>{m.manage_tab_rules()}</a
 						>
-					</form>
+						·
+						<a
+							href={localizeHref(
+								resolve('/tournament/[id]/manage', { id: String(tournament.id) })
+							) + '#players'}>{m.manage_tab_players()}</a
+						>
+					</p>
 				{/if}
 			</section>
-
-			{#if isActive && isViewingCurrentRound && courtSizes.length > 0}
-				<section class="scoring-section">
-					<details>
-						<summary class="scoring-header">{m.scoring_heading()}</summary>
-						<p class="scoring-note">
-							{m.scoring_override_hint()}
-						</p>
-						{#if editingScoring}
-							<div class="scoring-grid">
-								{#each courtSizes
-									.filter((s, i, a) => a.indexOf(s) === i)
-									.sort((a, b) => a - b) as size (size)}
-									{@const effective = getEffectiveScoring(
-										size,
-										{
-											pointsToWin: tournament.pointsToWin ?? 21,
-											setsToWin: tournament.setsToWin ?? 1,
-											decidingSetPoints: tournament.decidingSetPoints ?? 15,
-											winBy: tournament.winBy ?? 2
-										},
-										tournament.scoringOverrides
-									)}
-									{@const ovr =
-										localOverrides[String(size)] ??
-										tournament.scoringOverrides?.[String(size)] ??
-										{}}
-									<fieldset class="scoring-fieldset">
-										<legend>{size}p Courts</legend>
-										<label>
-											{m.create_points_to_win()}
-											<input
-												type="number"
-												min="1"
-												max="50"
-												value={ovr.pointsToWin ??
-													getMinPointsForSet(
-														1,
-														size,
-														{
-															pointsToWin: tournament.pointsToWin ?? 21,
-															winBy: tournament.winBy ?? 2,
-															setsToWin: tournament.setsToWin ?? 1,
-															decidingSetPoints: tournament.decidingSetPoints ?? 15
-														},
-														tournament.scoringOverrides
-													)}
-												oninput={(e) => {
-													const v = parseInt(e.currentTarget.value);
-													if (!isNaN(v))
-														localOverrides = {
-															...localOverrides,
-															[size]: { ...(localOverrides[String(size)] ?? {}), pointsToWin: v }
-														};
-												}}
-											/>
-										</label>
-										<label>
-											{m.create_win_by()}
-											<input
-												type="number"
-												min="1"
-												max="10"
-												value={ovr.winBy ?? tournament.winBy ?? 2}
-												oninput={(e) => {
-													const v = parseInt(e.currentTarget.value);
-													if (!isNaN(v))
-														localOverrides = {
-															...localOverrides,
-															[size]: { ...(localOverrides[String(size)] ?? {}), winBy: v }
-														};
-												}}
-											/>
-										</label>
-										<label>
-											{m.create_sets_to_win()}
-											<input
-												type="number"
-												min="1"
-												max="5"
-												value={ovr.setsToWin ?? effective.setsToWin}
-												oninput={(e) => {
-													const v = parseInt(e.currentTarget.value);
-													if (!isNaN(v))
-														localOverrides = {
-															...localOverrides,
-															[size]: { ...(localOverrides[String(size)] ?? {}), setsToWin: v }
-														};
-												}}
-											/>
-										</label>
-										{#if (ovr.setsToWin ?? effective.setsToWin) >= 2}
-											<label>
-												{m.create_deciding_set_points()}
-												<input
-													type="number"
-													min="1"
-													max="50"
-													value={ovr.decidingSetPoints ?? effective.decidingSetPoints}
-													oninput={(e) => {
-														const v = parseInt(e.currentTarget.value);
-														if (!isNaN(v))
-															localOverrides = {
-																...localOverrides,
-																[size]: {
-																	...(localOverrides[String(size)] ?? {}),
-																	decidingSetPoints: v
-																}
-															};
-													}}
-												/>
-											</label>
-										{/if}
-										<p class="scoring-preview">
-											{getScoringLabel(
-												{
-													pointsToWin: tournament.pointsToWin ?? 21,
-													setsToWin: tournament.setsToWin ?? 1,
-													decidingSetPoints: tournament.decidingSetPoints ?? 15,
-													winBy: tournament.winBy ?? 2
-												},
-												size,
-												{
-													...(tournament.scoringOverrides ?? {}),
-													[String(size)]:
-														localOverrides[String(size)] ??
-														tournament.scoringOverrides?.[String(size)] ??
-														{}
-												}
-											)}
-										</p>
-									</fieldset>
-								{/each}
-							</div>
-							<div class="scoring-actions">
-								<button
-									class="btn-primary"
-									onclick={async () => {
-										const merged: Record<
-											string,
-											{
-												pointsToWin?: number;
-												winBy?: number;
-												setsToWin?: number;
-												decidingSetPoints?: number;
-											}
-										> = { ...(tournament.scoringOverrides ?? {}) };
-										for (const [k, v] of Object.entries(localOverrides)) {
-											merged[k] = { ...(merged[k] ?? {}), ...v };
-										}
-										await updateScoringOverrides({
-											tournamentId: tournament.id,
-											overrides: merged
-										});
-										editingScoring = false;
-										localOverrides = {};
-									}}>{m.save_scoring()}</button
-								>
-								<button
-									class="btn-secondary"
-									onclick={() => {
-										editingScoring = false;
-										localOverrides = {};
-									}}>{m.cancel()}</button
-								>
-							</div>
-						{:else}
-							<div class="scoring-summary">
-								{#each courtSizes
-									.filter((s, i, a) => a.indexOf(s) === i)
-									.sort((a, b) => a - b) as size (size)}
-									<span class="scoring-badge"
-										>{size}p: {getScoringLabel(
-											{
-												pointsToWin: tournament.pointsToWin ?? 21,
-												setsToWin: tournament.setsToWin ?? 1,
-												decidingSetPoints: tournament.decidingSetPoints ?? 15,
-												winBy: tournament.winBy ?? 2
-											},
-											size,
-											tournament.scoringOverrides
-										)}</span
-									>
-								{/each}
-								<button
-									class="btn-edit"
-									onclick={() => {
-										editingScoring = true;
-										localOverrides = {};
-									}}>{m.edit_btn()}</button
-								>
-							</div>
-						{/if}
-					</details>
-				</section>
-			{/if}
-
-			{#if isActive && isViewingCurrentRound}
-				<section class="tie-break-section">
-					<details>
-						<summary class="scoring-header">{m.tie_break_heading()}</summary>
-						<p class="scoring-note">{m.tie_break_hint()}</p>
-						<ul class="tie-break-list">
-							{#each localStatFactors as factor, fi (factor.id)}
-								<li class="tie-break-item">
-									<label>
-										<input
-											type="checkbox"
-											checked={factor.enabled}
-											onchange={(e) => {
-												localStatFactors = localStatFactors.map((f, i) =>
-													i === fi ? { ...f, enabled: e.currentTarget.checked } : f
-												);
-												editingTieBreak = true;
-											}}
-										/>
-										{tieBreakFactorLabel(factor.id)}
-									</label>
-									<div class="tie-break-actions">
-										<button
-											type="button"
-											class="btn-small"
-											disabled={fi === 0}
-											onclick={() => {
-												moveStatFactor(fi, -1);
-												editingTieBreak = true;
-											}}>{m.tie_break_move_up()}</button
-										>
-										<button
-											type="button"
-											class="btn-small"
-											disabled={fi === localStatFactors.length - 1}
-											onclick={() => {
-												moveStatFactor(fi, 1);
-												editingTieBreak = true;
-											}}>{m.tie_break_move_down()}</button
-										>
-									</div>
-								</li>
-							{/each}
-						</ul>
-						<fieldset class="tie-break-finals">
-							<legend>{m.tie_break_final_heading()}</legend>
-							<p class="tie-break-finals-note">{m.tie_break_final_hint()}</p>
-							{#each TIE_BREAK_FINAL_FACTOR_IDS as finalId (finalId)}
-								<label class="tie-break-final-option">
-									<input
-										type="radio"
-										name="tie-break-final"
-										value={finalId}
-										checked={selectedFinalFactor === finalId}
-										onchange={() => {
-											selectedFinalFactor = finalId;
-											editingTieBreak = true;
-										}}
-									/>
-									{tieBreakFactorLabel(finalId)}
-								</label>
-							{/each}
-						</fieldset>
-						{#if editingTieBreak}
-							<button
-								type="button"
-								class="btn-primary"
-								onclick={() => saveTieBreakConfig(tournament.id)}>{m.tie_break_save()}</button
-							>
-						{/if}
-					</details>
-				</section>
-			{/if}
-
-			{#if isActive && isViewingCurrentRound && currentRound > 0 && !hasScores}
-				<section class="retire-section">
-					<details bind:open={retireDetailsOpen}>
-						<summary class="btn-retire-header">{m.retire_player()}</summary>
-						<div class="retire-form">
-							<p class="retire-note">
-								{m.retire_note()}
-							</p>
-							<div class="field">
-								<label for="retirePlayerId">{m.retire_select_hint()}</label>
-								<select id="retirePlayerId" bind:value={retirePlayerId} required>
-									<option value="">{m.retire_select_placeholder()}</option>
-									{#each courts as court (court.courtNumber)}
-										{#each court.players as p (p.id)}
-											{#if !p.retired}
-												<option value={p.id}
-													>{m.retire_player_option({
-														name: p.name,
-														group: court.courtNumber
-													})}</option
-												>
-											{/if}
-										{/each}
-									{/each}
-								</select>
-							</div>
-							<div class="field">
-								<label for="retireReason">{m.retire_reason_label()}</label>
-								<select id="retireReason" bind:value={retireReason}>
-									<option value="">{m.retire_reason_placeholder()}</option>
-									<option value="injury">{m.retire_reason_injury()}</option>
-									<option value="schedule">{m.retire_reason_schedule()}</option>
-									<option value="personal">{m.retire_reason_personal()}</option>
-									<option value="disqualified">{m.retire_reason_disqualified()}</option>
-									<option value="other">{m.retire_reason_other()}</option>
-								</select>
-							</div>
-							<label class="checkbox-label">
-								<input type="checkbox" bind:checked={retireUseReplacement} />
-								{m.retire_use_replacement()}
-							</label>
-							{#if retireUseReplacement}
-								<div class="field">
-									<label for="replacementName">{m.retire_replacement_name()}</label>
-									<input
-										id="replacementName"
-										type="text"
-										bind:value={replacementName}
-										required={retireUseReplacement}
-									/>
-								</div>
-								{#if tournament?.formatType === 'preseed'}
-									<div class="field">
-										<label for="replacementSeed">{m.retire_replacement_seed()}</label>
-										<input
-											id="replacementSeed"
-											type="number"
-											min="0"
-											bind:value={replacementSeedPoints}
-										/>
-									</div>
-								{/if}
-							{/if}
-							<button
-								class="btn-danger"
-								disabled={retireSubmitting}
-								onclick={async () => {
-									if (!retirePlayerId || retireSubmitting) return;
-									retireSubmitting = true;
-									try {
-										await retirePlayer({
-											tournamentId: data.tournamentId,
-											playerId: retirePlayerId,
-											reason: retireReason || undefined,
-											useReplacement: retireUseReplacement,
-											replacementName: retireUseReplacement ? replacementName.trim() : undefined,
-											replacementSeedPoints:
-												retireUseReplacement && tournament?.formatType === 'preseed'
-													? replacementSeedPoints
-													: undefined
-										});
-										retirePlayerId = 0;
-										retireReason = '';
-										retireUseReplacement = false;
-										replacementName = '';
-										replacementSeedPoints = 0;
-										retireDetailsOpen = false;
-										await tournamentQuery.refresh();
-									} finally {
-										retireSubmitting = false;
-									}
-								}}
-							>
-								{m.retire_confirm()}
-							</button>
-
-							{#if undoableRetirements.length > 0}
-								<div class="undo-list">
-									<span class="undo-label">{m.retire_undo_hint()}</span>
-									{#each undoableRetirements as rp (rp.id)}
-										{@const remaining = Math.max(
-											0,
-											FIVE_MIN_MS - (now - new Date(rp.retiredAt!).getTime())
-										)}
-										{@const secondsLeft = Math.ceil(remaining / 1000)}
-										<div class="undo-item">
-											<span class="undo-desc"
-												>{m.retire_undo_seconds({ name: rp.name, seconds: secondsLeft })}</span
-											>
-											<button
-												class="btn-undo"
-												onclick={async () => {
-													await undoRetirement({
-														tournamentId: data.tournamentId,
-														playerId: rp.id
-													});
-												}}>{m.retire_undo_btn()}</button
-											>
-										</div>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					</details>
-				</section>
-			{/if}
-
-			{#if isActive && isViewingCurrentRound && currentRound > 0 && hasScores && !allCourtsComplete}
-				<section class="injury-section">
-					<details bind:open={injuryDetailsOpen}>
-						<summary class="btn-injury-header">{m.report_injury()}</summary>
-						<div class="injury-form">
-							<p class="injury-note">
-								{m.injury_note()}
-							</p>
-							<div class="field">
-								<label for="injuryPlayerId">{m.injury_select_player()}</label>
-								<select id="injuryPlayerId" bind:value={injuryPlayerId} required>
-									<option value="">{m.injury_select_placeholder()}</option>
-									{#each eligibleInjuryPlayers as ep (ep.id)}
-										<option value={ep.id}
-											>{m.injury_player_label({ name: ep.name, court: ep.courtNumber })}</option
-										>
-									{/each}
-								</select>
-							</div>
-							<div class="field">
-								<span class="label-text">{m.injury_options_label()}</span>
-								<div class="radio-group" role="radiogroup" aria-label={m.injury_options_label()}>
-									<label class="radio-label">
-										<input type="radio" bind:group={injuryOption} value="substitute" required />
-										<span class="radio-title">{m.injury_substitute()}</span>
-										<span class="radio-desc">
-											{m.injury_substitute_desc()}
-										</span>
-									</label>
-									<label class="radio-label">
-										<input type="radio" bind:group={injuryOption} value="cancel" required />
-										<span class="radio-title">{m.injury_cancel()}</span>
-										<span class="radio-desc">
-											{m.injury_cancel_desc()}
-										</span>
-									</label>
-								</div>
-							</div>
-							<label class="checkbox-label">
-								<input type="checkbox" bind:checked={injuryUseReplacement} />
-								{m.injury_use_replacement()}
-							</label>
-							{#if injuryUseReplacement}
-								<div class="field">
-									<label for="injuryReplacementName">{m.retire_replacement_name()}</label>
-									<input
-										id="injuryReplacementName"
-										type="text"
-										bind:value={injuryReplacementName}
-										required={injuryUseReplacement}
-									/>
-								</div>
-								{#if tournament?.formatType === 'preseed'}
-									<div class="field">
-										<label for="injuryReplacementSeed">{m.retire_replacement_seed()}</label>
-										<input
-											id="injuryReplacementSeed"
-											type="number"
-											min="0"
-											bind:value={injuryReplacementSeedPoints}
-										/>
-									</div>
-								{/if}
-							{/if}
-							<button
-								class="btn-danger"
-								disabled={injurySubmitting}
-								onclick={async () => {
-									if (!injuryPlayerId || !injuryOption || injurySubmitting) return;
-									injurySubmitting = true;
-									try {
-										await reportInjury({
-											tournamentId: data.tournamentId,
-											playerId: injuryPlayerId,
-											option: injuryOption,
-											reason: 'injury',
-											useReplacement: injuryUseReplacement,
-											replacementName: injuryUseReplacement
-												? injuryReplacementName.trim()
-												: undefined,
-											replacementSeedPoints:
-												injuryUseReplacement && tournament?.formatType === 'preseed'
-													? injuryReplacementSeedPoints
-													: undefined
-										});
-										injuryPlayerId = 0;
-										injuryOption = '';
-										injuryUseReplacement = false;
-										injuryReplacementName = '';
-										injuryReplacementSeedPoints = 0;
-										injuryDetailsOpen = false;
-										await tournamentQuery.refresh();
-									} finally {
-										injurySubmitting = false;
-									}
-								}}
-							>
-								{m.injury_confirm()}
-							</button>
-
-							{#each undoableInjuries as ui (ui.id)}
-								{@const remaining = Math.max(
-									0,
-									FIVE_MIN_MS - (now - new Date(ui.retiredAt as string | Date).getTime())
-								)}
-								{@const secondsLeft = Math.ceil(remaining / 1000)}
-								{#if ui.canUndoInjury}
-									<div class="undo-item">
-										<span class="undo-desc"
-											>{m.injury_undo_hint({ name: ui.name, seconds: secondsLeft })}</span
-										>
-										<button
-											class="btn-undo"
-											onclick={async () => {
-												await undoInjury({
-													tournamentId: data.tournamentId,
-													playerId: ui.id
-												});
-											}}>{m.injury_undo_btn()}</button
-										>
-									</div>
-								{/if}
-							{/each}
-						</div>
-					</details>
-				</section>
-			{/if}
-
-			{#if isActive && isViewingCurrentRound && currentRound > 0 && hasScores && allCourtsComplete}
-				<section class="injury-section">
-					<details>
-						<summary class="btn-injury-header">{m.report_injury()}</summary>
-						<div class="injury-form">
-							<p class="info-muted">
-								{m.court_all_done()}
-							</p>
-						</div>
-					</details>
-				</section>
-			{/if}
 
 			<dialog
 				bind:this={manualTieDialogEl}
@@ -1782,6 +1080,16 @@
 		margin-top: var(--spacing-lg);
 	}
 
+	.ops-back-office {
+		margin: var(--spacing-sm) 0 0;
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+	}
+
+	.ops-back-office a {
+		color: var(--accent-primary);
+	}
+
 	.btn-primary {
 		background-color: var(--accent-primary);
 		color: var(--bg-primary);
@@ -1918,101 +1226,6 @@
 		}
 	}
 
-	.scoring-section {
-		margin-top: var(--spacing-lg);
-	}
-
-	.scoring-header {
-		cursor: pointer;
-		font-weight: 600;
-		color: var(--text-muted);
-		padding: var(--spacing-sm);
-	}
-
-	.scoring-header:hover {
-		color: var(--text-secondary);
-	}
-
-	.scoring-note {
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
-		margin: var(--spacing-xs) 0;
-	}
-
-	.scoring-summary {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--spacing-sm);
-		align-items: center;
-		margin-top: var(--spacing-sm);
-	}
-
-	.scoring-badge {
-		font-size: var(--font-size-sm);
-		padding: 2px 8px;
-		border-radius: var(--radius-sm);
-		background-color: var(--bg-secondary);
-		color: var(--text-secondary);
-	}
-
-	.scoring-grid {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--spacing-md);
-		margin-top: var(--spacing-sm);
-	}
-
-	.scoring-fieldset {
-		border: 2px solid var(--border-default);
-		border-radius: var(--radius-md);
-		padding: var(--spacing-sm);
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-xs);
-		min-width: 180px;
-	}
-
-	.scoring-fieldset legend {
-		font-weight: 700;
-		font-size: var(--font-size-sm);
-		color: var(--text-primary);
-	}
-
-	.scoring-fieldset label {
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-	}
-
-	.scoring-fieldset input {
-		min-height: 36px;
-		padding: var(--spacing-xs) var(--spacing-sm);
-		font-size: var(--font-size-base);
-		background-color: var(--bg-input);
-		color: var(--text-input);
-		border: var(--border-thickness) solid var(--border-strong);
-		border-radius: var(--radius-sm);
-	}
-
-	.scoring-fieldset input:focus {
-		outline: none;
-		border-color: var(--border-focus);
-	}
-
-	.scoring-preview {
-		font-size: var(--font-size-xs);
-		color: var(--text-muted);
-		margin: var(--spacing-xs) 0 0 0;
-	}
-
-	.scoring-actions {
-		display: flex;
-		gap: var(--spacing-sm);
-		margin-top: var(--spacing-sm);
-	}
-
 	.btn-secondary {
 		background-color: transparent;
 		color: var(--text-secondary);
@@ -2028,82 +1241,6 @@
 		color: var(--text-primary);
 	}
 
-	.retire-section {
-		margin-top: var(--spacing-lg);
-	}
-
-	.btn-retire-header {
-		cursor: pointer;
-		font-weight: 600;
-		color: var(--text-muted);
-		padding: var(--spacing-sm);
-	}
-
-	.btn-retire-header:hover {
-		color: var(--text-secondary);
-	}
-
-	.retire-form {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-sm);
-		margin-top: var(--spacing-sm);
-		padding: var(--spacing-md);
-		background-color: var(--bg-card);
-		border: 2px solid var(--border-default);
-		border-radius: var(--radius-md);
-	}
-
-	.retire-form .field {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-xs);
-	}
-
-	.retire-form label {
-		font-weight: 600;
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-	}
-
-	.checkbox-label {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-	}
-
-	.retire-form input[type='text'],
-	.retire-form input[type='number'] {
-		min-height: 40px;
-		padding: var(--spacing-xs) var(--spacing-sm);
-		font-size: var(--font-size-base);
-		background-color: var(--bg-input);
-		color: var(--text-input);
-		border: var(--border-thickness) solid var(--border-strong);
-		border-radius: var(--radius-sm);
-	}
-
-	.retire-form select {
-		min-height: 40px;
-		padding: var(--spacing-xs) var(--spacing-sm);
-		font-size: var(--font-size-base);
-		background-color: var(--bg-input);
-		color: var(--text-input);
-		border: var(--border-thickness) solid var(--border-strong);
-		border-radius: var(--radius-sm);
-	}
-
-	.retire-form select:focus {
-		outline: none;
-		border-color: var(--border-focus);
-	}
-
-	.retire-form .btn-danger {
-		align-self: flex-start;
-	}
-
 	.player.retired {
 		opacity: 0.6;
 		text-decoration: line-through;
@@ -2114,182 +1251,6 @@
 		color: var(--accent-error);
 		margin-left: 4px;
 		font-weight: 700;
-	}
-
-	.retire-note {
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
-		margin: 0;
-		padding-bottom: var(--spacing-xs);
-	}
-
-	.injury-note {
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
-		margin: 0;
-		padding-bottom: var(--spacing-xs);
-	}
-
-	.injury-section {
-		margin-top: var(--spacing-lg);
-	}
-
-	.btn-injury-header {
-		cursor: pointer;
-		font-weight: 600;
-		color: var(--text-muted);
-		padding: var(--spacing-sm);
-	}
-
-	.btn-injury-header:hover {
-		color: var(--text-secondary);
-	}
-
-	.injury-form {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-sm);
-		margin-top: var(--spacing-sm);
-		padding: var(--spacing-md);
-		background-color: var(--bg-card);
-		border: 2px solid var(--border-default);
-		border-radius: var(--radius-md);
-	}
-
-	.injury-form .field {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-xs);
-	}
-
-	.injury-form label,
-	.injury-form .label-text {
-		font-weight: 600;
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-	}
-
-	.injury-form .checkbox-label {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-	}
-
-	.injury-form input[type='text'],
-	.injury-form input[type='number'] {
-		min-height: 40px;
-		padding: var(--spacing-xs) var(--spacing-sm);
-		font-size: var(--font-size-base);
-		background-color: var(--bg-input);
-		color: var(--text-input);
-		border: var(--border-thickness) solid var(--border-strong);
-		border-radius: var(--radius-sm);
-	}
-
-	.injury-form select {
-		min-height: 40px;
-		padding: var(--spacing-xs) var(--spacing-sm);
-		font-size: var(--font-size-base);
-		background-color: var(--bg-input);
-		color: var(--text-input);
-		border: var(--border-thickness) solid var(--border-strong);
-		border-radius: var(--radius-sm);
-	}
-
-	.injury-form select:focus {
-		outline: none;
-		border-color: var(--border-focus);
-	}
-
-	.radio-group {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-sm);
-		margin-top: var(--spacing-xs);
-	}
-
-	.radio-label {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		padding: var(--spacing-sm);
-		background-color: var(--bg-secondary);
-		border-radius: var(--radius-sm);
-		cursor: pointer;
-	}
-
-	.radio-title {
-		font-weight: 600;
-		font-size: var(--font-size-sm);
-		color: var(--text-primary);
-	}
-
-	.radio-desc {
-		font-size: var(--font-size-xs);
-		color: var(--text-muted);
-	}
-
-	.injury-form .btn-danger {
-		align-self: flex-start;
-	}
-
-	.info-muted {
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
-		margin: 0;
-		padding: var(--spacing-sm);
-	}
-
-	.undo-list {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-xs);
-		margin-top: var(--spacing-sm);
-		padding-top: var(--spacing-sm);
-		border-top: 1px solid var(--border-default);
-	}
-
-	.undo-label {
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
-		font-weight: 600;
-	}
-
-	.undo-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--spacing-sm);
-		padding: var(--spacing-xs) var(--spacing-sm);
-		background-color: var(--bg-secondary);
-		border-radius: var(--radius-sm);
-	}
-
-	.undo-desc {
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-	}
-
-	.btn-undo {
-		background-color: transparent;
-		color: var(--accent-warning);
-		border: 2px solid var(--accent-warning);
-		padding: 2px 10px;
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-xs);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		cursor: pointer;
-		transition: all var(--transition-fast);
-		flex-shrink: 0;
-	}
-
-	.btn-undo:hover {
-		background-color: var(--accent-warning);
-		color: var(--bg-primary);
 	}
 
 	.frozen-courts {
@@ -2412,55 +1373,6 @@
 		cursor: pointer;
 		font-weight: 600;
 		text-decoration: underline;
-	}
-
-	.tie-break-list {
-		list-style: none;
-		padding: 0;
-		margin: var(--spacing-md) 0;
-	}
-
-	.tie-break-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--spacing-sm);
-		padding: var(--spacing-xs) 0;
-		border-bottom: 1px solid var(--border-color);
-	}
-
-	.tie-break-finals {
-		margin: var(--spacing-md) 0 0;
-		padding: var(--spacing-sm);
-		border: 1px solid var(--border-color);
-		border-radius: var(--radius-sm);
-	}
-
-	.tie-break-finals legend {
-		font-size: var(--font-size-sm);
-		font-weight: 600;
-		color: var(--text-primary);
-		padding: 0 var(--spacing-xs);
-	}
-
-	.tie-break-finals-note {
-		margin: 0 0 var(--spacing-sm);
-		font-size: var(--font-size-xs);
-		color: var(--text-muted);
-		line-height: 1.4;
-	}
-
-	.tie-break-final-option {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		padding: var(--spacing-xs) 0;
-		cursor: pointer;
-	}
-
-	.tie-break-actions {
-		display: flex;
-		gap: var(--spacing-xs);
 	}
 
 	.btn-small {

@@ -17,7 +17,11 @@ import {
 	waitForRetireFormClosed,
 	waitForTournamentPlayer,
 	configureTieBreakFinal,
-	deleteTournament
+	openInjuryForm,
+	openRetireForm,
+	gotoOps,
+	deleteTournament,
+	fillNumericControl
 } from './helpers';
 
 test.describe('Code review findings (spec 1040)', () => {
@@ -42,14 +46,14 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.goto('/');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', name);
-		await page.fill('input[name="n:numRounds"]', '2');
+		await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 		const players = Array.from({ length: 17 }, (_, i) => `Q${i + 1}`);
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
 		await page.waitForURL(/\/tournament\/\d+/);
 		await ensureTournamentStarted(page);
 
-		await page.click('summary:has-text("Retire a Player")');
+		await openRetireForm(page);
 		await page.waitForSelector('.retire-form');
 		const opts = await page.locator('#retirePlayerId option').allTextContents();
 		const target = opts.find((o) => o.match(/\bQ1\b/));
@@ -143,7 +147,7 @@ test.describe('Code review findings (spec 1040)', () => {
 
 		await page.goto(tournamentUrl);
 		// Submit injury via UI
-		await page.click('summary:has-text("Report Injury")');
+		await openInjuryForm(page);
 		await page.waitForSelector('.injury-form');
 		const opts = await page.locator('#injuryPlayerId option').allTextContents();
 		const injured = opts.find((o) => /\bP1\b/.test(o));
@@ -152,7 +156,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.locator('input[value="cancel"]').click();
 		await page.locator('.injury-form button').click({ force: true });
 		await page.waitForTimeout(3000);
-		await page.reload();
+		await gotoOps(page);
 		// Verify player is retired (not critical if fails)
 		await page.waitForSelector('.player.retired', { timeout: 15000 }).catch(() => {});
 
@@ -191,7 +195,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.waitForSelector('text=Round 2 of 2', { timeout: 15000 });
 		await waitForLiveQuerySettle(page);
 
-		await page.click('summary:has-text("Retire a Player")');
+		await openRetireForm(page);
 		await page.waitForSelector('.retire-form');
 		await page.waitForTimeout(500);
 		await selectRetirePlayer(page, /\bP1\b/);
@@ -213,7 +217,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.goto('/');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', name);
-		await page.fill('input[name="n:numRounds"]', '2');
+		await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 		const players = Array.from({ length: 17 }, (_, i) => `Hist${i + 1}`);
 		await page.fill('textarea[name="names"]', players.join('\n'));
 		await page.click('button[type="submit"]');
@@ -228,7 +232,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.click('button:has-text("Close Round & Advance")');
 		await page.waitForSelector('text=Round 2 of 2', { timeout: 15000 });
 
-		await page.click('summary:has-text("Retire a Player")');
+		await openRetireForm(page);
 		await page.waitForSelector('.retire-form');
 		const opts = await page.locator('#retirePlayerId option').allTextContents();
 		const target = opts.find((o) => /Hist16/.test(o));

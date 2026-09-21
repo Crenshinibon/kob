@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { ensureTournamentStarted } from './helpers';
+import { ensureTournamentStarted, fillNumericControl } from './helpers';
 
 /**
  * Tests for promotion and relegation logic
@@ -76,7 +76,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.fill('input[name="n:numRounds"]', '3');
+		await fillNumericControl(page, 'input[name="n:numRounds"]', 3);
 
 		// Add 16 players with predictable names
 		const players = Array.from({ length: 16 }, (_, i) => `Player${String(i + 1).padStart(2, '0')}`);
@@ -107,9 +107,13 @@ test.describe('Promotion and Relegation', () => {
 
 			// Get all match IDs on this court
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
-				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
-			);
+			const matchIds = await page
+				.locator('[data-testid^="match-form-"]')
+				.evaluateAll((els) =>
+					els
+						.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '')
+						.filter(Boolean)
+				);
 			expect(matchIds.length).toBe(3);
 
 			// Enter any valid scores for all 3 matches
@@ -183,7 +187,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.fill('input[name="n:numRounds"]', '2');
+		await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 
 		// Add 16 players
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
@@ -218,9 +222,13 @@ test.describe('Promotion and Relegation', () => {
 
 		// Get all match IDs on this court
 		await page.waitForSelector('[data-testid^="match-form-"]');
-		const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
-			(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
-		);
+		const matchIds = await page
+			.locator('[data-testid^="match-form-"]')
+			.evaluateAll((els) =>
+				els
+					.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '')
+					.filter(Boolean)
+			);
 		expect(matchIds.length).toBe(3);
 
 		// Complete all 3 matches for this court
@@ -241,9 +249,13 @@ test.describe('Promotion and Relegation', () => {
 
 			// Get all match IDs on this court
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const courtMatchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
-				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
-			);
+			const courtMatchIds = await page
+				.locator('[data-testid^="match-form-"]')
+				.evaluateAll((els) =>
+					els
+						.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '')
+						.filter(Boolean)
+				);
 			expect(courtMatchIds.length).toBe(3);
 
 			for (let i = 0; i < 3; i++) {
@@ -270,7 +282,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.fill('input[name="n:numRounds"]', '1');
+		await fillNumericControl(page, 'input[name="n:numRounds"]', 1);
 
 		// Add 16 players
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
@@ -302,9 +314,13 @@ test.describe('Promotion and Relegation', () => {
 
 			// Get all match IDs on this court
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
-				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
-			);
+			const matchIds = await page
+				.locator('[data-testid^="match-form-"]')
+				.evaluateAll((els) =>
+					els
+						.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '')
+						.filter(Boolean)
+				);
 			expect(matchIds.length).toBe(3);
 
 			for (let i = 0; i < 3; i++) {
@@ -347,7 +363,7 @@ test.describe('Promotion and Relegation', () => {
 		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.fill('input[name="n:numRounds"]', '3');
+		await fillNumericControl(page, 'input[name="n:numRounds"]', 3);
 
 		// Add 16 players
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
@@ -379,9 +395,13 @@ test.describe('Promotion and Relegation', () => {
 
 			// Get all match IDs on this court
 			await page.waitForSelector('[data-testid^="match-form-"]');
-			const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
-				(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
-			);
+			const matchIds = await page
+				.locator('[data-testid^="match-form-"]')
+				.evaluateAll((els) =>
+					els
+						.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '')
+						.filter(Boolean)
+				);
 			expect(matchIds.length).toBe(3);
 
 			for (let i = 0; i < 3; i++) {
@@ -425,7 +445,7 @@ test.describe('Promotion and Relegation', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 
 			// 11 players = 2×4p + 1×3p
 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
@@ -454,9 +474,13 @@ test.describe('Promotion and Relegation', () => {
 			for (const courtUrl of courtLinks) {
 				await page.goto(courtUrl);
 				await page.waitForSelector('[data-testid^="match-form-"]');
-				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
-					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
-				);
+				const matchIds = await page
+					.locator('[data-testid^="match-form-"]')
+					.evaluateAll((els) =>
+						els
+							.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '')
+							.filter(Boolean)
+					);
 
 				for (let i = 0; i < matchIds.length; i++) {
 					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');
@@ -497,7 +521,7 @@ test.describe('Promotion and Relegation', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 
 			// 21 players = 5×4p + 1×5p (leftover = 1)
 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
@@ -527,9 +551,13 @@ test.describe('Promotion and Relegation', () => {
 			for (const courtUrl of courtLinks) {
 				await page.goto(courtUrl);
 				await page.waitForSelector('[data-testid^="match-form-"]');
-				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
-					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
-				);
+				const matchIds = await page
+					.locator('[data-testid^="match-form-"]')
+					.evaluateAll((els) =>
+						els
+							.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '')
+							.filter(Boolean)
+					);
 
 				for (let i = 0; i < matchIds.length; i++) {
 					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');
@@ -569,7 +597,7 @@ test.describe('Promotion and Relegation', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 
 			// 22 players = 4×4p + 1×6p (leftover = 2)
 			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
@@ -599,9 +627,13 @@ test.describe('Promotion and Relegation', () => {
 			for (const courtUrl of courtLinks) {
 				await page.goto(courtUrl);
 				await page.waitForSelector('[data-testid^="match-form-"]');
-				const matchIds = await page.locator('[data-testid^="match-form-"]').evaluateAll(
-					(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
-				);
+				const matchIds = await page
+					.locator('[data-testid^="match-form-"]')
+					.evaluateAll((els) =>
+						els
+							.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '')
+							.filter(Boolean)
+					);
 
 				for (let i = 0; i < matchIds.length; i++) {
 					await page.fill(`[data-testid="team-a-score-${matchIds[i]}"]`, '21');

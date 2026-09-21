@@ -29,18 +29,18 @@ Branch: `cursor/review-findings-spec-b2d0` (PR #22). All findings 1–9 implemen
 passing; `bun run check` clean. E2E coverage added in `e2e/code-review-findings.spec.ts` (8 tests) —
 requires Neon + Chromium locally.
 
-| #   | Status | Key files changed |
-| --- | ------ | ----------------- |
-| 1   | Done   | `tournament-logic.ts` (`generateRound1Assignments`), `retirePlayer`, `undoRetirement` |
-| 2   | Done   | `MIN_TOURNAMENT_PLAYERS`, `createInitialState` courtSizes override, `bracketCourtSizes`, `err_retire_min_players` |
-| 3   | Done   | `scores.remote.ts`, `scoreSchema.ts`, `court/[token]/+page.svelte`, `tournament-data.remote.ts` |
+| #   | Status | Key files changed                                                                                                   |
+| --- | ------ | ------------------------------------------------------------------------------------------------------------------- |
+| 1   | Done   | `tournament-logic.ts` (`generateRound1Assignments`), `retirePlayer`, `undoRetirement`                               |
+| 2   | Done   | `MIN_TOURNAMENT_PLAYERS`, `createInitialState` courtSizes override, `bracketCourtSizes`, `err_retire_min_players`   |
+| 3   | Done   | `scores.remote.ts`, `scoreSchema.ts`, `court/[token]/+page.svelte`, `tournament-data.remote.ts`                     |
 | 4   | Done   | `isRoundReadyToClose`, optimistic claim + conditional `currentRound` update, close button disabled while submitting |
-| 5   | Done   | `getCompletedRoundCourtResults` in `retirePlayer` / `undoRetirement` |
-| 6   | Done   | `standings-data.remote.ts` — rotation `courtSize`, snapshots, normalized totals |
-| 7   | Done   | Multi-injury append/filter in `reportInjury` / `undoInjury`; logic helpers already fixed |
-| 8   | Done   | `computeFinalStandingMap` in `closeRoundForm` completion path |
-| 9   | Done   | Compute-then-write + `buildMatchInsertRows` batch inserts; documented in `specs/120_gotchas.md` |
-| 10  | Done   | Unit tests for findings 1,2,4,7,8 (382 total); E2E in `e2e/code-review-findings.spec.ts` |
+| 5   | Done   | `getCompletedRoundCourtResults` in `retirePlayer` / `undoRetirement`                                                |
+| 6   | Done   | `standings-data.remote.ts` — rotation `courtSize`, snapshots, normalized totals                                     |
+| 7   | Done   | Multi-injury append/filter in `reportInjury` / `undoInjury`; logic helpers already fixed                            |
+| 8   | Done   | `computeFinalStandingMap` in `closeRoundForm` completion path                                                       |
+| 9   | Done   | Compute-then-write + `buildMatchInsertRows` batch inserts; documented in `specs/120_gotchas.md`                     |
+| 10  | Done   | Unit tests for findings 1,2,4,7,8 (382 total); E2E in `e2e/code-review-findings.spec.ts`                            |
 
 ### E2E Stabilization Progress (2026-07-04)
 
@@ -55,16 +55,16 @@ Follow-up in PRs #24–#26 and spec [1045](./1045_e2e-flaky-fixes-and-dynamic-cl
 
 **E2E status in `e2e/code-review-findings.spec.ts` (8 tests):**
 
-| Test | Status | Notes |
-| ---- | ------ | ----- |
-| Round-1 retirement 17→16 | Pass | Uses `waitForCourtCardCount`; no post-retire court URL navigation |
-| Wrong court token rejected | Pass | |
-| Close round while incomplete rejected | Pass | |
-| 8p mid-round injury → completion | **Fail** | Court page / score-save; see 1045 |
-| Replacement player roster size | **Fail** | R1 close button never appears; likely silent court skip |
-| Standings after mid-tournament retirement | **Fail** | Same close-round / court-link pattern |
-| Manual tie-break flow | Unverified in last partial run | Fix applied (evaluate-based config) |
-| Dice tie-break flow | Unverified in last partial run | Fix applied (evaluate-based config) |
+| Test                                      | Status                         | Notes                                                             |
+| ----------------------------------------- | ------------------------------ | ----------------------------------------------------------------- |
+| Round-1 retirement 17→16                  | Pass                           | Uses `waitForCourtCardCount`; no post-retire court URL navigation |
+| Wrong court token rejected                | Pass                           |                                                                   |
+| Close round while incomplete rejected     | Pass                           |                                                                   |
+| 8p mid-round injury → completion          | **Fail**                       | Court page / score-save; see 1045                                 |
+| Replacement player roster size            | **Fail**                       | R1 close button never appears; likely silent court skip           |
+| Standings after mid-tournament retirement | **Fail**                       | Same close-round / court-link pattern                             |
+| Manual tie-break flow                     | Unverified in last partial run | Fix applied (evaluate-based config)                               |
+| Dice tie-break flow                       | Unverified in last partial run | Fix applied (evaluate-based config)                               |
 
 **Blocking issue for remaining E2E:** tournament QR links expose `rotation.token`, but `retirePlayer` regenerates rotation tokens on rebuild. Stale URLs 404 on the court page (`ssr = false`, no match forms). Spec says stable `court.token` URLs (050/060). Server fix: expose `court.token` in `tournament-data.remote.ts` or stop rotating rotation tokens.
 

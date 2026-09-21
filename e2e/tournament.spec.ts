@@ -4,8 +4,14 @@ import {
 	clickRetireSubmit,
 	dismissCookieNotice,
 	ensureTournamentStarted,
+	fillNumericControl,
+	openInjuryForm,
+	openRetireForm,
+	openManageSection,
+	gotoOps,
 	reloadForCourtStandings,
 	scoreAllOpenMatches,
+	selectBestOf3Scoring,
 	waitForCourtCardCount
 } from './helpers';
 
@@ -102,7 +108,7 @@ test.describe('Tournament Integration Tests', () => {
 		// 1. Create tournament with players
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.fill('input[name="n:numRounds"]', '2');
+		await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 		const players = [
 			'Alice',
 			'Bob',
@@ -364,44 +370,20 @@ test.describe('Tournament Integration Tests', () => {
 	});
 
 	test.describe('Scoring Modes', () => {
-		test('best-of-3 scoring mode is selectable', async ({ page }) => {
+		test('court-size scoring tabs are visible on create', async ({ page }) => {
 			await page.click('text=+ New Tournament');
 
-			// Best of 3 radio should be visible
-			await expect(page.locator('input[name="scoringMode"][value="best-of-3"]')).toBeVisible();
-			await expect(page.locator('label:has-text("Best of 3")').first()).toBeVisible();
+			await expect(page.getByTestId('scoring-tab-4')).toBeVisible();
+			await expect(page.getByTestId('scoring-tab-3')).toBeVisible();
+			await expect(page.getByTestId('scoring-sets-2')).toBeVisible();
+			await expect(page.getByTestId('scoring-win-by-2')).toBeVisible();
+			await expect(page.getByTestId('scoring-points')).toBeVisible();
 		});
 
-		test('custom scoring mode reveals advanced options', async ({ page }) => {
+		test('best of 3 reveals deciding set points', async ({ page }) => {
 			await page.click('text=+ New Tournament');
-
-			// Select custom scoring
-			await page.click('input[value="custom"]');
-
-			// Advanced section should be visible
-			await expect(page.locator('.advanced-section')).toBeVisible();
-
-			// Should show match format radio buttons
-			await expect(page.locator('input[name="n:setsToWin"][value="1"]')).toBeVisible();
-			await expect(page.locator('input[name="n:setsToWin"][value="2"]')).toBeVisible();
-
-			// Should show win by radio buttons
-			await expect(page.locator('input[name="n:winBy"][value="1"]')).toBeVisible();
-			await expect(page.locator('input[name="n:winBy"][value="2"]')).toBeVisible();
-
-			// Should show points to win input
-			await expect(page.locator('input[name="n:pointsToWin"]')).toBeVisible();
-		});
-
-		test('custom best-of-3 shows deciding set points', async ({ page }) => {
-			await page.click('text=+ New Tournament');
-			await page.click('input[value="custom"]');
-
-			// Change to best-of-3 via radio button
-			await page.click('input[name="n:setsToWin"][value="2"]');
-
-			// Should show deciding set points input
-			await expect(page.locator('input[name="n:decidingSetPoints"]')).toBeVisible();
+			await page.getByTestId('scoring-sets-2').click();
+			await expect(page.getByTestId('scoring-deciding')).toBeVisible();
 		});
 
 		test('duration estimate updates based on scoring mode', async ({ page }) => {
@@ -422,7 +404,7 @@ test.describe('Tournament Integration Tests', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '1');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 1);
 
 			// Enter 21 players on the create page
 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
@@ -451,7 +433,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill('input[name="name"]', tournamentName);
 
 			// Select best-of-3
-			await page.click('input[value="best-of-3"]');
+			await selectBestOf3Scoring(page);
 
 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
@@ -596,7 +578,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForSelector('text=+ New Tournament');
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '1');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 1);
 
 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
@@ -700,7 +682,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill('textarea[name="names"]', players.join('\n'));
 
 			// Set physical courts to 4 (less than 8 virtual)
-			await page.locator('input[name="n:physicalCourts"]').fill('4');
+			await fillNumericControl(page, 'input[name="n:physicalCourts"]', 4);
 
 			// Should show virtual court info
 			await expect(page.locator('.info:has-text("scheduled across")')).toBeVisible();
@@ -723,7 +705,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.fill('textarea[name="names"]', players.join('\n'));
 
 			// With 4 physical courts, should show 2 shifts per round
-			await page.locator('input[name="n:physicalCourts"]').fill('4');
+			await fillNumericControl(page, 'input[name="n:physicalCourts"]', 4);
 
 			// Duration estimate should reflect shifts
 			await expect(page.locator('.duration-estimate')).toBeVisible();
@@ -856,7 +838,7 @@ test.describe('Tournament Integration Tests', () => {
 			// Create 16-player tournament with 2 rounds
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
@@ -905,7 +887,7 @@ test.describe('Tournament Integration Tests', () => {
 			// Retire a player before Round 2 scores are entered
 			// Wait for live query to settle before interacting (re-renders can detach DOM elements)
 			await page.waitForTimeout(1500);
-			await page.click('summary:has-text("Retire a Player")');
+			await openRetireForm(page);
 			await page.waitForSelector('.retire-form');
 			await page.waitForTimeout(500);
 			const retireOptions = await page.locator('#retirePlayerId option').allTextContents();
@@ -979,7 +961,7 @@ test.describe('Tournament Integration Tests', () => {
 			// Create 16-player tournament with 2 rounds
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
@@ -1016,7 +998,7 @@ test.describe('Tournament Integration Tests', () => {
 			await expect(page).toHaveURL(/\/tournament\/\d+/);
 			await page.waitForTimeout(1000);
 
-			await page.click('summary:has-text("Report Injury")');
+			await openInjuryForm(page);
 			await page.waitForSelector('.injury-form');
 			// Find Player1 option by text content and select by value
 			const options = await page.locator('#injuryPlayerId option').allTextContents();
@@ -1027,6 +1009,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.selectOption('#injuryPlayerId', { label: player1Option.trim() });
 			await page.click('input[value="cancel"]');
 			await page.click('.injury-form button');
+			await gotoOps(page);
 
 			// Verify Player1 shows as retired on the court
 			await page.waitForSelector('.player.retired', { timeout: 10000 });
@@ -1060,7 +1043,7 @@ test.describe('Tournament Integration Tests', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
@@ -1096,7 +1079,7 @@ test.describe('Tournament Integration Tests', () => {
 			await expect(page).toHaveURL(/\/tournament\/\d+/);
 			await page.waitForTimeout(1000);
 
-			await page.click('summary:has-text("Report Injury")');
+			await openInjuryForm(page);
 			await page.waitForSelector('.injury-form');
 			const options = await page.locator('#injuryPlayerId option').allTextContents();
 			const player1Option = options.find((opt) => opt.match(/\bPlayer1\b/));
@@ -1106,6 +1089,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.selectOption('#injuryPlayerId', { label: player1Option.trim() });
 			await page.click('input[value="substitute"]');
 			await page.click('.injury-form button');
+			await gotoOps(page);
 
 			// Verify Player1 shows as retired
 			await page.waitForTimeout(2000);
@@ -1152,7 +1136,7 @@ test.describe('Tournament Integration Tests', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
@@ -1200,7 +1184,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForTimeout(1500);
 
 			// Retire Player1
-			await page.click('summary:has-text("Retire a Player")');
+			await openRetireForm(page);
 			await page.waitForSelector('.retire-form');
 			await page.waitForTimeout(500);
 			const retireOpts = await page.locator('#retirePlayerId option').allTextContents();
@@ -1254,7 +1238,7 @@ test.describe('Tournament Integration Tests', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
@@ -1288,7 +1272,7 @@ test.describe('Tournament Integration Tests', () => {
 			await expect(page).toHaveURL(/\/tournament\/\d+/);
 			await page.waitForTimeout(1000);
 
-			await page.click('summary:has-text("Report Injury")');
+			await openInjuryForm(page);
 			await page.waitForSelector('.injury-form');
 			const opts = await page.locator('#injuryPlayerId option').allTextContents();
 			const p1Option = opts.find((opt) => /\bPlayer1\b/.test(opt));
@@ -1318,7 +1302,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForTimeout(3000);
 
 			// Re-open injury section
-			await page.click('summary:has-text("Report Injury")');
+			await openInjuryForm(page);
 			await page.waitForSelector('.injury-form', { state: 'visible' });
 
 			// Verify undo button visible
@@ -1354,7 +1338,7 @@ test.describe('Tournament Integration Tests', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 			const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
@@ -1388,7 +1372,7 @@ test.describe('Tournament Integration Tests', () => {
 			await expect(page).toHaveURL(/\/tournament\/\d+/);
 			await page.waitForTimeout(1000);
 
-			await page.click('summary:has-text("Report Injury")');
+			await openInjuryForm(page);
 			await page.waitForSelector('.injury-form');
 			const opts = await page.locator('#injuryPlayerId option').allTextContents();
 			const p1Option = opts.find((opt) => /\bPlayer1\b/.test(opt));
@@ -1420,7 +1404,7 @@ test.describe('Tournament Integration Tests', () => {
 			await page.waitForTimeout(3000);
 
 			// Re-open injury section
-			await page.click('summary:has-text("Report Injury")');
+			await openInjuryForm(page);
 			await page.waitForSelector('.injury-form', { state: 'visible' });
 
 			// Verify undo button visible and click it
@@ -1456,7 +1440,7 @@ test.describe('Tournament Integration Tests', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 			// Start with 16 players → retire 1 → 15 → 4×4p + 1×3p
 			const players = Array.from({ length: 16 }, (_, i) => `R${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
@@ -1503,7 +1487,7 @@ test.describe('Tournament Integration Tests', () => {
 
 			// Retire a player between rounds
 			await page.waitForTimeout(1500);
-			await page.click('summary:has-text("Retire a Player")');
+			await openRetireForm(page);
 			await page.waitForSelector('.retire-form');
 			await page.waitForTimeout(500);
 			const retireOptions = await page.locator('#retirePlayerId option').allTextContents();
@@ -1577,7 +1561,7 @@ test.describe('Tournament Integration Tests', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 			const players = Array.from({ length: 16 }, (_, i) => `R1P${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
@@ -1585,7 +1569,7 @@ test.describe('Tournament Integration Tests', () => {
 			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 
-			await page.click('summary:has-text("Retire a Player")');
+			await openRetireForm(page);
 			await page.waitForSelector('.retire-form');
 			const retireOptions = await page.locator('#retirePlayerId option').allTextContents();
 			const targetOption = retireOptions.find((opt) => opt.match(/\bR1P1\b/));
@@ -1615,7 +1599,7 @@ test.describe('Tournament Integration Tests', () => {
 
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 			const players = Array.from({ length: 8 }, (_, i) => `MinP${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
@@ -1623,7 +1607,7 @@ test.describe('Tournament Integration Tests', () => {
 			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 
-			await page.click('summary:has-text("Retire a Player")');
+			await openRetireForm(page);
 			await page.waitForSelector('.retire-form');
 			const retireOptions = await page.locator('#retirePlayerId option').allTextContents();
 			const targetOption = retireOptions.find((opt) => opt.match(/\bMinP1\b/));
@@ -1646,7 +1630,7 @@ test.describe('Tournament Integration Tests', () => {
 			// Create 21-player tournament (5×4p + 1×5p)
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 			const players = Array.from({ length: 21 }, (_, i) => `P${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
@@ -1654,23 +1638,12 @@ test.describe('Tournament Integration Tests', () => {
 			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 
-			// Override 5p court scoring: change pointsToWin from 15 to 10
-			await page.click('summary:has-text("Group Scoring Configuration")');
-			await page.waitForSelector('.scoring-summary');
-			await page.click('.btn-edit');
-			await page.waitForSelector('.scoring-grid');
-
-			// Find the 5p fieldset and change points to win to 10
-			const fieldset = page.locator('fieldset.scoring-fieldset:has(legend:text("5p"))');
-			await expect(fieldset).toBeVisible();
-			const pointsInput = fieldset.locator('label:has-text("Points to win") input');
-			await pointsInput.fill('10');
-			await page.click('button:has-text("Save Scoring")');
+			await openManageSection(page, 'rules');
+			await page.getByTestId('scoring-tab-5').click();
+			await page.getByTestId('scoring-points').fill('10');
+			await page.getByTestId('save-scoring').click();
 			await page.waitForTimeout(1500);
-
-			// Verify the summary badge shows the new scoring
-			const badge5p = page.locator('.scoring-badge:has-text("5p")');
-			await expect(badge5p).toContainText('1 set to 10');
+			await gotoOps(page);
 
 			// Navigate to the 5p court (the 5th court link)
 			const allLinks = await page.locator('.qr-link a').all();
@@ -1707,7 +1680,7 @@ test.describe('Tournament Integration Tests', () => {
 			// Create 11-player tournament (2×4p + 1×3p)
 			await page.click('text=+ New Tournament');
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '2');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 2);
 			const players = Array.from({ length: 11 }, (_, i) => `Q${i + 1}`);
 			await page.fill('textarea[name="names"]', players.join('\n'));
 			await page.click('button[type="submit"]');
@@ -1715,22 +1688,12 @@ test.describe('Tournament Integration Tests', () => {
 			await ensureTournamentStarted(page);
 			await page.waitForSelector('text=Round 1 of 2');
 
-			// Override 3p to best-of-3
-			await page.click('summary:has-text("Group Scoring Configuration")');
-			await page.waitForSelector('.scoring-summary');
-			await page.click('.btn-edit');
-			await page.waitForSelector('.scoring-grid');
-
-			const fieldset = page.locator('fieldset.scoring-fieldset:has(legend:text("3p"))');
-			await expect(fieldset).toBeVisible();
-			const setsInput = fieldset.locator('label:has-text("Sets to win") input');
-			await setsInput.fill('2');
-			await page.click('button:has-text("Save Scoring")');
+			await openManageSection(page, 'rules');
+			await page.getByTestId('scoring-tab-3').click();
+			await page.getByTestId('scoring-sets-2').click();
+			await page.getByTestId('save-scoring').click();
 			await page.waitForTimeout(1500);
-
-			// Verify badge shows best-of-3
-			const badge3p = page.locator('.scoring-badge:has-text("3p")');
-			await expect(badge3p).toContainText('Best of 2');
+			await gotoOps(page);
 
 			// Navigate to the 3p court (3rd court link)
 			const allLinks = await page.locator('.qr-link a').all();

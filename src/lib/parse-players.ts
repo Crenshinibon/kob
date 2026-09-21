@@ -76,8 +76,7 @@ export function parsePastedText(text: string): string[] {
 }
 
 export type CsvParseResult =
-	| { ok: true; lines: string[]; hasWvvPoints: boolean }
-	| { ok: false; error: string };
+	{ ok: true; lines: string[]; hasWvvPoints: boolean } | { ok: false; error: string };
 
 function stripQuotes(val: string): string {
 	const trimmed = val.trim();

@@ -4,6 +4,7 @@ export type ManualAssignmentCourt = {
 	courtNumber: number;
 	playerIds: number[];
 	isFrozen?: boolean;
+	manualAdjustedAt?: Date | string | null;
 };
 
 export type AssignmentValidation = {
@@ -157,7 +158,8 @@ export function proposedMove(
 	const next = courts.map((c) => ({
 		courtNumber: c.courtNumber,
 		playerIds: c.playerIds.filter((id) => id !== playerId),
-		isFrozen: c.isFrozen
+		isFrozen: c.isFrozen,
+		manualAdjustedAt: c.manualAdjustedAt
 	}));
 	const target = next.find((c) => c.courtNumber === toCourt);
 	if (target) target.playerIds = [...target.playerIds, playerId];

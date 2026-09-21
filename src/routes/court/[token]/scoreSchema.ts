@@ -8,7 +8,8 @@ export function createScoreSchema(minPoints: number, winBy: number = 2) {
 			token: v.pipe(v.string(), v.nonEmpty()),
 			matchId: v.pipe(v.string(), v.nonEmpty()),
 			teamAScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number)),
-			teamBScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number))
+			teamBScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number)),
+			youOnTeam: v.optional(v.picklist(['a', 'b']))
 		}),
 		v.check((input) => {
 			return input.teamAScore >= 0 && input.teamBScore >= 0;
@@ -39,7 +40,8 @@ export function createSetScoreSchema(
 			matchId: v.pipe(v.string(), v.nonEmpty()),
 			setNumber: v.pipe(v.string(), v.nonEmpty(), v.transform(Number)),
 			teamAScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number)),
-			teamBScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number))
+			teamBScore: v.pipe(v.string(), v.nonEmpty(), v.transform(Number)),
+			youOnTeam: v.optional(v.picklist(['a', 'b']))
 		}),
 		v.check((input) => {
 			return input.teamAScore >= 0 && input.teamBScore >= 0;

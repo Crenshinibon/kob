@@ -237,13 +237,14 @@ The round consists of **2 runs × 2 parallel games = 4 games** total.
 - Game 4: D+E vs B+C (scored when C is on court)
 
 **Game count per player:**
+
 | Player | Run 1 | Run 2 | Total |
-|--------|-------|-------|-------|
-| A | 2 | 1 | 3 |
-| B | 2 | 2 | 4 |
-| C | 2 | 1 | 3 |
-| D | 1 | 2 | 3 |
-| E | 1 | 2 | 3 |
+| ------ | ----- | ----- | ----- |
+| A      | 2     | 1     | 3     |
+| B      | 2     | 2     | 4     |
+| C      | 2     | 1     | 3     |
+| D      | 1     | 2     | 3     |
+| E      | 1     | 2     | 3     |
 
 One player plays 4 games, everyone else plays 3. Across tournament rounds, the "4 games" role rotates (via randomization).
 
@@ -266,14 +267,15 @@ Same structure: 2 runs × 2 parallel games = 4 games.
 - Game 4: C+D vs E+F (scored when E+F is on court)
 
 **Game count per player:**
+
 | Player | Run 1 | Run 2 | Total |
-|--------|-------|-------|-------|
-| A | 2 | 1 | 3 |
-| B | 2 | 1 | 3 |
-| C | 1 | 2 | 3 |
-| D | 1 | 2 | 3 |
-| E | 1 | 1 | 2 |
-| F | 1 | 1 | 2 |
+| ------ | ----- | ----- | ----- |
+| A      | 2     | 1     | 3     |
+| B      | 2     | 1     | 3     |
+| C      | 1     | 2     | 3     |
+| D      | 1     | 2     | 3     |
+| E      | 1     | 1     | 2     |
+| F      | 1     | 1     | 2     |
 
 A-D play 3 games each, E-F play 2 each. Within each rotating pair (C+D, E+F, A+B), both players play the same number of games. Across rounds, roles rotate.
 
@@ -308,13 +310,14 @@ Player ranking = totalPoints / gamesPlayed
 ```
 
 Example for 5 players:
+
 | Player | Games | Total Points | Avg/Game | Rank |
-|--------|-------|--------------|----------|------|
-| A | 3 | 39 | 13.0 | 1 |
-| B | 4 | 48 | 12.0 | 3 |
-| C | 3 | 36 | 12.0 | 3 |
-| D | 3 | 33 | 11.0 | 5 |
-| E | 3 | 36 | 12.0 | 3 |
+| ------ | ----- | ------------ | -------- | ---- |
+| A      | 3     | 39           | 13.0     | 1    |
+| B      | 4     | 48           | 12.0     | 3    |
+| C      | 3     | 36           | 12.0     | 3    |
+| D      | 3     | 33           | 11.0     | 5    |
+| E      | 3     | 36           | 12.0     | 3    |
 
 Tiebreaker: if averages are equal, use total points (more games = more data), then diff, then playerId.
 

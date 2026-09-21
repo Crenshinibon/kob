@@ -788,5 +788,12 @@
 	"manage_sets_one": "Un set",
 	"manage_sets_best_of_3": "Mejor de 3",
 	"manage_win_by_1": "1 punto",
-	"manage_win_by_2": "2 puntos"
+	"manage_win_by_2": "2 puntos",
+	"range_courts_value": "{count} pistas",
+	"range_rounds_value": "{count}",
+	"player_record_round": "Ronda {round} · Pista {court} · {rank}",
+	"player_record_vs_above": "Arriba: {name}",
+	"player_record_vs_below": "Abajo: {name}",
+	"player_score_could_not_save": "No se pudo guardar",
+	"ops_back_office_hint": "Puntuación, desempate, bajas y lesiones están en Gestionar:"
 }

@@ -16,8 +16,7 @@
 		type TieBreakFactorId,
 		type TieBreakDecidingOutcome
 	} from '$lib/tournament-logic';
-	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
-	import { formatDiff, formatPoints } from '$lib/i18n/format';
+	import CourtStandingsTable from '$lib/components/CourtStandingsTable.svelte';
 
 	interface MatchRow {
 		id: number;
@@ -113,23 +112,6 @@
 	});
 
 	const data = $derived(courtQuery.current ?? routeData.courtPageData);
-
-	const showTieBreakIcons = $derived(
-		data.standings.some((s: StandingRow) => s.tiedFactors.length > 0 || s.decidingFactor)
-	);
-
-	function tieBreakFactorLabel(id: TieBreakFactorId): string {
-		const labels: Record<TieBreakFactorId, () => string> = {
-			round_points: msg.tie_break_factor_round_points,
-			round_diff: msg.tie_break_factor_round_diff,
-			total_points: msg.tie_break_factor_total_points,
-			total_diff: msg.tie_break_factor_total_diff,
-			initial_order: msg.tie_break_factor_initial_order,
-			dice: msg.tie_break_factor_dice,
-			manual: msg.tie_break_factor_manual
-		};
-		return labels[id]();
-	}
 
 	function getSavedScore(match: MatchRow): { teamAScore: number; teamBScore: number } | null {
 		const saved = savedScores.get(match.id);
@@ -656,30 +638,32 @@
 														>{msg.court_saved()}</span
 													>
 													{#if data.isEditable}
-														<button
-															class="btn-edit"
-															onclick={() =>
-																(editingMatches = new Set([...editingMatches, setMatch.id]))}
-														>
-															{msg.edit_btn()}
-														</button>
-														<form
-															class="inline-clear"
-															{...clearScore.for(setMatch.id).enhance(async ({ submit }) => {
-																await submit();
-																savedScores.delete(setMatch.id);
-																await courtQuery.refresh();
-															})}
-														>
-															<input type="hidden" name="token" value={page.params.token} />
-															<input type="hidden" name="matchId" value={setMatch.id} />
+														<div class="completed-actions">
 															<button
-																type="submit"
 																class="btn-edit"
-																data-testid="clear-score-{setMatch.id}"
-																>{msg.court_clear_score()}</button
+																onclick={() =>
+																	(editingMatches = new Set([...editingMatches, setMatch.id]))}
 															>
-														</form>
+																{msg.edit_btn()}
+															</button>
+															<form
+																class="inline-clear"
+																{...clearScore.for(setMatch.id).enhance(async ({ submit }) => {
+																	await submit();
+																	savedScores.delete(setMatch.id);
+																	await courtQuery.refresh();
+																})}
+															>
+																<input type="hidden" name="token" value={page.params.token} />
+																<input type="hidden" name="matchId" value={setMatch.id} />
+																<button
+																	type="submit"
+																	class="btn-clear"
+																	data-testid="clear-score-{setMatch.id}"
+																	>{msg.court_clear_score()}</button
+																>
+															</form>
+														</div>
 													{/if}
 												</div>
 											{:else if data.isEditable}
@@ -744,29 +728,32 @@
 												<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span
 												>
 												{#if data.isEditable}
-													<button
-														class="btn-edit"
-														onclick={() =>
-															(editingMatches = new Set([...editingMatches, match.id]))}
-													>
-														{msg.edit_btn()}
-													</button>
-													<form
-														class="inline-clear"
-														{...clearScore.for(match.id).enhance(async ({ submit }) => {
-															await submit();
-															savedScores.delete(match.id);
-															await courtQuery.refresh();
-														})}
-													>
-														<input type="hidden" name="token" value={page.params.token} />
-														<input type="hidden" name="matchId" value={match.id} />
+													<div class="completed-actions">
 														<button
-															type="submit"
 															class="btn-edit"
-															data-testid="clear-score-{match.id}">{msg.court_clear_score()}</button
+															onclick={() =>
+																(editingMatches = new Set([...editingMatches, match.id]))}
 														>
-													</form>
+															{msg.edit_btn()}
+														</button>
+														<form
+															class="inline-clear"
+															{...clearScore.for(match.id).enhance(async ({ submit }) => {
+																await submit();
+																savedScores.delete(match.id);
+																await courtQuery.refresh();
+															})}
+														>
+															<input type="hidden" name="token" value={page.params.token} />
+															<input type="hidden" name="matchId" value={match.id} />
+															<button
+																type="submit"
+																class="btn-clear"
+																data-testid="clear-score-{match.id}"
+																>{msg.court_clear_score()}</button
+															>
+														</form>
+													</div>
 												{/if}
 											</div>
 										{:else if data.isEditable}
@@ -824,28 +811,28 @@
 									</p>
 									<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span>
 									{#if data.isEditable}
-										<button
-											class="btn-edit"
-											onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
-										>
-											{msg.edit_btn()}
-										</button>
-										<form
-											class="inline-clear"
-											{...clearScore.for(match.id).enhance(async ({ submit }) => {
-												await submit();
-												savedScores.delete(match.id);
-												await courtQuery.refresh();
-											})}
-										>
-											<input type="hidden" name="token" value={page.params.token} />
-											<input type="hidden" name="matchId" value={match.id} />
+										<div class="completed-actions">
 											<button
-												type="submit"
 												class="btn-edit"
-												data-testid="clear-score-{match.id}">{msg.court_clear_score()}</button
+												onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
 											>
-										</form>
+												{msg.edit_btn()}
+											</button>
+											<form
+												class="inline-clear"
+												{...clearScore.for(match.id).enhance(async ({ submit }) => {
+													await submit();
+													savedScores.delete(match.id);
+													await courtQuery.refresh();
+												})}
+											>
+												<input type="hidden" name="token" value={page.params.token} />
+												<input type="hidden" name="matchId" value={match.id} />
+												<button type="submit" class="btn-clear" data-testid="clear-score-{match.id}"
+													>{msg.court_clear_score()}</button
+												>
+											</form>
+										</div>
 									{/if}
 								</div>
 							{:else if data.isEditable}
@@ -866,56 +853,11 @@
 	{/if}
 
 	{#if data.standings.length > 0}
-		<section class="standings" transition:slide>
-			<h2>{msg.court_standings()}</h2>
-			{#if showTieBreakIcons}
-				<p class="standings-legend">{msg.tie_break_standings_legend()}</p>
-			{/if}
-			{#if data.court.courtSize === 3}
-				<p class="standings-note">
-					{msg.court_3p_desc({ points: data.court.pointsToWin ?? 21 })}
-				</p>
-			{/if}
-			<table>
-				<thead>
-					<tr>
-						<th>{msg.court_3p_table_header()}</th>
-						<th>{msg.court_3p_table_player()}</th>
-						{#if showTieBreakIcons}
-							<th>{msg.tie_break_icons_header()}</th>
-						{/if}
-						{#if data.court.courtSize === 5 || data.court.courtSize === 6}
-							<th>{msg.court_3p_table_avg()}</th>
-						{/if}
-						<th>{msg.court_3p_table_points()}</th>
-						<th>{msg.court_3p_table_diff()}</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each data.standings as s (s.id)}
-						<tr transition:slide>
-							<td>{s.rank}</td>
-							<td>{s.name}</td>
-							{#if showTieBreakIcons}
-								<td>
-									<TieBreakFactorIcons
-										tiedFactors={s.tiedFactors}
-										decidingFactor={s.decidingFactor}
-										decidingOutcome={s.decidingOutcome}
-										getLabel={tieBreakFactorLabel}
-									/>
-								</td>
-							{/if}
-							{#if data.court.courtSize === 5 || data.court.courtSize === 6}
-								<td>{s.avgPoints != null ? formatPoints(s.avgPoints) : '—'}</td>
-							{/if}
-							<td>{formatPoints(s.points)}</td>
-							<td>{formatDiff(s.diff)}</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</section>
+		<CourtStandingsTable
+			standings={data.standings}
+			courtSize={data.court.courtSize}
+			pointsToWin={data.court.pointsToWin ?? 21}
+		/>
 	{/if}
 </main>
 
@@ -1362,8 +1304,35 @@
 		transition: background-color var(--transition-fast);
 	}
 
-	.btn-edit:hover {
-		background-color: #e6b800;
+	.btn-clear {
+		background: transparent;
+		color: var(--accent-error);
+		border: 1px solid var(--accent-error);
+		border-radius: var(--radius-sm);
+		font-size: 0.65rem;
+		font-weight: 700;
+		padding: 0.15rem 0.45rem;
+		min-height: 26px;
+		cursor: pointer;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+
+	.btn-clear:hover {
+		background: rgba(255, 51, 51, 0.12);
+	}
+
+	.completed-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-xs);
+		flex-wrap: wrap;
+	}
+
+	.inline-clear {
+		display: inline-flex;
+		margin: 0;
 	}
 
 	.btn-secondary {
@@ -1503,49 +1472,5 @@
 		to {
 			transform: rotate(360deg);
 		}
-	}
-
-	.standings {
-		margin-bottom: var(--spacing-xl);
-	}
-
-	.standings h2 {
-		font-size: var(--font-size-lg);
-		margin-bottom: var(--spacing-sm);
-		color: var(--text-primary);
-	}
-
-	table {
-		width: 100%;
-		border-collapse: collapse;
-		background-color: var(--bg-card);
-		border-radius: var(--radius-md);
-		overflow: hidden;
-		border: 2px solid var(--border-default);
-	}
-
-	th,
-	td {
-		padding: var(--spacing-sm);
-		text-align: left;
-		border-bottom: 1px solid var(--border-default);
-	}
-
-	th {
-		font-weight: 700;
-		font-size: var(--font-size-sm);
-		background-color: var(--bg-secondary);
-		color: var(--text-primary);
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-	}
-
-	td {
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-	}
-
-	tr:last-child td {
-		border-bottom: none;
 	}
 </style>

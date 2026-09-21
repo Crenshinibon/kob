@@ -788,5 +788,12 @@
 	"manage_sets_one": "Ein Satz",
 	"manage_sets_best_of_3": "Best of 3",
 	"manage_win_by_1": "1 Punkt",
-	"manage_win_by_2": "2 Punkte"
+	"manage_win_by_2": "2 Punkte",
+	"range_courts_value": "{count} Plätze",
+	"range_rounds_value": "{count}",
+	"player_record_round": "Runde {round} · Platz {court} · {rank}",
+	"player_record_vs_above": "Darüber: {name}",
+	"player_record_vs_below": "Darunter: {name}",
+	"player_score_could_not_save": "Speichern fehlgeschlagen",
+	"ops_back_office_hint": "Satzregeln, Tie-Break, Rücktritt und Verletzungsmeldung sind unter Verwalten:"
 }

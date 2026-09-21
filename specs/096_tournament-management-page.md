@@ -105,8 +105,8 @@ Badges (status, check-in, court) are **not** shown on the one-line roster row as
 | **Edit seed points** (preseed) | Update `seedPoints`, recompute `seedRank` for the whole roster with `assignSeedRanks` (points desc, then insertion / name-list order), rebuild round 1 from that seed order.                                                                                                                   | Round 1, no scores anywhere                   |
 | **Edit order** (random seed)   | Four icon buttons on the **right edge** of the card, top → up → down → bottom. `updatePlayerOrder({ playerIds })` persists the new permutation as `seedRank` 1..n. Same lock as edit seed points. Used as the Seeding tie-break (`initial_order`, 094). List rows animate with `animate:flip`. | `setup`, or round 1 with no scores            |
 | **Move (courts)**              | Courts tab: court `<select>` on each tile, or drag the tile onto another court card.                                                                                                                                                                                                           | See Courts tab                                |
-| **Retire…**                    | Existing `retirePlayer` (reason, optional replacement, shrink/cascade preview — 670/091). **As shipped:** the form stays on the operations view.                                                                                                                                               | Existing rules (player's court has no scores) |
-| **Report injury…**             | Existing `reportInjury` (substitute / cancel & average, optional replacement — 670/092). **As shipped:** the form stays on the operations view.                                                                                                                                                | Existing rules (player's court has scores)    |
+| **Retire…**                    | Existing `retirePlayer` (reason, optional replacement, shrink/cascade preview — 670/091). Form lives on **Manage → Players**.                                                                                                                                                                  | Existing rules (player's court has no scores) |
+| **Report injury…**             | Existing `reportInjury` (substitute / cancel & average, optional replacement — 670/092). Form lives on **Manage → Players**.                                                                                                                                                                   | Existing rules (player's court has scores)    |
 | **Undo retirement / injury**   | Existing commands, 5-minute window, countdown shown.                                                                                                                                                                                                                                           | Existing rules                                |
 | **Remove (no-show)**           | **Hard delete** of the player row. In `setup`: no rebuild. After start (round 1, no scores): `playerCount--`, court sizes recalculated, round 1 rebuilt. Unlike retire: no final standing, never shown in standings or history.                                                                | `setup`, or round 1 with no scores            |
 | **⋯ → Regenerate player link** | New `player.token` (invalidates a leaked/shared QR). See 097.                                                                                                                                                                                                                                  | Always while `setup` or `active`              |
@@ -148,7 +148,7 @@ In `setup` this tab reads "Tournament not started — Start to generate courts, 
 
 ### Drag-and-drop
 
-Player names are tiles. **HTML5 drag-and-drop** plus a court `<select>` on each tile (no extra DnD library). Drop targets that would stay in 3–6 players highlight; blocked courts dim. Cards always render in **court-number order** (a 4p→4p move that becomes 3p+5p does not reorder the cards).
+Player names are tiles. **Pointer long-press drag** (not HTML5 `dragstart` — that does not lift on touch) plus a court `<select>` on each tile. Long-press (~160ms) or a short move lifts the tile (scale/rotate + a following ghost). Drop targets that would stay in 3–6 players highlight; blocked courts dim. Cards always render in **court-number order** (a 4p→4p move that becomes 3p+5p does not reorder the cards). Cross-court moves (drag or `<select>`) use the same `animate:flip` + `crossfade` send/receive as roster seed-order buttons, with an optimistic `pendingCourts` assignment so the tiles animate immediately.
 
 - **Order on a court is meaningful.** `player1Id`…`player6Id` slots drive 5p/6p match generation (who sits which run). Moving a player onto a court appends them; there is no separate within-court slot drop in v1.
 - **More than one uneven court is allowed** for the _current_ round (two 5p, a 3p in the middle, etc.). Highlight every non-standard court so the organizer sees it. The **next** round still uses normal redistribution from results (`closeRoundForm` checklist — canonical sizes from active player count, not this manual layout).
@@ -204,8 +204,8 @@ Collapsible groups, same `<details>` pattern as today. Editors for scoring overr
 
 - **Rename** tournament.
 - **Courts & rounds** (`manage_layout_heading` panel, moved here from Rules):
-  - `numRounds` — random seed: any time while not completed (min = `currentRound` if no scores, else `currentRound + 1`). Also editable in **`setup`**, including preseed (honored at start except one-court force-1). After start, preseed rounds stay derived. If `numRounds === currentRound`, the current round becomes the final: allowed only if Court 1 has exactly 4 players, otherwise error suggests `+1`.
-  - `physicalCourtCount` — any time while not completed — **setup panel, manage Tournament, and operations** after start. Shift/wait estimates (660).
+  - `numRounds` — **range slider**, min **1**, max **10** (`RangeSlider`, same control as Create). Random seed: any time while not completed (effective min = `currentRound` if no scores, else `currentRound + 1`). Also editable in **`setup`**, including preseed (honored at start except one-court force-1). After start, preseed rounds stay derived. If `numRounds === currentRound`, the current round becomes the final: allowed only if Court 1 has exactly 4 players, otherwise error suggests `+1`.
+  - `physicalCourtCount` — **range slider** 1–16, same `RangeSlider` as Create. Any time while not completed — **setup panel, manage Tournament, and operations** after start. Shift/wait estimates (660).
   - `court.label` per court (existing `setCourtLabel`) — labels on court + player pages.
 - **Finish tournament early** — enabled once at least one round is closed.
 
@@ -360,9 +360,9 @@ Reused unchanged from `tournament-actions.remote.ts`: `retirePlayer`, `reportInj
 
 ## Operations View Changes (`/tournament/[id]`)
 
-Added: **`ops-nav`** chip links — Manage, Check-in (097), View Standings — with gap and tap targets so they do not run together. Setup panel and post-start schedule expose **rounds** and **physical courts**. **adjusted** badge on court cards with `manualAdjustedAt`.
+Added: **`ops-nav`** chip links — Manage, Check-in (097), View Standings — with gap and tap targets so they do not run together. Setup panel and post-start schedule expose **rounds** and **physical courts** as the same `RangeSlider` as Create / Manage (rounds 1–10, physical courts 1–16). **adjusted** badge on court cards with `manualAdjustedAt`.
 
-Kept on operations (not yet moved exclusively to Manage): scoring-override editor, retire form, injury form, delete. Manage also has delete (danger zone), court-size scoring rules, finish early, and reopen. Round stepper, court cards **with court QR + labels** and the **Open court page** link (stable `court.token`, 1045), manual tie-break dialog, and close round / finalize stay here.
+Scoring, tie-break, retire, injury, and delete live **only on Manage** (Rules / Players / Tournament). Operations keeps a one-line hint with links to Manage → Rules and Manage → Players. Round stepper, court cards **with court QR + labels**, manual tie-break **rank dialog** on court cards, physical-court slider in the schedule block, and close round / finalize / reopen stay here.
 
 In `setup` ([099](./099_tournament-setup-and-start.md)) this page shows the start panel instead of court cards.
 
@@ -409,7 +409,7 @@ In `setup` ([099](./099_tournament-setup-and-start.md)) this page shows the star
 5. Finish early with scores: **always cancel-and-average**. Discard only when the current round is empty.
 6. Scoring rules only at the **start of a round** (no scores yet).
 7. Reopen is blocked while the current round has scores. Clear those scores one by one on the court page first. No bulk discard on the reopen dialog.
-8. Courts tab is **drag-and-drop**, including within-court order and preseed bracket overwrites. Multiple uneven courts allowed for the current round; **Refill** flatten-by-current-assignment then canonical fill; next round redistributes normally.
+8. Courts tab is **pointer long-press drag-and-drop** (lift + ghost) including the court-number `<select>` (flip/crossfade), and preseed bracket overwrites. Multiple uneven courts allowed for the current round; **Refill** flatten-by-current-assignment then canonical fill; next round redistributes normally.
 9. **Order UI:** right-edge icon buttons on the Players tab in order **top → up → down → bottom**. No order-number input; list position is the rank. Cards animate with `animate:flip`.
 10. **Clear score** on the court page only (empty both sides → incomplete). Used to unblock reopen.
 11. **Reset to computed** undoes a preseed overwrite (rebuild from previous-round snapshots) while the round has no scores.

@@ -2232,6 +2232,21 @@ export function clampCourtScoringRules(rules: CourtScoringRules): CourtScoringRu
 	};
 }
 
+export function scoringPayloadFromDraft(draft: Record<string, CourtScoringRules>): {
+	four: CourtScoringRules;
+	scoringOverrides: ScoringOverrides;
+} {
+	const four = clampCourtScoringRules(draft['4'] ?? baseCourtScoring(null));
+	return {
+		four,
+		scoringOverrides: {
+			'3': clampCourtScoringRules(draft['3'] ?? displayedScoringForCourt(3, four, null)),
+			'5': clampCourtScoringRules(draft['5'] ?? displayedScoringForCourt(5, four, null)),
+			'6': clampCourtScoringRules(draft['6'] ?? displayedScoringForCourt(6, four, null))
+		}
+	};
+}
+
 export function isDecidingSet(setNumber: number, setsToWin: number): boolean {
 	return setsToWin >= 2 && setNumber === setsToWin * 2 - 1;
 }

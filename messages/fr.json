@@ -788,5 +788,12 @@
 	"manage_sets_one": "Un set",
 	"manage_sets_best_of_3": "Meilleur des 3",
 	"manage_win_by_1": "1 point",
-	"manage_win_by_2": "2 points"
+	"manage_win_by_2": "2 points",
+	"range_courts_value": "{count} terrains",
+	"range_rounds_value": "{count}",
+	"player_record_round": "Tour {round} · Terrain {court} · {rank}",
+	"player_record_vs_above": "Au-dessus : {name}",
+	"player_record_vs_below": "En dessous : {name}",
+	"player_score_could_not_save": "Enregistrement impossible",
+	"ops_back_office_hint": "Règles, départage, forfait et blessure se gèrent dans Gérer :"
 }

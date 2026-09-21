@@ -3,26 +3,38 @@
 	import { page as appPage } from '$app/state';
 	import LanguageSwitcher from '$lib/components/LanguageSwitcher.svelte';
 	import ScoreEntry from '$lib/components/ScoreEntry.svelte';
+	import CourtStandingsTable from '$lib/components/CourtStandingsTable.svelte';
+	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
 	import { formatDiff, formatPoints } from '$lib/i18n/format';
 	import { getPlayerData, savePlayerScore, savePlayerSetScore } from './player-data.remote';
 	import { createScoreSchema, createSetScoreSchema } from '../../court/[token]/scoreSchema';
 	import type { PlayerPageData } from '$lib/server/player-page-data';
 	import type { OrientedMatchView } from '$lib/player-page-logic';
+	import type { TieBreakFactorId } from '$lib/tournament-logic';
 
-	let { data: routeData } = $props<{
+	type PlayerRouteData = {
 		data: {
 			token: string;
 			playerPageData: PlayerPageData;
 			user?: { id: string } | null;
 		};
-	}>();
+	};
 
-	const playerQuery = $derived(getPlayerData({ token: routeData.token }));
+	type ScoreSubmitForm = {
+		submit: () => Promise<unknown>;
+		validate?: (options?: { includeUntouched?: boolean; preflightOnly?: boolean }) => Promise<void>;
+		fields: { allIssues(): Array<{ message: string }> | undefined };
+	};
+
+	let { data: routeData }: PlayerRouteData = $props();
+
 	let saving = $state(false);
 	let focused = $state(false);
 	let hidden = $state(false);
 	let lastUpdated = $state(new Date());
 	let formErrors = $state(new Map<number, string[]>());
+
+	const playerQuery = $derived(getPlayerData({ token: routeData.token }));
 
 	function onVisibilityChange(): void {
 		hidden = document.hidden;
@@ -30,9 +42,9 @@
 	}
 
 	const page = $derived(playerQuery.current ?? routeData.playerPageData);
-	const state = $derived(page.state);
+	const roundState = $derived(page.state);
 	const pollMs = $derived(
-		state === 'active' || state === 'waiting' || state === 'injured' ? 5000 : 10000
+		roundState === 'active' || roundState === 'waiting' || roundState === 'injured' ? 5000 : 10000
 	);
 
 	$effect(() => {
@@ -107,7 +119,7 @@
 	}
 
 	function canScore(): boolean {
-		return state === 'active' || state === 'injured';
+		return roundState === 'active' || roundState === 'injured';
 	}
 
 	async function refreshNow(): Promise<void> {
@@ -115,17 +127,51 @@
 		lastUpdated = new Date();
 	}
 
-	async function handleSave(
-		form: { submit: () => Promise<unknown> },
-		matchId: number
-	): Promise<void> {
+	async function handleSave(form: ScoreSubmitForm, matchId: number): Promise<void> {
 		saving = true;
 		formErrors = new Map([...formErrors].filter(([id]) => id !== matchId));
 		try {
-			await form.submit();
+			if (typeof form.validate === 'function') {
+				await form.validate({ includeUntouched: true, preflightOnly: true });
+			}
+		} catch {
+			/* validate is best-effort; submit still runs */
+		}
+		const preflightIssues = form.fields.allIssues() ?? [];
+		if (preflightIssues.length > 0) {
+			formErrors = new Map([
+				...formErrors,
+				[matchId, preflightIssues.map((issue) => issue.message)]
+			]);
+			saving = false;
+			return;
+		}
+		try {
+			const result = await form.submit();
+			const serverIssues = form.fields.allIssues() ?? [];
+			if (serverIssues.length > 0) {
+				formErrors = new Map([
+					...formErrors,
+					[matchId, serverIssues.map((issue) => issue.message)]
+				]);
+				return;
+			}
+			if (result === false) {
+				formErrors = new Map([...formErrors, [matchId, [msg.player_score_could_not_save()]]]);
+				return;
+			}
 			await playerQuery.refresh();
 		} catch {
-			formErrors = new Map([...formErrors, [matchId, ['Could not save']]]);
+			const serverIssues = form.fields.allIssues() ?? [];
+			formErrors = new Map([
+				...formErrors,
+				[
+					matchId,
+					serverIssues.length > 0
+						? serverIssues.map((issue) => issue.message)
+						: [msg.player_score_could_not_save()]
+				]
+			]);
 		} finally {
 			saving = false;
 		}
@@ -138,8 +184,29 @@
 		return { matchId, setNumber, scored, set: view.sets[setIndex] };
 	}
 
-	const scoringSchema = $derived(createScoreSchema(21, 2));
+	const courtScoring = $derived(
+		page.now.court?.scoring ?? {
+			pointsToWin: 21,
+			winBy: 2,
+			setsToWin: 1,
+			decidingSetPoints: 15
+		}
+	);
+	const scoringSchema = $derived(createScoreSchema(courtScoring.pointsToWin, courtScoring.winBy));
 	const hasSession = $derived(!!(routeData.user ?? appPage.data.user));
+
+	function tieBreakFactorLabel(id: TieBreakFactorId): string {
+		const labels: Record<TieBreakFactorId, () => string> = {
+			round_points: msg.tie_break_factor_round_points,
+			round_diff: msg.tie_break_factor_round_diff,
+			total_points: msg.tie_break_factor_total_points,
+			total_diff: msg.tie_break_factor_total_diff,
+			initial_order: msg.tie_break_factor_initial_order,
+			dice: msg.tie_break_factor_dice,
+			manual: msg.tie_break_factor_manual
+		};
+		return labels[id]();
+	}
 </script>
 
 <svelte:document onvisibilitychange={onVisibilityChange} />
@@ -165,11 +232,11 @@
 		{/if}
 	</header>
 
-	{#if page.tournament.checkInOpen && state !== 'not_started'}
+	{#if page.tournament.checkInOpen && roundState !== 'not_started'}
 		<p class="banner" data-testid="checkin-open-banner">{msg.player_checkin_open_note()}</p>
 	{/if}
 
-	{#if state === 'not_started'}
+	{#if roundState === 'not_started'}
 		<section class="hero" data-testid="player-not-started">
 			<h2>{msg.player_not_started({ name: page.tournament.name })}</h2>
 			<p>{msg.player_not_started_registered({ count: page.placement.total || 0 })}</p>
@@ -178,7 +245,7 @@
 			{/if}
 			<p>{msg.player_not_started_wait()}</p>
 		</section>
-	{:else if state === 'completed'}
+	{:else if roundState === 'completed'}
 		<section class="hero final" data-testid="player-completed">
 			<h2>
 				{msg.player_final_place({
@@ -189,7 +256,7 @@
 				<p>{msg.player_finished_early({ round: page.tournament.currentRound })}</p>
 			{/if}
 		</section>
-	{:else if state === 'retired'}
+	{:else if roundState === 'retired'}
 		<section class="hero">
 			<p>
 				{#if page.player.retired?.injured}
@@ -208,7 +275,7 @@
 				<p>{msg.player_replaced_by({ name: page.player.retired.replacedByName })}</p>
 			{/if}
 		</section>
-	{:else if state === 'eliminated'}
+	{:else if roundState === 'eliminated'}
 		<section class="hero">
 			<p>
 				{msg.player_eliminated({
@@ -216,7 +283,7 @@
 				})}
 			</p>
 		</section>
-	{:else if state === 'frozen'}
+	{:else if roundState === 'frozen'}
 		<section class="hero">
 			<p>
 				{msg.player_frozen({
@@ -227,7 +294,7 @@
 				})}
 			</p>
 		</section>
-	{:else if state === 'waiting'}
+	{:else if roundState === 'waiting'}
 		<section class="hero" data-testid="player-waiting">
 			<h2>{msg.player_court_now({ number: page.now.court?.courtNumber ?? 0 })}</h2>
 			{#if page.movement === 'up'}
@@ -244,7 +311,7 @@
 			{/each}
 			<p class="hint">{msg.player_waiting_scores_locked()}</p>
 		</section>
-	{:else if state === 'court_done'}
+	{:else if roundState === 'court_done'}
 		<section class="hero" data-testid="player-court-done">
 			<h2>{msg.player_court_done({ number: page.now.court?.courtNumber ?? 0 })}</h2>
 			<p>
@@ -270,6 +337,15 @@
 						})}
 					{/if}
 				</p>
+			{/if}
+			{#if page.now.courtStandings.length > 0}
+				<CourtStandingsTable
+					standings={page.now.courtStandings}
+					courtSize={page.now.court?.courtSize ?? 4}
+					pointsToWin={courtScoring.pointsToWin}
+					youLabel={msg.player_you()}
+					heading={msg.player_court_standings()}
+				/>
 			{/if}
 		</section>
 	{:else}
@@ -327,11 +403,11 @@
 											.for(info.matchId)
 											.preflight(
 												createSetScoreSchema(
-													21,
-													15,
+													courtScoring.pointsToWin,
+													courtScoring.decidingSetPoints,
 													info.setNumber,
-													page.now.current.sets.length > 1 ? 2 : 1,
-													2
+													page.now.current.sets.length > 1 ? courtScoring.setsToWin : 1,
+													courtScoring.winBy
 												)
 											)
 									: savePlayerScore.for(info.matchId).preflight(scoringSchema)}
@@ -347,6 +423,7 @@
 								savedA={set.a}
 								savedB={set.b}
 								{saving}
+								extraErrors={formErrors.get(info.matchId) ?? []}
 								youOnTeam={page.now.current.youOnTeam === 'b' ? 'b' : 'a'}
 								onsubmit={(form) => handleSave(form, info.matchId)}
 								onfocus={() => (focused = true)}
@@ -372,18 +449,33 @@
 						{#if canScore() && !view.sitOut && !view.isCanceled}
 							{#each view.sets as set, si (set.id || si)}
 								{@const info = setForm(view, si)}
-								{@const formObj = savePlayerScore.for(info.matchId).preflight(scoringSchema)}
+								{@const formObj =
+									info.setNumber > 1 || view.sets.length > 1
+										? savePlayerSetScore
+												.for(info.matchId)
+												.preflight(
+													createSetScoreSchema(
+														courtScoring.pointsToWin,
+														courtScoring.decidingSetPoints,
+														info.setNumber,
+														view.sets.length > 1 ? courtScoring.setsToWin : 1,
+														courtScoring.winBy
+													)
+												)
+										: savePlayerScore.for(info.matchId).preflight(scoringSchema)}
 								<ScoreEntry
 									{formObj}
 									matchId={info.matchId}
 									token={routeData.token}
 									teamALabel={youLabel(view)}
 									teamBLabel={oppLabel(view)}
+									setNumber={view.sets.length > 1 ? info.setNumber : undefined}
 									compact={true}
 									readOnly={info.scored}
 									savedA={set.a}
 									savedB={set.b}
 									{saving}
+									extraErrors={formErrors.get(info.matchId) ?? []}
 									youOnTeam={view.youOnTeam === 'b' ? 'b' : 'a'}
 									onsubmit={(form) => handleSave(form, info.matchId)}
 									onfocus={() => (focused = true)}
@@ -396,22 +488,18 @@
 			{/if}
 
 			{#if page.now.courtStandings.length > 0}
-				<section class="court-standings">
-					<h3>{msg.player_court_standings()}</h3>
-					<ol>
-						{#each page.now.courtStandings as s, i (s.name + i)}
-							<li class:you={s.isYou}>
-								{s.rank}. {s.isYou ? msg.player_you() : s.name}
-								{formatPoints(s.points)} ({formatDiff(s.diff)})
-							</li>
-						{/each}
-					</ol>
-				</section>
+				<CourtStandingsTable
+					standings={page.now.courtStandings}
+					courtSize={page.now.court?.courtSize ?? 4}
+					pointsToWin={courtScoring.pointsToWin}
+					youLabel={msg.player_you()}
+					heading={msg.player_court_standings()}
+				/>
 			{/if}
 		</section>
 	{/if}
 
-	{#if state !== 'not_started'}
+	{#if roundState !== 'not_started'}
 		<section class="placement" data-testid="player-placement">
 			<h2>{msg.player_placement_heading()}</h2>
 			{#if page.placement.isFinal}
@@ -455,6 +543,49 @@
 			{#if page.record.usedAverages}
 				<p class="hint">{msg.player_record_averages_note()}</p>
 			{/if}
+			{#if page.record.rounds.length > 0}
+				<ul class="record-rounds" data-testid="player-record-rounds">
+					{#each page.record.rounds as round (round.round)}
+						<li>
+							<p>
+								{msg.player_record_round({
+									round: round.round,
+									court: round.courtNumber,
+									rank: round.rank
+								})}
+								<TieBreakFactorIcons
+									tiedFactors={round.tiedFactors}
+									decidingFactor={round.decidingFactor}
+									decidingOutcome={round.decidingOutcome}
+									getLabel={tieBreakFactorLabel}
+								/>
+							</p>
+							{#if round.above}
+								<p class="hint">
+									{msg.player_record_vs_above({ name: round.above.name })}
+									<TieBreakFactorIcons
+										tiedFactors={[]}
+										decidingFactor={round.above.decidingFactor}
+										decidingOutcome={round.above.decidingOutcome}
+										getLabel={tieBreakFactorLabel}
+									/>
+								</p>
+							{/if}
+							{#if round.below}
+								<p class="hint">
+									{msg.player_record_vs_below({ name: round.below.name })}
+									<TieBreakFactorIcons
+										tiedFactors={[]}
+										decidingFactor={round.below.decidingFactor}
+										decidingOutcome={round.below.decidingOutcome}
+										getLabel={tieBreakFactorLabel}
+									/>
+								</p>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			{/if}
 		</section>
 	{/if}
 
@@ -480,8 +611,8 @@
 								—
 							{:else}
 								{item.sets
-									.filter((s) => s.a != null && s.b != null)
-									.map((s) => `${s.a}–${s.b}`)
+									.filter((s: { a: number | null; b: number | null }) => s.a != null && s.b != null)
+									.map((s: { a: number | null; b: number | null }) => `${s.a}–${s.b}`)
 									.join(', ')}
 								{#if item.diffForGame != null}
 									<span>{formatDiff(item.diffForGame)}</span>
@@ -566,15 +697,13 @@
 	.hero h3,
 	.placement h2,
 	.record h2,
-	.history h2,
-	.court-standings h3 {
+	.history h2 {
 		margin: 0 0 var(--spacing-md);
 		padding-bottom: var(--spacing-xs);
 		border-bottom: 2px solid var(--accent-primary);
 	}
 
-	.hero h3,
-	.court-standings h3 {
+	.hero h3 {
 		margin-top: var(--spacing-lg);
 		border-bottom-color: var(--border-strong);
 	}
@@ -604,8 +733,22 @@
 		background: var(--bg-secondary);
 	}
 
-	.court-standings li.you {
-		font-weight: 700;
+	.record-rounds {
+		list-style: none;
+		padding: 0;
+		margin: var(--spacing-md) 0 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+	}
+
+	.record-rounds li {
+		border-top: 1px solid var(--border-default);
+		padding-top: var(--spacing-sm);
+	}
+
+	.record-rounds p {
+		margin: 0;
 	}
 
 	.history li.current {

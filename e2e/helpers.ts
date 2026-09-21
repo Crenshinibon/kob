@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 export async function dismissCookieNotice(page: Page): Promise<void> {
 	const dismissBtn = page.locator('button.cookie-btn, button:has-text("OK")');
@@ -30,6 +30,39 @@ export async function login(page: Page): Promise<void> {
 	await dismissCookieNotice(page);
 }
 
+export async function setRangeValue(locator: Locator, value: number | string): Promise<void> {
+	await locator.evaluate((el, v) => {
+		const input = el as HTMLInputElement;
+		const proto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+		proto?.set?.call(input, String(v));
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		input.dispatchEvent(new Event('change', { bubbles: true }));
+	}, String(value));
+}
+
+export async function fillNumericControl(
+	page: Page,
+	selector: string,
+	value: number | string
+): Promise<void> {
+	const locator = page.locator(selector).first();
+	await fillNumericLocator(locator, value);
+}
+
+export async function fillNumericLocator(locator: Locator, value: number | string): Promise<void> {
+	const type = await locator.getAttribute('type');
+	if (type === 'range') {
+		await setRangeValue(locator, value);
+		return;
+	}
+	await locator.fill(String(value));
+	await locator.blur();
+}
+
+export async function selectBestOf3Scoring(page: Page): Promise<void> {
+	await page.getByTestId('scoring-sets-2').click();
+}
+
 export async function createSetupTournament(
 	page: Page,
 	name: string,
@@ -44,7 +77,7 @@ export async function createSetupTournament(
 	if (formatType === 'preseed') {
 		await page.click('input[value="preseed"]');
 	} else {
-		await page.fill('input[name="n:numRounds"]', String(numRounds));
+		await fillNumericControl(page, 'input[name="n:numRounds"]', numRounds);
 	}
 	if (playerCount > 0) {
 		const players = Array.from({ length: playerCount }, (_, i) => `P${i + 1}`);
@@ -133,7 +166,52 @@ export async function waitForLiveQuerySettle(page: Page, ms = 1500): Promise<voi
 	await page.waitForTimeout(ms);
 }
 
-/** Select a retire player by name pattern; verifies bind:value stuck before submit. */
+export async function gotoOps(page: Page): Promise<void> {
+	const match = page.url().match(/\/tournament\/(\d+)/);
+	if (!match) throw new Error('Cannot open operations: no tournament id in URL');
+	await page.goto(`/tournament/${match[1]}`);
+	await page.waitForSelector('.ops-nav, .court-card, [data-testid="setup-panel"]', {
+		timeout: 15000
+	});
+}
+
+export async function openManageSection(
+	page: Page,
+	section: 'players' | 'courts' | 'rules' | 'tournament'
+): Promise<string> {
+	const match = page.url().match(/\/tournament\/(\d+)/);
+	if (!match) throw new Error('Cannot open manage: no tournament id in URL');
+	const id = match[1];
+	await page.goto(`/tournament/${id}/manage#${section}`);
+	await page.waitForSelector('[data-testid="manage-page"]');
+	await page.getByTestId(`tab-${section}`).click();
+	await expect(page.getByTestId(`${section}-tab`)).toBeVisible({ timeout: 15000 });
+	return `/tournament/${id}`;
+}
+
+export async function openRetireForm(page: Page): Promise<void> {
+	const summary = page.locator('summary:has-text("Retire a Player")');
+	if (!(await summary.isVisible().catch(() => false))) {
+		await openManageSection(page, 'players');
+	}
+	const details = page.locator('section.retire-section details');
+	if ((await details.getAttribute('open')) == null) {
+		await page.locator('summary:has-text("Retire a Player")').click();
+	}
+	await page.waitForSelector('.retire-form');
+}
+
+export async function openInjuryForm(page: Page): Promise<void> {
+	const summary = page.locator('summary:has-text("Report Injury")');
+	if (!(await summary.isVisible().catch(() => false))) {
+		await openManageSection(page, 'players');
+	}
+	const details = page.locator('section.injury-section details');
+	if ((await details.getAttribute('open')) == null) {
+		await page.locator('summary:has-text("Report Injury")').click();
+	}
+	await page.waitForSelector('.injury-form');
+}
 export async function selectRetirePlayer(page: Page, namePattern: RegExp): Promise<void> {
 	const pattern = namePattern.source;
 	const flags = namePattern.flags;
@@ -158,6 +236,7 @@ export async function clickRetireSubmit(page: Page): Promise<void> {
 	const btn = page.locator('.retire-form button.btn-danger');
 	await expect(page.locator('#retirePlayerId')).not.toHaveValue('');
 	await btn.click({ timeout: 10000 });
+	await gotoOps(page);
 }
 
 /** Toggle replacement checkbox and fill name (Svelte bind:checked needs label click). */
@@ -400,7 +479,10 @@ export async function configureTieBreakFinal(
 	page: Page,
 	finalFactor: 'manual' | 'dice'
 ): Promise<void> {
-	await page.click('summary:has-text("Tie-break rules")');
+	const list = page.locator('.tie-break-list');
+	if (!(await list.isVisible().catch(() => false))) {
+		await openManageSection(page, 'rules');
+	}
 	await page.waitForSelector('.tie-break-list');
 
 	await page.evaluate(

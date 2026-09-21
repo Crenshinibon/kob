@@ -5,6 +5,10 @@
 	import { localizeHref } from '$lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
 	import PlayerNameImport from '$lib/components/PlayerNameImport.svelte';
+	import RangeSlider from '$lib/components/RangeSlider.svelte';
+	import ScoringRulesFields from '$lib/components/ScoringRulesFields.svelte';
+	import TieBreakRulesFields from '$lib/components/TieBreakRulesFields.svelte';
+	import RosterStatusActions from './RosterStatusActions.svelte';
 	import {
 		isValidPlayerMove,
 		movePlayerInOrder,
@@ -12,19 +16,27 @@
 		proposedMove,
 		sortCourts,
 		sortPlayersBySeed,
+		type ManualAssignmentCourt,
 		type SeedOrderMove
 	} from '$lib/manage-logic';
 	import {
-		SCORING_COURT_SIZES,
-		clampCourtScoringRules,
 		scoringDraftFromConfig,
+		scoringPayloadFromDraft,
+		DEFAULT_TIE_BREAK_CONFIG,
+		DEFAULT_TIE_BREAK_FINAL_FACTOR,
+		normalizeTieBreakConfig,
+		isStatisticalTieBreakFactor,
+		TIE_BREAK_FINAL_FACTOR_IDS,
 		type CourtScoringRules,
 		type ScoringCourtSize,
-		type ScoringOverrides
+		type ScoringOverrides,
+		type TieBreakConfig,
+		type TieBreakFactorId
 	} from '$lib/tournament-logic';
 	import { flip } from 'svelte/animate';
 	import { quintOut } from 'svelte/easing';
-	import { scale } from 'svelte/transition';
+	import { tick } from 'svelte';
+	import { crossfade, scale } from 'svelte/transition';
 	import { getManageData } from './manage-data.remote';
 	import {
 		addPlayer,
@@ -45,7 +57,7 @@
 		updateScoringRules,
 		updateTournamentSettings
 	} from './manage-actions.remote';
-	import { deleteTournamentForm } from '../tournament-actions.remote';
+	import { deleteTournamentForm, updateTieBreakConfig } from '../tournament-actions.remote';
 
 	let { data } = $props<{
 		data: { tournamentId: number; tournamentName: string };
@@ -61,6 +73,11 @@
 	let renameValue = $state('');
 	let errorMsg = $state('');
 	let draggingId = $state<number | null>(null);
+	let liftActive = $state(false);
+	let ghostPos = $state<{ x: number; y: number } | null>(null);
+	let ghostName = $state('');
+	let hoverCourt = $state<number | null>(null);
+	let pendingCourts = $state<ManualAssignmentCourt[] | null>(null);
 	let pendingOrderIds = $state<number[] | null>(null);
 	let orderGen = 0;
 	let regenBusyIds = $state<number[]>([]);
@@ -69,6 +86,13 @@
 	let scoringTab = $state<ScoringCourtSize>(4);
 	let scoringEdits = $state<Record<string, CourtScoringRules> | null>(null);
 	let scoringEditSnap = $state('');
+	let editingTieBreak = $state(false);
+	let localStatFactors = $state<{ id: TieBreakFactorId; enabled: boolean }[]>(
+		DEFAULT_TIE_BREAK_CONFIG.factors
+			.filter((f) => isStatisticalTieBreakFactor(f.id))
+			.map((f) => ({ id: f.id, enabled: f.enabled }))
+	);
+	let selectedFinalFactor = $state<TieBreakFactorId>(DEFAULT_TIE_BREAK_FINAL_FACTOR);
 
 	afterNavigate(() => {
 		const fromHash = window.location.hash.replace('#', '') || 'players';
@@ -85,6 +109,23 @@
 		tab = next;
 		if (browser) history.replaceState(null, '', `#${next}`);
 	}
+
+	const [sendTile, receiveTile] = crossfade({
+		duration: (d) => {
+			if (browser && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 0;
+			return Math.min(420, Math.max(220, d * 0.5));
+		},
+		easing: quintOut,
+		fallback(node) {
+			return scale(node, { duration: 200, start: 0.92 });
+		}
+	});
+
+	const LIFT_DELAY_MS = 160;
+	const MOVE_THRESHOLD_PX = 8;
+	let liftTimer: ReturnType<typeof setTimeout> | null = null;
+	let dragPointerId: number | null = null;
+	let dragOrigin = { x: 0, y: 0 };
 
 	const page = $derived(query.current);
 	const orderedActiveIds = $derived(
@@ -105,12 +146,13 @@
 	const uncheckedCount = $derived(
 		(page?.players ?? []).filter((p) => !p.retiredAt && !p.checkedInAt).length
 	);
-	const sortedCourts = $derived(sortCourts(page?.courts ?? []));
+	const sortedCourts = $derived(sortCourts(pendingCourts ?? page?.courts ?? []));
 	const validDropCourts = $derived.by(() => {
 		const ids = new Set<number>();
+		const courts = pendingCourts ?? page?.courts ?? [];
 		if (!page || draggingId == null) return ids;
-		for (const court of page.courts) {
-			if (isValidPlayerMove(page.courts, draggingId, court.courtNumber)) {
+		for (const court of courts) {
+			if (isValidPlayerMove(courts, draggingId, court.courtNumber)) {
 				ids.add(court.courtNumber);
 			}
 		}
@@ -135,39 +177,97 @@
 
 	async function movePlayer(playerId: number, toCourt: number) {
 		if (!page) return;
-		if (!isValidPlayerMove(page.courts, playerId, toCourt)) return;
-		const next = proposedMove(page.courts, playerId, toCourt).map((c) => ({
-			courtNumber: c.courtNumber,
-			playerIds: c.playerIds
-		}));
-		await run(() => applyAssignmentCommand({ tournamentId: data.tournamentId, courts: next }));
+		const source = pendingCourts ?? page.courts;
+		if (!isValidPlayerMove(source, playerId, toCourt)) return;
+		const next = proposedMove(source, playerId, toCourt);
+		pendingCourts = next;
+		await tick();
+		await run(() =>
+			applyAssignmentCommand({
+				tournamentId: data.tournamentId,
+				courts: next.map((c) => ({ courtNumber: c.courtNumber, playerIds: c.playerIds }))
+			})
+		);
+		pendingCourts = null;
 	}
 
-	function handleDragStart(e: DragEvent, pid: number) {
-		draggingId = pid;
-		e.dataTransfer?.setData('text/plain', String(pid));
-		if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-	}
-
-	function handleDragEnd() {
+	function clearDrag(): void {
+		if (liftTimer) {
+			clearTimeout(liftTimer);
+			liftTimer = null;
+		}
 		draggingId = null;
+		liftActive = false;
+		ghostPos = null;
+		ghostName = '';
+		hoverCourt = null;
+		dragPointerId = null;
 	}
 
-	function handleCourtDragOver(e: DragEvent, courtNumber: number) {
-		if (draggingId == null || !validDropCourts.has(courtNumber)) {
-			if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
-			return;
+	function courtFromPoint(x: number, y: number): number | null {
+		if (!browser) return null;
+		for (const el of document.elementsFromPoint(x, y)) {
+			if (!(el instanceof Element)) continue;
+			const node = el.closest('[data-court-number]');
+			if (node) return Number(node.getAttribute('data-court-number'));
+		}
+		return null;
+	}
+
+	function startLift(pid: number): void {
+		liftActive = true;
+		ghostName = nameById.get(pid) ?? String(pid);
+	}
+
+	function onTilePointerDown(e: PointerEvent, pid: number): void {
+		if (!page || page.lock.roundHasScores) return;
+		if ((e.target as HTMLElement).closest('select, option, button')) return;
+		if (e.button !== 0) return;
+		draggingId = pid;
+		dragOrigin = { x: e.clientX, y: e.clientY };
+		dragPointerId = e.pointerId;
+		ghostPos = { x: e.clientX, y: e.clientY };
+		const node = e.currentTarget as HTMLElement;
+		if (node.setPointerCapture) {
+			try {
+				node.setPointerCapture(e.pointerId);
+			} catch {
+				/* capture is best-effort on some pointers */
+			}
 		}
 		e.preventDefault();
-		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+		liftTimer = setTimeout(() => startLift(pid), LIFT_DELAY_MS);
 	}
 
-	async function handleCourtDrop(e: DragEvent, courtNumber: number) {
-		e.preventDefault();
+	function onPointerMove(e: PointerEvent): void {
+		if (draggingId == null || (dragPointerId != null && e.pointerId !== dragPointerId)) return;
+		ghostPos = { x: e.clientX, y: e.clientY };
+		const dist = Math.hypot(e.clientX - dragOrigin.x, e.clientY - dragOrigin.y);
+		if (!liftActive && dist >= MOVE_THRESHOLD_PX) {
+			if (liftTimer) {
+				clearTimeout(liftTimer);
+				liftTimer = null;
+			}
+			startLift(draggingId);
+		}
+		if (liftActive) {
+			hoverCourt = courtFromPoint(e.clientX, e.clientY);
+			e.preventDefault();
+		}
+	}
+
+	async function onPointerUp(e: PointerEvent): Promise<void> {
+		if (draggingId == null) return;
+		if (dragPointerId != null && e.pointerId !== dragPointerId) return;
 		const id = draggingId;
-		draggingId = null;
-		if (id == null) return;
-		await movePlayer(id, courtNumber);
+		const lifted = liftActive;
+		const target = courtFromPoint(e.clientX, e.clientY);
+		clearDrag();
+		if (lifted && target != null) await movePlayer(id, target);
+	}
+
+	function onPointerCancel(): void {
+		clearDrag();
 	}
 
 	function orderLabel(move: SeedOrderMove): string {
@@ -254,26 +354,53 @@
 
 	function saveScoring(): void {
 		const draft = scoringDraft;
-		const four = draft?.['4'];
-		const three = draft?.['3'];
-		const five = draft?.['5'];
-		const six = draft?.['6'];
-		if (!four || !three || !five || !six) return;
-		const clampedFour = clampCourtScoringRules(four);
+		if (!draft) return;
+		const payload = scoringPayloadFromDraft(draft);
 		run(() =>
 			updateScoringRules({
 				tournamentId: data.tournamentId,
-				pointsToWin: clampedFour.pointsToWin,
-				winBy: clampedFour.winBy,
-				setsToWin: clampedFour.setsToWin,
-				decidingSetPoints: clampedFour.decidingSetPoints,
-				scoringOverrides: {
-					'3': clampCourtScoringRules(three),
-					'5': clampCourtScoringRules(five),
-					'6': clampCourtScoringRules(six)
-				}
+				pointsToWin: payload.four.pointsToWin,
+				winBy: payload.four.winBy,
+				setsToWin: payload.four.setsToWin,
+				decidingSetPoints: payload.four.decidingSetPoints,
+				scoringOverrides: payload.scoringOverrides as Record<string, CourtScoringRules>
 			})
 		);
+	}
+
+	function applyTieBreakConfig(cfg: TieBreakConfig | null | undefined): void {
+		const normalized = normalizeTieBreakConfig(cfg);
+		localStatFactors = normalized.factors
+			.filter((f) => isStatisticalTieBreakFactor(f.id))
+			.map((f) => ({ id: f.id, enabled: f.enabled }));
+		selectedFinalFactor =
+			normalized.factors.find((f) => f.enabled && !isStatisticalTieBreakFactor(f.id))?.id ??
+			DEFAULT_TIE_BREAK_FINAL_FACTOR;
+	}
+
+	$effect(() => {
+		const cfg = page?.tournament.tieBreakConfig as TieBreakConfig | null | undefined;
+		if (!editingTieBreak) applyTieBreakConfig(cfg);
+	});
+
+	function saveTieBreak(): void {
+		const normalized = normalizeTieBreakConfig({
+			factors: [
+				...localStatFactors,
+				...TIE_BREAK_FINAL_FACTOR_IDS.map((id) => ({
+					id,
+					enabled: id === selectedFinalFactor
+				}))
+			]
+		});
+		applyTieBreakConfig(normalized);
+		run(() =>
+			updateTieBreakConfig({
+				tournamentId: data.tournamentId,
+				factors: normalized.factors.map((f) => ({ id: f.id, enabled: f.enabled }))
+			})
+		);
+		editingTieBreak = false;
 	}
 
 	function regenLocked(playerId: number): boolean {
@@ -300,6 +427,11 @@
 </script>
 
 <svelte:document onvisibilitychange={refreshIfVisible} />
+<svelte:window
+	onpointermove={onPointerMove}
+	onpointerup={onPointerUp}
+	onpointercancel={onPointerCancel}
+/>
 
 <main data-testid="manage-page">
 	<header>
@@ -618,6 +750,18 @@
 					</li>
 				{/each}
 			</ul>
+			<RosterStatusActions
+				tournamentId={data.tournamentId}
+				formatType={page.tournament.formatType}
+				status={page.tournament.status}
+				currentRound={page.tournament.currentRound}
+				roundHasScores={page.lock.roundHasScores}
+				players={page.players}
+				courts={page.courts}
+				onDone={async () => {
+					await query.refresh();
+				}}
+			/>
 		</section>
 	{/if}
 
@@ -653,8 +797,18 @@
 						>
 					{/if}
 				</div>
-				{#if draggingId != null}
+				{#if draggingId != null && liftActive}
 					<p class="drop-hint">{m.manage_drop_hint()}</p>
+				{/if}
+				{#if liftActive && ghostPos}
+					<div
+						class="drag-ghost"
+						style:left="{ghostPos.x}px"
+						style:top="{ghostPos.y}px"
+						aria-hidden="true"
+					>
+						{ghostName}
+					</div>
 				{/if}
 				<div class="court-grid">
 					{#each sortedCourts as court (court.courtNumber)}
@@ -662,17 +816,17 @@
 						<div
 							class="court-card"
 							class:uneven={size !== 4}
-							class:drop-ok={draggingId != null && validDropCourts.has(court.courtNumber)}
-							class:drop-blocked={draggingId != null &&
+							class:drop-ok={liftActive &&
+								(validDropCourts.has(court.courtNumber) || hoverCourt === court.courtNumber)}
+							class:drop-blocked={liftActive &&
 								!validDropCourts.has(court.courtNumber) &&
-								!court.playerIds.includes(draggingId)}
+								!court.playerIds.includes(draggingId ?? -1)}
 							data-testid="manage-court-{court.courtNumber}"
-							data-drop-valid={draggingId != null && validDropCourts.has(court.courtNumber)
+							data-court-number={court.courtNumber}
+							data-drop-valid={liftActive && validDropCourts.has(court.courtNumber)
 								? 'true'
 								: 'false'}
 							role="group"
-							ondragover={(e) => handleCourtDragOver(e, court.courtNumber)}
-							ondrop={(e) => handleCourtDrop(e, court.courtNumber)}
 						>
 							<h3>
 								Court {court.courtNumber}
@@ -683,13 +837,18 @@
 							{#each court.playerIds as pid (pid)}
 								<div
 									class="tile"
-									draggable={!page.lock.roundHasScores}
+									class:pressing={draggingId === pid}
+									class:lift={liftActive && draggingId === pid}
 									data-testid="player-tile-{pid}"
 									role="listitem"
-									ondragstart={(e) => handleDragStart(e, pid)}
-									ondragend={handleDragEnd}
-									ondragover={(e) => handleCourtDragOver(e, court.courtNumber)}
-									ondrop={(e) => handleCourtDrop(e, court.courtNumber)}
+									in:receiveTile={{ key: pid }}
+									out:sendTile={{ key: pid }}
+									animate:flip={{ duration: rosterFlipDuration }}
+									onpointerdown={(e) => onTilePointerDown(e, pid)}
+									onpointermove={onPointerMove}
+									onpointerup={onPointerUp}
+									onpointercancel={onPointerCancel}
+									oncontextmenu={(e) => e.preventDefault()}
 								>
 									{nameById.get(pid) ?? pid}
 									{#if !page.lock.roundHasScores}
@@ -702,8 +861,11 @@
 											{#each sortedCourts as c (c.courtNumber)}
 												<option
 													value={c.courtNumber}
-													disabled={!isValidPlayerMove(page.courts, pid, c.courtNumber) &&
-														c.courtNumber !== court.courtNumber}
+													disabled={!isValidPlayerMove(
+														pendingCourts ?? page.courts,
+														pid,
+														c.courtNumber
+													) && c.courtNumber !== court.courtNumber}
 												>
 													{c.courtNumber}
 												</option>
@@ -726,7 +888,7 @@
 			{/if}
 			<div class="panel">
 				<h2>{m.manage_scoring_heading()}</h2>
-				{#if currentScoring}
+				{#if scoringDraft && currentScoring}
 					<form
 						class="scoring-form"
 						onsubmit={(e) => {
@@ -734,125 +896,12 @@
 							saveScoring();
 						}}
 					>
-						<div
-							class="scoring-size-tabs"
-							role="tablist"
-							aria-label={m.manage_scoring_heading()}
-							data-testid="scoring-size-tabs"
-						>
-							{#each SCORING_COURT_SIZES as size (size)}
-								<button
-									type="button"
-									role="tab"
-									class:active={scoringTab === size}
-									aria-selected={scoringTab === size}
-									data-testid="scoring-tab-{size}"
-									disabled={page.lock.roundHasScores}
-									onclick={() => (scoringTab = size)}
-								>
-									{m.manage_scoring_size_tab({ size })}
-								</button>
-							{/each}
-						</div>
-						{#if scoringTab === 4}
-							<p class="hint">{m.manage_scoring_4p_hint()}</p>
-						{/if}
-						<div class="scoring-grid" data-testid="scoring-fields">
-							<label
-								>{m.manage_points_per_set()}
-								<input
-									data-testid="scoring-points"
-									type="number"
-									min="6"
-									max="30"
-									value={currentScoring.pointsToWin}
-									disabled={page.lock.roundHasScores}
-									oninput={(e) =>
-										patchScoring(
-											scoringTab,
-											'pointsToWin',
-											Number((e.currentTarget as HTMLInputElement).value)
-										)}
-								/></label
-							>
-							<fieldset class="radio-field">
-								<legend>{m.manage_win_by()}</legend>
-								<div class="radio-row">
-									<label class="radio-option">
-										<input
-											data-testid="scoring-win-by-1"
-											type="radio"
-											name="scoring-win-by"
-											value="1"
-											checked={currentScoring.winBy === 1}
-											disabled={page.lock.roundHasScores}
-											onchange={() => patchScoring(scoringTab, 'winBy', 1)}
-										/>
-										{m.manage_win_by_1()}
-									</label>
-									<label class="radio-option">
-										<input
-											data-testid="scoring-win-by-2"
-											type="radio"
-											name="scoring-win-by"
-											value="2"
-											checked={currentScoring.winBy !== 1}
-											disabled={page.lock.roundHasScores}
-											onchange={() => patchScoring(scoringTab, 'winBy', 2)}
-										/>
-										{m.manage_win_by_2()}
-									</label>
-								</div>
-							</fieldset>
-							<fieldset class="radio-field">
-								<legend>{m.manage_sets_to_win()}</legend>
-								<div class="radio-row">
-									<label class="radio-option">
-										<input
-											data-testid="scoring-sets-1"
-											type="radio"
-											name="scoring-sets"
-											value="1"
-											checked={currentScoring.setsToWin <= 1}
-											disabled={page.lock.roundHasScores}
-											onchange={() => patchScoring(scoringTab, 'setsToWin', 1)}
-										/>
-										{m.manage_sets_one()}
-									</label>
-									<label class="radio-option">
-										<input
-											data-testid="scoring-sets-2"
-											type="radio"
-											name="scoring-sets"
-											value="2"
-											checked={currentScoring.setsToWin > 1}
-											disabled={page.lock.roundHasScores}
-											onchange={() => patchScoring(scoringTab, 'setsToWin', 2)}
-										/>
-										{m.manage_sets_best_of_3()}
-									</label>
-								</div>
-							</fieldset>
-							{#if currentScoring.setsToWin > 1}
-								<label
-									>{m.manage_deciding_set_points()}
-									<input
-										data-testid="scoring-deciding"
-										type="number"
-										min="6"
-										max="30"
-										value={currentScoring.decidingSetPoints}
-										disabled={page.lock.roundHasScores}
-										oninput={(e) =>
-											patchScoring(
-												scoringTab,
-												'decidingSetPoints',
-												Number((e.currentTarget as HTMLInputElement).value)
-											)}
-									/></label
-								>
-							{/if}
-						</div>
+						<ScoringRulesFields
+							bind:tab={scoringTab}
+							draft={scoringDraft}
+							disabled={page.lock.roundHasScores}
+							onPatch={patchScoring}
+						/>
 						<button
 							type="submit"
 							class="btn-primary scoring-save"
@@ -860,6 +909,19 @@
 							disabled={page.lock.roundHasScores}>{m.save_scoring()}</button
 						>
 					</form>
+				{/if}
+			</div>
+			<div class="panel tie-break-section">
+				<h2>{m.tie_break_heading()}</h2>
+				<TieBreakRulesFields
+					bind:statFactors={localStatFactors}
+					bind:selectedFinalFactor
+					onChange={() => (editingTieBreak = true)}
+				/>
+				{#if editingTieBreak}
+					<button type="button" class="btn-primary scoring-save" onclick={() => saveTieBreak()}
+						>{m.tie_break_save()}</button
+					>
 				{/if}
 			</div>
 		</section>
@@ -887,17 +949,19 @@
 					{#if canEditRounds}
 						<label>
 							{m.manage_rounds_label()}
-							<input
-								type="number"
+							<RangeSlider
+								id="num-rounds"
 								min={page.minRounds}
-								max="10"
+								max={10}
 								value={page.tournament.numRounds}
-								data-testid="num-rounds"
-								onchange={(e) =>
+								testId="num-rounds"
+								disabled={false}
+								formatCurrent={(n) => m.range_rounds_value({ count: n })}
+								onchange={(n) =>
 									run(() =>
 										updateRoundCount({
 											tournamentId: data.tournamentId,
-											numRounds: Number((e.currentTarget as HTMLInputElement).value)
+											numRounds: n
 										})
 									)}
 							/>
@@ -915,17 +979,18 @@
 					{#if canEditPhysicalCourts}
 						<label>
 							{m.manage_physical_courts()}
-							<input
-								type="number"
-								min="1"
-								max="16"
+							<RangeSlider
+								id="physical-courts"
+								min={1}
+								max={16}
 								value={page.tournament.physicalCourtCount}
-								data-testid="physical-courts"
-								onchange={(e) =>
+								testId="physical-courts"
+								formatCurrent={(n) => m.range_courts_value({ count: n })}
+								onchange={(n) =>
 									run(() =>
 										updateTournamentSettings({
 											tournamentId: data.tournamentId,
-											physicalCourtCount: Number((e.currentTarget as HTMLInputElement).value)
+											physicalCourtCount: n
 										})
 									)}
 							/>
@@ -1002,35 +1067,6 @@
 		color: var(--accent-primary);
 	}
 
-	.scoring-size-tabs {
-		display: flex;
-		gap: var(--spacing-xs);
-		flex-wrap: wrap;
-	}
-
-	.scoring-size-tabs button {
-		min-height: 44px;
-		min-width: 44px;
-		padding: 0.25rem 0.7rem;
-		font-size: var(--font-size-sm);
-		font-weight: 700;
-		background: var(--bg-secondary);
-		color: var(--text-primary);
-		border: 1px solid var(--border-default);
-		border-radius: var(--radius-sm);
-		cursor: pointer;
-	}
-
-	.scoring-size-tabs button.active {
-		border-color: var(--accent-primary);
-		color: var(--accent-primary);
-	}
-
-	.scoring-size-tabs button:disabled {
-		opacity: 0.45;
-		cursor: not-allowed;
-	}
-
 	.stack {
 		display: flex;
 		flex-direction: column;
@@ -1070,7 +1106,6 @@
 
 	.stack-form,
 	.scoring-form,
-	.scoring-grid,
 	.layout-grid {
 		display: grid;
 		grid-template-columns: 1fr;
@@ -1079,6 +1114,9 @@
 	}
 
 	.scoring-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-md);
 		align-items: stretch;
 	}
 
@@ -1086,51 +1124,7 @@
 		width: 100%;
 	}
 
-	.radio-field {
-		border: none;
-		margin: 0;
-		padding: 0;
-		min-width: 0;
-	}
-
-	.radio-field legend {
-		font-size: var(--font-size-sm);
-		font-weight: 700;
-		padding: 0;
-		margin-bottom: var(--spacing-xs);
-	}
-
-	.radio-row {
-		display: flex;
-		gap: var(--spacing-md);
-		flex-wrap: wrap;
-	}
-
-	.radio-row label {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-xs);
-		min-height: 44px;
-		cursor: pointer;
-	}
-
-	.radio-row .radio-option {
-		display: inline-flex;
-		flex-direction: row;
-		align-items: center;
-		color: var(--text-primary);
-	}
-
-	.radio-row input[type='radio'] {
-		width: 1.25rem;
-		height: 1.25rem;
-		min-height: 0;
-		flex-shrink: 0;
-		accent-color: var(--accent-primary);
-	}
-
 	@media (min-width: 700px) {
-		.scoring-grid,
 		.layout-grid {
 			grid-template-columns: 1fr 1fr;
 		}
@@ -1407,6 +1401,45 @@
 		justify-content: space-between;
 		align-items: center;
 		gap: var(--spacing-sm);
+		touch-action: none;
+		user-select: none;
+		-webkit-user-select: none;
+		-webkit-touch-callout: none;
+		transition:
+			transform 0.12s ease,
+			box-shadow 0.12s ease,
+			opacity 0.12s ease;
+	}
+
+	.tile.pressing {
+		transform: scale(1.03);
+		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+	}
+
+	.tile.lift {
+		opacity: 0.4;
+		transform: scale(1.05) rotate(-1.5deg);
+		box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+		cursor: grabbing;
+		z-index: 2;
+	}
+
+	.tile.lift select {
+		pointer-events: none;
+	}
+
+	.drag-ghost {
+		position: fixed;
+		pointer-events: none;
+		z-index: 80;
+		transform: translate(-50%, -120%) scale(1.08) rotate(-2deg);
+		background: var(--bg-card);
+		color: var(--text-primary);
+		border: 2px solid var(--accent-primary);
+		border-radius: var(--radius-sm);
+		padding: var(--spacing-xs) var(--spacing-sm);
+		font-weight: 700;
+		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 	}
 
 	.tile select {

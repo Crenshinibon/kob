@@ -1,14 +1,22 @@
 <script lang="ts">
 	import * as msg from '$lib/paraglide/messages';
 
+	type ScoreIssue = { message: string };
+
+	type ScoreSubmitForm = {
+		submit: () => Promise<unknown>;
+		element?: HTMLFormElement;
+		fields: { allIssues(): ScoreIssue[] | undefined };
+	};
+
 	type ScoreFields = {
-		enhance(
-			cb: (fi: { submit: () => Promise<unknown> }) => void | Promise<void>
-		): Record<string, unknown>;
+		enhance(cb: (fi: ScoreSubmitForm) => void | Promise<void>): Record<string, unknown>;
 		fields: {
 			teamAScore: Record<string, unknown>;
 			teamBScore: Record<string, unknown>;
+			allIssues(): ScoreIssue[] | undefined;
 		};
+		pending?: number;
 	};
 
 	let {
@@ -27,6 +35,7 @@
 		editing = false,
 		showClear = false,
 		youOnTeam = undefined,
+		extraErrors = [],
 		onsubmit,
 		onclear,
 		oncancel,
@@ -48,12 +57,17 @@
 		editing?: boolean;
 		showClear?: boolean;
 		youOnTeam?: 'a' | 'b';
-		onsubmit?: (form: { submit: () => Promise<unknown> }) => void | Promise<void>;
+		extraErrors?: string[];
+		onsubmit?: (form: ScoreSubmitForm) => void | Promise<void>;
 		onclear?: () => void;
 		oncancel?: () => void;
 		onfocus?: () => void;
 		onblur?: () => void;
 	} = $props();
+
+	const fieldIssues = $derived((formObj?.fields.allIssues() ?? []).map((issue) => issue.message));
+	const visibleErrors = $derived([...new Set([...extraErrors, ...fieldIssues])]);
+	const busy = $derived(saving || (formObj?.pending ?? 0) > 0);
 </script>
 
 {#if readOnly}
@@ -65,10 +79,15 @@
 	</div>
 {:else if formObj}
 	<form
+		novalidate
 		data-testid="{formTestId}-form-{matchId}"
 		class:compact
 		{...formObj.enhance(async (form) => {
-			await onsubmit?.(form);
+			if (onsubmit) {
+				await onsubmit(form);
+				return;
+			}
+			await form.submit();
 		})}
 	>
 		<input type="hidden" name="token" value={token} />
@@ -79,6 +98,13 @@
 		{#if youOnTeam}
 			<input type="hidden" name="youOnTeam" value={youOnTeam} />
 		{/if}
+		{#if visibleErrors.length > 0 && !busy}
+			<div class="error" data-testid="score-error-{matchId}" role="alert">
+				{#each visibleErrors as message, ei (ei)}
+					<p>{message}</p>
+				{/each}
+			</div>
+		{/if}
 		<div class="teams">
 			<div class="team">
 				<p>{teamALabel}</p>
@@ -88,7 +114,7 @@
 					name="teamAScore"
 					min="0"
 					required
-					disabled={saving}
+					disabled={busy}
 					{onfocus}
 					{onblur}
 					{...formObj.fields.teamAScore}
@@ -103,7 +129,7 @@
 					name="teamBScore"
 					min="0"
 					required
-					disabled={saving}
+					disabled={busy}
 					{onfocus}
 					{onblur}
 					{...formObj.fields.teamBScore}
@@ -112,28 +138,23 @@
 		</div>
 		<div class="form-actions">
 			{#if editing}
-				<button type="button" class="btn-secondary" onclick={oncancel} disabled={saving}>
+				<button type="button" class="btn-secondary" onclick={oncancel} disabled={busy}>
 					{msg.court_cancel_btn()}
 				</button>
 			{/if}
 			{#if showClear}
 				<button
 					type="button"
-					class="btn-secondary"
+					class="btn-clear"
 					data-testid="clear-score-{matchId}"
 					onclick={onclear}
-					disabled={saving}
+					disabled={busy}
 				>
 					{msg.court_clear_score()}
 				</button>
 			{/if}
-			<button
-				data-testid="save-score-{matchId}"
-				type="submit"
-				class="btn-primary"
-				disabled={saving}
-			>
-				{#if saving}
+			<button data-testid="save-score-{matchId}" type="submit" class="btn-primary" disabled={busy}>
+				{#if busy}
 					<span class="spinner"></span>
 					{editing ? msg.court_updating() : msg.court_saving()}
 				{:else}
@@ -191,6 +212,7 @@
 	.form-actions {
 		display: flex;
 		flex-wrap: wrap;
+		align-items: center;
 		gap: var(--spacing-sm);
 		margin-top: var(--spacing-xs);
 	}
@@ -211,5 +233,54 @@
 
 	.saved {
 		color: var(--accent-success, #3c3);
+	}
+
+	.error {
+		background-color: rgba(255, 51, 51, 0.1);
+		color: var(--accent-error);
+		border: 1px solid var(--accent-error);
+		border-radius: var(--radius-sm);
+		padding: var(--spacing-sm);
+		font-size: var(--font-size-sm);
+	}
+
+	.error p {
+		margin: 0;
+	}
+
+	.btn-clear {
+		background: transparent;
+		color: var(--accent-error);
+		border: 1px solid var(--accent-error);
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		padding: 0.2rem 0.5rem;
+		min-height: 28px;
+		cursor: pointer;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+
+	.btn-clear:hover:not(:disabled) {
+		background: rgba(255, 51, 51, 0.12);
+	}
+
+	.spinner {
+		display: inline-block;
+		width: 14px;
+		height: 14px;
+		border: 2px solid var(--bg-primary);
+		border-top-color: transparent;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+		vertical-align: middle;
+		margin-right: var(--spacing-xs);
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 </style>

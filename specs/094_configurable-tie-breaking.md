@@ -13,15 +13,15 @@ This spec defines **configurable, reorderable tie-break factors** stored per tou
 
 ## Tie-Break Factors
 
-| ID | Label | Description |
-|----|-------|-------------|
-| `round_points` | Points This Round | Court standings for the active round. On 5p/6p (or canceled-match average courts): **average points per game** in this round on this court. |
-| `round_diff` | Diff This Round | Point differential this round on this court. Normalized to **average diff per game** on 5p/6p / canceled courts. |
-| `total_points` | Total Points | Sum of per-round point contributions across all completed rounds **plus** the round being ranked. Each 5p/6p round contributes `roundRawPoints / 3` (3 = standard games per round). Standard 4p rounds contribute raw round points. |
-| `total_diff` | Total Diff | Sum of raw point differentials across all rounds (no per-game normalization). |
-| `initial_order` | Seeding | Lower `seedRank` wins. `seedRank` is assigned from the roster: higher `seedPoints` first; **when points are omitted or tied, the order of names in the player list** (first name = seed 1). If `seedRank` is missing (legacy rows), lower `playerId` wins (insert order). |
-| `dice` | Dice | When still tied after all prior **enabled** factors, pick a random ordering among the tied group. Uses injected RNG (tests use seeded RNG). |
-| `manual` | Manual | Organizer-defined order for tied players on a court before closing the round. Stored as `manual_rank_order` on `court_rotation`. Lower index = better rank. |
+| ID              | Label             | Description                                                                                                                                                                                                                                                               |
+| --------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `round_points`  | Points This Round | Court standings for the active round. On 5p/6p (or canceled-match average courts): **average points per game** in this round on this court.                                                                                                                               |
+| `round_diff`    | Diff This Round   | Point differential this round on this court. Normalized to **average diff per game** on 5p/6p / canceled courts.                                                                                                                                                          |
+| `total_points`  | Total Points      | Sum of per-round point contributions across all completed rounds **plus** the round being ranked. Each 5p/6p round contributes `roundRawPoints / 3` (3 = standard games per round). Standard 4p rounds contribute raw round points.                                       |
+| `total_diff`    | Total Diff        | Sum of raw point differentials across all rounds (no per-game normalization).                                                                                                                                                                                             |
+| `initial_order` | Seeding           | Lower `seedRank` wins. `seedRank` is assigned from the roster: higher `seedPoints` first; **when points are omitted or tied, the order of names in the player list** (first name = seed 1). If `seedRank` is missing (legacy rows), lower `playerId` wins (insert order). |
+| `dice`          | Dice              | When still tied after all prior **enabled** factors, pick a random ordering among the tied group. Uses injected RNG (tests use seeded RNG).                                                                                                                               |
+| `manual`        | Manual            | Organizer-defined order for tied players on a court before closing the round. Stored as `manual_rank_order` on `court_rotation`. Lower index = better rank.                                                                                                               |
 
 ### Default Configuration
 
@@ -37,15 +37,15 @@ Enabled factors in this order (dice and manual **disabled** by default):
 
 ```typescript
 export const DEFAULT_TIE_BREAK_CONFIG: TieBreakConfig = {
-  factors: [
-    { id: 'round_points', enabled: true },
-    { id: 'round_diff', enabled: true },
-    { id: 'total_points', enabled: true },
-    { id: 'total_diff', enabled: true },
-    { id: 'initial_order', enabled: true },
-    { id: 'dice', enabled: false },
-    { id: 'manual', enabled: false }
-  ]
+	factors: [
+		{ id: 'round_points', enabled: true },
+		{ id: 'round_diff', enabled: true },
+		{ id: 'total_points', enabled: true },
+		{ id: 'total_diff', enabled: true },
+		{ id: 'initial_order', enabled: true },
+		{ id: 'dice', enabled: false },
+		{ id: 'manual', enabled: false }
+	]
 };
 ```
 
@@ -55,13 +55,13 @@ Tournaments with `tie_break_config = NULL` use `DEFAULT_TIE_BREAK_CONFIG`. With 
 
 ## Where Tie-Breaking Applies
 
-| Context | Factors used |
-|---------|--------------|
-| **Court standings** (`calculateCourtStandings`) | All enabled factors; `round_*` from current court matches; `total_*` from completed rounds + current |
-| **Vertical seeding tier sort** | Same; players compared across courts at same finish position |
-| **Preseed redistribution tier sort** | Same |
-| **Ladder redistribution rank picks** | Same when comparing candidates |
-| **Final court positions** | Court standings on final round use full factor chain — relevant for all positions (1st–4th), not only 2nd vs 3rd |
+| Context                                         | Factors used                                                                                                     |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Court standings** (`calculateCourtStandings`) | All enabled factors; `round_*` from current court matches; `total_*` from completed rounds + current             |
+| **Vertical seeding tier sort**                  | Same; players compared across courts at same finish position                                                     |
+| **Preseed redistribution tier sort**            | Same                                                                                                             |
+| **Ladder redistribution rank picks**            | Same when comparing candidates                                                                                   |
+| **Final court positions**                       | Court standings on final round use full factor chain — relevant for all positions (1st–4th), not only 2nd vs 3rd |
 
 ## Factor Semantics (Detailed)
 
@@ -125,21 +125,21 @@ Example: names pasted as `Zoe`, `Alex`, `Mia` with no points → seeds 1, 2, 3. 
 
 ```typescript
 type TieBreakFactorId =
-  | 'round_points'
-  | 'round_diff'
-  | 'total_points'
-  | 'total_diff'
-  | 'initial_order'
-  | 'dice'
-  | 'manual';
+	| 'round_points'
+	| 'round_diff'
+	| 'total_points'
+	| 'total_diff'
+	| 'initial_order'
+	| 'dice'
+	| 'manual';
 
 type TieBreakFactorConfig = {
-  id: TieBreakFactorId;
-  enabled: boolean;
+	id: TieBreakFactorId;
+	enabled: boolean;
 };
 
 type TieBreakConfig = {
-  factors: TieBreakFactorConfig[];
+	factors: TieBreakFactorConfig[];
 };
 ```
 
@@ -151,12 +151,12 @@ type TieBreakConfig = {
 
 When a round is closed, each rotation stores:
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| `tie_break_config_snapshot` | JSONB | Tie-break rules in effect when the round closed |
-| `standings_snapshot` | JSONB | Final per-player ranks, points, diff, tie-break explanations |
-| `dice_rolls` | JSONB | Stable pair-wise dice rolls (`"minId:maxId"` → `0..1`) |
-| `round_closed_at` | timestamp | Marks the rotation as finalized |
+| Column                      | Type      | Purpose                                                      |
+| --------------------------- | --------- | ------------------------------------------------------------ |
+| `tie_break_config_snapshot` | JSONB     | Tie-break rules in effect when the round closed              |
+| `standings_snapshot`        | JSONB     | Final per-player ranks, points, diff, tie-break explanations |
+| `dice_rolls`                | JSONB     | Stable pair-wise dice rolls (`"minId:maxId"` → `0..1`)       |
+| `round_closed_at`           | timestamp | Marks the rotation as finalized                              |
 
 Past-round views (stepper, court pages) read snapshots instead of recomputing. Dice rolls are also persisted during the active round so standings do not shuffle on reload.
 

@@ -254,6 +254,62 @@ describe('reachable ranks and range', () => {
 		expect(range.best).toBe(1);
 		expect(range.worst).toBe(8);
 	});
+
+	it('random-seed round 1 with no scores can still reach 1st', () => {
+		const sizes = Array(8).fill(4);
+		const dummyResults = sizes.map((_, i) => ({
+			courtNumber: i + 1,
+			standings: [1, 2, 3, 4].map((rank, j) => ({
+				playerId: i * 4 + j + 1,
+				rank,
+				points: 0,
+				diff: 0,
+				matchCount: 0
+			}))
+		}));
+		const range = reachableFinalPlaceRange({
+			formatType: 'random-seed',
+			currentRound: 1,
+			numRounds: 4,
+			courtNumber: 5,
+			courtSizes: sizes,
+			bestRankOnCourt: null,
+			safeRankOnCourt: null,
+			liveRoundResults: dummyResults,
+			frozenCourtNumbers: new Set(),
+			playerId: 17
+		});
+		expect(range.best).toBe(1);
+		expect(range.worst).toBe(32);
+	});
+
+	it('random-seed round 1 rank-1 on court still allows 1st despite dummy other courts', () => {
+		const sizes = Array(8).fill(4);
+		const dummyResults = sizes.map((_, i) => ({
+			courtNumber: i + 1,
+			standings: [1, 2, 3, 4].map((rank, j) => ({
+				playerId: i * 4 + j + 1,
+				rank,
+				points: 0,
+				diff: 0,
+				matchCount: 0
+			}))
+		}));
+		const range = reachableFinalPlaceRange({
+			formatType: 'random-seed',
+			currentRound: 1,
+			numRounds: 2,
+			courtNumber: 5,
+			courtSizes: sizes,
+			bestRankOnCourt: 1,
+			safeRankOnCourt: 4,
+			liveRoundResults: dummyResults,
+			frozenCourtNumbers: new Set(),
+			playerId: 17
+		});
+		expect(range.best).toBe(1);
+		expect(range.worst).toBeGreaterThanOrEqual(21);
+	});
 });
 
 describe('check-in helpers', () => {

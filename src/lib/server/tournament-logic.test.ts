@@ -44,6 +44,7 @@ import {
 	clampPointsPerSet,
 	displayedScoringForCourt,
 	scoringDraftFromConfig,
+	scoringPayloadFromDraft,
 	recalculateCourtConfigAfterRetirement,
 	computeRetirementFinalStanding,
 	buildRedistributionFromResults,
@@ -3034,6 +3035,24 @@ describe('Scoring logic', () => {
 			expect(draft['5'].pointsToWin).toBe(15);
 			expect(draft['6'].pointsToWin).toBe(15);
 		});
+
+		it('clamps a scoring draft into a 4p payload plus 3/5/6 overrides', () => {
+			const payload = scoringPayloadFromDraft({
+				'4': { pointsToWin: 50, winBy: 3, setsToWin: 9, decidingSetPoints: 2 },
+				'3': { pointsToWin: 12, winBy: 1, setsToWin: 1, decidingSetPoints: 9 },
+				'5': { pointsToWin: 5, winBy: 2, setsToWin: 2, decidingSetPoints: 11 },
+				'6': { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 }
+			});
+			expect(payload.four).toEqual({
+				pointsToWin: 30,
+				winBy: 2,
+				setsToWin: 2,
+				decidingSetPoints: 6
+			});
+			expect(payload.scoringOverrides['3']?.pointsToWin).toBe(12);
+			expect(payload.scoringOverrides['5']?.pointsToWin).toBe(6);
+			expect(payload.scoringOverrides['6']?.pointsToWin).toBe(21);
+		});
 	});
 
 	describe('clampPointsPerSet and clampCourtScoringRules', () => {
@@ -5160,9 +5179,9 @@ describe('tie-break ranking', () => {
 
 	it('initial_order uses assignSeedRanks list order when points are absent', () => {
 		const roster = [
-			{ id: 30, name: 'First', seedPoints: null, seedRank: null },
-			{ id: 10, name: 'Second', seedPoints: null, seedRank: null },
-			{ id: 20, name: 'Third', seedPoints: null, seedRank: null }
+			{ id: 30, name: 'First', seedPoints: null },
+			{ id: 10, name: 'Second', seedPoints: null },
+			{ id: 20, name: 'Third', seedPoints: null }
 		];
 		const ranked = assignSeedRanks(roster);
 		const sorted = sortPlayersByTieBreak([20, 10, 30], only('initial_order'), { players: ranked });
@@ -5171,9 +5190,9 @@ describe('tie-break ranking', () => {
 
 	it('initial_order keeps name-list order among equal seed points', () => {
 		const roster = [
-			{ id: 9, name: 'A', seedPoints: 100, seedRank: null },
-			{ id: 1, name: 'B', seedPoints: 100, seedRank: null },
-			{ id: 5, name: 'C', seedPoints: 50, seedRank: null }
+			{ id: 9, name: 'A', seedPoints: 100 },
+			{ id: 1, name: 'B', seedPoints: 100 },
+			{ id: 5, name: 'C', seedPoints: 50 }
 		];
 		const ranked = assignSeedRanks(roster);
 		expect(ranked.map((p) => p.id)).toEqual([9, 1, 5]);

@@ -205,7 +205,8 @@
 						{#each standings as player, i (player.playerId)}
 							{@const currentCourt = getEffectiveCourt(player, cr, assignment)}
 							{@const rankOnCourt = getCurrentRank(player, cr)}
-							{@const courtColor = currentCourt != null ? getCourtPositionColor(currentCourt) : null}
+							{@const courtColor =
+								currentCourt != null ? getCourtPositionColor(currentCourt) : null}
 							{@const prevCourt =
 								i > 0 ? getEffectiveCourt(standings[i - 1], cr, assignment) : undefined}
 							{@const isNewGroup = currentCourt !== prevCourt}

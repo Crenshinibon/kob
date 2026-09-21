@@ -18,27 +18,27 @@ After two fix batches (PRs #24–#26), the E2E suite went from **11 failures** d
 
 ### Batch 1 (PR #24–#25, spec 1045 initial)
 
-| Fix | File(s) | Effect |
-| --- | ------- | ------ |
-| Frozen-court `courtSizes` persistence bug | `tournament-actions.remote.ts` | Preseed 20p frozen-court E2E no longer 500s on close round |
-| Wrong-token selector (`form` child vs form element) | `code-review-findings.spec.ts` | Wrong-token rejection test passes |
-| Stale locator pattern → `evaluateAll` | `helpers.ts`, multiple specs | Fewer detached-element timeouts |
-| Score-form check after `page.goto(courtUrl)` | `tournament.spec.ts` | Injury tests no longer skip all court scoring |
+| Fix                                                 | File(s)                        | Effect                                                     |
+| --------------------------------------------------- | ------------------------------ | ---------------------------------------------------------- |
+| Frozen-court `courtSizes` persistence bug           | `tournament-actions.remote.ts` | Preseed 20p frozen-court E2E no longer 500s on close round |
+| Wrong-token selector (`form` child vs form element) | `code-review-findings.spec.ts` | Wrong-token rejection test passes                          |
+| Stale locator pattern → `evaluateAll`               | `helpers.ts`, multiple specs   | Fewer detached-element timeouts                            |
+| Score-form check after `page.goto(courtUrl)`        | `tournament.spec.ts`           | Injury tests no longer skip all court scoring              |
 
 ### Batch 2 (PR #26, commit `8ae0fea`)
 
-| Fix | File(s) | Effect |
-| --- | ------- | ------ |
-| Pause 5s auto-refresh during tie-break / retire / injury submit | `+page.svelte` | Tie-break DOM no longer detaches mid-edit |
-| `retireSubmitting` / `injurySubmitting` + post-action `tournamentQuery.refresh()` | `+page.svelte` | Live query settles before tests continue |
-| `waitForCourtCardCount`, `clickRetireSubmit`, `closeRoundOrFetch`, `configureTieBreakFinal` | `e2e/helpers.ts` | Shared, less flaky helpers |
-| Dynamic `closeRoundViaFetch` (hash from page form action) | `e2e/helpers.ts` | **Issue A resolved** — no hardcoded remote hash |
-| `closeRoundOrFetch` handles Finalize button | `e2e/helpers.ts` | Final-round close works in helpers |
-| `configureTieBreakFinal` via `page.evaluate` | `e2e/helpers.ts` | **Issue C resolved** — tie-break checkbox/radio flakiness |
-| `extractMatchIds` 5s timeout + reload fallback on score save | `e2e/helpers.ts` | Graceful handling when court page slow; see caveat below |
-| `await getTournamentData().refresh()` after score saves | `scores.remote.ts` | Tournament page sees saved scores sooner |
-| Guard missing court row on rotation insert | `tournament-actions.remote.ts` | Prevents silent insert failure during rebuild |
-| Round-1 retirement test uses `waitForCourtCardCount` | `code-review-findings.spec.ts` | **Passes** — no court URL navigation needed |
+| Fix                                                                                         | File(s)                        | Effect                                                    |
+| ------------------------------------------------------------------------------------------- | ------------------------------ | --------------------------------------------------------- |
+| Pause 5s auto-refresh during tie-break / retire / injury submit                             | `+page.svelte`                 | Tie-break DOM no longer detaches mid-edit                 |
+| `retireSubmitting` / `injurySubmitting` + post-action `tournamentQuery.refresh()`           | `+page.svelte`                 | Live query settles before tests continue                  |
+| `waitForCourtCardCount`, `clickRetireSubmit`, `closeRoundOrFetch`, `configureTieBreakFinal` | `e2e/helpers.ts`               | Shared, less flaky helpers                                |
+| Dynamic `closeRoundViaFetch` (hash from page form action)                                   | `e2e/helpers.ts`               | **Issue A resolved** — no hardcoded remote hash           |
+| `closeRoundOrFetch` handles Finalize button                                                 | `e2e/helpers.ts`               | Final-round close works in helpers                        |
+| `configureTieBreakFinal` via `page.evaluate`                                                | `e2e/helpers.ts`               | **Issue C resolved** — tie-break checkbox/radio flakiness |
+| `extractMatchIds` 5s timeout + reload fallback on score save                                | `e2e/helpers.ts`               | Graceful handling when court page slow; see caveat below  |
+| `await getTournamentData().refresh()` after score saves                                     | `scores.remote.ts`             | Tournament page sees saved scores sooner                  |
+| Guard missing court row on rotation insert                                                  | `tournament-actions.remote.ts` | Prevents silent insert failure during rebuild             |
+| Round-1 retirement test uses `waitForCourtCardCount`                                        | `code-review-findings.spec.ts` | **Passes** — no court URL navigation needed               |
 
 ### Tests now passing (code-review-findings.spec.ts)
 
@@ -50,12 +50,12 @@ After two fix batches (PRs #24–#26), the E2E suite went from **11 failures** d
 
 ## Remaining Failures (failures.txt, 2026-07-04)
 
-| # | Test | Symptom | Phase |
-| - | ---- | ------- | ----- |
-| 1 | `bestof3.spec.ts` — round closes on 2-0 | `saved-{matchId}` not visible after set save | Score save (unrelated to injury) |
-| 2 | `code-review-findings` — 8p mid-round injury | Timeout on first score save; navigates to `/` | **Before** injury report |
-| 3 | `code-review-findings` — replacement player | `Close Round & Advance` not visible after R1 scoring | **Before** retirement |
-| 4 | `code-review-findings` — standings after retirement | Interrupted clicking Close Round; navigates to `/` | **Before** retirement |
+| #   | Test                                                | Symptom                                              | Phase                            |
+| --- | --------------------------------------------------- | ---------------------------------------------------- | -------------------------------- |
+| 1   | `bestof3.spec.ts` — round closes on 2-0             | `saved-{matchId}` not visible after set save         | Score save (unrelated to injury) |
+| 2   | `code-review-findings` — 8p mid-round injury        | Timeout on first score save; navigates to `/`        | **Before** injury report         |
+| 3   | `code-review-findings` — replacement player         | `Close Round & Advance` not visible after R1 scoring | **Before** retirement            |
+| 4   | `code-review-findings` — standings after retirement | Interrupted clicking Close Round; navigates to `/`   | **Before** retirement            |
 
 All four share the pattern: court page does not confirm score save (`saved-*` missing) or tournament page never reaches `canCloseRound === true`. Failures 2–4 in the captured log occur **before** the injury/retirement step, but the user's diagnosis applies to the **post-action** scoring path: tests that call `scoreAllCourts` / `extractMatchIds` after injury or between-round retirement hang because court URLs are stale or the page loads with zero match forms.
 
@@ -98,7 +98,7 @@ Court page is client-rendered. Initial data comes from `+page.server.ts` load. A
 
 ```typescript
 // helpers.ts extractMatchIds — on timeout:
-return [];  // scoreAllCourts then: if (formCount === 0) continue;
+return []; // scoreAllCourts then: if (formCount === 0) continue;
 ```
 
 This masks the real failure (bad URL / missing rotation) and surfaces later as "Close Round button not found" or "Round 2 of 2" timeout.
@@ -146,13 +146,13 @@ Needs confirmation with trace + server logs; not fully isolated yet.
 
 ## Issue Status (original 1045 list)
 
-| Issue | Status |
-| ----- | ------ |
-| A — hardcoded closeRound URL | **Fixed** (dynamic hash from form action) |
-| B — stale `.all()` patterns | Open — partial migration to helpers |
-| C — tie-break checkbox flakiness | **Fixed** (`configureTieBreakFinal` evaluate) |
-| D — closeRoundViaFetch return value | **Fixed** (JSON status parsing) |
-| E — rotation token / stable URL mismatch | **New — root cause of remaining 4 failures** |
+| Issue                                    | Status                                        |
+| ---------------------------------------- | --------------------------------------------- |
+| A — hardcoded closeRound URL             | **Fixed** (dynamic hash from form action)     |
+| B — stale `.all()` patterns              | Open — partial migration to helpers           |
+| C — tie-break checkbox flakiness         | **Fixed** (`configureTieBreakFinal` evaluate) |
+| D — closeRoundViaFetch return value      | **Fixed** (JSON status parsing)               |
+| E — rotation token / stable URL mismatch | **New — root cause of remaining 4 failures**  |
 
 ---
 

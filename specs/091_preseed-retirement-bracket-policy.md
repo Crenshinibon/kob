@@ -39,13 +39,13 @@ When one player disappears, two reasonable approaches exist — and they have di
 
 ## Scope
 
-| In scope | Out of scope |
-| -------- | ------------ |
-| Between-round retirement in **preseed** format | Random-seed policy details (see [089](./089_random-example-17p-retirement.md); same replacement rules apply) |
-| **Optional replacement** for the retiree (roster slot preserved) | Pre-tournament roster editing (unchanged) |
-| Retirement **before scores** in the current round | Physical mid-round substitute (see [092](./092_mid-round-injury-forward-retirement.md)) |
-| Active (non-frozen) courts only | Re-running completed rounds |
-| Single or multiple retirements between same rounds | |
+| In scope                                                         | Out of scope                                                                                                 |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Between-round retirement in **preseed** format                   | Random-seed policy details (see [089](./089_random-example-17p-retirement.md); same replacement rules apply) |
+| **Optional replacement** for the retiree (roster slot preserved) | Pre-tournament roster editing (unchanged)                                                                    |
+| Retirement **before scores** in the current round                | Physical mid-round substitute (see [092](./092_mid-round-injury-forward-retirement.md))                      |
+| Active (non-frozen) courts only                                  | Re-running completed rounds                                                                                  |
+| Single or multiple retirements between same rounds               |                                                                                                              |
 
 ### Preconditions
 
@@ -66,10 +66,10 @@ Courts that have **frozen** (per [087](./087_preseed-frozen-courts.md)) do not p
 
 The product goal is **at most one non-standard court** (3p / 5p / 6p), and it should be the **lowest-ranked active court** when possible. See [610_incomplete-core.md](./610_incomplete-core.md).
 
-| Policy | Risk to non-standard rule |
-| ------ | ------------------------- |
-| **Shrink** | Can create a **3p court inside the bracket** (e.g. Court 2 in a 16p final round) while Court 4 is still 4p — **two** non-standard situations |
-| **Cascade** | Concentrates the player deficit at the **bottom** of the bracket hierarchy; only the lowest active court may become 3p |
+| Policy      | Risk to non-standard rule                                                                                                                    |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Shrink**  | Can create a **3p court inside the bracket** (e.g. Court 2 in a 16p final round) while Court 4 is still 4p — **two** non-standard situations |
+| **Cascade** | Concentrates the player deficit at the **bottom** of the bracket hierarchy; only the lowest active court may become 3p                       |
 
 ### 3. Bracket roles are preserved
 
@@ -87,9 +87,9 @@ Unchanged from [670](./670_player-retirement.md): preseed retirees receive the *
 
 Add a tournament-level option:
 
-| Field | Values | Default (proposed) |
-| ----- | ------ | ------------------ |
-| `preseedRetirementPolicy` | `shrink` \| `cascade` | `cascade` |
+| Field                     | Values                | Default (proposed) |
+| ------------------------- | --------------------- | ------------------ |
+| `preseedRetirementPolicy` | `shrink` \| `cascade` | `cascade`          |
 
 **Where to set it:**
 
@@ -137,12 +137,12 @@ This is distinct from mid-round **substitute** play (temporary, not in standings
 
 ### When replacement is allowed
 
-| Timing | Replacement allowed? | Notes |
-| ------ | -------------------- | ----- |
-| Between-round retirement (no scores on current round) | ✅ Yes | Primary use case |
-| Mid-round injury report | ✅ Optional (proposed) | Replacement starts **next round**; current round uses substitute/cancel |
-| Frozen court | ❌ No | Bracket finished — no future assignments |
-| Tournament completed | ❌ No | |
+| Timing                                                | Replacement allowed?   | Notes                                                                   |
+| ----------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------- |
+| Between-round retirement (no scores on current round) | ✅ Yes                 | Primary use case                                                        |
+| Mid-round injury report                               | ✅ Optional (proposed) | Replacement starts **next round**; current round uses substitute/cancel |
+| Frozen court                                          | ❌ No                  | Bracket finished — no future assignments                                |
+| Tournament completed                                  | ❌ No                  |                                                                         |
 
 ### Replacement rules
 
@@ -183,8 +183,8 @@ All other courts unchanged. Player count remains 16.
 
 **After replacement with player R:**
 
-| Court 1 | Court 2 | Court 3 | Court 4 |
-| ------- | ------- | ------- | ------- |
+| Court 1   | Court 2        | Court 3   | Court 4   |
+| --------- | -------------- | --------- | --------- |
 | unchanged | D, E, F, **R** | unchanged | unchanged |
 
 - J → retired, final standing per bracket rules
@@ -211,32 +211,32 @@ At any round, assign each **active** court a **placement level** (1 = best, N = 
 
 ### 16 players, Round 3 (final)
 
-| Level | Court | Bracket role |
-| ----- | ----- | ------------ |
-| 1 | Court 1 | Final (F) |
-| 2 | Court 2 | Loser-of-winners (L(W)) |
-| 3 | Court 3 | Top consolation (TL) |
-| 4 | Court 4 | Bottom consolation (BL) |
+| Level | Court   | Bracket role            |
+| ----- | ------- | ----------------------- |
+| 1     | Court 1 | Final (F)               |
+| 2     | Court 2 | Loser-of-winners (L(W)) |
+| 3     | Court 3 | Top consolation (TL)    |
+| 4     | Court 4 | Bottom consolation (BL) |
 
 ### 20 players, Round 3 (Court 5 frozen)
 
-| Level | Court | Bracket role | Active? |
-| ----- | ----- | ------------ | ------- |
-| 1 | Court 1 | WW top | ✓ |
-| 2 | Court 2 | WW bottom | ✓ |
-| 3 | Court 3 | LW top | ✓ |
-| 4 | Court 4 | LW bottom | ✓ |
-| — | Court 5 | Early leaf (L5) | **Frozen** |
+| Level | Court   | Bracket role    | Active?    |
+| ----- | ------- | --------------- | ---------- |
+| 1     | Court 1 | WW top          | ✓          |
+| 2     | Court 2 | WW bottom       | ✓          |
+| 3     | Court 3 | LW top          | ✓          |
+| 4     | Court 4 | LW bottom       | ✓          |
+| —     | Court 5 | Early leaf (L5) | **Frozen** |
 
 ### 20 players, Round 4 (Court 5 frozen)
 
-| Level | Court | Bracket role | Active? |
-| ----- | ----- | ------------ | ------- |
-| 1 | Court 1 | Final | ✓ |
-| 2 | Court 2 | Top consolation (TL) | ✓ |
-| 3 | Court 3 | *(unused — only 2 active courts in final split)* | — |
-| 4 | Court 4 | *(unused)* | — |
-| — | Court 5 | Frozen | **Frozen** |
+| Level | Court   | Bracket role                                     | Active?    |
+| ----- | ------- | ------------------------------------------------ | ---------- |
+| 1     | Court 1 | Final                                            | ✓          |
+| 2     | Court 2 | Top consolation (TL)                             | ✓          |
+| 3     | Court 3 | _(unused — only 2 active courts in final split)_ | —          |
+| 4     | Court 4 | _(unused)_                                       | —          |
+| —     | Court 5 | Frozen                                           | **Frozen** |
 
 > **Rule:** Placement levels are computed from the bracket tree **at the current round**, not from raw court numbers alone. Implementation must use the same bracket-group metadata that `processPreseedTransition()` uses.
 
@@ -265,12 +265,12 @@ At any round, assign each **active** court a **placement level** (1 = best, N = 
 
 ### Properties
 
-| Pro | Con |
-| --- | --- |
-| Simple, predictable | May create **3p court mid-bracket** |
-| No player "undeservedly" promoted | Violates one-non-standard-court goal |
-| Bracket membership strictly reflects prior round results | Uneven match counts on the short court |
-| | 3p in a gold/silver court feels wrong competitively |
+| Pro                                                      | Con                                                 |
+| -------------------------------------------------------- | --------------------------------------------------- |
+| Simple, predictable                                      | May create **3p court mid-bracket**                 |
+| No player "undeservedly" promoted                        | Violates one-non-standard-court goal                |
+| Bracket membership strictly reflects prior round results | Uneven match counts on the short court              |
+|                                                          | 3p in a gold/silver court feels wrong competitively |
 
 ### When organizers might choose Shrink
 
@@ -313,12 +313,12 @@ Tie-break: points → diff → playerId (deterministic).
 
 ### Properties
 
-| Pro | Con |
-| --- | --- |
-| Preserves **4p courts** at higher bracket levels | A lower-bracket player moves up (may feel unfair) |
-| Concentrates non-standard court at the **bottom** | Slightly more complex |
-| Consistent with random-seed cascade mental model | Requires clear UI explanation |
-| Better competitive format above the bottom court | |
+| Pro                                               | Con                                               |
+| ------------------------------------------------- | ------------------------------------------------- |
+| Preserves **4p courts** at higher bracket levels  | A lower-bracket player moves up (may feel unfair) |
+| Concentrates non-standard court at the **bottom** | Slightly more complex                             |
+| Consistent with random-seed cascade mental model  | Requires clear UI explanation                     |
+| Better competitive format above the bottom court  |                                                   |
 
 ### When organizers might choose Cascade
 
@@ -334,12 +334,12 @@ Uses data from [082_preseed-example-16p.md](./082_preseed-example-16p.md). Round
 
 ### Round 3 before retirement
 
-| Court 1 (F) | Court 2 (L(W)) | Court 3 (TL) | Court 4 (BL) |
-| :---------: | :------------: | :----------: | :----------: |
-| C           | D              | G            | I            |
-| B           | E              | L            | M            |
-| A           | F              | N            | K            |
-| H           | **J** ← retires | O            | P            |
+| Court 1 (F) | Court 2 (L(W))  | Court 3 (TL) | Court 4 (BL) |
+| :---------: | :-------------: | :----------: | :----------: |
+|      C      |        D        |      G       |      I       |
+|      B      |        E        |      L       |      M       |
+|      A      |        F        |      N       |      K       |
+|      H      | **J** ← retires |      O       |      P       |
 
 **Context:** J finished 4th on Court 1 (Winners) in Round 2 and was relegated to Court 2 (Silver) for Round 3.
 
@@ -372,16 +372,16 @@ Remove J. Backfill Court 2 from Court 3 (next level down). Cascade continues.
 
 **Step 1 — Court 2 loses J:**
 
-| Slot | Source | Player |
-| ---- | ------ | ------ |
-| Keep | — | D, E, F |
+| Slot    | Source                      | Player                       |
+| ------- | --------------------------- | ---------------------------- |
+| Keep    | —                           | D, E, F                      |
 | Vacancy | Pull best from Court 3 (TL) | **G** (1st on Court 3 in R2) |
 
 **Step 2 — Court 3 loses G:**
 
-| Slot | Source | Player |
-| ---- | ------ | ------ |
-| Keep | — | L, N, O |
+| Slot    | Source                      | Player                       |
+| ------- | --------------------------- | ---------------------------- |
+| Keep    | —                           | L, N, O                      |
 | Vacancy | Pull best from Court 4 (BL) | **I** (1st on Court 4 in R2) |
 
 **Step 3 — Court 4 loses I:**
@@ -406,14 +406,14 @@ Court 4 absorbs deficit at bottom → **3p**
 
 ### Side-by-side summary (16p / retire J)
 
-| Aspect | Shrink | Cascade |
-| ------ | ------ | ------- |
-| Court 1 | Unchanged | Unchanged |
-| Court 2 | **3p** (D, E, F) | 4p (D, E, F, G) |
-| Court 3 | Unchanged | I promoted in, G promoted out |
-| Court 4 | Unchanged | **3p** (M, K, P) |
-| Non-standard courts | 1 mid-bracket | 1 at bottom |
-| Players promoted | None | G, I |
+| Aspect              | Shrink           | Cascade                       |
+| ------------------- | ---------------- | ----------------------------- |
+| Court 1             | Unchanged        | Unchanged                     |
+| Court 2             | **3p** (D, E, F) | 4p (D, E, F, G)               |
+| Court 3             | Unchanged        | I promoted in, G promoted out |
+| Court 4             | Unchanged        | **3p** (M, K, P)              |
+| Non-standard courts | 1 mid-bracket    | 1 at bottom                   |
+| Players promoted    | None             | G, I                          |
 
 ---
 
@@ -425,10 +425,10 @@ Uses data from [083_preseed-example-20p.md](./083_preseed-example-20p.md). Round
 
 | C1 (WW⊤) | C2 (WW⊥) | C3 (LW⊤) | C4 (LW⊥) | C5 (frozen) |
 | :------: | :------: | :------: | :------: | :---------: |
-| A        | L        | C        | I        | O           |
-| B        | J        | D        | P        | R           |
-| E        | **M** ←  | F        | N        | T           |
-| G        | Q        | H        | K        | S           |
+|    A     |    L     |    C     |    I     |      O      |
+|    B     |    J     |    D     |    P     |      R      |
+|    E     | **M** ←  |    F     |    N     |      T      |
+|    G     |    Q     |    H     |    K     |      S      |
 
 **Context:** M finished 3rd on Court 1 (WW) in Round 2 and was on Court 2 (WW bottom) for Round 3.
 
@@ -438,9 +438,9 @@ Uses data from [083_preseed-example-20p.md](./083_preseed-example-20p.md). Round
 
 ### Policy A (Shrink): Result
 
-| C1 4p | C2 **3p** | C3 4p | C4 4p | C5 frozen |
-| ----- | --------- | ----- | ----- | --------- |
-| A,B,E,G | L,J,Q | C,D,F,H | I,P,N,K | O,R,T,S |
+| C1 4p   | C2 **3p** | C3 4p   | C4 4p   | C5 frozen |
+| ------- | --------- | ------- | ------- | --------- |
+| A,B,E,G | L,J,Q     | C,D,F,H | I,P,N,K | O,R,T,S   |
 
 - Court 2 becomes **3p** in the **winner bracket sub-tree**
 - Courts 3–4 unaffected
@@ -465,9 +465,9 @@ Backfill from Court 4: **I** (1st on Court 4 in R2)
 
 Court 4 becomes **3p** at bottom of active bracket
 
-| C1 4p | C2 4p | C3 4p | C4 **3p** | C5 frozen |
-| ----- | ----- | ----- | --------- | --------- |
-| A,B,E,G | L,J,Q,**C**↑ | D,F,H,**I**↑ | P,N,K | O,R,T,S |
+| C1 4p   | C2 4p        | C3 4p        | C4 **3p** | C5 frozen |
+| ------- | ------------ | ------------ | --------- | --------- |
+| A,B,E,G | L,J,Q,**C**↑ | D,F,H,**I**↑ | P,N,K     | O,R,T,S   |
 
 **Observations:**
 
@@ -498,9 +498,9 @@ Court 5 is frozen. Retirement does not change assignments. S receives final stan
 
 ### 16p — Retire H from Court 1 (F)
 
-| Policy | Result |
-| ------ | ------ |
-| **Shrink** | Court 1 → **3p** (C, B, A) — disastrous format-wise |
+| Policy      | Result                                                                                               |
+| ----------- | ---------------------------------------------------------------------------------------------------- |
+| **Shrink**  | Court 1 → **3p** (C, B, A) — disastrous format-wise                                                  |
 | **Cascade** | Pull from Court 2: **D** (best available from L(W)) → Court 1 stays 4p. Cascade continues to bottom. |
 
 **Recommendation:** Never use Shrink for non-bottom retirements. Cascade strongly preferred for Court 1 retirements.
@@ -509,17 +509,17 @@ Court 5 is frozen. Retirement does not change assignments. S receives final stan
 
 ## Comparison Table
 
-| Criterion | Shrink | Cascade |
-| --------- | ------ | ------- |
-| Algorithm complexity | Low | Medium |
-| Preserves 4p on upper courts | ❌ | ✅ |
-| One non-standard court at bottom | ❌ | ✅ |
-| Player promotion from lower bracket | Never | Yes, by bracket level |
-| Same as random-seed mental model | ❌ | ✅ |
-| Fair if retirement is on bottom court | ✅ | ✅ (identical) |
-| Fair if retirement is mid-bracket | ⚠️ Short court | ⚠️ Someone promoted |
-| Frozen court handling | No change | No change |
-| Re-runs full preseed redistribution | No | No |
+| Criterion                             | Shrink         | Cascade               |
+| ------------------------------------- | -------------- | --------------------- |
+| Algorithm complexity                  | Low            | Medium                |
+| Preserves 4p on upper courts          | ❌             | ✅                    |
+| One non-standard court at bottom      | ❌             | ✅                    |
+| Player promotion from lower bracket   | Never          | Yes, by bracket level |
+| Same as random-seed mental model      | ❌             | ✅                    |
+| Fair if retirement is on bottom court | ✅             | ✅ (identical)        |
+| Fair if retirement is mid-bracket     | ⚠️ Short court | ⚠️ Someone promoted   |
+| Frozen court handling                 | No change      | No change             |
+| Re-runs full preseed redistribution   | No             | No                    |
 
 ---
 
@@ -580,21 +580,19 @@ Show:
 
 ```typescript
 // tournament table
-preseedRetirementPolicy: text('preseed_retirement_policy')
-  .notNull()
-  .default('cascade'); // 'shrink' | 'cascade'
+preseedRetirementPolicy: text('preseed_retirement_policy').notNull().default('cascade'); // 'shrink' | 'cascade'
 ```
 
 ### Logic layer (`src/lib/tournament-logic.ts`)
 
 New functions (proposed):
 
-| Function | Purpose |
-| -------- | ------- |
-| `getActiveBracketLevels(courtCount, roundsCompleted, frozenCourts)` | Placement levels for cascade |
-| `applyPreseedShrink(assignments, retiredId, courtSizes)` | Policy A |
-| `applyPreseedCascade(assignments, prevResults, retiredId, levels, courtSizes)` | Policy B |
-| `resolvePreseedRetirement(opts)` | Entry point; selects policy from tournament config |
+| Function                                                                       | Purpose                                            |
+| ------------------------------------------------------------------------------ | -------------------------------------------------- |
+| `getActiveBracketLevels(courtCount, roundsCompleted, frozenCourts)`            | Placement levels for cascade                       |
+| `applyPreseedShrink(assignments, retiredId, courtSizes)`                       | Policy A                                           |
+| `applyPreseedCascade(assignments, prevResults, retiredId, levels, courtSizes)` | Policy B                                           |
+| `resolvePreseedRetirement(opts)`                                               | Entry point; selects policy from tournament config |
 
 `buildRedistributionFromResults()` for preseed should **not** be the primary retirement path — bracket policies operate on **already-calculated** assignments.
 
@@ -606,12 +604,12 @@ Today, preseed retirement calls `processPreseedTransition()` with filtered playe
 
 ## Recommended Defaults
 
-| Scenario | Recommended policy |
-| -------- | ------------------ |
-| New preseed tournaments | **Cascade** (default) |
-| Retirement on bottom active court | Either (equivalent) |
-| Retirement on frozen court | N/A (no redistribution) |
-| Casual / no promotion wanted | Shrink (with warnings) |
+| Scenario                          | Recommended policy      |
+| --------------------------------- | ----------------------- |
+| New preseed tournaments           | **Cascade** (default)   |
+| Retirement on bottom active court | Either (equivalent)     |
+| Retirement on frozen court        | N/A (no redistribution) |
+| Casual / no promotion wanted      | Shrink (with warnings)  |
 
 ---
 
@@ -623,125 +621,125 @@ This section defines **required test coverage** before the retirement/replacemen
 
 ### Legend
 
-| Symbol | Meaning |
-| ------ | ------- |
-| RS | Random seed format |
-| PS | Preseed format |
-| BR | Between-round retirement (no scores) |
-| REP | Replacement instead of removal |
-| INJ | Mid-round injury → closeRound forward |
-| FC | Frozen court involved |
-| NS | Non-standard bottom court |
+| Symbol | Meaning                               |
+| ------ | ------------------------------------- |
+| RS     | Random seed format                    |
+| PS     | Preseed format                        |
+| BR     | Between-round retirement (no scores)  |
+| REP    | Replacement instead of removal        |
+| INJ    | Mid-round injury → closeRound forward |
+| FC     | Frozen court involved                 |
+| NS     | Non-standard bottom court             |
 
 ### A. Between-round retirement — standard 4p courts (16 players)
 
-| ID | Format | Action | Policy | Expected |
-| -- | ------ | ------ | ------ | -------- |
-| A1 | PS | Retire J from C2 R3 | Cascade | Per Example 1; C1 unchanged; C4 → 3p |
-| A2 | PS | Retire J from C2 R3 | Shrink | Per Example 1; C2 → 3p mid-bracket |
-| A3 | PS | Retire P from C4 R3 | Cascade | Same as shrink (bottom court) |
-| A4 | PS | Retire H from C1 R3 | Cascade | C1 stays 4p; cascade to bottom |
-| A5 | PS | Retire H from C1 R3 | Shrink | **Reject or warn** — C1 would be 3p |
-| A6 | RS | Retire from C2 R3 | Cascade | Ladder cascade per [089](./089_random-example-17p-retirement.md) |
-| A7 | RS/PS | Retire J from C2 R3 | **Replace** | Only C2 changes (J→R); all else identical |
+| ID  | Format | Action              | Policy      | Expected                                                         |
+| --- | ------ | ------------------- | ----------- | ---------------------------------------------------------------- |
+| A1  | PS     | Retire J from C2 R3 | Cascade     | Per Example 1; C1 unchanged; C4 → 3p                             |
+| A2  | PS     | Retire J from C2 R3 | Shrink      | Per Example 1; C2 → 3p mid-bracket                               |
+| A3  | PS     | Retire P from C4 R3 | Cascade     | Same as shrink (bottom court)                                    |
+| A4  | PS     | Retire H from C1 R3 | Cascade     | C1 stays 4p; cascade to bottom                                   |
+| A5  | PS     | Retire H from C1 R3 | Shrink      | **Reject or warn** — C1 would be 3p                              |
+| A6  | RS     | Retire from C2 R3   | Cascade     | Ladder cascade per [089](./089_random-example-17p-retirement.md) |
+| A7  | RS/PS  | Retire J from C2 R3 | **Replace** | Only C2 changes (J→R); all else identical                        |
 
 ### B. Non-standard bottom courts (player count % 4 ≠ 0)
 
 Court configs from `calculateCourtSizes()`:
 
-| Players | Court sizes | NS type |
-| ------- | ----------- | ------- |
-| 17 | `[4,4,4,5]` | 5p bottom |
-| 21 | `[4,4,4,4,5]` | 5p bottom |
-| 22 | `[4,4,4,4,6]` | 6p bottom |
-| 23 | `[4,4,4,4,4,3]` | 3p bottom |
-| 25 | `[4,4,4,4,4,5]` | 5p bottom |
+| Players | Court sizes     | NS type   |
+| ------- | --------------- | --------- |
+| 17      | `[4,4,4,5]`     | 5p bottom |
+| 21      | `[4,4,4,4,5]`   | 5p bottom |
+| 22      | `[4,4,4,4,6]`   | 6p bottom |
+| 23      | `[4,4,4,4,4,3]` | 3p bottom |
+| 25      | `[4,4,4,4,4,5]` | 5p bottom |
 
-| ID | Format | Players | Retire from | Policy | Expected |
-| -- | ------ | ------- | ----------- | ------ | -------- |
-| B1 | RS | 17 | C2 (4p) R3 | Cascade | C1 unchanged; bottom 5p→4p; cascade fills |
-| B2 | RS | 17 | C4 (5p) R3 | Cascade | ≡ Shrink (bottom); C4 → 4p; 16 players all 4p |
-| B3 | RS | 17 | C4 (5p) R3 | Shrink | C4 → 4p only; upper courts unchanged |
-| B4 | RS | 21 | C3 R3 | Cascade | Only bottom may become 3p/5p per new count (20→5×4) |
-| B5 | RS | 22 | C2 R4 | Cascade | 21 players → `[4,4,4,4,5]`; cascade not mid-bracket 3p |
-| B6 | RS | 23 | C5 (3p) R3 | Cascade | ≡ Shrink; bottom already 3p, loses 1 → 22p `[4,4,4,4,6]` |
-| B7 | RS | 25 | C1 R3 | Cascade | Top 4p preserved; deficit at bottom |
-| B8 | PS | 21 | C2 R3 | Cascade | Bracket cascade; verify single NS at lowest active court |
-| B9 | RS/PS | 17 | C2 R3 | **Replace** | Sizes stay `[4,4,4,5]`; only slot swap on C2 |
+| ID  | Format | Players | Retire from | Policy      | Expected                                                 |
+| --- | ------ | ------- | ----------- | ----------- | -------------------------------------------------------- |
+| B1  | RS     | 17      | C2 (4p) R3  | Cascade     | C1 unchanged; bottom 5p→4p; cascade fills                |
+| B2  | RS     | 17      | C4 (5p) R3  | Cascade     | ≡ Shrink (bottom); C4 → 4p; 16 players all 4p            |
+| B3  | RS     | 17      | C4 (5p) R3  | Shrink      | C4 → 4p only; upper courts unchanged                     |
+| B4  | RS     | 21      | C3 R3       | Cascade     | Only bottom may become 3p/5p per new count (20→5×4)      |
+| B5  | RS     | 22      | C2 R4       | Cascade     | 21 players → `[4,4,4,4,5]`; cascade not mid-bracket 3p   |
+| B6  | RS     | 23      | C5 (3p) R3  | Cascade     | ≡ Shrink; bottom already 3p, loses 1 → 22p `[4,4,4,4,6]` |
+| B7  | RS     | 25      | C1 R3       | Cascade     | Top 4p preserved; deficit at bottom                      |
+| B8  | PS     | 21      | C2 R3       | Cascade     | Bracket cascade; verify single NS at lowest active court |
+| B9  | RS/PS  | 17      | C2 R3       | **Replace** | Sizes stay `[4,4,4,5]`; only slot swap on C2             |
 
 ### C. Preseed asymmetric + frozen courts (20 players)
 
-| ID | Round | Retire from | Policy | Frozen | Expected |
-| -- | ----- | ----------- | ------ | ------ | -------- |
-| C1 | R3 pre-scores | C2 | Cascade | C5 | Per Example 2; C5 untouched |
-| C2 | R3 pre-scores | C2 | Shrink | C5 | C2 → 3p; C5 frozen |
-| C3 | R3 pre-scores | C5 | Any | C5 | **No assignment change**; final standing only |
-| C4 | R4 pre-scores | C2 | Cascade | C5 | Only active courts 1–2; levels from R4 tree |
-| C5 | R3 | C2 | **Replace** | C5 | C2 slot swap; C5 frozen unchanged |
+| ID  | Round         | Retire from | Policy      | Frozen | Expected                                      |
+| --- | ------------- | ----------- | ----------- | ------ | --------------------------------------------- |
+| C1  | R3 pre-scores | C2          | Cascade     | C5     | Per Example 2; C5 untouched                   |
+| C2  | R3 pre-scores | C2          | Shrink      | C5     | C2 → 3p; C5 frozen                            |
+| C3  | R3 pre-scores | C5          | Any         | C5     | **No assignment change**; final standing only |
+| C4  | R4 pre-scores | C2          | Cascade     | C5     | Only active courts 1–2; levels from R4 tree   |
+| C5  | R3            | C2          | **Replace** | C5     | C2 slot swap; C5 frozen unchanged             |
 
 ### D. Multiple retirements (sequential)
 
-| ID | Scenario | Expected |
-| -- | -------- | -------- |
-| D1 | PS 16p: retire J then F from C2, Shrink | **Block** second — C2 would be 2p |
-| D2 | PS 16p: retire J then F from C2, Cascade | After J: cascade; after F: cascade again from new state |
-| D3 | RS 17p: retire 2 from bottom 5p court, Cascade | End state: 15 players, valid court sizes, no duplicate players |
-| D4 | 16p: retire J with Replace R, then undo J | R removed, J restored on C2 |
+| ID  | Scenario                                       | Expected                                                       |
+| --- | ---------------------------------------------- | -------------------------------------------------------------- |
+| D1  | PS 16p: retire J then F from C2, Shrink        | **Block** second — C2 would be 2p                              |
+| D2  | PS 16p: retire J then F from C2, Cascade       | After J: cascade; after F: cascade again from new state        |
+| D3  | RS 17p: retire 2 from bottom 5p court, Cascade | End state: 15 players, valid court sizes, no duplicate players |
+| D4  | 16p: retire J with Replace R, then undo J      | R removed, J restored on C2                                    |
 
 ### E. Mid-round injury → closeRound forward (see [092](./092_mid-round-injury-forward-retirement.md))
 
-| ID | Format | Injury option | Close round | Next-round policy | Expected |
-| -- | ------ | ------------- | ----------- | ----------------- | -------- |
-| E1 | RS | Cancel | R2→R3 | Cascade | Next assignments = cascade from R2 standings w/o injured |
-| E2 | PS | Cancel | R2→R3 | Cascade | Bracket cascade on closeRound; not global reshuffle |
-| E3 | PS | Substitute | R2→R3 | Shrink | Same shrink rules as between-round |
-| E4 | RS | Cancel | R3→R4 (17p NS) | Cascade | Bottom court sizing correct for 16 active |
-| E5 | PS | Cancel | R2→R3 | **Replace** at injury | Injured plays 0 for remaining; replacement on R3 only |
-| E6 | PS | Cancel | R2→R3 | FC on C5 | Injured on C1–C4 only; C5 frozen unaffected |
+| ID  | Format | Injury option | Close round    | Next-round policy     | Expected                                                 |
+| --- | ------ | ------------- | -------------- | --------------------- | -------------------------------------------------------- |
+| E1  | RS     | Cancel        | R2→R3          | Cascade               | Next assignments = cascade from R2 standings w/o injured |
+| E2  | PS     | Cancel        | R2→R3          | Cascade               | Bracket cascade on closeRound; not global reshuffle      |
+| E3  | PS     | Substitute    | R2→R3          | Shrink                | Same shrink rules as between-round                       |
+| E4  | RS     | Cancel        | R3→R4 (17p NS) | Cascade               | Bottom court sizing correct for 16 active                |
+| E5  | PS     | Cancel        | R2→R3          | **Replace** at injury | Injured plays 0 for remaining; replacement on R3 only    |
+| E6  | PS     | Cancel        | R2→R3          | FC on C5              | Injured on C1–C4 only; C5 frozen unaffected              |
 
 ### F. Injury current round (no forward redistribution yet)
 
-| ID | Scenario | Expected |
-| -- | -------- | -------- |
-| F1 | 4p cancel injury, 1 match scored | Unscored matches canceled; averages for standings |
-| F2 | 4p substitute, score substitute match | Injured 0 pts; partners/opponents normal |
-| F3 | 5p cancel injury | Average ranking on 5p court |
-| F4 | Undo injury within 5 min, no post-injury scores | Retirement cleared; matches restored |
-| F5 | Undo blocked after post-injury score entered | |
+| ID  | Scenario                                        | Expected                                          |
+| --- | ----------------------------------------------- | ------------------------------------------------- |
+| F1  | 4p cancel injury, 1 match scored                | Unscored matches canceled; averages for standings |
+| F2  | 4p substitute, score substitute match           | Injured 0 pts; partners/opponents normal          |
+| F3  | 5p cancel injury                                | Average ranking on 5p court                       |
+| F4  | Undo injury within 5 min, no post-injury scores | Retirement cleared; matches restored              |
+| F5  | Undo blocked after post-injury score entered    |                                                   |
 
 ### G. Replacement edge cases
 
-| ID | Scenario | Expected |
-| -- | -------- | -------- |
-| G1 | Replace on frozen court | Rejected |
-| G2 | Replace with duplicate name | Rejected |
-| G3 | Replace with existing active player ID | Rejected |
-| G4 | Replace then retire replacement same round | Replacement retired; original already has standing |
-| G5 | Preseed replace includes seed points | Snake order uses seed for future rounds only |
+| ID  | Scenario                                   | Expected                                           |
+| --- | ------------------------------------------ | -------------------------------------------------- |
+| G1  | Replace on frozen court                    | Rejected                                           |
+| G2  | Replace with duplicate name                | Rejected                                           |
+| G3  | Replace with existing active player ID     | Rejected                                           |
+| G4  | Replace then retire replacement same round | Replacement retired; original already has standing |
+| G5  | Preseed replace includes seed points       | Snake order uses seed for future rounds only       |
 
 ### H. Integration / E2E flows
 
-| ID | Flow |
-| -- | ---- |
-| H1 | Create PS tournament → cascade policy → R1→R2 → retire R3 pre-scores → verify preview = result |
-| H2 | Create RS 17p → R1→R2 → R3 → retire C2 → cascade → score R3 → complete |
-| H3 | RS 17p → injury C2 mid-R2 cancel → closeRound → verify R3 cascade |
-| H4 | PS 20p → R1→R2 → injury C2 → replace for R3 → closeRound → R3 has replacement on C2 |
-| H5 | Undo between-round retirement within 5 min |
+| ID  | Flow                                                                                           |
+| --- | ---------------------------------------------------------------------------------------------- |
+| H1  | Create PS tournament → cascade policy → R1→R2 → retire R3 pre-scores → verify preview = result |
+| H2  | Create RS 17p → R1→R2 → R3 → retire C2 → cascade → score R3 → complete                         |
+| H3  | RS 17p → injury C2 mid-R2 cancel → closeRound → verify R3 cascade                              |
+| H4  | PS 20p → R1→R2 → injury C2 → replace for R3 → closeRound → R3 has replacement on C2            |
+| H5  | Undo between-round retirement within 5 min                                                     |
 
 ### I. Unit test functions (implementation checklist)
 
-| Function / module | Tests from |
-| ----------------- | ---------- |
-| `applyPreseedShrink` | A2, A3, C2 |
-| `applyPreseedCascade` | A1, A4, C1, C4 |
-| `applyReplacementSlot` | A7, B9, C5, G1–G5 |
-| `ladderRedistribute` + exclude | A6, B1–B7 |
-| `resolvePreseedRetirement` | Policy routing |
-| `resolveForwardRetirementOnClose` | E1–E6 |
-| `getFrozenCourts` + retirement | C3, C5, E6 |
-| `recalculateCourtConfigAfterRetirement` | B1–B8 |
-| `computeRetirementFinalStanding` | All formats |
+| Function / module                       | Tests from        |
+| --------------------------------------- | ----------------- |
+| `applyPreseedShrink`                    | A2, A3, C2        |
+| `applyPreseedCascade`                   | A1, A4, C1, C4    |
+| `applyReplacementSlot`                  | A7, B9, C5, G1–G5 |
+| `ladderRedistribute` + exclude          | A6, B1–B7         |
+| `resolvePreseedRetirement`              | Policy routing    |
+| `resolveForwardRetirementOnClose`       | E1–E6             |
+| `getFrozenCourts` + retirement          | C3, C5, E6        |
+| `recalculateCourtConfigAfterRetirement` | B1–B8             |
+| `computeRetirementFinalStanding`        | All formats       |
 
 ---
 

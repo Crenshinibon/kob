@@ -83,7 +83,7 @@ The operations view renders a **start panel** instead of court cards:
 ```
 
 - Court layout, rounds and duration come from the existing pure functions (`getCourtConfiguration`, `calculateRoundCount`, `estimateTournamentDuration`) on the current roster count. **One court (4–6 players) → one round.** Random-seed rounds default to **`min(courtCount, 4)`** unless the organizer already overwrote `numRounds`.
-- **Rounds** and **physical courts** are number inputs on this panel (`setup-num-rounds`, `setup-physical-courts`) and again on the operations view after start (`ops-physical-courts`). Same values as Manage → Rules.
+- **Rounds** and **physical courts** are the same **range sliders** as Create (`RangeSlider`; `setup-num-rounds` min 1 max 10, `setup-physical-courts` min 1 max 16) and again on the operations view after start (`ops-physical-courts`). Same values as Manage → Tournament (not Rules).
 - "Checked-in only" option appears **only** when check-in has at least one check-in and at least one player is not checked in. It **removes** the unchecked players (hard delete, same as 096 Remove) before starting. If check-in was never used, Start uses the full roster.
 - The Start button is disabled below 4 (or below 4 checked-in when that option is selected) with the reason shown.
 - Round stepper and close round are hidden in `setup`. Court QRs appear after start on the operations view. Personal QRs live on the optional check-in page (097).

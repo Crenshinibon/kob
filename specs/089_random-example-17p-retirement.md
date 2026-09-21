@@ -31,7 +31,7 @@ Court sizes: `[4, 4, 4, 5]`. Rounds 1–2 follow the 16-player example; **Q** is
 | 3. C −4  | 3. J −2  | 3. L −6 | 3. O −6  |              |
 | 4. D −28 | 4. H −22 | 4. I −2 | 4. N −10 |              |
 
-*(Q’s exact points are omitted — only placement on the bottom court matters for the retirement walkthrough.)*
+_(Q’s exact points are omitted — only placement on the bottom court matters for the retirement walkthrough.)_
 
 ---
 
@@ -76,12 +76,12 @@ After:  16 players → 4×4p
 
 Normal Court 2 slots:
 
-| Slot source        | Player |
-| ------------------ | ------ |
-| Court 1, 3rd       | C      |
-| Court 1, 4th       | ~~D~~ (retired) |
-| Court 3, 1st       | K      |
-| Court 3, 2nd       | G      |
+| Slot source  | Player          |
+| ------------ | --------------- |
+| Court 1, 3rd | C               |
+| Court 1, 4th | ~~D~~ (retired) |
+| Court 3, 1st | K               |
+| Court 3, 2nd | G               |
 
 Court 2 is one player short. **Backfill** from Court 2’s Round 2 relegation pool: **J** (was 3rd on Court 2 in Round 2, would normally have gone to Court 3).
 
@@ -96,12 +96,12 @@ Court 2 is one player short. **Backfill** from Court 2’s Round 2 relegation po
 
 ### What stays the same vs what moves
 
-| Court | Changes? | Why |
-| ----- | -------- | --- |
+| Court | Changes? | Why                                                                                         |
+| ----- | -------- | ------------------------------------------------------------------------------------------- |
 | **1** | **No**   | D was not in Court 1’s promotion pool (ranks 1–2 stay, ranks 3–4 from C1 only fed Court 2). |
-| **2** | **Yes**  | D’s slot opens; J backfills from the same court’s relegation path. |
-| **3** | **Yes**  | Loses J to Court 2; lower courts cascade upward. |
-| **4** | **Yes**  | Shrinks from 5p to 4p; one player drops off the bottom. |
+| **2** | **Yes**  | D’s slot opens; J backfills from the same court’s relegation path.                          |
+| **3** | **Yes**  | Loses J to Court 2; lower courts cascade upward.                                            |
+| **4** | **Yes**  | Shrinks from 5p to 4p; one player drops off the bottom.                                     |
 
 ---
 
@@ -109,9 +109,9 @@ Court 2 is one player short. **Backfill** from Court 2’s Round 2 relegation po
 
 Using only the 16-player data from [085](./085_random-example-16p.md): retire **D** from Court 2 before Round 3 scores.
 
-| Court 1 (unchanged) | Court 2              | Court 3           | Court 4 (3p) |
-| ------------------- | -------------------- | ----------------- | ------------ |
-| A, B, E, F          | C, K, G, **J** ↑     | H, P, M, L        | O, N, I      |
+| Court 1 (unchanged) | Court 2          | Court 3    | Court 4 (3p) |
+| ------------------- | ---------------- | ---------- | ------------ |
+| A, B, E, F          | C, K, G, **J** ↑ | H, P, M, L | O, N, I      |
 
 - D’s slot on Court 2 → **J** (Court 2’s 3rd from Round 2).
 - Court 3 loses J, gains **L** from the next rung down.

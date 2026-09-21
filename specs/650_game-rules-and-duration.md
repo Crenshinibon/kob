@@ -53,10 +53,10 @@ Organizer can adjust:
 
 | Parameter           | Default | Range | Notes                                                 |
 | ------------------- | ------- | ----- | ----------------------------------------------------- |
-| `pointsToWin`       | 21      | 9-21  | Points needed to win a regular set                    |
+| `pointsToWin`       | 21      | 6-30  | Points needed to win a regular set                    |
 | `winBy`             | 2       | 1-2   | Minimum point margin to win (radio: 1 or 2)           |
-| `setsToWin`         | 1       | 1-2   | Sets needed to win match (radio: single or best-of-3) |
-| `decidingSetPoints` | 15      | 9-21  | Points for the deciding set only (if best-of-3)       |
+| `setsToWin`         | 1       | 1-2   | Sets needed to win match (radio: One Set / Best of 3) |
+| `decidingSetPoints` | 15      | 6-30  | Points for the deciding set only (if best-of-3)       |
 
 **UI note**: "Match Format" (single set vs best-of-3) and "Win By" (1 vs 2) should use radio buttons, not `<select>` dropdowns, since they only have two options.
 
@@ -64,7 +64,7 @@ Organizer can adjust:
 
 **Inference rule**: Special court rules are derived from the standard 4p rules unless explicitly overridden by the organizer.
 
-**Org override**: The organizer can override scoring for 3p, 5p and 6p courts on **Manage → Rules** (tabs next to 4p), even in `setup` before those court sizes exist. Each tab has Points per Set (6–30), Win by (radio: 1 / 2), Sets to Win (radio: One Set / Best of 3), and Points for Deciding Set (6–30, when Best of 3). There is no scoring-mode preset on that page. Courts & rounds (`numRounds`, `physicalCourtCount`) live on **Manage → Tournament**, not Rules.
+**Org override**: The organizer can override scoring for 3p, 5p and 6p courts on **Create, Manage → Rules, and (no longer) operations**. All three surfaces share `ScoringRulesFields`: tabs 4p / 3p / 5p / 6p, Points per Set (6–30), Win by (radio: 1 / 2), Sets to Win (radio: One Set / Best of 3), and Points for Deciding Set (6–30, when Best of 3). There is no scoring-mode preset. Courts & rounds (`numRounds` slider 1–10, `physicalCourtCount` slider 1–16) live on **Create, setup, Manage → Tournament, and operations schedule** — not on Rules.
 
 #### 3-Player Courts
 
