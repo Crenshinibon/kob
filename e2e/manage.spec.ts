@@ -143,6 +143,12 @@ test.describe('Manage page (096)', () => {
 		const name = `ManageR2Order ${Date.now()}`;
 		names.push(name);
 		const id = await createRandomSeedTournament(page, name, 8, 2);
+
+		await page.goto(`/tournament/${id}/manage#players`);
+		await page.getByTestId('tab-players').click();
+		await expect(page.locator('.order-btn').first()).toBeVisible();
+
+		await page.goto(`/tournament/${id}`);
 		await scoreAllOpenMatches(page);
 		await page.goto(`/tournament/${id}`);
 		await expect(page.locator('button:has-text("Close Round")')).toBeEnabled({ timeout: 20000 });
@@ -157,6 +163,11 @@ test.describe('Manage page (096)', () => {
 		await expect(page.getByTestId('order-locked')).toBeVisible();
 		await expect(page.getByTestId('add-one-panel')).toHaveCount(0);
 		await expect(page.getByTestId('add-player')).toHaveCount(0);
+		await expect(page.getByRole('alert')).toHaveCount(0);
+
+		await page.getByTestId('tab-courts').click();
+		await expect(page.getByTestId('courts-tab')).toBeVisible();
+		await expect(page.locator('[data-testid^="move-"]').first()).toBeVisible();
 	});
 
 	test('4-player tournament is one court on the courts tab', async ({ page }) => {
