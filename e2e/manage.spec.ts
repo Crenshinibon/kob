@@ -382,6 +382,7 @@ test.describe('Manage page (096)', () => {
 		await page.locator('summary:has-text("Retire a Player")').click();
 		await expect(page.locator('.retire-form')).toBeVisible();
 
+		await page.goto(`/tournament/${id}`);
 		const courtLinks = await getCourtLinks(page);
 		await page.goto(courtLinks[0]);
 		const matchIds = await extractMatchIds(page);
