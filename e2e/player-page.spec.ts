@@ -172,6 +172,7 @@ test.describe('Player page (098)', () => {
 		const id = await createRandomSeedTournament(page, name, 32, 4);
 		const courtLinks = await getCourtLinks(page);
 		const lastCourt = courtLinks[courtLinks.length - 1];
+		await scoreAllMatchesOnCourt(page, courtLinks[0]);
 		await scoreAllMatchesOnCourt(page, lastCourt);
 		await expect(page.getByTestId('group-standings')).toBeVisible({ timeout: 15000 });
 		const firstName = (
