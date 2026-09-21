@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { afterNavigate } from '$app/navigation';
 	import * as m from '$lib/paraglide/messages';
 	import { localizeHref } from '$lib/paraglide/runtime';
 	import { resolve } from '$app/paths';
@@ -58,16 +59,16 @@
 	let regenDoneIds = $state<number[]>([]);
 	const REGEN_COOLDOWN_MS = 2500;
 
-	$effect(() => {
-		if (!browser) return;
+	afterNavigate(() => {
 		const fromHash = window.location.hash.replace('#', '') || 'players';
 		if (['players', 'courts', 'rules', 'tournament'].includes(fromHash)) tab = fromHash;
-		const onVis = () => {
-			if (!document.hidden) query.refresh().catch(() => {});
-		};
-		document.addEventListener('visibilitychange', onVis);
-		return () => document.removeEventListener('visibilitychange', onVis);
+		query.refresh().catch(() => {});
 	});
+
+	function refreshIfVisible(): void {
+		if (document.hidden) return;
+		query.refresh().catch(() => {});
+	}
 
 	function setTab(next: string) {
 		tab = next;
@@ -90,6 +91,9 @@
 		)
 	);
 	const nameById = $derived(new Map((page?.players ?? []).map((p) => [p.id, p.name])));
+	const uncheckedCount = $derived(
+		(page?.players ?? []).filter((p) => !p.retiredAt && !p.checkedInAt).length
+	);
 	const sortedCourts = $derived(sortCourts(page?.courts ?? []));
 	const validDropCourts = $derived.by(() => {
 		const ids = new Set<number>();
@@ -207,6 +211,8 @@
 		}
 	}
 </script>
+
+<svelte:document onvisibilitychange={refreshIfVisible} />
 
 <main data-testid="manage-page">
 	<header>
@@ -353,7 +359,7 @@
 					onclick={() => run(() => removeUncheckedPlayers({ tournamentId: data.tournamentId }))}
 				>
 					{m.manage_remove_unchecked({
-						count: page.players.filter((p) => !p.retiredAt && !p.checkedInAt).length
+						count: uncheckedCount
 					})}
 				</button>
 			{/if}

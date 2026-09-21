@@ -87,6 +87,7 @@ The operations view renders a **start panel** instead of court cards:
 - "Checked-in only" option appears **only** when check-in has at least one check-in and at least one player is not checked in. It **removes** the unchecked players (hard delete, same as 096 Remove) before starting. If check-in was never used, Start uses the full roster.
 - The Start button is disabled below 4 (or below 4 checked-in when that option is selected) with the reason shown.
 - Round stepper and close round are hidden in `setup`. Court QRs appear after start on the operations view. Personal QRs live on the optional check-in page (097).
+- Check-in counts on this panel refresh on navigate and `visibilitychange`, and poll every **2 s** while `status = 'setup'` (5 s after start) so a laptop left on Setup tracks desk check-ins without a 5-second lag.
 
 ## Start
 
@@ -104,14 +105,14 @@ This is the second half of today's `createTournamentForm`, extracted into `start
 
 `MIN_TOURNAMENT_PLAYERS` becomes **4**. `getCourtConfiguration` / `calculateCourtSizes` must accept 4–7 (today they throw below 8):
 
-| Players | Courts   | Rounds                                                                 |
-| ------- | -------- | ---------------------------------------------------------------------- |
-| 4       | `[4]`    | 1 (final = that court)                                                 |
-| 5       | `[5]`    | 1                                                                      |
-| 6       | `[6]`    | 1                                                                      |
+| Players | Courts   | Rounds                                                                   |
+| ------- | -------- | ------------------------------------------------------------------------ |
+| 4       | `[4]`    | 1 (final = that court)                                                   |
+| 5       | `[5]`    | 1                                                                        |
+| 6       | `[6]`    | 1                                                                        |
 | 7       | `[4, 3]` | preseed: 2; random-seed **default 2** (`min(2, 4)`), organizer can raise |
-| 8–16    | 2–4      | preseed: as today; random-seed **default = court count** (max 4)       |
-| 17–64   | 5–16     | preseed: as today; random-seed **default 4**, organizer can raise      |
+| 8–16    | 2–4      | preseed: as today; random-seed **default = court count** (max 4)         |
+| 17–64   | 5–16     | preseed: as today; random-seed **default 4**, organizer can raise        |
 
 ## Effects on Other Pages and Specs
 

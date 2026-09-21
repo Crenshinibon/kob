@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getTournamentData, type CourtDisplayData } from './tournament-data.remote';
+	import { afterNavigate } from '$app/navigation';
 	import * as m from '$lib/paraglide/messages';
 	import { localizeHref } from '$lib/paraglide/runtime';
 	import {
@@ -73,14 +74,28 @@
 			viewRound: viewRound ?? undefined
 		})
 	);
+	const setupPoll = $derived(tournamentQuery.current?.tournament?.status === 'setup');
+	const SETUP_CHECKIN_POLL_MS = 2000;
+	const DEFAULT_POLL_MS = 5000;
+
+	afterNavigate(() => {
+		tournamentQuery.refresh().catch(() => {});
+	});
+
+	function refreshTournamentIfVisible(): void {
+		if (document.hidden) return;
+		tournamentQuery.refresh().catch(() => {});
+	}
 
 	$effect(() => {
 		if (editingTieBreak || editingScoring || closingRound || retireSubmitting || injurySubmitting) {
 			return;
 		}
+		const q = tournamentQuery;
+		const ms = setupPoll ? SETUP_CHECKIN_POLL_MS : DEFAULT_POLL_MS;
 		const interval = setInterval(() => {
-			tournamentQuery.refresh().catch(() => {});
-		}, 5000);
+			q.refresh().catch(() => {});
+		}, ms);
 		return () => clearInterval(interval);
 	});
 
@@ -374,6 +389,8 @@
 	}
 </script>
 
+<svelte:document onvisibilitychange={refreshTournamentIfVisible} />
+
 {#if tournamentQuery.current}
 	{@const state = tournamentQuery.current}
 	{@const tournament = state?.tournament}
@@ -469,7 +486,9 @@
 					<p class="status-setup">{m.status_setup()}</p>
 					<p>{m.setup_player_count({ count: setupActiveCount })}</p>
 					{#if checkInUsed}
-						<p>{m.setup_checked_in_count({ checked: checkedInCount, total: setupActiveCount })}</p>
+						<p data-testid="setup-checked-in-count">
+							{m.setup_checked_in_count({ checked: checkedInCount, total: setupActiveCount })}
+						</p>
 					{/if}
 					{#if setupCourtSizes.length > 0}
 						<p>

@@ -82,6 +82,7 @@ The reshuffle banner ("your court may change") only appears if check-in is still
 - **QR button** → full-screen modal: name (large), QR ≥ 240 px, tournament name, hint "Scan for your court and scores", buttons **Copy link** and **Share** (Web Share API when available, hidden otherwise). Useful when the organizer walks up to a player with the phone.
 - **Counter** `12/16` counts active (non-retired) players only. Replacements appear in the list; retirees are hidden. **Do not** show round-1 court numbers — after start, each player sees their court on the player page (098).
 - Polling: `getCheckInData` refreshed every **5 s** so self check-ins pop up on the organizer's screen; paused while `document.hidden`.
+- Check-in commands also refresh `getManageData` and `getTournamentData`. Navigating back to Manage Players or the setup panel must show the current not-checked-in count immediately (not a cached number from an earlier visit).
 - After check-in is closed the page stays usable (late arrival scanning still checks in) but shows a "Check-in closed at 10:02 · [Reopen]" banner instead of the Close button.
 
 ### Close check-in dialog
@@ -166,7 +167,7 @@ Token generation: `crypto.randomBytes(16).toString('hex')` on every `player` ins
 | Function           | Kind    | Input                                 | Notes                                                                                                                       |
 | ------------------ | ------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `getCheckInData`   | query   | `tournamentId`                        | active players with `token`, `checkedInAt`, `checkInSource`; counts; `checkInClosedAt`; `round1HasScores`                   |
-| `setPlayerCheckIn` | command | `playerId, checkedIn: boolean`        | sets/clears `checkedInAt`, `checkInSource = 'org'`                                                                          |
+| `setPlayerCheckIn` | command | `playerId, checkedIn: boolean`        | sets/clears `checkedInAt`, `checkInSource = 'org'`; refreshes check-in, manage, and tournament queries                      |
 | `closeCheckIn`     | command | `tournamentId, removeUnchecked: bool` | After start: `removeUnchecked` → 096. In `setup`, the UI calls `startTournamentForm` (099) instead. Sets `checkInClosedAt`. |
 | `reopenCheckIn`    | command | `tournamentId`                        | clears `checkInClosedAt`                                                                                                    |
 
@@ -197,6 +198,7 @@ All organizer-only (same guard as the operations view). `regeneratePlayerToken` 
 6. After start, save one score from a **player page** in round 1 → close-check-in dialog offers only "Keep".
 7. Reopen check-in after start → banner appears on player page (098).
 8. Skip check-in entirely → Start with all 16 → operations view shows court QRs; scores via `/court/[token]` work; player pages still exist if a URL is opened.
+9. Visit Manage then Setup, check in 3 of 8, go back: Manage **Remove all not checked in (5)** and Setup **3 of 8 checked in** appear within 3 s (not a stale cached count).
 
 ## Decisions (from review)
 

@@ -61,7 +61,7 @@ Protected route; same guard as the operations view (`tournament.orgId === user.i
   - `🏁 Completed` — only rename and delete remain.
 - Header links: Operations view · Check-in (097), as spaced chip links (same treatment as the operations `ops-nav`).
 
-Data comes from a single `getManageData` query (no interval polling — refresh after each mutation and on `visibilitychange`). Every mutation re-validates the lock server-side (see Concurrency).
+Data comes from a single `getManageData` query (no interval polling). Refresh after each mutation, on `afterNavigate` (so returning from Check-in does not keep a stale roster), and on `visibilitychange`. Check-in commands (`setPlayerCheckIn`, `closeCheckIn`, `reopenCheckIn`) also refresh `getManageData` and `getTournamentData` so the **Remove all not checked in (N)** count and the setup panel counts stay in sync. Every mutation re-validates the lock server-side (see Concurrency).
 
 ---
 

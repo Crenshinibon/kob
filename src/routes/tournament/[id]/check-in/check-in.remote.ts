@@ -10,6 +10,16 @@ import { checkInWasUsed } from '$lib/player-page-logic';
 import { deriveLockState } from '$lib/manage-logic';
 import { removePlayersFromRoster } from '$lib/server/manage-orchestration';
 import { startTournament, StartTournamentError } from '$lib/server/tournament-orchestration';
+import { getManageData } from '../manage/manage-data.remote';
+import { getTournamentData } from '../tournament-data.remote';
+
+async function refreshCheckInSurfaces(tournamentId: number): Promise<void> {
+	await Promise.all([
+		getCheckInData({ tournamentId }).refresh(),
+		getManageData({ tournamentId }).refresh(),
+		getTournamentData({ tournamentId }).refresh()
+	]);
+}
 
 const idSchema = v.object({
 	tournamentId: v.pipe(v.number(), v.minValue(1))
@@ -65,7 +75,7 @@ export const setPlayerCheckIn = command(
 				checkInSource: 'org'
 			})
 			.where(eq(player.id, playerId));
-		await getCheckInData({ tournamentId: row.tournamentId }).refresh();
+		await refreshCheckInSurfaces(row.tournamentId);
 		return { success: true };
 	}
 );
@@ -106,7 +116,7 @@ export const closeCheckIn = command(
 			}
 		}
 
-		await getCheckInData({ tournamentId }).refresh();
+		await refreshCheckInSurfaces(tournamentId);
 		return { success: true };
 	}
 );
@@ -117,6 +127,6 @@ export const reopenCheckIn = command(idSchema, async ({ tournamentId }) => {
 		.update(tournament)
 		.set({ checkInClosedAt: null, lastActivityAt: new Date() })
 		.where(eq(tournament.id, tournamentId));
-	await getCheckInData({ tournamentId }).refresh();
+	await refreshCheckInSurfaces(tournamentId);
 	return { success: true };
 });

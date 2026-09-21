@@ -4,8 +4,7 @@ import {
 	createSetupTournament,
 	deleteTournament,
 	getPlayerLinks,
-	login,
-	startTournamentFromSetup
+	login
 } from './helpers';
 
 test.describe('Player check-in (097)', () => {
@@ -142,6 +141,42 @@ test.describe('Player check-in (097)', () => {
 			page.locator('[data-testid^="match-form-"], [data-testid^="saved-"]').first()
 		).toBeVisible({
 			timeout: 15000
+		});
+	});
+
+	test('manage and setup check-in counts refresh after navigating back', async ({ page }) => {
+		const name = `CheckinCounts ${Date.now()}`;
+		names.push(name);
+		await createSetupTournament(page, name, 8, 2);
+		await expect(page.getByTestId('setup-panel')).toBeVisible();
+		await page.getByTestId('ops-nav').getByRole('link', { name: 'Manage' }).click();
+		await expect(page.getByTestId('manage-page')).toBeVisible();
+		await expect(page.getByTestId('remove-unchecked')).toHaveCount(0);
+
+		await page.getByRole('link', { name: 'Check-in' }).click();
+		await expect(page.getByTestId('checkin-page')).toBeVisible();
+		const rowIds = await page
+			.locator('[data-testid^="checkin-row-"]')
+			.evaluateAll((els) =>
+				els
+					.map((el) => el.getAttribute('data-testid')?.replace('checkin-row-', '') ?? '')
+					.filter((rowId) => rowId && rowId !== 'undefined')
+			);
+		expect(rowIds.length).toBe(8);
+		for (let i = 0; i < 3; i++) {
+			await page.getByTestId(`checkin-row-${rowIds[i]}`).click();
+			await expect(page.getByTestId('checkin-progress')).toContainText(String(i + 1), {
+				timeout: 10000
+			});
+		}
+
+		await page.getByRole('link', { name: /Manage no-shows/i }).click();
+		await expect(page.getByTestId('manage-page')).toBeVisible();
+		await expect(page.getByTestId('remove-unchecked')).toContainText('(5)', { timeout: 3000 });
+
+		await page.getByRole('link', { name: 'Operations view' }).click();
+		await expect(page.getByTestId('setup-checked-in-count')).toContainText('3 of 8', {
+			timeout: 3000
 		});
 	});
 });
