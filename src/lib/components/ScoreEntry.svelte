@@ -9,11 +9,15 @@
 		fields: { allIssues(): ScoreIssue[] | undefined };
 	};
 
+	type ScoreField = {
+		as: (type: string, value?: string | number) => Record<string, unknown>;
+	};
+
 	type ScoreFields = {
 		enhance(cb: (fi: ScoreSubmitForm) => void | Promise<void>): Record<string, unknown>;
 		fields: {
-			teamAScore: Record<string, unknown>;
-			teamBScore: Record<string, unknown>;
+			teamAScore: ScoreField;
+			teamBScore: ScoreField;
 			allIssues(): ScoreIssue[] | undefined;
 		};
 		pending?: number;
@@ -68,6 +72,8 @@
 	const fieldIssues = $derived((formObj?.fields.allIssues() ?? []).map((issue) => issue.message));
 	const visibleErrors = $derived([...new Set([...extraErrors, ...fieldIssues])]);
 	const busy = $derived(saving || (formObj?.pending ?? 0) > 0);
+	const prefillA = $derived(editing && savedA != null ? String(savedA) : undefined);
+	const prefillB = $derived(editing && savedB != null ? String(savedB) : undefined);
 </script>
 
 {#if readOnly}
@@ -110,14 +116,13 @@
 				<p>{teamALabel}</p>
 				<input
 					data-testid="team-a-score-{matchId}"
-					type="number"
-					name="teamAScore"
 					min="0"
 					required
 					disabled={busy}
 					{onfocus}
 					{onblur}
-					{...formObj.fields.teamAScore}
+					{...formObj.fields.teamAScore.as('text', prefillA)}
+					type="number"
 				/>
 			</div>
 			<div class="vs">{msg.court_vs()}</div>
@@ -125,14 +130,13 @@
 				<p>{teamBLabel}</p>
 				<input
 					data-testid="team-b-score-{matchId}"
-					type="number"
-					name="teamBScore"
 					min="0"
 					required
 					disabled={busy}
 					{onfocus}
 					{onblur}
-					{...formObj.fields.teamBScore}
+					{...formObj.fields.teamBScore.as('text', prefillB)}
+					type="number"
 				/>
 			</div>
 		</div>

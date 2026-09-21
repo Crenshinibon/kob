@@ -123,6 +123,13 @@
 		return null;
 	}
 
+	function scorePrefill(match: MatchRow, editing: boolean, side: 'a' | 'b'): string | undefined {
+		if (!editing) return undefined;
+		const saved = getSavedScore(match);
+		if (!saved) return undefined;
+		return String(side === 'a' ? saved.teamAScore : saved.teamBScore);
+	}
+
 	function isMatchCompleted(matchId: number, serverScore: number | null): boolean {
 		return serverScore !== null || savedScores.has(matchId);
 	}
@@ -406,8 +413,8 @@
 	formObj: {
 		enhance(cb: (fi: ScoreSubmitForm) => void | Promise<void>): Record<string, unknown>;
 		fields: ScoreSubmitForm['fields'] & {
-			teamAScore: Record<string, unknown>;
-			teamBScore: Record<string, unknown>;
+			teamAScore: { as: (type: string, value?: string | number) => Record<string, unknown> };
+			teamBScore: { as: (type: string, value?: string | number) => Record<string, unknown> };
 		};
 	},
 	match: MatchRow,
@@ -432,14 +439,13 @@
 				<p>{getTeamDisplay(match, 'a')}</p>
 				<input
 					data-testid="team-a-score-{matchId}"
-					type="number"
-					name="teamAScore"
 					min="0"
 					required
 					disabled={savingMatches.has(matchId)}
 					onfocus={() => (scoreFocused = true)}
 					onblur={() => (scoreFocused = false)}
-					{...formObj.fields.teamAScore}
+					{...formObj.fields.teamAScore.as('text', scorePrefill(match, editing, 'a'))}
+					type="number"
 				/>
 			</div>
 			<div class="vs">{msg.court_vs()}</div>
@@ -447,14 +453,13 @@
 				<p>{getTeamDisplay(match, 'b')}</p>
 				<input
 					data-testid="team-b-score-{matchId}"
-					type="number"
-					name="teamBScore"
 					min="0"
 					required
 					disabled={savingMatches.has(matchId)}
 					onfocus={() => (scoreFocused = true)}
 					onblur={() => (scoreFocused = false)}
-					{...formObj.fields.teamBScore}
+					{...formObj.fields.teamBScore.as('text', scorePrefill(match, editing, 'b'))}
+					type="number"
 				/>
 			</div>
 		</div>
@@ -640,7 +645,9 @@
 													{#if data.isEditable}
 														<div class="completed-actions">
 															<button
+																type="button"
 																class="btn-compact btn-secondary"
+																data-testid="edit-score-{setMatch.id}"
 																onclick={() =>
 																	(editingMatches = new Set([...editingMatches, setMatch.id]))}
 															>
@@ -730,7 +737,9 @@
 												{#if data.isEditable}
 													<div class="completed-actions">
 														<button
+															type="button"
 															class="btn-compact btn-secondary"
+															data-testid="edit-score-{match.id}"
 															onclick={() =>
 																(editingMatches = new Set([...editingMatches, match.id]))}
 														>
@@ -813,7 +822,9 @@
 									{#if data.isEditable}
 										<div class="completed-actions">
 											<button
+												type="button"
 												class="btn-compact btn-secondary"
+												data-testid="edit-score-{match.id}"
 												onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
 											>
 												{msg.edit_btn()}
