@@ -26,10 +26,9 @@ import {
 	neighborSeparatingFactor,
 	nextHintFor,
 	playerMatchesView,
-	reachableFinalPlaceRange,
+	playerPlacement,
 	reachableRanksOnCourt,
 	splitPlayerMatches,
-	verticalTierPlaceRange,
 	waitClock,
 	type PlayerRoundState
 } from '$lib/player-page-logic';
@@ -319,39 +318,26 @@ export async function fetchPlayerPageData(token: string) {
 		groupsComplete(matchesByRotation.get(r.id) ?? [], r.courtSize)
 	).length;
 
-	const range =
-		myRotation && placementSizes.length > 0
-			? reachableFinalPlaceRange({
-					formatType: tourney.formatType as 'preseed' | 'random-seed',
-					currentRound,
-					numRounds: tourney.numRounds,
-					courtNumber: myRotation.courtNumber,
-					courtSizes: placementSizes,
-					bestRankOnCourt: ranks?.bestRank ?? null,
-					safeRankOnCourt: ranks?.safeRank ?? null,
-					liveRankOnCourt: ranks ? (liveRank ?? youCourtRank) : null,
-					liveRoundResults: liveResults,
-					frozenCourtNumbers: frozenNumbers,
-					playerId: row.id,
-					scoredCourtCount: courtsDone
-				})
-			: {
-					best: 1,
-					worst: Math.max(1, activeTotal),
-					minCourt: 1,
-					maxCourt: courtSizes.length || 1,
-					current: null
-				};
-
-	const roundOpen =
-		tourney.status === 'active' &&
-		currentRotations.length > 0 &&
-		courtsDone < currentRotations.length;
-	const r1Open = tourney.formatType !== 'preseed' && currentRound === 1 && roundOpen;
-	const placementCurrent =
-		r1Open && liveRank != null
-			? verticalTierPlaceRange(liveRank, placementSizes).best
-			: (range.current ?? (roundOpen ? null : (myStanding?.overallRank ?? null)));
+	const placement = playerPlacement({
+		formatType: tourney.formatType as 'preseed' | 'random-seed',
+		tournamentStatus: tourney.status,
+		currentRound,
+		numRounds: tourney.numRounds,
+		roundState: state,
+		courtNumber: myRotation?.courtNumber ?? null,
+		courtSizes: placementSizes,
+		courtComplete,
+		courtsDone,
+		courtsTotal: currentRotations.length,
+		bestRankOnCourt: ranks?.bestRank ?? null,
+		safeRankOnCourt: ranks?.safeRank ?? null,
+		liveRankOnCourt: ranks ? (liveRank ?? youCourtRank) : null,
+		liveRoundResults: liveResults,
+		frozenCourtNumbers: frozenNumbers,
+		playerId: row.id,
+		overallRank: myStanding?.overallRank ?? null,
+		totalPlayers: activeTotal
+	});
 
 	const hint =
 		myRotation && liveRank
@@ -662,19 +648,15 @@ export async function fetchPlayerPageData(token: string) {
 			rounds: recordRounds
 		},
 		placement: {
-			current: placementCurrent,
-			total: activeTotal,
-			best: range.best,
-			worst: range.worst,
-			isFinal:
-				state === 'completed' ||
-				state === 'retired' ||
-				state === 'eliminated' ||
-				(state === 'frozen' && courtComplete),
+			current: placement.current,
+			total: placement.total,
+			best: placement.best,
+			worst: placement.worst,
+			isFinal: placement.isFinal,
 			nextCourt: hint?.courtNumber ?? null,
-			minCourt: range.minCourt,
-			maxCourt: range.maxCourt,
-			rankCanStillChange: !courtComplete && state === 'active'
+			minCourt: placement.minCourt,
+			maxCourt: placement.maxCourt,
+			rankCanStillChange: placement.rankCanStillChange
 		}
 	};
 }

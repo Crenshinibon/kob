@@ -778,6 +778,108 @@ export function reachableFinalPlaceRange(ctx: ReachableFinalPlaceContext): {
 	};
 }
 
+export type PlayerPlacementInput = {
+	formatType: FormatType;
+	tournamentStatus: string;
+	currentRound: number;
+	numRounds: number;
+	roundState: PlayerRoundState;
+	courtNumber: number | null;
+	courtSizes: readonly number[];
+	courtComplete: boolean;
+	courtsDone: number;
+	courtsTotal: number;
+	bestRankOnCourt: number | null;
+	safeRankOnCourt: number | null;
+	liveRankOnCourt: number | null;
+	liveRoundResults: CourtResult[] | null;
+	frozenCourtNumbers: ReadonlySet<number>;
+	playerId?: number;
+	/** Standings-page overall rank. Used only after the round is closed. */
+	overallRank: number | null;
+	totalPlayers: number;
+};
+
+export type PlayerPlacement = {
+	current: number | null;
+	total: number;
+	best: number;
+	worst: number;
+	isFinal: boolean;
+	minCourt: number;
+	maxCourt: number;
+	rankCanStillChange: boolean;
+};
+
+function placementIsFinal(roundState: PlayerRoundState, courtComplete: boolean): boolean {
+	return (
+		roundState === 'completed' ||
+		roundState === 'retired' ||
+		roundState === 'eliminated' ||
+		(roundState === 'frozen' && courtComplete)
+	);
+}
+
+/**
+ * Currently / Best / Safe on the player page. The data layer must not recompute these.
+ * Round-1 random current is the vertical-tier first place while the round is still
+ * open — never seed-court slot or standings `overallRank` (court-then-rank).
+ */
+export function playerPlacement(input: PlayerPlacementInput): PlayerPlacement {
+	const isFinal = placementIsFinal(input.roundState, input.courtComplete);
+	const rankCanStillChange = !input.courtComplete && input.roundState === 'active';
+	const total = input.totalPlayers;
+	const roundOpen =
+		input.tournamentStatus === 'active' &&
+		input.courtsTotal > 0 &&
+		input.courtsDone < input.courtsTotal;
+
+	if (input.courtNumber == null || input.courtSizes.length === 0) {
+		return {
+			current: input.roundState === 'not_started' || roundOpen ? null : input.overallRank,
+			total,
+			best: 1,
+			worst: Math.max(1, total),
+			isFinal,
+			minCourt: 1,
+			maxCourt: input.courtSizes.length || 1,
+			rankCanStillChange
+		};
+	}
+
+	const range = reachableFinalPlaceRange({
+		formatType: input.formatType,
+		currentRound: input.currentRound,
+		numRounds: input.numRounds,
+		courtNumber: input.courtNumber,
+		courtSizes: input.courtSizes,
+		bestRankOnCourt: input.bestRankOnCourt,
+		safeRankOnCourt: input.safeRankOnCourt,
+		liveRankOnCourt: input.liveRankOnCourt,
+		liveRoundResults: input.liveRoundResults,
+		frozenCourtNumbers: input.frozenCourtNumbers,
+		playerId: input.playerId,
+		scoredCourtCount: input.courtsDone
+	});
+
+	const r1Open = input.formatType !== 'preseed' && input.currentRound === 1 && roundOpen;
+	const current =
+		r1Open && input.liveRankOnCourt != null
+			? verticalTierPlaceRange(input.liveRankOnCourt, input.courtSizes).best
+			: (range.current ?? (roundOpen ? null : input.overallRank));
+
+	return {
+		current,
+		total,
+		best: range.best,
+		worst: range.worst,
+		isFinal,
+		minCourt: range.minCourt,
+		maxCourt: range.maxCourt,
+		rankCanStillChange
+	};
+}
+
 export function shouldAutoCheckIn(
 	tournament: { status: string; orgId: string },
 	player: { checkedInAt: Date | null; checkInSource: string | null },

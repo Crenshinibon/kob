@@ -408,7 +408,22 @@ reachableRanksOnCourt(playerId, matches, scoring): { bestRank: number; safeRank:
 - **safeRank:** the same, but those matches are a **0–target loss** for this player (no more points). Already-saved scores stand.
 - Other courts are not in this function.
 
-Then map each rank along a **one-way** path of remaining redistributions (`t = N − r`):
+Then map each rank along a **one-way** path of remaining redistributions (`t = N − r`). The player page does **not** assemble Currently / Best / Safe in `player-page-data.ts` — it calls one function, same pattern as `tournament-logic.ts`:
+
+```typescript
+playerPlacement(input): {
+	current: number | null;
+	total: number;
+	best: number;
+	worst: number;
+	isFinal: boolean;
+	minCourt: number;
+	maxCourt: number;
+	rankCanStillChange: boolean;
+};
+```
+
+`playerPlacement` owns the displayed numbers. While a random-seed round 1 is still open it uses the vertical-tier first place as **Currently** and never standings `overallRank` (court-then-rank) or the seed-court slot. After the round is closed it may fall back to `overallRank` only if the range has no current. Path walking stays in `reachableFinalPlaceRange`:
 
 ```typescript
 reachableFinalPlaceRange(ctx: {
@@ -627,7 +642,7 @@ type PlayerPageData = {
 
 Queries per request: player by token → tournament → all rotations of the tournament (needed for history, movement, progress) → matches of the current round (all courts — needed for live standings, `liveRoundResults`, round progress) → players of the tournament (names) → standings. `court.token` is read from the `court` table via `rotation.courtId` so a player-page save can refresh `getCourtData`.
 
-`placement.current` in random-seed round 1 comes from `reachableFinalPlaceRange.current` (projected place after vertical seeding) and must not fall back to seed-court `overallRank`. After round 1, it matches the shared standings computation (`standings-service.ts`, 095). `placement.best/worst` come from `reachableRanksOnCourt` + `reachableFinalPlaceRange`. `record` uses ranking totals (094); above/below icons use `pairDecidingFactor` / `neighborSeparatingFactor` (the factor that separates those two players, not the group's seed icon). `history` is a newest-first list of finished games (current round included) derived from the same rotations + matches. No extra round-trip.
+`placement.current` / `best` / `worst` come from `playerPlacement` (`$lib/player-page-logic.ts`, re-exported like other tournament rules from `$lib/server/tournament-logic.ts`). In random-seed round 1 that is the vertical-tier place, never seed-court `overallRank`. After the round is closed, `overallRank` from `standings-service.ts` (095) is only a fallback. `player-page-data.ts` must not override these fields. `record` uses ranking totals (094); above/below icons use `pairDecidingFactor` / `neighborSeparatingFactor` (the factor that separates those two players, not the group's seed icon). `history` is a newest-first list of finished games (current round included) derived from the same rotations + matches. No extra round-trip.
 
 ### `src/routes/player/[token]/player-data.remote.ts`
 
@@ -671,7 +686,7 @@ Do **not** fall back to closed-round-only current place — live including this 
 
 ## Testing
 
-### Unit (`src/lib/server/tournament-logic.test.ts`)
+### Unit (`src/lib/player-page-logic.test.ts`, re-exported from `src/lib/server/tournament-logic.ts`)
 
 - `derivePlayerRoundState` — one case per state, including: injured-with-substitute in current round → `injured`, injured in a past round → `retired`; frozen court; eliminated in final; completed overrides everything; shift 2 not yet on a physical court → `waiting`.
 - `movementFor(prevCourt, currentCourt)` → up/down/same/null.
@@ -683,7 +698,12 @@ Do **not** fall back to closed-round-only current place — live including this 
 - `movementWhy(format, round, rank, courtNumber, courtCount, …)` — one key per row of the Movement copy table.
 - `placeForCourtRank(courtSizes, k, r)` — canonical `[4,4,4,4]`, non-standard bottom `[4,4,4,5]` (Court 4 rank 5 → 17), manual layout `[4,3,5,4]`.
 - `reachableRanksOnCourt` — 4p after match 1: a player far behind cannot reach rank 1 even at 21–0; a leader cannot fall to last if remaining points cannot catch them. Sit-out matches are left as-is.
-- `reachableFinalPlaceRange` — every row of both example tables above, plus:
+- `playerPlacement` — the function the player page calls for Currently / Best / Safe (`src/lib/player-page-logic.test.ts`). Cases:
+  - R1 court-done 4th on 8×4 → Currently 25, Best 13, Safe 32; `overallRank` 4 is ignored while the round is open.
+  - R1 court-done 1st on court 8, 2 of 8 done, leaked dummy points, `overallRank` 29 → Currently 1, Best 1, Safe 20.
+  - `overallRank` is used only after the round is closed when the range has no current.
+  - `not_started` → current null; `completed` → `isFinal`.
+- `reachableFinalPlaceRange` — path-walking helper used by `playerPlacement`; every row of both example tables above, plus:
   - still-possible ranks 1–2 on Court 3 in round 2 of 16p → Best 1st, Safe 8th (forced up, then last on C2).
   - still-possible ranks 3–4 only → Best 9th, Safe 16th.
   - last round Court 2 ranks 1–4 still possible → 5th – 8th; only rank 3 left → Final place 7.
@@ -757,7 +777,7 @@ None remaining for this spec.
 - `src/lib/server/player-page-data.ts`
 - `src/lib/server/save-score.ts` — shared write + validation for court-token and player-token saves
 - `src/lib/server/standings-service.ts` (extracted from `standings/standings-data.remote.ts`, 095)
-- `src/lib/player-page-logic.ts` — `derivePlayerRoundState`, `movementFor`, `nextHintFor`, `playerMatchesView`, `splitPlayerMatches`, `orientMatchForPlayer`, `movementWhy`, `placeForCourtRank`, `reachableRanksOnCourt`, `reachableFinalPlaceRange`, `verticalTierPlaceRange`, `neighborSeparatingFactor`, `waitClock`
+- `src/lib/player-page-logic.ts` — `playerPlacement` (Currently / Best / Safe), `derivePlayerRoundState`, `movementFor`, `nextHintFor`, `playerMatchesView`, `splitPlayerMatches`, `orientMatchForPlayer`, `movementWhy`, `placeForCourtRank`, `reachableRanksOnCourt`, `reachableFinalPlaceRange`, `verticalTierPlaceRange`, `neighborSeparatingFactor`, `waitClock`
 - `src/lib/components/player/PlacementCard.svelte` (current / best / safe text; no bar)
 - `src/lib/components/player/RecordStrip.svelte`, `HistoryList.svelte`, `NowCard.svelte`
 - `src/lib/components/ScoreEntry.svelte` — extracted from `src/routes/court/[token]/+page.svelte`
