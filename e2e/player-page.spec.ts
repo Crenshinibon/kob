@@ -144,7 +144,7 @@ test.describe('Player page (098)', () => {
 		expect(fourthName.length).toBeGreaterThan(0);
 
 		const links = await getPlayerLinks(page, id);
-		const target = links.find((l) => fourthName.includes(l.name) || l.name.includes(fourthName));
+		const target = links.find((l) => l.name === fourthName);
 		expect(target).toBeTruthy();
 
 		const anon = await browser.newContext();

@@ -3,8 +3,10 @@ import {
 	createRandomSeedTournament,
 	createSetupTournament,
 	deleteTournament,
+	getCourtLinks,
 	getPlayerLinks,
-	login
+	login,
+	scoreAllMatchesOnCourt
 } from './helpers';
 
 test.describe('Player check-in (097)', () => {
