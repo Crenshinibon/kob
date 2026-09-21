@@ -794,5 +794,7 @@
 	"player_record_vs_above": "Arriba: {name}",
 	"player_record_vs_below": "Abajo: {name}",
 	"player_score_could_not_save": "No se pudo guardar",
-	"ops_back_office_hint": "Puntuación, desempate, bajas y lesiones están en Gestionar:"
+	"ops_back_office_hint": "Puntuación, desempate, bajas y lesiones están en Gestionar:",
+	"manage_order_locked": "No se puede cambiar el orden de los jugadores mientras esta ronda tenga marcadores.",
+	"manage_courts_locked": "No se puede mover a los jugadores entre pistas mientras esta ronda tenga marcadores."
 }

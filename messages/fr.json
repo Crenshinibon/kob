@@ -794,5 +794,7 @@
 	"player_record_vs_above": "Au-dessus : {name}",
 	"player_record_vs_below": "En dessous : {name}",
 	"player_score_could_not_save": "Enregistrement impossible",
-	"ops_back_office_hint": "Règles, départage, forfait et blessure se gèrent dans Gérer :"
+	"ops_back_office_hint": "Règles, départage, forfait et blessure se gèrent dans Gérer :",
+	"manage_order_locked": "L’ordre des joueurs ne peut pas être modifié tant que ce tour a des scores.",
+	"manage_courts_locked": "Les joueurs ne peuvent pas être déplacés entre terrains tant que ce tour a des scores."
 }

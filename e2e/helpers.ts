@@ -449,7 +449,7 @@ export async function closeRoundOrFetch(
 ): Promise<void> {
 	await page
 		.waitForSelector(
-			'input[name="n:tournamentId"], button:has-text("Close Round & Advance"), button:has-text("Finalize Tournament"), button:has-text("Waiting")',
+			'input[name="n:tournamentId"], button:has-text("Close Round & Advance"), button:has-text("Finalize Tournament"), button:has-text("Waiting"), [data-testid="waiting-scores"]',
 			{ timeout: 15000 }
 		)
 		.catch(() => {});

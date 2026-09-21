@@ -204,8 +204,7 @@ test.describe('Promotion and Relegation', () => {
 		expect(tournamentId).toBeTruthy();
 
 		// Initially, close round button should show waiting state
-		const waitingButton = await page.locator('button:has-text("Waiting")');
-		await expect(waitingButton).toBeVisible();
+		await expect(page.getByTestId('waiting-scores')).toBeVisible();
 
 		// Get all court URLs first
 		await page.waitForSelector('.qr-link a');
@@ -241,7 +240,7 @@ test.describe('Promotion and Relegation', () => {
 
 		// Navigate to tournament page - button should still show waiting
 		await page.goto(`/tournament/${tournamentId}`);
-		await page.waitForSelector('button:has-text("Waiting")');
+		await expect(page.getByTestId('waiting-scores')).toBeVisible();
 
 		// Complete matches on remaining courts
 		for (let courtNum = 1; courtNum < 4; courtNum++) {

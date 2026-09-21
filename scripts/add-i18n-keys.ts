@@ -305,7 +305,19 @@ const keys: Record<string, { en: string; de: string; fr: string; es: string }> =
 	manage_sets_one: { en: 'One Set', de: 'Ein Satz', fr: 'Un set', es: 'Un set' },
 	manage_sets_best_of_3: { en: 'Best of 3', de: 'Best of 3', fr: 'Meilleur des 3', es: 'Mejor de 3' },
 	manage_win_by_1: { en: '1 point', de: '1 Punkt', fr: '1 point', es: '1 punto' },
-	manage_win_by_2: { en: '2 points', de: '2 Punkte', fr: '2 points', es: '2 puntos' }
+	manage_win_by_2: { en: '2 points', de: '2 Punkte', fr: '2 points', es: '2 puntos' },
+	manage_order_locked: {
+		en: 'Player order cannot be changed while this round has scores.',
+		de: 'Die Reihenfolge lässt sich nicht ändern, solange diese Runde Ergebnisse hat.',
+		fr: 'L’ordre des joueurs ne peut pas être modifié tant que ce tour a des scores.',
+		es: 'No se puede cambiar el orden de los jugadores mientras esta ronda tenga marcadores.'
+	},
+	manage_courts_locked: {
+		en: 'Players cannot be moved between courts while this round has scores.',
+		de: 'Spieler können nicht zwischen Plätzen verschoben werden, solange diese Runde Ergebnisse hat.',
+		fr: 'Les joueurs ne peuvent pas être déplacés entre terrains tant que ce tour a des scores.',
+		es: 'No se puede mover a los jugadores entre pistas mientras esta ronda tenga marcadores.'
+	}
 };
 
 const locales = ['en', 'de', 'fr', 'es'] as const;

@@ -794,5 +794,7 @@
 	"player_record_vs_above": "Above: {name}",
 	"player_record_vs_below": "Below: {name}",
 	"player_score_could_not_save": "Could not save",
-	"ops_back_office_hint": "Scoring, tie-break, retirement and injury reporting are on Manage:"
+	"ops_back_office_hint": "Scoring, tie-break, retirement and injury reporting are on Manage:",
+	"manage_order_locked": "Player order cannot be changed while this round has scores.",
+	"manage_courts_locked": "Players cannot be moved between courts while this round has scores."
 }

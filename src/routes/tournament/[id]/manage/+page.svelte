@@ -455,10 +455,13 @@
 			</p>
 		{/if}
 		<nav class="page-nav">
-			<a href={localizeHref(resolve('/tournament/[id]', { id: String(data.tournamentId) }))}
+			<a
+				class="btn-secondary"
+				href={localizeHref(resolve('/tournament/[id]', { id: String(data.tournamentId) }))}
 				>{m.manage_operations_link()}</a
 			>
 			<a
+				class="btn-secondary"
 				href={localizeHref(resolve('/tournament/[id]/check-in', { id: String(data.tournamentId) }))}
 				>{m.checkin_title()}</a
 			>
@@ -583,6 +586,9 @@
 				</button>
 			{/if}
 
+			{#if page.tournament.formatType === 'random-seed' && (page.lock.roundHasScores || page.tournament.status === 'completed')}
+				<p class="hint" data-testid="order-locked">{m.manage_order_locked()}</p>
+			{/if}
 			<ul class="roster">
 				{#each players as p (p.id)}
 					{@const orderIndex = orderedActiveIds.indexOf(p.id)}
@@ -770,33 +776,34 @@
 			{#if page.tournament.status === 'setup'}
 				<p>{m.manage_not_started_courts()}</p>
 			{:else}
-				<div class="court-actions">
-					<button
-						type="button"
-						class="btn-secondary"
-						data-testid="refill-courts"
-						disabled={page.lock.roundHasScores}
-						onclick={() => run(() => refillCourts({ tournamentId: data.tournamentId }))}
-						>{m.manage_refill()}</button
-					>
-					<button
-						type="button"
-						class="btn-secondary"
-						data-testid="reset-assignments"
-						disabled={page.lock.roundHasScores}
-						onclick={() => run(() => resetRoundAssignments({ tournamentId: data.tournamentId }))}
-						>{m.manage_reset_assignments()}</button
-					>
-					{#if page.tournament.formatType === 'random-seed' && page.tournament.currentRound === 1}
+				{#if page.lock.roundHasScores}
+					<p class="hint" data-testid="courts-locked">{m.manage_courts_locked()}</p>
+				{:else}
+					<div class="court-actions">
 						<button
 							type="button"
 							class="btn-secondary"
-							disabled={page.lock.roundHasScores}
-							onclick={() => run(() => reshuffleRound1({ tournamentId: data.tournamentId }))}
-							>{m.manage_reshuffle_round1()}</button
+							data-testid="refill-courts"
+							onclick={() => run(() => refillCourts({ tournamentId: data.tournamentId }))}
+							>{m.manage_refill()}</button
 						>
-					{/if}
-				</div>
+						<button
+							type="button"
+							class="btn-secondary"
+							data-testid="reset-assignments"
+							onclick={() => run(() => resetRoundAssignments({ tournamentId: data.tournamentId }))}
+							>{m.manage_reset_assignments()}</button
+						>
+						{#if page.tournament.formatType === 'random-seed' && page.tournament.currentRound === 1}
+							<button
+								type="button"
+								class="btn-secondary"
+								onclick={() => run(() => reshuffleRound1({ tournamentId: data.tournamentId }))}
+								>{m.manage_reshuffle_round1()}</button
+							>
+						{/if}
+					</div>
+				{/if}
 				{#if draggingId != null && liftActive}
 					<p class="drop-hint">{m.manage_drop_hint()}</p>
 				{/if}
@@ -839,6 +846,7 @@
 									class="tile"
 									class:pressing={draggingId === pid}
 									class:lift={liftActive && draggingId === pid}
+									class:locked={page.lock.roundHasScores}
 									data-testid="player-tile-{pid}"
 									role="listitem"
 									in:receiveTile={{ key: pid }}
@@ -902,12 +910,11 @@
 							disabled={page.lock.roundHasScores}
 							onPatch={patchScoring}
 						/>
-						<button
-							type="submit"
-							class="btn-primary scoring-save"
-							data-testid="save-scoring"
-							disabled={page.lock.roundHasScores}>{m.save_scoring()}</button
-						>
+						{#if !page.lock.roundHasScores}
+							<button type="submit" class="btn-primary scoring-save" data-testid="save-scoring"
+								>{m.save_scoring()}</button
+							>
+						{/if}
 					</form>
 				{/if}
 			</div>
@@ -1298,7 +1305,9 @@
 	}
 
 	.order-btn:disabled {
-		opacity: 0.35;
+		opacity: 1;
+		color: var(--text-muted);
+		background: var(--bg-primary);
 		cursor: not-allowed;
 	}
 
@@ -1313,24 +1322,6 @@
 		flex-wrap: wrap;
 		gap: var(--spacing-sm);
 		margin: var(--spacing-sm) 0;
-	}
-
-	.page-nav a {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: var(--spacing-xs) var(--spacing-md);
-		min-height: 44px;
-		border: 2px solid var(--border-default);
-		border-radius: var(--radius-sm);
-		color: var(--accent-info);
-		text-decoration: none;
-	}
-
-	.page-nav a:hover {
-		border-color: var(--accent-info);
-		color: var(--text-primary);
-		text-decoration: none;
 	}
 
 	.court-actions {
@@ -1397,6 +1388,10 @@
 	.tile.pressing {
 		transform: scale(1.03);
 		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+	}
+
+	.tile.locked {
+		cursor: default;
 	}
 
 	.tile.lift {

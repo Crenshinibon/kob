@@ -625,7 +625,7 @@
 						{#if manualTieBreakEnabled && isViewingCurrentRound && court.manualTieGroups.length > 0}
 							<button
 								type="button"
-								class="btn-manual-tie"
+								class="btn-secondary manual-tie-action"
 								onclick={() => openManualTieDialog(court)}
 							>
 								{m.manual_rank_open({
@@ -674,7 +674,7 @@
 								{isFinalRound ? m.finalize_tournament() : m.close_round()}
 							</button>
 						{:else}
-							<button type="button" disabled class="btn-primary">{m.waiting_scores()}</button>
+							<p class="hint" data-testid="waiting-scores">{m.waiting_scores()}</p>
 						{/if}
 					</form>
 				{/if}
@@ -1242,7 +1242,9 @@
 	}
 
 	.stepper-step:disabled {
-		opacity: 0.4;
+		opacity: 1;
+		color: var(--text-muted);
+		border-style: dashed;
 		cursor: not-allowed;
 	}
 
@@ -1280,22 +1282,9 @@
 		font-size: var(--font-size-sm);
 	}
 
-	.btn-manual-tie {
+	.manual-tie-action {
 		width: 100%;
 		margin-top: var(--spacing-sm);
-		padding: var(--spacing-sm) var(--spacing-md);
-		border: 1px solid var(--accent-warning);
-		border-radius: var(--radius-sm);
-		background: color-mix(in srgb, var(--accent-warning) 12%, var(--bg-primary));
-		color: var(--text-primary);
-		font-size: var(--font-size-sm);
-		font-weight: 600;
-		cursor: pointer;
-		text-align: center;
-	}
-
-	.btn-manual-tie:hover {
-		background: color-mix(in srgb, var(--accent-warning) 22%, var(--bg-primary));
 	}
 
 	.manual-tie-dialog {

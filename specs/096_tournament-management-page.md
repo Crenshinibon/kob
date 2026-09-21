@@ -59,7 +59,7 @@ Protected route; same guard as the operations view (`tournament.orgId === user.i
   - `🔓 No scores in round N yet — assignments editable`
   - `🔒 Round N has scores — assignments and scoring mode locked`
   - `🏁 Completed` — only rename and delete remain.
-- Header links: Operations view · Check-in (097), as spaced chip links (same treatment as the operations `ops-nav`).
+- Header links: Operations view · Check-in (097), as `btn-secondary` chips (same chrome as the operations `ops-nav`).
 
 Data comes from a single `getManageData` query (no interval polling). Refresh after each mutation, on `afterNavigate` (so returning from Check-in does not keep a stale roster), and on `visibilitychange`. Check-in commands (`setPlayerCheckIn`, `closeCheckIn`, `reopenCheckIn`) also refresh `getManageData` and `getTournamentData` so the **Remove all not checked in (N)** count and the setup panel counts stay in sync. Every mutation re-validates the lock server-side (see Concurrency).
 
@@ -128,7 +128,7 @@ Add many players
 [Add players]
 ```
 
-For **random seed**, list order is the Seeding tie-break (094). The Players tab shows that order as **list position** (1-based `seedRank` under the hood). Order is editable via the **top / up / down / bottom** buttons while assignments are unlocked. A new player is appended (`seedRank = n+1`).
+For **random seed**, list order is the Seeding tie-break (094). The Players tab shows that order as **list position** (1-based `seedRank` under the hood). Order is editable via the **top / up / down / bottom** buttons while assignments are unlocked. When the round has scores, those buttons are hidden and a short hint says player order cannot be changed. A new player is appended (`seedRank = n+1`).
 
 | Phase                                                | Behaviour                                                                                                                                                                                                                                                                                                                                        |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -156,7 +156,7 @@ Player names are tiles. **Pointer long-press drag** (not HTML5 `dragstart` — t
 - **Refill** button: pack players top-to-bottom into `calculateCourtSizes(playerCount)` so only the bottom court is uneven. Flatten the current assignment court-1-to-N, slot order, then fill canonical sizes (not a re-snake by seed).
 - **Reset to computed** / **Reshuffle round 1** stay as today (see below).
 
-Whole-round lock: once **any** score exists in the round, tiles are not draggable (including later shifts).
+Whole-round lock: once **any** score exists in the round, tiles are not draggable (including later shifts), the move `<select>` is hidden, Refill / Reset / Reshuffle are hidden, and a short hint says players cannot be moved between courts.
 
 ### Validation (server-side, blocking)
 
@@ -370,7 +370,7 @@ In `setup` ([099](./099_tournament-setup-and-start.md)) this page shows the star
 
 ## i18n Keys (new)
 
-`manage_title`, `manage_tab_players`, `manage_tab_courts`, `manage_tab_rules`, `manage_tab_tournament`, `manage_lock_open`, `manage_lock_scored`, `manage_lock_completed`, `manage_search_players`, `manage_add_player`, `manage_add_joins`, `manage_add_reshuffle_note`, `manage_remove_player`, `manage_remove_confirm`, `manage_remove_unchecked`, `manage_remove_unchecked_confirm`, `manage_rename`, `manage_seed_points`, `manage_order`, `manage_order_up`, `manage_order_down`, `manage_order_top`, `manage_order_bottom`, `manage_regenerate_link`, `manage_regenerate_short`, `manage_regenerate_done`, `manage_badge_replacement_for`, `manage_badge_eliminated`, `manage_refill`, `manage_reset_assignments`, `manage_reshuffle_round1`, `manage_adjusted_badge`, `manage_warn_uneven`, `manage_warn_bracket_cross`, `manage_warn_ladder_jump`, `manage_rules_scoring_locked`, `manage_rounds_min_hint`, `manage_rounds_preseed_fixed`, `manage_finish_early`, `manage_finish_early_confirm`, `manage_finished_early_note`, `manage_reopen_round`, `manage_reopen_confirm`, `manage_reopen_discards_next`, `manage_reopen_undoes_roster`, `manage_reopen_completed`, `manage_reopen_clear_scores_first`, `manage_danger_zone`, `err_state_changed`, `err_reopen_has_scores`, `err_reopen_round1`, `err_round_locked`, `err_court_too_small`, `err_court_too_large`, `err_final_court_must_be_4`, `err_court_frozen`, `err_add_player_phase`, `err_remove_after_scores`, `err_roster_min_after_remove`, `err_rounds_below_current`, `err_rounds_final_court_size`, `err_name_taken`.
+`manage_title`, `manage_tab_players`, `manage_tab_courts`, `manage_tab_rules`, `manage_tab_tournament`, `manage_lock_open`, `manage_lock_scored`, `manage_lock_completed`, `manage_search_players`, `manage_add_player`, `manage_add_joins`, `manage_add_reshuffle_note`, `manage_remove_player`, `manage_remove_confirm`, `manage_remove_unchecked`, `manage_remove_unchecked_confirm`, `manage_rename`, `manage_seed_points`, `manage_order`, `manage_order_up`, `manage_order_down`, `manage_order_top`, `manage_order_bottom`, `manage_order_locked`, `manage_courts_locked`, `manage_regenerate_link`, `manage_regenerate_short`, `manage_regenerate_done`, `manage_badge_replacement_for`, `manage_badge_eliminated`, `manage_refill`, `manage_reset_assignments`, `manage_reshuffle_round1`, `manage_adjusted_badge`, `manage_warn_uneven`, `manage_warn_bracket_cross`, `manage_warn_ladder_jump`, `manage_rules_scoring_locked`, `manage_rounds_min_hint`, `manage_rounds_preseed_fixed`, `manage_finish_early`, `manage_finish_early_confirm`, `manage_finished_early_note`, `manage_reopen_round`, `manage_reopen_confirm`, `manage_reopen_discards_next`, `manage_reopen_undoes_roster`, `manage_reopen_completed`, `manage_reopen_clear_scores_first`, `manage_danger_zone`, `err_state_changed`, `err_reopen_has_scores`, `err_reopen_round1`, `err_round_locked`, `err_court_too_small`, `err_court_too_large`, `err_final_court_must_be_4`, `err_court_frozen`, `err_add_player_phase`, `err_remove_after_scores`, `err_roster_min_after_remove`, `err_rounds_below_current`, `err_rounds_final_court_size`, `err_name_taken`.
 
 ## Testing
 

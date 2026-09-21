@@ -27,12 +27,16 @@
 				<button
 					type="button"
 					onclick={() => goto(localizeHref(resolve('/privacy')))}
-					class="cookie-link-btn"
+					class="btn-link"
 				>
 					{m.cookie_learn_more()}
 				</button>
 			</p>
-			<button onclick={handleDismiss} class="cookie-btn" aria-label="Dismiss cookie notice">
+			<button
+				onclick={handleDismiss}
+				class="btn-compact btn-primary"
+				aria-label="Dismiss cookie notice"
+			>
 				OK
 			</button>
 		</div>
@@ -70,39 +74,5 @@
 		font-size: var(--font-size-sm);
 		color: var(--text-secondary);
 		line-height: 1.4;
-	}
-
-	.cookie-link-btn {
-		background: none;
-		border: none;
-		padding: 0;
-		margin: 0;
-		color: var(--accent-info);
-		text-decoration: underline;
-		font-size: inherit;
-		font-family: inherit;
-		cursor: pointer;
-		display: inline;
-	}
-
-	.cookie-link-btn:hover {
-		color: var(--text-primary);
-	}
-
-	.cookie-btn {
-		background: var(--accent-info);
-		color: var(--bg-primary);
-		border: none;
-		padding: 0.5rem 1.25rem;
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
-		font-weight: 600;
-		cursor: pointer;
-		white-space: nowrap;
-		transition: all var(--transition-base);
-	}
-
-	.cookie-btn:hover {
-		background: var(--text-primary);
 	}
 </style>

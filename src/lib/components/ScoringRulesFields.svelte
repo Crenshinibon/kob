@@ -179,7 +179,9 @@
 	}
 
 	.scoring-size-tabs button:disabled {
-		opacity: 0.45;
+		opacity: 1;
+		color: var(--text-muted);
+		border-style: dashed;
 		cursor: not-allowed;
 	}
 

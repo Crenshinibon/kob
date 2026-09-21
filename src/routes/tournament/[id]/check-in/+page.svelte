@@ -161,7 +161,7 @@
 				</button>
 				<button
 					type="button"
-					class="btn-secondary"
+					class="btn-compact btn-secondary"
 					data-testid="checkin-qr-{p.id}"
 					data-player-id={p.id}
 					data-player-name={p.name}

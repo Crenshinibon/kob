@@ -182,12 +182,17 @@ select:disabled {
    Kinds (color only): secondary (default), primary (highlight), danger,
    link (text action), inactive (muted, still clickable).
    Sizes: default 44px, compact (row / Clear), small (inline).
+   Disabled: never wash out with opacity. Form submits that become
+   available as the user fills the form stay visible (dashed, muted).
+   Actions locked until something else happens are hidden in markup
+   and replaced with a .hint.
 */
 button,
 a.btn-primary,
 a.btn-secondary,
 a.btn-danger,
 a.btn-inactive,
+a.btn-link,
 label.btn-small,
 label.btn-secondary {
 	display: inline-flex;
@@ -212,7 +217,6 @@ label.btn-secondary {
 
 button:disabled {
 	cursor: not-allowed;
-	opacity: 0.5;
 }
 
 .btn-primary {
@@ -229,10 +233,10 @@ button:disabled {
 }
 
 .btn-primary:disabled {
-	opacity: 1;
 	background-color: var(--bg-secondary);
 	color: var(--text-muted);
 	border-color: var(--border-default);
+	border-style: dashed;
 	box-shadow: none;
 }
 
@@ -248,6 +252,13 @@ button:disabled {
 	text-decoration: none;
 }
 
+.btn-secondary:disabled,
+.btn-small:disabled,
+.btn-compact:disabled {
+	color: var(--text-muted);
+	border-style: dashed;
+}
+
 .btn-danger {
 	background-color: var(--accent-error);
 	color: var(--bg-primary);
@@ -258,6 +269,13 @@ button:disabled {
 	background-color: var(--accent-error-hover);
 	border-color: var(--accent-error-hover);
 	text-decoration: none;
+}
+
+.btn-danger:disabled {
+	background-color: var(--bg-secondary);
+	color: var(--text-muted);
+	border-color: var(--border-default);
+	border-style: dashed;
 }
 
 .btn-inactive {
@@ -275,23 +293,24 @@ button:disabled {
 	text-decoration: none;
 }
 
-.btn-link {
-	display: inline-flex;
-	align-items: center;
+.btn-link,
+a.btn-link {
 	background: none;
 	border: none;
 	padding: 0;
 	min-height: 0;
 	color: var(--accent-info);
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
 	text-decoration: underline;
-	cursor: pointer;
 }
 
 .btn-link:hover {
 	color: var(--text-primary);
+}
+
+.hint {
+	font-size: var(--font-size-sm);
+	color: var(--text-secondary);
+	margin: 0 0 var(--spacing-sm) 0;
 }
 
 .btn-compact,

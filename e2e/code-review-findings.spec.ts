@@ -119,7 +119,7 @@ test.describe('Code review findings (spec 1040)', () => {
 		await scoreAllMatchesOnCourt(page, links[2]);
 
 		await page.goto(`/tournament/${tid}`);
-		await expect(page.locator('button.btn-disabled')).toBeVisible();
+		await expect(page.getByTestId('waiting-scores')).toBeVisible();
 
 		const result = await closeRoundViaFetch(page, tid);
 		expect(result.ok).toBe(false);
@@ -264,8 +264,8 @@ test.describe('Code review findings (spec 1040)', () => {
 		await page.goto(`/tournament/${tid}`);
 		await page.waitForSelector('.court-card', { timeout: 10000 });
 		await page.waitForTimeout(2000);
-		await page.waitForSelector('.btn-manual-tie', { timeout: 30000 });
-		await page.click('.btn-manual-tie');
+		await page.waitForSelector('.manual-tie-action', { timeout: 30000 });
+		await page.click('.manual-tie-action');
 		await page.waitForSelector('.manual-tie-dialog');
 		const moveDown = page.locator('.manual-rank-actions button').last();
 		if (await moveDown.isEnabled()) await moveDown.click();

@@ -131,7 +131,11 @@ test.describe('Manage page (096)', () => {
 		await expect(page.getByTestId('lock-indicator')).toContainText(/scores/i);
 		await page.getByTestId('tab-courts').click();
 		await expect(page.locator('[data-testid^="move-"]')).toHaveCount(0);
-		await expect(page.getByTestId('refill-courts')).toBeDisabled();
+		await expect(page.getByTestId('refill-courts')).toHaveCount(0);
+		await expect(page.getByTestId('courts-locked')).toBeVisible();
+		await page.getByTestId('tab-players').click();
+		await expect(page.getByTestId('order-locked')).toBeVisible();
+		await expect(page.locator('.order-btn')).toHaveCount(0);
 	});
 
 	test('4-player tournament is one court on the courts tab', async ({ page }) => {

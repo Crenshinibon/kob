@@ -794,5 +794,7 @@
 	"player_record_vs_above": "Darüber: {name}",
 	"player_record_vs_below": "Darunter: {name}",
 	"player_score_could_not_save": "Speichern fehlgeschlagen",
-	"ops_back_office_hint": "Satzregeln, Tie-Break, Rücktritt und Verletzungsmeldung sind unter Verwalten:"
+	"ops_back_office_hint": "Satzregeln, Tie-Break, Rücktritt und Verletzungsmeldung sind unter Verwalten:",
+	"manage_order_locked": "Die Reihenfolge lässt sich nicht ändern, solange diese Runde Ergebnisse hat.",
+	"manage_courts_locked": "Spieler können nicht zwischen Plätzen verschoben werden, solange diese Runde Ergebnisse hat."
 }

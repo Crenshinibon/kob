@@ -72,6 +72,8 @@ All actions share one layout (44px min height, uppercase, `letter-spacing: 0.06e
 
 Sizes: default; `btn-compact` for row actions; `btn-small` for inline tweaks. Defined in `static/global.css`.
 
+**Unavailable actions:** do not wash a chip out with `opacity`. If the action is locked until something else happens (round has scores, waiting on other courts), **hide the button** and show a short `.hint`. If a form submit becomes available as the user fills the form (Start with fewer than 4 players, Create with an empty name), keep it visible using the disabled kind: readable muted text, dashed border, no 50% fade.
+
 ```css
 .btn-primary {
 	background: #ff6b35;
