@@ -3,7 +3,12 @@ import * as m from '$lib/paraglide/messages';
 import { db } from '$lib/server/db';
 import { court, courtRotation, match, tournament, player } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { getMinPointsForSet, getScoringLabel, type TieBreakFactorId, type TieBreakDecidingOutcome } from '$lib/tournament-logic';
+import {
+	getMinPointsForSet,
+	getScoringLabel,
+	type TieBreakFactorId,
+	type TieBreakDecidingOutcome
+} from '$lib/tournament-logic';
 import {
 	buildCompletedRoundsBefore,
 	persistRotationDiceRolls,
@@ -191,8 +196,7 @@ export async function fetchCourtPageData(
 		injuredPlayerIds: row.injuredPlayerIds ?? undefined
 	}));
 
-	const isCurrentRound =
-		tourney.status === 'active' && rotation.roundNumber === currentRound;
+	const isCurrentRound = tourney.status === 'active' && rotation.roundNumber === currentRound;
 	const useSnapshot = !isCurrentRound || tourney.status === 'completed';
 
 	const standingsResult = resolveRotationStandings({

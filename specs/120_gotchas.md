@@ -112,7 +112,9 @@ Or modify package.json:
 "build": "npm run db:migrate && vite build"
 ```
 
-**Important**: Set `DATABASE_URL` environment variable in Vercel dashboard.
+**Important**: Set `DATABASE_URL` (and usually `DATABASE_URL_UNPOOLED`) in Vercel. Production and each preview should **not** share one URL.
+
+The Neon–Vercel integration creates an isolated branch `preview/<git-branch>` by **cloning production**. Data and schema writes stay on that clone. `bun run build` → `scripts/db-push.ts` applies `drizzle/*.sql` (including `0016`) then `drizzle-kit push --force` **only to that branch**. Sibling previews and production are not mutated. Reset the Neon branch if you need a fresh clone of later production data. Cleanup: `scripts/cleanup-neon-branches.ts` and `.github/workflows/neon-branch-cleanup*.yml`.
 
 ### Better Auth ORIGIN Mismatch
 

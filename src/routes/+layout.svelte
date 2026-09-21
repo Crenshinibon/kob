@@ -50,12 +50,12 @@
 
 <div class="app-container">
 	{#if data?.user}
-		<div class="v1-banner">
+		<div class="v1-banner no-print">
 			{m.v1_banner()}
 		</div>
 	{/if}
 
-	<nav class="top-nav">
+	<nav class="top-nav no-print">
 		<div class="nav-links">
 			<a href={localizeHref('/docs')} data-sveltekit-preload>{m.nav_docs()}</a>
 			<a href={localizeHref('/faq')} data-sveltekit-preload>{m.nav_faq()}</a>
@@ -63,7 +63,11 @@
 		<LanguageSwitcher />
 		{#if data?.user}
 			<span class="user-email">{data.user.email}</span>
-			<button type="button" onclick={handleSignOut} class="btn-signout">{m.sign_out()}</button>
+			<button type="button" onclick={handleSignOut} class="btn-compact btn-danger"
+				>{m.sign_out()}</button
+			>
+		{:else}
+			<a href={localizeHref('/login')} class="nav-auth">{m.login()}</a>
 		{/if}
 	</nav>
 
@@ -71,7 +75,7 @@
 		{@render children()}
 	</main>
 
-	<footer class="site-footer">
+	<footer class="site-footer no-print">
 		<a
 			href="https://buymeacoffee.com/accomade"
 			target="_blank"
@@ -164,21 +168,18 @@
 		color: var(--text-secondary);
 	}
 
-	.btn-signout {
-		background: transparent;
-		color: var(--accent-error);
-		border: 2px solid var(--accent-error);
-		padding: 0.4rem 0.75rem;
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
+	.nav-auth {
+		padding: 0.25rem 0.5rem;
+		font-size: 0.8rem;
 		font-weight: 600;
-		cursor: pointer;
-		transition: all var(--transition-base);
+		color: var(--text-muted);
+		text-decoration: none;
+		border-radius: 4px;
 	}
 
-	.btn-signout:hover {
-		background-color: var(--accent-error);
-		color: var(--bg-primary);
+	.nav-auth:hover {
+		background: var(--bg-hover);
+		color: var(--text-primary);
 	}
 
 	main {
@@ -192,5 +193,26 @@
 		padding: var(--spacing-lg);
 		border-top: 1px solid var(--border-default);
 		background-color: var(--bg-secondary);
+	}
+
+	@media print {
+		:global(.no-print) {
+			display: none !important;
+		}
+
+		.app-container {
+			display: block;
+			min-height: 0;
+			background: #fff;
+			color: #000;
+		}
+
+		main {
+			flex: none;
+		}
+
+		.site-footer {
+			position: static;
+		}
 	}
 </style>

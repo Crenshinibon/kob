@@ -192,7 +192,7 @@ export function getCourtConfiguration(playerCount: number): {
 	standardCourts: number;
 	bottomCourtSize: number | null;
 } {
-	if (playerCount < 8) throw new Error(`Player count must be at least 8, got ${playerCount}`);
+	if (playerCount < 4) throw new Error(`Player count must be at least 4, got ${playerCount}`);
 	if (playerCount > 64) throw new Error(`Player count must be at most 64, got ${playerCount}`);
 
 	const leftover = playerCount % 4;
@@ -220,17 +220,18 @@ export function calculateCourtSizes(playerCount: number): number[] {
 // ============================================================================
 
 export function calculateRoundCount(courtCount: number, formatType: FormatType): number {
-	if (courtCount < 2) throw new Error(`Court count must be at least 2, got ${courtCount}`);
+	if (courtCount < 1) throw new Error(`Court count must be at least 1, got ${courtCount}`);
+	if (courtCount === 1) return 1;
 	if (formatType === 'preseed') return Math.floor(Math.log2(courtCount - 1)) + 2;
-	return 4;
+	return Math.min(courtCount, 4);
 }
 
 // ============================================================================
 // Tournament Initialization
 // ============================================================================
 
-/** Minimum players required to create a tournament or voluntarily retire below this count. */
-export const MIN_TOURNAMENT_PLAYERS = 8;
+/** Minimum players required to start a tournament (one 4p court). */
+export const MIN_TOURNAMENT_PLAYERS = 4;
 /** Minimum active players that must remain after voluntary retirement (not replacement). */
 export const MIN_ACTIVE_PLAYERS_AFTER_RETIREMENT = 2;
 
@@ -246,7 +247,7 @@ export type CreateTournamentOpts = {
 	setsToWin?: number;
 	decidingSetPoints?: number;
 	tieBreakConfig?: TieBreakConfig;
-	/** When set (e.g. after retirement), skips calculateCourtSizes and the 8-player minimum. */
+	/** When set (e.g. after retirement), skips calculateCourtSizes and the 4-player minimum. */
 	courtSizes?: readonly number[];
 };
 
@@ -272,7 +273,7 @@ export function createInitialState(opts: CreateTournamentOpts): TournamentState 
 			throw new Error(`Court sizes sum to ${sum}, expected ${playerCount}`);
 		}
 	} else if (playerCount < MIN_TOURNAMENT_PLAYERS || playerCount > 64) {
-		throw new Error(`Player count must be 8-64, got ${playerCount}`);
+		throw new Error(`Player count must be 4-64, got ${playerCount}`);
 	}
 	return {
 		config: {
@@ -2138,11 +2139,21 @@ export type ScoringOverrides = Record<
 	{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
 >;
 
+export type CourtScoringRules = {
+	pointsToWin: number;
+	winBy: number;
+	setsToWin: number;
+	decidingSetPoints: number;
+};
+
+export const SCORING_COURT_SIZES = [4, 3, 5, 6] as const;
+export type ScoringCourtSize = (typeof SCORING_COURT_SIZES)[number];
+
 export function getEffectiveScoring(
 	courtSize: number,
 	config: Pick<TournamentConfig, 'pointsToWin' | 'setsToWin' | 'decidingSetPoints' | 'winBy'>,
 	overrides?: ScoringOverrides | null
-): { pointsToWin: number; setsToWin: number; decidingSetPoints: number; winBy: number } {
+): CourtScoringRules {
 	const key = String(courtSize);
 	const ovr = overrides?.[key];
 	return {
@@ -2150,6 +2161,89 @@ export function getEffectiveScoring(
 		setsToWin: ovr?.setsToWin ?? config.setsToWin,
 		decidingSetPoints: ovr?.decidingSetPoints ?? config.decidingSetPoints,
 		winBy: ovr?.winBy ?? config.winBy
+	};
+}
+
+export function baseCourtScoring(
+	config: Partial<CourtScoringRules> | null | undefined
+): CourtScoringRules {
+	return {
+		pointsToWin: config?.pointsToWin ?? 21,
+		winBy: config?.winBy ?? 2,
+		setsToWin: config?.setsToWin ?? 1,
+		decidingSetPoints: config?.decidingSetPoints ?? 15
+	};
+}
+
+export function inferScoringMode(rules: CourtScoringRules): ScoringMode {
+	if (rules.setsToWin <= 1 && rules.pointsToWin === 21 && rules.winBy === 2) return 'single-21';
+	if (
+		rules.setsToWin === 2 &&
+		rules.pointsToWin === 21 &&
+		rules.winBy === 2 &&
+		rules.decidingSetPoints === 15
+	) {
+		return 'best-of-3';
+	}
+	return 'custom';
+}
+
+export function displayedScoringForCourt(
+	size: number,
+	config: CourtScoringRules,
+	overrides?: ScoringOverrides | null
+): CourtScoringRules {
+	const effective = getEffectiveScoring(size, config, overrides);
+	return {
+		pointsToWin: getMinPointsForSet(1, size, config, overrides),
+		winBy: effective.winBy,
+		setsToWin: effective.setsToWin,
+		decidingSetPoints: effective.decidingSetPoints
+	};
+}
+
+export function scoringDraftFromConfig(
+	config: Partial<CourtScoringRules> | null | undefined,
+	overrides?: ScoringOverrides | null
+): Record<string, CourtScoringRules> {
+	const base = baseCourtScoring(config);
+	const draft: Record<string, CourtScoringRules> = { '4': { ...base } };
+	for (const size of [3, 5, 6] as const) {
+		draft[String(size)] = displayedScoringForCourt(size, base, overrides);
+	}
+	return draft;
+}
+
+export const MIN_POINTS_PER_SET = 6;
+export const MAX_POINTS_PER_SET = 30;
+
+export function clampPointsPerSet(value: number, fallback: number): number {
+	const rounded = Math.round(value);
+	if (!Number.isFinite(rounded)) return fallback;
+	return Math.min(MAX_POINTS_PER_SET, Math.max(MIN_POINTS_PER_SET, rounded));
+}
+
+export function clampCourtScoringRules(rules: CourtScoringRules): CourtScoringRules {
+	return {
+		pointsToWin: clampPointsPerSet(rules.pointsToWin, 21),
+		winBy: rules.winBy === 1 ? 1 : 2,
+		setsToWin: rules.setsToWin >= 2 ? 2 : 1,
+		decidingSetPoints: clampPointsPerSet(rules.decidingSetPoints, 15)
+	};
+}
+
+export function scoringPayloadFromDraft(draft: Record<string, CourtScoringRules>): {
+	four: CourtScoringRules;
+	scoringOverrides: ScoringOverrides;
+} {
+	const four = clampCourtScoringRules(draft['4'] ?? baseCourtScoring(null));
+	return {
+		four,
+		scoringOverrides: {
+			'3': clampCourtScoringRules(draft['3'] ?? displayedScoringForCourt(3, four, null)),
+			'5': clampCourtScoringRules(draft['5'] ?? displayedScoringForCourt(5, four, null)),
+			'6': clampCourtScoringRules(draft['6'] ?? displayedScoringForCourt(6, four, null))
+		}
 	};
 }
 

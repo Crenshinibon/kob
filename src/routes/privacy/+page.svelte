@@ -14,7 +14,7 @@
 </svelte:head>
 
 <div class="privacy-page">
-	<button type="button" onclick={handleBack} class="back-btn">&larr; {m.back()}</button>
+	<button type="button" onclick={handleBack} class="btn-link">&larr; {m.back()}</button>
 
 	<h1>{m.privacy_title()}</h1>
 
@@ -69,18 +69,8 @@
 		padding: 1.5rem;
 	}
 
-	.back-btn {
-		background: transparent;
-		color: var(--accent-info);
-		border: none;
-		padding: 0.5rem 0;
-		font-size: var(--font-size-base);
-		cursor: pointer;
+	.privacy-page .btn-link {
 		margin-bottom: 1rem;
-	}
-
-	.back-btn:hover {
-		color: var(--text-primary);
 	}
 
 	h1 {

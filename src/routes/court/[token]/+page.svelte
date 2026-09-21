@@ -6,7 +6,7 @@
 	import QRCode from 'qrcode';
 	import * as msg from '$lib/paraglide/messages';
 
-	import { saveScore, saveSetScore } from './scores.remote';
+	import { saveScore, saveSetScore, clearScore } from './scores.remote';
 	import { getCourtData } from './court-data.remote';
 	import type { CourtPageData } from '$lib/server/court-page-data';
 	import { createScoreSchema, createSetScoreSchema } from './scoreSchema';
@@ -16,8 +16,7 @@
 		type TieBreakFactorId,
 		type TieBreakDecidingOutcome
 	} from '$lib/tournament-logic';
-	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
-	import { formatDiff, formatPoints } from '$lib/i18n/format';
+	import CourtStandingsTable from '$lib/components/CourtStandingsTable.svelte';
 
 	interface MatchRow {
 		id: number;
@@ -90,9 +89,22 @@
 	let editingMatches = $state<Set<number>>(new Set());
 	let savedScores = new SvelteMap<number, { teamAScore: number; teamBScore: number }>();
 	let formErrors = new SvelteMap<number, string[]>();
+	let scoreFocused = $state(false);
+	let pageHidden = $state(false);
 
 	$effect(() => {
-		if (savingMatches.size > 0) return;
+		if (!browser) return;
+		const onVis = () => {
+			pageHidden = document.hidden;
+			if (!document.hidden) courtQuery.refresh().catch(() => {});
+		};
+		document.addEventListener('visibilitychange', onVis);
+		pageHidden = document.hidden;
+		return () => document.removeEventListener('visibilitychange', onVis);
+	});
+
+	$effect(() => {
+		if (savingMatches.size > 0 || scoreFocused || pageHidden) return;
 		const interval = setInterval(() => {
 			courtQuery.refresh().catch(() => {});
 		}, 5000);
@@ -100,23 +112,6 @@
 	});
 
 	const data = $derived(courtQuery.current ?? routeData.courtPageData);
-
-	const showTieBreakIcons = $derived(
-		data.standings.some((s: StandingRow) => s.tiedFactors.length > 0 || s.decidingFactor)
-	);
-
-	function tieBreakFactorLabel(id: TieBreakFactorId): string {
-		const labels: Record<TieBreakFactorId, () => string> = {
-			round_points: msg.tie_break_factor_round_points,
-			round_diff: msg.tie_break_factor_round_diff,
-			total_points: msg.tie_break_factor_total_points,
-			total_diff: msg.tie_break_factor_total_diff,
-			initial_order: msg.tie_break_factor_initial_order,
-			dice: msg.tie_break_factor_dice,
-			manual: msg.tie_break_factor_manual
-		};
-		return labels[id]();
-	}
 
 	function getSavedScore(match: MatchRow): { teamAScore: number; teamBScore: number } | null {
 		const saved = savedScores.get(match.id);
@@ -126,6 +121,13 @@
 			return { teamAScore: match.teamAScore, teamBScore: match.teamBScore };
 		}
 		return null;
+	}
+
+	function scorePrefill(match: MatchRow, editing: boolean, side: 'a' | 'b'): string | undefined {
+		if (!editing) return undefined;
+		const saved = getSavedScore(match);
+		if (!saved) return undefined;
+		return String(side === 'a' ? saved.teamAScore : saved.teamBScore);
 	}
 
 	function isMatchCompleted(matchId: number, serverScore: number | null): boolean {
@@ -411,8 +413,8 @@
 	formObj: {
 		enhance(cb: (fi: ScoreSubmitForm) => void | Promise<void>): Record<string, unknown>;
 		fields: ScoreSubmitForm['fields'] & {
-			teamAScore: Record<string, unknown>;
-			teamBScore: Record<string, unknown>;
+			teamAScore: { as: (type: string, value?: string | number) => Record<string, unknown> };
+			teamBScore: { as: (type: string, value?: string | number) => Record<string, unknown> };
 		};
 	},
 	match: MatchRow,
@@ -437,12 +439,13 @@
 				<p>{getTeamDisplay(match, 'a')}</p>
 				<input
 					data-testid="team-a-score-{matchId}"
-					type="number"
-					name="teamAScore"
 					min="0"
 					required
 					disabled={savingMatches.has(matchId)}
-					{...formObj.fields.teamAScore}
+					onfocus={() => (scoreFocused = true)}
+					onblur={() => (scoreFocused = false)}
+					{...formObj.fields.teamAScore.as('text', scorePrefill(match, editing, 'a'))}
+					type="number"
 				/>
 			</div>
 			<div class="vs">{msg.court_vs()}</div>
@@ -450,12 +453,13 @@
 				<p>{getTeamDisplay(match, 'b')}</p>
 				<input
 					data-testid="team-b-score-{matchId}"
-					type="number"
-					name="teamBScore"
 					min="0"
 					required
 					disabled={savingMatches.has(matchId)}
-					{...formObj.fields.teamBScore}
+					onfocus={() => (scoreFocused = true)}
+					onblur={() => (scoreFocused = false)}
+					{...formObj.fields.teamBScore.as('text', scorePrefill(match, editing, 'b'))}
+					type="number"
 				/>
 			</div>
 		</div>
@@ -638,14 +642,35 @@
 													<span class="saved" data-testid="saved-{setMatch.id}"
 														>{msg.court_saved()}</span
 													>
-													{#if data.isAuthenticated && data.isEditable}
-														<button
-															class="btn-edit"
-															onclick={() =>
-																(editingMatches = new Set([...editingMatches, setMatch.id]))}
-														>
-															{msg.edit_btn()}
-														</button>
+													{#if data.isEditable}
+														<div class="completed-actions">
+															<button
+																type="button"
+																class="btn-compact btn-secondary"
+																data-testid="edit-score-{setMatch.id}"
+																onclick={() =>
+																	(editingMatches = new Set([...editingMatches, setMatch.id]))}
+															>
+																{msg.edit_btn()}
+															</button>
+															<form
+																class="inline-clear"
+																{...clearScore.for(setMatch.id).enhance(async ({ submit }) => {
+																	await submit();
+																	savedScores.delete(setMatch.id);
+																	await courtQuery.refresh();
+																})}
+															>
+																<input type="hidden" name="token" value={page.params.token} />
+																<input type="hidden" name="matchId" value={setMatch.id} />
+																<button
+																	type="submit"
+																	class="btn-compact btn-danger"
+																	data-testid="clear-score-{setMatch.id}"
+																	>{msg.court_clear_score()}</button
+																>
+															</form>
+														</div>
 													{/if}
 												</div>
 											{:else if data.isEditable}
@@ -709,14 +734,35 @@
 												</p>
 												<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span
 												>
-												{#if data.isAuthenticated && data.isEditable}
-													<button
-														class="btn-edit"
-														onclick={() =>
-															(editingMatches = new Set([...editingMatches, match.id]))}
-													>
-														{msg.edit_btn()}
-													</button>
+												{#if data.isEditable}
+													<div class="completed-actions">
+														<button
+															type="button"
+															class="btn-compact btn-secondary"
+															data-testid="edit-score-{match.id}"
+															onclick={() =>
+																(editingMatches = new Set([...editingMatches, match.id]))}
+														>
+															{msg.edit_btn()}
+														</button>
+														<form
+															class="inline-clear"
+															{...clearScore.for(match.id).enhance(async ({ submit }) => {
+																await submit();
+																savedScores.delete(match.id);
+																await courtQuery.refresh();
+															})}
+														>
+															<input type="hidden" name="token" value={page.params.token} />
+															<input type="hidden" name="matchId" value={match.id} />
+															<button
+																type="submit"
+																class="btn-compact btn-danger"
+																data-testid="clear-score-{match.id}"
+																>{msg.court_clear_score()}</button
+															>
+														</form>
+													</div>
 												{/if}
 											</div>
 										{:else if data.isEditable}
@@ -773,13 +819,33 @@
 										<strong>{getSavedScore(match)?.teamBScore}</strong>
 									</p>
 									<span class="saved" data-testid="saved-{match.id}">{msg.court_saved()}</span>
-									{#if data.isAuthenticated && data.isEditable}
-										<button
-											class="btn-edit"
-											onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
-										>
-											{msg.edit_btn()}
-										</button>
+									{#if data.isEditable}
+										<div class="completed-actions">
+											<button
+												type="button"
+												class="btn-compact btn-secondary"
+												data-testid="edit-score-{match.id}"
+												onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
+											>
+												{msg.edit_btn()}
+											</button>
+											<form
+												class="inline-clear"
+												{...clearScore.for(match.id).enhance(async ({ submit }) => {
+													await submit();
+													savedScores.delete(match.id);
+													await courtQuery.refresh();
+												})}
+											>
+												<input type="hidden" name="token" value={page.params.token} />
+												<input type="hidden" name="matchId" value={match.id} />
+												<button
+													type="submit"
+													class="btn-compact btn-danger"
+													data-testid="clear-score-{match.id}">{msg.court_clear_score()}</button
+												>
+											</form>
+										</div>
 									{/if}
 								</div>
 							{:else if data.isEditable}
@@ -800,56 +866,11 @@
 	{/if}
 
 	{#if data.standings.length > 0}
-		<section class="standings" transition:slide>
-			<h2>{msg.court_standings()}</h2>
-			{#if showTieBreakIcons}
-				<p class="standings-legend">{msg.tie_break_standings_legend()}</p>
-			{/if}
-			{#if data.court.courtSize === 3}
-				<p class="standings-note">
-					{msg.court_3p_desc({ points: data.court.pointsToWin ?? 21 })}
-				</p>
-			{/if}
-			<table>
-				<thead>
-					<tr>
-						<th>{msg.court_3p_table_header()}</th>
-						<th>{msg.court_3p_table_player()}</th>
-						{#if showTieBreakIcons}
-							<th>{msg.tie_break_icons_header()}</th>
-						{/if}
-						{#if data.court.courtSize === 5 || data.court.courtSize === 6}
-							<th>{msg.court_3p_table_avg()}</th>
-						{/if}
-						<th>{msg.court_3p_table_points()}</th>
-						<th>{msg.court_3p_table_diff()}</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each data.standings as s (s.id)}
-						<tr transition:slide>
-							<td>{s.rank}</td>
-							<td>{s.name}</td>
-							{#if showTieBreakIcons}
-								<td>
-									<TieBreakFactorIcons
-										tiedFactors={s.tiedFactors}
-										decidingFactor={s.decidingFactor}
-										decidingOutcome={s.decidingOutcome}
-										getLabel={tieBreakFactorLabel}
-									/>
-								</td>
-							{/if}
-							{#if data.court.courtSize === 5 || data.court.courtSize === 6}
-								<td>{s.avgPoints != null ? formatPoints(s.avgPoints) : '—'}</td>
-							{/if}
-							<td>{formatPoints(s.points)}</td>
-							<td>{formatDiff(s.diff)}</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</section>
+		<CourtStandingsTable
+			standings={data.standings}
+			courtSize={data.court.courtSize}
+			pointsToWin={data.court.pointsToWin ?? 21}
+		/>
 	{/if}
 </main>
 
@@ -1283,42 +1304,17 @@
 		font-weight: 700;
 	}
 
-	.btn-edit {
-		background-color: var(--accent-warning);
-		color: var(--bg-primary);
-		padding: var(--spacing-xs) var(--spacing-sm);
-		border: none;
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-xs);
-		font-weight: 600;
-		cursor: pointer;
-		margin-left: var(--spacing-sm);
-		transition: background-color var(--transition-fast);
+	.completed-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-xs);
+		flex-wrap: wrap;
 	}
 
-	.btn-edit:hover {
-		background-color: #e6b800;
-	}
-
-	.btn-secondary {
-		background-color: var(--text-muted);
-		color: var(--bg-primary);
-		padding: var(--spacing-sm) var(--spacing-md);
-		border: none;
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
-		font-weight: 600;
-		cursor: pointer;
-		transition: background-color var(--transition-fast);
-	}
-
-	.btn-secondary:hover:not(:disabled) {
-		background-color: var(--text-secondary);
-	}
-
-	.btn-secondary:disabled {
-		background-color: var(--border-default);
-		cursor: not-allowed;
+	.inline-clear {
+		display: inline-flex;
+		margin: 0;
 	}
 
 	.form-actions {
@@ -1390,40 +1386,6 @@
 		text-transform: uppercase;
 	}
 
-	.btn-primary {
-		background-color: var(--accent-primary);
-		color: var(--bg-primary);
-		padding: var(--spacing-sm) var(--spacing-md);
-		border: 2px solid var(--accent-primary);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		cursor: pointer;
-		align-self: center;
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		transition: all var(--transition-base);
-	}
-
-	.btn-primary:hover:not(:disabled) {
-		background-color: var(--accent-primary-hover);
-		box-shadow: var(--glow-primary);
-	}
-
-	.btn-primary:active:not(:disabled) {
-		transform: scale(0.95);
-	}
-
-	.btn-primary:disabled {
-		background-color: var(--bg-secondary);
-		border-color: var(--border-default);
-		color: var(--text-muted);
-		cursor: not-allowed;
-	}
-
 	.spinner {
 		width: 16px;
 		height: 16px;
@@ -1437,49 +1399,5 @@
 		to {
 			transform: rotate(360deg);
 		}
-	}
-
-	.standings {
-		margin-bottom: var(--spacing-xl);
-	}
-
-	.standings h2 {
-		font-size: var(--font-size-lg);
-		margin-bottom: var(--spacing-sm);
-		color: var(--text-primary);
-	}
-
-	table {
-		width: 100%;
-		border-collapse: collapse;
-		background-color: var(--bg-card);
-		border-radius: var(--radius-md);
-		overflow: hidden;
-		border: 2px solid var(--border-default);
-	}
-
-	th,
-	td {
-		padding: var(--spacing-sm);
-		text-align: left;
-		border-bottom: 1px solid var(--border-default);
-	}
-
-	th {
-		font-weight: 700;
-		font-size: var(--font-size-sm);
-		background-color: var(--bg-secondary);
-		color: var(--text-primary);
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-	}
-
-	td {
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-	}
-
-	tr:last-child td {
-		border-bottom: none;
 	}
 </style>

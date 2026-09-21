@@ -1,5 +1,7 @@
 # Incomplete Rosters — Spec Index
 
+Shipped. Leftover 3/5/6 courts, virtual vs physical courts, and redistribution for non-multiples of 4 are in the app. The start floor is **4** players ([099](./099_tournament-setup-and-start.md)), not 8. The notes below keep the original design decisions.
+
 Replaces the original `600_incomplete-rosters.md` (deleted). Split into focused sub-specs.
 
 ## Sub-Specs

@@ -11,6 +11,7 @@ import {
 	calculateCourtStandings,
 	explainCourtStandings,
 	buildStandingsTieBreakContext,
+	getDecidingTieBreakFactor,
 	normalizeTieBreakConfig,
 	type CourtResult,
 	type CourtStandings,
@@ -18,8 +19,10 @@ import {
 	type MatchData,
 	type Player,
 	type TieBreakConfig,
+	type TieBreakContext,
 	type TieBreakDecidingOutcome,
-	type TieBreakFactorId
+	type TieBreakFactorId,
+	type PlayerRoundStats
 } from '$lib/tournament-logic';
 
 export type ExplainedCourtStanding = CourtStandings & {
@@ -34,7 +37,18 @@ export type ResolveRotationStandingsResult = {
 	diceRolls: Record<string, number>;
 	tieBreakConfig: TieBreakConfig;
 	fromSnapshot: boolean;
+	pairDecidingFactor: (higherId: number, lowerId: number) => TieBreakFactorId | null;
 };
+
+function pairDecidingFactorFor(
+	config: TieBreakConfig,
+	context: TieBreakContext & {
+		roundStats?: Map<number, PlayerRoundStats>;
+		totalStats?: Map<number, { totalPoints: number; totalDiff: number }>;
+	}
+): (higherId: number, lowerId: number) => TieBreakFactorId | null {
+	return (higherId, lowerId) => getDecidingTieBreakFactor(higherId, lowerId, config, context);
+}
 
 function rotationPlayerIds(rotation: typeof courtRotation.$inferSelect): number[] {
 	return [
@@ -287,7 +301,8 @@ export function computeExplainedStandings(opts: {
 		standings: applyStandingsExplanations(standings, playerNames, tieBreakConfig, tbContext),
 		diceRolls: mutableDiceRolls,
 		tieBreakConfig,
-		fromSnapshot: false
+		fromSnapshot: false,
+		pairDecidingFactor: pairDecidingFactorFor(tieBreakConfig, tbContext.context)
 	};
 }
 
@@ -301,6 +316,7 @@ export function resolveRotationStandings(opts: {
 	courtSizes: readonly number[];
 	tourney: typeof tournament.$inferSelect;
 	useSnapshot: boolean;
+	includeUnscored?: boolean;
 }): ResolveRotationStandingsResult {
 	const {
 		rotation,
@@ -340,16 +356,18 @@ export function resolveRotationStandings(opts: {
 			standings: applyStandingsExplanations(baseStandings, playerNames, tieBreakConfig, tbContext),
 			diceRolls: mutableDiceRolls,
 			tieBreakConfig,
-			fromSnapshot: true
+			fromSnapshot: true,
+			pairDecidingFactor: pairDecidingFactorFor(tieBreakConfig, tbContext.context)
 		};
 	}
 
-	if (!matchData.some((m) => m.teamAScore !== null)) {
+	if (!matchData.some((m) => m.teamAScore !== null) && !opts.includeUnscored) {
 		return {
 			standings: [],
 			diceRolls: { ...(rotation.diceRolls ?? {}) },
 			tieBreakConfig: normalizeTieBreakConfig(tourney.tieBreakConfig ?? null),
-			fromSnapshot: false
+			fromSnapshot: false,
+			pairDecidingFactor: () => null
 		};
 	}
 

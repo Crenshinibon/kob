@@ -11,7 +11,7 @@
 		<p class="lead">{m.faq_lead()}</p>
 	</header>
 
-	<nav class="faq-toc" aria-label="{m.faq_categories()}">
+	<nav class="faq-toc" aria-label={m.faq_categories()}>
 		<ul>
 			<li><a href="#getting-started">{m.faq_getting_started()}</a></li>
 			<li><a href="#formats">{m.faq_formats()}</a></li>

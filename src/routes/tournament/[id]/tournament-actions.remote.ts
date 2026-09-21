@@ -39,6 +39,7 @@ import {
 	type PreseedRetirementPolicy
 } from '$lib/server/tournament-logic';
 import { getTournamentData } from './tournament-data.remote';
+import { getManageData } from './manage/manage-data.remote';
 import {
 	buildCompletedRoundsBefore,
 	getCompletedRoundCourtResults,
@@ -49,8 +50,76 @@ import {
 	buildRound1AssignmentsFromPlayers,
 	assignmentCourtSize,
 	buildMatchInsertRows,
-	prevalidateAssignments
+	prevalidateAssignments,
+	newPlayerToken,
+	startTournament,
+	StartTournamentError,
+	rebuildCurrentRound
 } from '$lib/server/tournament-orchestration';
+import { reopenLastRound } from '$lib/server/manage-orchestration';
+
+async function refreshOrgViews(tournamentId: number): Promise<void> {
+	await Promise.all([
+		getTournamentData({ tournamentId }).refresh(),
+		getManageData({ tournamentId }).refresh()
+	]);
+}
+
+export const startTournamentForm = form(
+	v.object({
+		tournamentId: v.pipe(v.number(), v.minValue(1)),
+		checkedInOnly: v.optional(v.boolean(), false)
+	}),
+	async ({ tournamentId, checkedInOnly }) => {
+		const event = getRequestEvent();
+		const user = event.locals.user;
+		if (!user) error(401, m.login_prompt());
+
+		try {
+			await startTournament({
+				tournamentId,
+				orgId: user.id,
+				checkedInOnly: checkedInOnly === true
+			});
+		} catch (err) {
+			if (err instanceof StartTournamentError) {
+				if (err.code === 'not_found') error(404, m.tournament_not_found());
+				if (err.code === 'not_setup') error(400, m.err_tournament_already_started());
+				if (err.code === 'conflict') error(409, m.err_tournament_already_started());
+				if (err.code === 'min_players') {
+					error(400, m.err_min_players({ count: 4, entered: err.entered ?? 0 }));
+				}
+				if (err.code === 'max_players') {
+					error(400, m.err_max_players({ count: 64, entered: err.entered ?? 0 }));
+				}
+			}
+			throw err;
+		}
+
+		await refreshOrgViews(tournamentId);
+		redirectLocalized(303, `/tournament/${tournamentId}`, getRequestEvent());
+	}
+);
+
+export const reopenLastRoundForm = form(
+	v.object({
+		tournamentId: v.pipe(v.number(), v.minValue(1))
+	}),
+	async ({ tournamentId }) => {
+		const event = getRequestEvent();
+		const user = event.locals.user;
+		if (!user) error(401, m.login_prompt());
+
+		const [tourney] = await db
+			.select()
+			.from(tournament)
+			.where(and(eq(tournament.id, tournamentId), eq(tournament.orgId, user.id)));
+		if (!tourney) error(404, m.tournament_not_found());
+		await reopenLastRound(tourney);
+		await refreshOrgViews(tournamentId);
+		return { success: true };
+	}
+);
 
 function parseCourtSizes(tourney: typeof tournament.$inferSelect): number[] {
 	return tourney.courtSizes
@@ -158,8 +227,9 @@ export const closeRoundForm = form(
 			error(400, m.err_round_incomplete());
 		}
 
-		// Apply redistribution sizing for the next round when active roster shrank.
-		if (activePlayerCount !== tourney.playerCount) {
+		// Next-round sizes always come from the active roster, not a manual current layout.
+		const hasManualLayout = currentRotations.some((r) => r.manualAdjustedAt);
+		if (hasManualLayout || activePlayerCount !== tourney.playerCount) {
 			const newConfig = recalculateCourtConfigAfterRetirement(activePlayerCount);
 			courtSizes = newConfig.courtSizes;
 			await db
@@ -332,13 +402,14 @@ export const closeRoundForm = form(
 				.set({
 					status: 'completed',
 					currentRound: closedState.roundsCompleted,
+					completedAt: new Date(),
 					lastActivityAt: new Date()
 				})
 				.where(and(eq(tournament.id, tournamentId), eq(tournament.currentRound, currentRound)))
 				.returning({ id: tournament.id });
 			if (completedUpdate.length === 0) error(409, m.err_round_already_closed());
 
-			await getTournamentData({ tournamentId }).refresh();
+			await refreshOrgViews(tournamentId);
 
 			redirectLocalized(303, `/tournament/${tournamentId}/standings`, getRequestEvent());
 		}
@@ -525,7 +596,7 @@ export const closeRoundForm = form(
 			.returning({ id: tournament.id });
 		if (advanced.length === 0) error(409, m.err_round_already_closed());
 
-		await getTournamentData({ tournamentId }).refresh();
+		await refreshOrgViews(tournamentId);
 
 		return { success: true };
 	}
@@ -555,7 +626,7 @@ export const setCourtLabel = command(
 			.set({ label: label.trim() || null })
 			.where(eq(court.id, courtId));
 
-		await getTournamentData({ tournamentId: tourney.id }).refresh();
+		await refreshOrgViews(tourney.id);
 
 		return { success: true };
 	}
@@ -625,7 +696,7 @@ export const updateScoringOverrides = command(
 			.set({ scoringOverrides: overrides, lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		await getTournamentData({ tournamentId }).refresh();
+		await refreshOrgViews(tournamentId);
 
 		return { success: true };
 	}
@@ -669,7 +740,7 @@ export const updateTieBreakConfig = command(
 			.set({ tieBreakConfig: config, lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		await getTournamentData({ tournamentId }).refresh();
+		await refreshOrgViews(tournamentId);
 
 		return { success: true };
 	}
@@ -757,7 +828,7 @@ export const updateManualRankOrder = command(
 			.set({ manualRankOrder: submittedOrder })
 			.where(eq(courtRotation.id, rotationId));
 
-		await getTournamentData({ tournamentId: tourney.id }).refresh();
+		await refreshOrgViews(tourney.id);
 
 		return { success: true };
 	}
@@ -893,7 +964,8 @@ export const retirePlayer = command(
 					name: replacementName!.trim(),
 					seedPoints: formatType === 'preseed' ? (replacementSeedPoints ?? 0) : null,
 					seedRank: null,
-					replacesPlayerId: playerId
+					replacesPlayerId: playerId,
+					token: newPlayerToken()
 				})
 				.returning();
 			replacementPlayerId = replacement.id;
@@ -913,7 +985,7 @@ export const retirePlayer = command(
 				})
 				.where(eq(player.id, playerId));
 
-			await getTournamentData({ tournamentId }).refresh();
+			await refreshOrgViews(tournamentId);
 			return { success: true };
 		}
 
@@ -1086,7 +1158,7 @@ export const retirePlayer = command(
 			})
 			.where(eq(tournament.id, tournamentId));
 
-		await getTournamentData({ tournamentId }).refresh();
+		await refreshOrgViews(tournamentId);
 
 		return { success: true };
 	}
@@ -1248,7 +1320,8 @@ export const reportInjury = command(
 					name: replacementName!.trim(),
 					seedPoints: formatType === 'preseed' ? (replacementSeedPoints ?? 0) : null,
 					seedRank: null,
-					replacesPlayerId: playerId
+					replacesPlayerId: playerId,
+					token: newPlayerToken()
 				})
 				.returning();
 			await db
@@ -1262,7 +1335,7 @@ export const reportInjury = command(
 			.set({ lastActivityAt: new Date() })
 			.where(eq(tournament.id, tournamentId));
 
-		await getTournamentData({ tournamentId }).refresh();
+		await refreshOrgViews(tournamentId);
 
 		return { success: true };
 	}
@@ -1531,7 +1604,7 @@ export const undoRetirement = command(
 			})
 			.where(eq(tournament.id, tournamentId));
 
-		await getTournamentData({ tournamentId }).refresh();
+		await refreshOrgViews(tournamentId);
 
 		return { success: true };
 	}
@@ -1669,7 +1742,7 @@ export const undoInjury = command(
 			})
 			.where(eq(player.id, playerId));
 
-		await getTournamentData({ tournamentId }).refresh();
+		await refreshOrgViews(tournamentId);
 
 		return { success: true };
 	}

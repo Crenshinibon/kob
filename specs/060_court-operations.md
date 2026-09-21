@@ -1,6 +1,6 @@
 # Court Operations
 
-> **Proposed ([098](./098_player-page.md), [097](./097_player-check-in.md)):** `/court/[token]` stays a player-facing scoring URL. The organizer may keep handing out **court QRs** from the operations view, may additionally (or instead) hand out **personal player QRs** via optional check-in, or mix both. Score rules below still apply; the UI is extracted into `ScoreEntry.svelte` and reused on the player page. Last write wins across both surfaces.
+> **Shipped ([098](./098_player-page.md), [097](./097_player-check-in.md)):** `/court/[token]` stays a player-facing scoring URL. The organizer may keep handing out **court QRs** from the operations view, may additionally (or instead) hand out **personal player QRs** via optional check-in, or mix both. Score rules below still apply; the UI is extracted into `ScoreEntry.svelte` and reused on the player page. Court-page writes are last-write-wins (including edits). Player-page writes are first-write of matches that player is in.
 
 ## Player Interface (`/court/[token]`)
 
@@ -72,7 +72,7 @@ Current Standings:
 - Per-court-type scoring overrides from tournament config applied via `getEffectiveScoring()`
 - Save button per set (saves individual set)
 - On save: show "Saved" confirmation
-- Edit after save for anyone who can save (court token today; player token on 098). Last write wins.
+- Edit after save: **court page** still allows anyone with the court token to edit (how the organizer corrects a write-once player-page save — 095 Open Question 1). Clicking **Edit** opens the score fields **pre-filled with the current scores** so the organizer can overwrite them. The **player page** (098) does not: first write of matches that player is in, then read-only.
 
 ### Closed Round
 

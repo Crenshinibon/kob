@@ -1,5 +1,9 @@
 import { pgTable, serial, integer, text, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core';
-import type { TieBreakConfig, TieBreakFactorId, TieBreakDecidingOutcome } from '$lib/tournament-logic';
+import type {
+	TieBreakConfig,
+	TieBreakFactorId,
+	TieBreakDecidingOutcome
+} from '$lib/tournament-logic';
 
 export type CourtStandingSnapshot = {
 	playerId: number;
@@ -18,7 +22,7 @@ export const tournament = pgTable('tournament', {
 	id: serial('id').primaryKey(),
 	orgId: text('org_id').notNull(),
 	name: text('name').notNull(),
-	status: text('status').notNull().default('active'),
+	status: text('status').notNull().default('setup'),
 	currentRound: integer('current_round').default(0),
 	numRounds: integer('num_rounds').notNull().default(3),
 	formatType: text('format_type').notNull().default('random-seed'),
@@ -46,6 +50,10 @@ export const tournament = pgTable('tournament', {
 	timeBetweenRalliesSeconds: integer('time_between_rallies_seconds').notNull().default(8),
 	timeBetweenMatchesMinutes: integer('time_between_matches_minutes').notNull().default(3),
 	lastActivityAt: timestamp('last_activity_at').defaultNow(),
+	startedAt: timestamp('started_at'),
+	checkInClosedAt: timestamp('check_in_closed_at'),
+	completedAt: timestamp('completed_at'),
+	finishedEarly: boolean('finished_early').notNull().default(false),
 	createdAt: timestamp('created_at').defaultNow()
 });
 
@@ -53,6 +61,7 @@ export const player = pgTable('player', {
 	id: serial('id').primaryKey(),
 	tournamentId: integer('tournament_id').notNull(),
 	name: text('name').notNull(),
+	token: text('token').notNull().unique(),
 	seedPoints: integer('seed_points'),
 	seedRank: integer('seed_rank'),
 	retiredAt: timestamp('retired_at'),
@@ -62,7 +71,10 @@ export const player = pgTable('player', {
 	finalStanding: integer('final_standing'),
 	injuredAt: timestamp('injured_at'),
 	replacesPlayerId: integer('replaces_player_id'),
-	replacedByPlayerId: integer('replaced_by_player_id')
+	replacedByPlayerId: integer('replaced_by_player_id'),
+	checkedInAt: timestamp('checked_in_at'),
+	checkInSource: text('check_in_source'),
+	joinedRound: integer('joined_round')
 });
 
 export const court = pgTable('court', {
@@ -92,7 +104,8 @@ export const courtRotation = pgTable('court_rotation', {
 	tieBreakConfigSnapshot: jsonb('tie_break_config_snapshot').$type<TieBreakConfig>(),
 	standingsSnapshot: jsonb('standings_snapshot').$type<CourtStandingSnapshot[]>(),
 	diceRolls: jsonb('dice_rolls').$type<Record<string, number>>(),
-	roundClosedAt: timestamp('round_closed_at')
+	roundClosedAt: timestamp('round_closed_at'),
+	manualAdjustedAt: timestamp('manual_adjusted_at')
 });
 
 export const match = pgTable('match', {

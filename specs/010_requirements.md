@@ -8,11 +8,11 @@ The core concept is to manage individual rankings within a 2v2 format. Players r
 
 ## 2. Assumptions & Constraints
 
-- **Player Count:** Supports **8-64 players** (2-16 courts). Non-multiples of 4 use a bottom court of 3/5/6 players.
-- **Players per Court:** Fixed at 4 players per court.
+- **Player Count:** Supports **4-64 players**. Start requires ≥ 4 (one court). 4–6 players = one court, one round. 8-64 = 2-16 courts as today. Non-multiples of 4 use a bottom court of 3/5/6 players. Create allows 0–64; the minimum is a **start** condition ([099](./099_tournament-setup-and-start.md)).
+- **Players per Court:** 3, 4, 5, or 6. Four is the standard court; leftovers use 3/5/6. A 4–6 player tournament is a single court.
 - **Platform:** Mobile-web optimized (users will access via smartphones on the beach).
 - **Formats:**
-  - **Random Seed**: Flexible round count, ladder redistribution.
+  - **Random Seed**: Flexible round count (1–10), ladder redistribution.
   - **Preseed**: Fixed rounds (3 for 16p, 4 for 32p), tiered binary redistribution based on seed points.
 
 ## 3. User Roles
@@ -27,12 +27,12 @@ The core concept is to manage individual rankings within a 2v2 format. Players r
 
 ### 3.2 Anonymous User ("Player")
 
-- **Permissions:** Temporary write access to specific court data.
+- **Permissions:** Temporary write access via unguessable URLs (court token and/or personal player token).
 - **Capabilities:**
-  - Access a specific court via a unique URL/QR code.
-  - Enter match results for that court.
-  - View live standings for that court.
-- **Constraint:** Players can only edit results while the round is **Active**. Once the Org closes a round, the view becomes read-only.
+  - Access a specific court via a unique URL/QR code and enter **any** match on that court (including edits).
+  - Optionally access a personal page via `/player/[token]` ([098](./098_player-page.md)): current game, upcoming games, placement, history; **first write only** of matches they play.
+  - View live standings for that court (and overall place on the player page).
+- **Constraint:** The court page accepts edits while the round is **Active**. The player page is write-once (corrections go through the court page / organizer). Once the Org closes a round, both views become read-only until the round is reopened ([096](./096_tournament-management-page.md)).
 
 ## 4. Feature: Creating & Editing Tournaments
 
@@ -44,17 +44,17 @@ Only the Org can create a tournament. The creation form requires:
 - **Format:**
   - **Random Seed:** First round random placement, then ladder system. Configurable number of rounds (1-5).
   - **Preseed**: Seeding based on player points. If no points are entered (or points are tied), the **order of names in the player list** is the seeding (first name = seed 1). Fixed rounds: 3 for 16 players, 4 for 32 players.
-- **Player Count:** 8-64 players.
-- **Validation:** The system validates the player count (8-64) with unique names.
-  - _Error Handling:_ If the wrong count is provided, the system prevents starting the tournament and prompts the user to fix the count.
-  - _Leftover Handling:_ Non-multiples of 4 result in a bottom court of 3p/5p/6p. The system shows a court configuration preview and offers the option to kick leftover players.
+- **Player Count:** 0–64 on create; **4–64 at start**. Always two steps: Create (`setup`), then Start. No "Create & start" ([099](./099_tournament-setup-and-start.md)).
+- **Validation:** Unique names. Start is blocked below 4 or above 64.
+  - _Error Handling:_ If the count is wrong at start, the system prevents starting and prompts the user to fix the roster.
+  - _Leftover Handling:_ Non-multiples of 4 result in a bottom court of 3p/5p/6p (or a single 5p/6p court for 5–6 players). The system shows a court configuration preview and offers the option to kick leftover players.
 
 ## 5. Feature: Running the Tournament
 
 ### 5.1 Starting
 
-- When "Start Tournament" is clicked, the system locks the player list and generates unique URLs (one for each court).
-- The Org can display/print QR codes for these URLs to distribute to players.
+- Create does **not** generate courts. When "Start Tournament" is clicked (roster ≥ 4), the system generates unique court URLs and round 1. One court (4–6 players) is a one-round tournament.
+- The Org can display/print **court** QR codes from the operations view, and optionally **personal** QRs from check-in ([097](./097_player-check-in.md)).
 
 ### 5.2 Round Logic (The "Court Engine")
 
@@ -78,7 +78,7 @@ Courts may contain 3, 4, 5, or 6 players depending on player count. The system g
 
 ### 5.3 Scoring & Standings
 
-- Players enter scores via court URL (mobile-optimized) and, optionally, via personal player URL ([098](./098_player-page.md))
+- Players enter scores via court URL (mobile-optimized) and, optionally, via personal player URL ([098](./098_player-page.md)). Player-page saves are write-once for matches that player is in; the court page can enter every game and correct a saved score.
 - **Scoring modes**: Single set (default), Best of 3, or Custom
 - **Score validation**: Minimum points per set, win-by margin, no point caps
 - **Per-court-type overrides**: Org can configure different scoring for 3p/5p/6p courts
@@ -115,13 +115,13 @@ Vertical seeding cascade: fill courts top-to-bottom with each rank group. For an
 
 #### Round 2+ (The "Ladder")
 
-2 up, 2 down between adjacent courts. Works for any court count >= 2.
+2 up, 2 down between adjacent courts. Works for any court count >= 2. **4–6 players (one court) skip this** — that single round is the final ([099](./099_tournament-setup-and-start.md)).
 
 ### 6.2 Preseed Format
 
 #### Initial Seeding
 
-Players distributed in snake pattern based on seed points. If no points are entered or points are tied, snake in **name-list order** (first name = seed 1). Works for any court count (8-64 players).
+Players distributed in snake pattern based on seed points. If no points are entered or points are tied, snake in **name-list order** (first name = seed 1). Works for any court count (4-64 players; one court is the final).
 
 #### Redistribution
 

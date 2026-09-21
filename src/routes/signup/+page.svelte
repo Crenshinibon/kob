@@ -58,6 +58,7 @@
 
 <main>
 	<div class="auth-container">
+		<a href={localizeHref(resolve('/'))} class="btn-link">{m.back()}</a>
 		<h1>{m.sign_up()}</h1>
 
 		{#if error}
@@ -117,6 +118,12 @@
 		font-size: var(--font-size-2xl);
 	}
 
+	.auth-container > .btn-link {
+		justify-content: flex-start;
+		padding-left: 0;
+		margin-bottom: var(--spacing-md);
+	}
+
 	form {
 		display: flex;
 		flex-direction: column;
@@ -148,31 +155,9 @@
 		font-weight: 500;
 	}
 
-	.btn-primary {
-		background-color: var(--accent-primary);
-		color: var(--bg-primary);
-		padding: var(--spacing-sm) var(--spacing-md);
-		border: 2px solid var(--accent-primary);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-base);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		cursor: pointer;
+	.auth-container .btn-primary {
 		margin-top: var(--spacing-sm);
-		transition: all var(--transition-base);
-	}
-
-	.btn-primary:hover:not(:disabled) {
-		background-color: var(--accent-primary-hover);
-		box-shadow: var(--glow-primary);
-	}
-
-	.btn-primary:disabled {
-		background-color: var(--bg-secondary);
-		color: var(--text-muted);
-		border-color: var(--border-default);
-		cursor: not-allowed;
+		width: 100%;
 	}
 
 	.error {

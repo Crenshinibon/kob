@@ -2,6 +2,7 @@
 	import { resolve } from '$app/paths';
 	import * as m from '$lib/paraglide/messages';
 	import { localizeHref } from '$lib/paraglide/runtime';
+	import LandingPage from '$lib/components/LandingPage.svelte';
 
 	interface TournamentSummary {
 		id: number;
@@ -9,6 +10,7 @@
 		status: string;
 		currentRound: number;
 		numRounds: number;
+		playerCount: number;
 	}
 
 	let {
@@ -16,6 +18,7 @@
 	}: {
 		data: {
 			user?: { id: string };
+			setup: TournamentSummary[];
 			active: TournamentSummary[];
 			finished: TournamentSummary[];
 			archived: TournamentSummary[];
@@ -23,34 +26,58 @@
 	} = $props();
 </script>
 
-<main>
-	<header>
-		<div class="logo-section">
-			<img
-				src="/logo-200.jpg"
-				alt={m.alt_logo()}
-				class="logo"
-				srcset="/logo-100.jpg 100w, /logo-200.jpg 200w, /logo-400.jpg 400w"
-				sizes="(max-width: 600px) 100px, 200px"
-			/>
-			<h1 style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px;">
-				KOB
-			</h1>
-		</div>
-		{#if data?.user}
+<svelte:head>
+	{#if data?.user}
+		<title>{m.dashboard_meta_title()}</title>
+	{:else}
+		<title>{m.landing_meta_title()}</title>
+		<meta name="description" content={m.landing_meta_description()} />
+	{/if}
+</svelte:head>
+
+{#if !data?.user}
+	<LandingPage />
+{:else}
+	<main>
+		<header>
+			<div class="logo-section">
+				<img
+					src="/logo-200.jpg"
+					alt={m.alt_logo()}
+					class="logo"
+					width="60"
+					height="60"
+					srcset="/logo-100.jpg 100w, /logo-200.jpg 200w, /logo-400.jpg 400w"
+					sizes="60px"
+				/>
+				<h1 style="writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px;">
+					KOB
+				</h1>
+			</div>
 			<a href={localizeHref(resolve('/tournament/create'))} class="btn-primary"
 				>{m.new_tournament()}</a
 			>
-		{:else}
-			<a href={localizeHref(resolve('/login'))} class="btn-primary">{m.login()}</a>
+		</header>
+		{#if data.setup && data.setup.length > 0}
+			<section class="tournaments" data-testid="dashboard-setup">
+				<h2>{m.dashboard_setup_heading()}</h2>
+				<div class="tournament-list">
+					{#each data.setup as tournament (tournament.id)}
+						<a
+							href={localizeHref(resolve('/tournament/[id]', { id: String(tournament.id) }))}
+							class="tournament-card"
+						>
+							<h3>{tournament.name}</h3>
+							<span class="status setup">{m.status_setup()}</span>
+							<p class="round">
+								{m.setup_player_count({ count: tournament.playerCount })}
+							</p>
+						</a>
+					{/each}
+				</div>
+			</section>
 		{/if}
-	</header>
 
-	{#if !data?.user}
-		<section class="login-prompt">
-			<p>{m.login_prompt()}</p>
-		</section>
-	{:else}
 		<!-- Active Tournaments -->
 		{#if data.active.length > 0}
 			<section class="tournaments">
@@ -108,7 +135,7 @@
 			</section>
 		{/if}
 
-		{#if data.active.length === 0 && data.finished.length === 0 && data.archived.length === 0}
+		{#if data.active.length === 0 && data.finished.length === 0 && data.archived.length === 0 && (!data.setup || data.setup.length === 0)}
 			<section class="empty">
 				<p>{m.no_tournaments()}</p>
 				<a href={localizeHref(resolve('/tournament/create'))} class="btn-primary"
@@ -116,8 +143,8 @@
 				>
 			</section>
 		{/if}
-	{/if}
-</main>
+	</main>
+{/if}
 
 <footer class="imprint">
 	<details>
@@ -173,25 +200,6 @@
 		letter-spacing: -1px;
 	}
 
-	.btn-primary {
-		background-color: var(--accent-primary);
-		color: var(--bg-primary);
-		padding: var(--spacing-sm) var(--spacing-md);
-		border-radius: var(--radius-sm);
-		text-decoration: none;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		border: 2px solid var(--accent-primary);
-		transition: all var(--transition-base);
-	}
-
-	.btn-primary:hover {
-		background-color: var(--accent-primary-hover);
-		box-shadow: var(--glow-primary);
-	}
-
-	.login-prompt,
 	.empty {
 		text-align: center;
 		padding: 3rem var(--spacing-md);
@@ -254,6 +262,11 @@
 		letter-spacing: 0.5px;
 	}
 
+	.status.setup {
+		background-color: var(--bg-secondary);
+		color: var(--text-secondary);
+	}
+
 	.status.active {
 		background-color: var(--status-active-bg);
 		color: var(--status-active-text);
@@ -279,7 +292,7 @@
 	.imprint {
 		max-width: 800px;
 		margin: var(--spacing-xl) auto 0;
-		padding: 0 var(--spacing-md);
+		padding: 0 var(--spacing-md) 6rem;
 		border-top: 1px solid var(--border-default);
 		padding-top: var(--spacing-lg);
 	}

@@ -177,24 +177,175 @@ select:disabled {
 	border-color: var(--border-default);
 }
 
-/* Buttons */
-button {
+/* Buttons
+   Same chrome for <button> and <a>/<label> with a btn-* kind.
+   Kinds (color only): secondary (default), primary (highlight), danger,
+   link (text action), inactive (muted, still clickable).
+   Sizes: default 44px, compact (row / Clear), small (inline).
+   Disabled: never wash out with opacity. Form submits that become
+   available as the user fills the form stay visible (dashed, muted).
+   Actions locked until something else happens are hidden in markup
+   and replaced with a .hint.
+*/
+button,
+a.btn-primary,
+a.btn-secondary,
+a.btn-danger,
+a.btn-inactive,
+a.btn-link,
+label.btn-small,
+label.btn-secondary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--spacing-xs);
 	font-family: inherit;
 	font-size: var(--font-size-base);
 	font-weight: 700;
+	line-height: 1.2;
 	cursor: pointer;
 	border: var(--border-thickness) solid transparent;
 	border-radius: var(--radius-sm);
 	padding: var(--spacing-sm) var(--spacing-md);
-	transition: all var(--transition-base);
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
 	min-height: 44px;
+	box-sizing: border-box;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	text-decoration: none;
+	transition: all var(--transition-base);
 }
 
 button:disabled {
 	cursor: not-allowed;
-	opacity: 0.5;
+}
+
+.btn-primary {
+	background-color: var(--accent-primary);
+	color: var(--bg-primary);
+	border-color: var(--accent-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+	background-color: var(--accent-primary-hover);
+	border-color: var(--accent-primary-hover);
+	box-shadow: var(--glow-primary);
+	text-decoration: none;
+}
+
+.btn-primary:disabled {
+	background-color: var(--bg-secondary);
+	color: var(--text-muted);
+	border-color: var(--border-default);
+	border-style: dashed;
+	box-shadow: none;
+}
+
+.btn-secondary {
+	background-color: var(--bg-secondary);
+	color: var(--text-secondary);
+	border-color: var(--border-default);
+}
+
+.btn-secondary:hover:not(:disabled) {
+	border-color: var(--border-strong);
+	color: var(--text-primary);
+	text-decoration: none;
+}
+
+.btn-secondary:disabled,
+.btn-small:disabled,
+.btn-compact:disabled {
+	color: var(--text-muted);
+	border-style: dashed;
+}
+
+.btn-danger {
+	background-color: var(--accent-error);
+	color: var(--bg-primary);
+	border-color: var(--accent-error);
+}
+
+.btn-danger:hover:not(:disabled) {
+	background-color: var(--accent-error-hover);
+	border-color: var(--accent-error-hover);
+	text-decoration: none;
+}
+
+.btn-danger:disabled {
+	background-color: var(--bg-secondary);
+	color: var(--text-muted);
+	border-color: var(--border-default);
+	border-style: dashed;
+}
+
+.btn-inactive {
+	background-color: var(--bg-secondary);
+	color: var(--text-muted);
+	border-color: var(--border-default);
+	box-shadow: none;
+	cursor: default;
+}
+
+.btn-inactive:hover {
+	background-color: var(--bg-secondary);
+	border-color: var(--border-default);
+	color: var(--text-muted);
+	text-decoration: none;
+}
+
+.btn-link,
+a.btn-link {
+	background: none;
+	border: none;
+	padding: 0;
+	min-height: 0;
+	color: var(--accent-info);
+	text-decoration: underline;
+}
+
+.btn-link:hover {
+	color: var(--text-primary);
+}
+
+.hint {
+	font-size: var(--font-size-sm);
+	color: var(--text-secondary);
+	margin: 0 0 var(--spacing-sm) 0;
+}
+
+.btn-compact,
+.btn-clear {
+	min-height: 32px;
+	padding: 0.2rem 0.55rem;
+	font-size: var(--font-size-xs);
+}
+
+.btn-compact.btn-danger,
+.btn-clear {
+	background-color: transparent;
+	color: var(--accent-error);
+	border-color: var(--accent-error);
+}
+
+.btn-compact.btn-danger:hover:not(:disabled),
+.btn-clear:hover:not(:disabled) {
+	background-color: rgba(255, 51, 51, 0.12);
+	color: var(--accent-error);
+}
+
+.btn-small {
+	min-height: 36px;
+	padding: 0.25rem 0.65rem;
+	font-size: var(--font-size-sm);
+	background-color: var(--bg-secondary);
+	color: var(--text-secondary);
+	border-color: var(--border-default);
+}
+
+.btn-small:hover:not(:disabled) {
+	border-color: var(--border-strong);
+	color: var(--text-primary);
+	text-decoration: none;
 }
 
 /* Utility Classes */
@@ -325,4 +476,22 @@ button:disabled {
 
 ::-webkit-scrollbar-thumb:hover {
 	background: var(--text-muted);
+}
+
+@media print {
+	.no-print,
+	.cookie-notice {
+		display: none !important;
+	}
+
+	.site-footer {
+		position: static !important;
+	}
+
+	html,
+	body,
+	.app-container {
+		background: #fff !important;
+		color: #000 !important;
+	}
 }

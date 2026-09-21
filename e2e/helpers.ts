@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 export async function dismissCookieNotice(page: Page): Promise<void> {
 	const dismissBtn = page.locator('button.cookie-btn, button:has-text("OK")');
@@ -30,19 +30,59 @@ export async function login(page: Page): Promise<void> {
 	await dismissCookieNotice(page);
 }
 
-export async function createRandomSeedTournament(
+export async function setRangeValue(locator: Locator, value: number | string): Promise<void> {
+	await locator.evaluate((el, v) => {
+		const input = el as HTMLInputElement;
+		const proto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+		proto?.set?.call(input, String(v));
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		input.dispatchEvent(new Event('change', { bubbles: true }));
+	}, String(value));
+}
+
+export async function fillNumericControl(
+	page: Page,
+	selector: string,
+	value: number | string
+): Promise<void> {
+	const locator = page.locator(selector).first();
+	await fillNumericLocator(locator, value);
+}
+
+export async function fillNumericLocator(locator: Locator, value: number | string): Promise<void> {
+	const type = await locator.getAttribute('type');
+	if (type === 'range') {
+		await setRangeValue(locator, value);
+		return;
+	}
+	await locator.fill(String(value));
+	await locator.blur();
+}
+
+export async function selectBestOf3Scoring(page: Page): Promise<void> {
+	await page.getByTestId('scoring-sets-2').click();
+}
+
+export async function createSetupTournament(
 	page: Page,
 	name: string,
 	playerCount: number,
-	numRounds = 2
+	numRounds = 2,
+	formatType: 'random-seed' | 'preseed' = 'random-seed'
 ): Promise<string> {
 	await page.goto('/');
 	await page.waitForSelector('text=+ New Tournament');
 	await page.click('text=+ New Tournament');
 	await page.fill('input[name="name"]', name);
-	await page.fill('input[name="n:numRounds"]', String(numRounds));
-	const players = Array.from({ length: playerCount }, (_, i) => `P${i + 1}`);
-	await page.fill('textarea[name="names"]', players.join('\n'));
+	if (formatType === 'preseed') {
+		await page.click('input[value="preseed"]');
+	} else {
+		await fillNumericControl(page, 'input[name="n:numRounds"]', numRounds);
+	}
+	if (playerCount > 0) {
+		const players = Array.from({ length: playerCount }, (_, i) => `P${i + 1}`);
+		await page.fill('textarea[name="names"]', players.join('\n'));
+	}
 	await page.click('button[type="submit"]');
 	await page.waitForURL(/\/tournament\/\d+/);
 	const match = page.url().match(/\/tournament\/(\d+)/);
@@ -50,7 +90,78 @@ export async function createRandomSeedTournament(
 	return match![1];
 }
 
+export async function createRandomSeedTournament(
+	page: Page,
+	name: string,
+	playerCount: number,
+	numRounds = 2
+): Promise<string> {
+	const id = await createSetupTournament(page, name, playerCount, numRounds);
+	await startTournamentFromSetup(page);
+	return id;
+}
+
+export type PlayerLink = { id: string; name: string; token: string; url: string };
+
+export async function getPlayerLinks(page: Page, tournamentId: string): Promise<PlayerLink[]> {
+	await page.goto(`/tournament/${tournamentId}/check-in`);
+	await page.waitForSelector('[data-testid="checkin-page"]');
+	await page.waitForSelector('[data-player-token]', { timeout: 15000 });
+	return page.locator('[data-player-token]').evaluateAll((els) =>
+		els.map((el) => {
+			const token = el.getAttribute('data-player-token') ?? '';
+			return {
+				id: el.getAttribute('data-player-id') ?? '',
+				name: el.getAttribute('data-player-name') ?? '',
+				token,
+				url: `/player/${token}`
+			};
+		})
+	);
+}
+
+export async function startTournamentFromSetup(page: Page): Promise<void> {
+	const start = page.getByTestId('start-tournament');
+	await expect(start).toBeEnabled({ timeout: 15000 });
+	await start.click();
+	await expect(page.locator('.court-card, .qr-link a').first()).toBeVisible({ timeout: 30000 });
+}
+
+/** After Create, start if the setup panel is showing. Safe to call when already started. */
+export async function ensureTournamentStarted(page: Page): Promise<void> {
+	await page
+		.locator('[data-testid="start-tournament"], .court-card, .qr-link a')
+		.first()
+		.waitFor({ state: 'visible', timeout: 20000 });
+	const start = page.getByTestId('start-tournament');
+	if (await start.isVisible().catch(() => false)) {
+		await startTournamentFromSetup(page);
+	}
+}
+
+/** Operations (court cards / QR links), not Manage / check-in / a court page. */
+export async function ensureOnOps(page: Page): Promise<void> {
+	const onOpsDetail =
+		/\/tournament\/\d+\/?(?:[?#]|$)/.test(page.url()) &&
+		!/\/tournament\/\d+\/(manage|check-in|standings)/.test(page.url());
+	if (
+		onOpsDetail &&
+		(await page
+			.locator(
+				'.court-card, .qr-link a, [data-testid="start-tournament"], [data-testid="setup-panel"]'
+			)
+			.first()
+			.isVisible()
+			.catch(() => false))
+	) {
+		return;
+	}
+	await gotoOps(page);
+}
+
 export async function getCourtLinks(page: Page): Promise<string[]> {
+	await ensureOnOps(page);
+	await ensureTournamentStarted(page);
 	await page.waitForSelector('.qr-link a');
 	return page
 		.locator('.qr-link a')
@@ -62,6 +173,7 @@ export async function waitForCourtCardCount(
 	count: number,
 	timeout = 30000
 ): Promise<void> {
+	await ensureOnOps(page);
 	await expect
 		.poll(
 			async () => {
@@ -76,7 +188,52 @@ export async function waitForLiveQuerySettle(page: Page, ms = 1500): Promise<voi
 	await page.waitForTimeout(ms);
 }
 
-/** Select a retire player by name pattern; verifies bind:value stuck before submit. */
+export async function gotoOps(page: Page): Promise<void> {
+	const match = page.url().match(/\/tournament\/(\d+)/);
+	if (!match) throw new Error('Cannot open operations: no tournament id in URL');
+	await page.goto(`/tournament/${match[1]}`);
+	await page.waitForSelector('.ops-nav, .court-card, [data-testid="setup-panel"]', {
+		timeout: 15000
+	});
+}
+
+export async function openManageSection(
+	page: Page,
+	section: 'players' | 'courts' | 'rules' | 'tournament'
+): Promise<string> {
+	const match = page.url().match(/\/tournament\/(\d+)/);
+	if (!match) throw new Error('Cannot open manage: no tournament id in URL');
+	const id = match[1];
+	await page.goto(`/tournament/${id}/manage#${section}`);
+	await page.waitForSelector('[data-testid="manage-page"]');
+	await page.getByTestId(`tab-${section}`).click();
+	await expect(page.getByTestId(`${section}-tab`)).toBeVisible({ timeout: 15000 });
+	return `/tournament/${id}`;
+}
+
+export async function openRetireForm(page: Page): Promise<void> {
+	const summary = page.locator('summary:has-text("Retire a Player")');
+	if (!(await summary.isVisible().catch(() => false))) {
+		await openManageSection(page, 'players');
+	}
+	const details = page.locator('section.retire-section details');
+	if ((await details.getAttribute('open')) == null) {
+		await page.locator('summary:has-text("Retire a Player")').click();
+	}
+	await page.waitForSelector('.retire-form');
+}
+
+export async function openInjuryForm(page: Page): Promise<void> {
+	const summary = page.locator('summary:has-text("Report Injury")');
+	if (!(await summary.isVisible().catch(() => false))) {
+		await openManageSection(page, 'players');
+	}
+	const details = page.locator('section.injury-section details');
+	if ((await details.getAttribute('open')) == null) {
+		await page.locator('summary:has-text("Report Injury")').click();
+	}
+	await page.waitForSelector('.injury-form');
+}
 export async function selectRetirePlayer(page: Page, namePattern: RegExp): Promise<void> {
 	const pattern = namePattern.source;
 	const flags = namePattern.flags;
@@ -101,6 +258,7 @@ export async function clickRetireSubmit(page: Page): Promise<void> {
 	const btn = page.locator('.retire-form button.btn-danger');
 	await expect(page.locator('#retirePlayerId')).not.toHaveValue('');
 	await btn.click({ timeout: 10000 });
+	await gotoOps(page);
 }
 
 /** Toggle replacement checkbox and fill name (Svelte bind:checked needs label click). */
@@ -150,6 +308,7 @@ export async function waitForTournamentPlayer(
 	namePattern: RegExp,
 	timeout = 30000
 ): Promise<void> {
+	await ensureOnOps(page);
 	await expect
 		.poll(
 			async () => {
@@ -313,7 +472,7 @@ export async function closeRoundOrFetch(
 ): Promise<void> {
 	await page
 		.waitForSelector(
-			'input[name="n:tournamentId"], button:has-text("Close Round & Advance"), button:has-text("Finalize Tournament"), button:has-text("Waiting")',
+			'input[name="n:tournamentId"], button:has-text("Close Round & Advance"), button:has-text("Finalize Tournament"), button:has-text("Waiting"), [data-testid="waiting-scores"]',
 			{ timeout: 15000 }
 		)
 		.catch(() => {});
@@ -343,7 +502,10 @@ export async function configureTieBreakFinal(
 	page: Page,
 	finalFactor: 'manual' | 'dice'
 ): Promise<void> {
-	await page.click('summary:has-text("Tie-break rules")');
+	const list = page.locator('.tie-break-list');
+	if (!(await list.isVisible().catch(() => false))) {
+		await openManageSection(page, 'rules');
+	}
 	await page.waitForSelector('.tie-break-list');
 
 	await page.evaluate(
@@ -381,23 +543,27 @@ export async function configureTieBreakFinal(
 		})
 		.catch(() => {});
 	await page.waitForTimeout(500);
+	await gotoOps(page);
+}
+
+export async function confirmDeleteTournament(page: Page, accept: boolean): Promise<void> {
+	await openManageSection(page, 'tournament');
+	page.once('dialog', (dialog) => {
+		if (accept) void dialog.accept();
+		else void dialog.dismiss();
+	});
+	await page.getByTestId('delete-tournament').click({ noWaitAfter: true });
 }
 
 export async function deleteTournament(page: Page, tournamentName: string): Promise<void> {
 	try {
 		await page.goto('/');
 		const card = page.locator(`.tournament-card:has-text("${tournamentName}")`).first();
-		if (await card.isVisible().catch(() => false)) {
-			await card.click();
-			const deleteButton = page.locator('button:has-text("Delete")');
-			if (await deleteButton.isVisible().catch(() => false)) {
-				await deleteButton.click();
-				const confirmButton = page.locator('button:has-text("Confirm")');
-				if (await confirmButton.isVisible().catch(() => false)) {
-					await confirmButton.click();
-				}
-			}
-		}
+		if (!(await card.isVisible().catch(() => false))) return;
+		await card.click();
+		await page.waitForURL(/\/tournament\/\d+/);
+		await confirmDeleteTournament(page, true);
+		await page.waitForURL('/', { timeout: 10000 }).catch(() => {});
 	} catch {
 		// ignore cleanup errors
 	}
