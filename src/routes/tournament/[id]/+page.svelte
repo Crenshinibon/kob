@@ -347,7 +347,9 @@
 						<div class="setup-fields">
 							{#if tournament.formatType === 'random-seed' || tournament.status === 'setup'}
 								<label>
-									{m.manage_rounds_label()}
+									{m.manage_rounds_label()}: {m.range_rounds_value({
+										count: tournament.numRounds
+									})}
 									<RangeSlider
 										id="setup-num-rounds"
 										min={1}

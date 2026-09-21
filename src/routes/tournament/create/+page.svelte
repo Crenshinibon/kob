@@ -339,7 +339,9 @@
 		</div>
 
 		<div class="field">
-			<span class="label">Number of Rounds</span>
+			<label for="numRounds"
+				>{m.manage_rounds_label()}: {m.range_rounds_value({ count: numRounds })}</label
+			>
 			{#if formatType === 'preseed'}
 				<span class="info-text">{m.create_rounds_computed_at_start()}</span>
 				<input type="hidden" name="n:numRounds" value={effectiveRounds} />
@@ -355,6 +357,7 @@
 						min={1}
 						max={10}
 						disabled={courtSizes.length === 1}
+						testId="create-num-rounds"
 						currentLabel={m.range_rounds_value({ count: numRounds })}
 						formatCurrent={(n) => m.range_rounds_value({ count: n })}
 						oninput={() => (roundsTouched = true)}

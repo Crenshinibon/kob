@@ -948,7 +948,9 @@
 				<div class="layout-grid">
 					{#if canEditRounds}
 						<label>
-							{m.manage_rounds_label()}
+							{m.manage_rounds_label()}: {m.range_rounds_value({
+								count: page.tournament.numRounds
+							})}
 							<RangeSlider
 								id="num-rounds"
 								min={page.minRounds}
