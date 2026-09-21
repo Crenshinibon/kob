@@ -230,15 +230,15 @@ test.describe('Manage page (096)', () => {
 		await page.getByTestId('num-rounds').waitFor({ timeout: 15000 });
 		await fillNumericLocator(page.getByTestId('num-rounds'), 3);
 		await expect(page.getByTestId('num-rounds')).toHaveValue('3', { timeout: 10000 });
-		await expect(page.getByTestId('tournament-tab').locator('.range-current').first()).toHaveText(
-			'3 rounds'
-		);
+		await expect(page.getByTestId('num-rounds-value')).toHaveText('3 rounds');
+		await expect(page.getByTestId('tournament-tab')).toContainText('Rounds: 3 rounds');
 		await expect(page.getByTestId('physical-courts')).toBeVisible({ timeout: 15000 });
 		await fillNumericLocator(page.getByTestId('physical-courts'), 2);
 		await expect(page.getByTestId('physical-courts')).toHaveValue('2', { timeout: 10000 });
 
 		await page.goto(`/tournament/${id}`);
 		await expect(page.getByTestId('setup-num-rounds')).toHaveValue('3', { timeout: 15000 });
+		await expect(page.getByTestId('setup-num-rounds-value')).toHaveText('3 rounds');
 		await expect(page.getByTestId('setup-physical-courts')).toHaveValue('2');
 		await fillNumericLocator(page.getByTestId('setup-num-rounds'), 4);
 		await expect(page.getByTestId('setup-num-rounds')).toHaveValue('4', { timeout: 10000 });

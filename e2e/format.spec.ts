@@ -77,8 +77,13 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('text=+ New Tournament');
 
 			const roundsInput = page.locator('input[name="n:numRounds"]');
+			await expect(page.getByTestId('create-num-rounds')).toBeVisible();
+			await expect(page.getByTestId('create-num-rounds-value')).toHaveText('3 rounds');
+			await expect(page.locator('label[for="numRounds"]')).toContainText('Rounds: 3 rounds');
 			await roundsInput.fill('5');
 			await expect(roundsInput).toHaveValue('5');
+			await expect(page.getByTestId('create-num-rounds-value')).toHaveText('5 rounds');
+			await expect(page.locator('label[for="numRounds"]')).toContainText('Rounds: 5 rounds');
 		});
 
 		test('Random format with 32 players creates 8 courts', async ({ page }) => {
