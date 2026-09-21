@@ -296,7 +296,9 @@
 				{#if isSetup}
 					<p class="status-setup">{m.status_setup()}</p>
 				{:else if isActive}
-					<p>{m.round_label({ current: currentRound, total: tournament.numRounds })}</p>
+					<p data-testid="round-label">
+						{m.round_label({ current: currentRound, total: tournament.numRounds })}
+					</p>
 				{:else}
 					<p class="status-completed">{m.completed()}</p>
 				{/if}
@@ -663,6 +665,7 @@
 							closingRound = true;
 							try {
 								await submit();
+								await tournamentQuery.refresh();
 							} finally {
 								closingRound = false;
 							}
