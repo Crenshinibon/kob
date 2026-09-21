@@ -97,7 +97,7 @@ The **Placement** block is present in every playing state (see [Placement](#plac
 - Canceled matches: "canceled — averaged"; no inputs.
 - **Up next**: remaining this-round matches the player is **in**, in match order, with the same `ScoreEntry` control **visually smaller**, so a court that plays game 3 first can still save it. Hidden when empty. Finished games are not listed here — they live in [History](#history).
 - **No Edit** after save. Once a score exists on a match, the player page shows it read-only. The organizer corrects it on the court page (060).
-- Court standings (including the tie-break **legend**) sit **just below** the current-round score fields — same `CourtStandingsTable` as `/court/[token]`. They stay after every point on the court is entered (`court_done` keeps the table). `resolveRotationStandings` output; the player's own row is highlighted; `TieBreakFactorIcons` reused.
+- Court standings (including the tie-break **legend**) sit **just below** the current-round score fields — same `CourtStandingsTable` as `/court/[token]`. They stay after every point on the court is entered (`court_done` keeps the table). `resolveRotationStandings(..., includeUnscored: true)` so a 0–0 table is visible before anyone scores. The player's own row is highlighted; `TieBreakFactorIcons` reused. Placement **best/safe** still ignore those dummy 0–0 ranks in round 1.
 - When the last open match the player is in is saved, the page moves to `court_done` on the next refresh (or immediately after the save returns).
 
 ### `waiting`
@@ -236,7 +236,7 @@ This page is a scoring surface **in parallel with** `/court/[token]`. Validation
 - **Single set**: one score pair + Save.
 - **Best-of-3**: Set 1, Set 2, Set 3 (Deciding) cards; deciding set only when 1–1; each set has its own save/edit/cancel.
 - Validation via `getEffectiveScoring()` / `isValidFinalScore()` (target, win-by, 5p/6p 15, no cap). Blowout / deuce rules from 870.
-- On save: spinner while pending; inline error if preflight or the server rejects; "Saved" confirmation once the score is on the match; `lastActivityAt` bumped; other players on the court see the score on their next poll. Empty/invalid input must not look like a no-op — the click always either saves or shows an error.
+- On save: `handleSave` calls `form.submit()` only (FormData). Do **not** call `form.validate({ preflightOnly: true })` first — remote-form JS field state is empty, so that path reports `teamAScore` undefined and looks like a no-op (no console, no server log). Spinner while pending; inline error if the server rejects; "Saved" confirmation once the score is on the match; `lastActivityAt` bumped; other players on the court see the score on the next poll. Empty/invalid input must not look like a no-op — the click always either saves or shows an error.
 - **Write-once on this page.** After a score exists on a set/match (saved by this player, a teammate, or the court page), the player page shows it read-only. There is no Edit. To change it, talk to the organizer — they use the **court page**, which still allows edit / clear (095: v1 keeps today's anonymous court-token edits).
 - Canceled matches: no form.
 - Last write wins **on the court page**. Two phones submitting the same empty match from **player pages** is expected (the first save wins; the second gets `err_score_already_saved`).

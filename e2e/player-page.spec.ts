@@ -63,9 +63,12 @@ test.describe('Player page (098)', () => {
 		await expect(playerPage.getByTestId('player-now')).toBeVisible({ timeout: 15000 });
 		await expect(playerPage.getByTestId('player-now')).toContainText('NOW');
 		await expect(playerPage.locator('[data-testid^="match-form-"]').first()).toBeVisible();
-		await expect(playerPage.getByTestId('player-placement')).toContainText('16');
-		await expect(playerPage.getByTestId('player-placement')).toContainText('1');
+		await expect(playerPage.getByTestId('player-placement-best')).toHaveText(
+			'Best achievable place: 1'
+		);
+		await expect(playerPage.getByTestId('player-placement-safe')).toHaveText('Safe place: 16');
 		await expect(playerPage.getByTestId('group-standings')).toBeVisible();
+		await expect(playerPage.getByTestId('player-record-rounds')).toBeVisible();
 		await expect(playerPage.getByRole('link', { name: /open court/i })).toHaveCount(0);
 		await anon.close();
 

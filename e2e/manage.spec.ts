@@ -244,6 +244,11 @@ test.describe('Manage page (096)', () => {
 		await expect(page.getByTestId('ops-physical-courts')).toHaveValue('2');
 		await fillNumericLocator(page.getByTestId('ops-physical-courts'), 4);
 		await expect(page.getByTestId('ops-physical-courts')).toHaveValue('4', { timeout: 10000 });
+		await expect(page.getByTestId('ops-back-office')).toBeVisible();
+		await expect(page.getByTestId('scoring-size-tabs')).toHaveCount(0);
+		await expect(page.getByTestId('tie-break-editor')).toHaveCount(0);
+		await expect(page.locator('.retire-form')).toHaveCount(0);
+		await expect(page.locator('.injury-form')).toHaveCount(0);
 	});
 
 	test('moving 4p to 4p keeps courts in number order as 3p and 5p', async ({ page }) => {

@@ -1115,32 +1115,6 @@
 		cursor: not-allowed;
 	}
 
-	.btn-danger {
-		background-color: transparent;
-		color: var(--accent-error);
-		padding: var(--spacing-sm) var(--spacing-lg);
-		border: 2px solid var(--accent-error);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-base);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		cursor: pointer;
-		transition: all var(--transition-fast);
-		align-self: flex-start;
-	}
-
-	.btn-danger:hover {
-		background-color: var(--accent-error);
-		color: var(--bg-primary);
-	}
-
-	.delete-form {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-	}
-
 	.scheduling-info {
 		background-color: var(--bg-card);
 		border: 2px solid var(--border-default);

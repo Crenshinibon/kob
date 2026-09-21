@@ -22,7 +22,6 @@
 
 	type ScoreSubmitForm = {
 		submit: () => Promise<unknown>;
-		validate?: (options?: { includeUntouched?: boolean; preflightOnly?: boolean }) => Promise<void>;
 		fields: { allIssues(): Array<{ message: string }> | undefined };
 	};
 
@@ -130,22 +129,6 @@
 	async function handleSave(form: ScoreSubmitForm, matchId: number): Promise<void> {
 		saving = true;
 		formErrors = new Map([...formErrors].filter(([id]) => id !== matchId));
-		try {
-			if (typeof form.validate === 'function') {
-				await form.validate({ includeUntouched: true, preflightOnly: true });
-			}
-		} catch {
-			/* validate is best-effort; submit still runs */
-		}
-		const preflightIssues = form.fields.allIssues() ?? [];
-		if (preflightIssues.length > 0) {
-			formErrors = new Map([
-				...formErrors,
-				[matchId, preflightIssues.map((issue) => issue.message)]
-			]);
-			saving = false;
-			return;
-		}
 		try {
 			const result = await form.submit();
 			const serverIssues = form.fields.allIssues() ?? [];
@@ -507,14 +490,18 @@
 					<strong>{msg.player_placement_final({ place: page.placement.current ?? '—' })}</strong>
 				</p>
 			{:else}
-				<p>
+				<p data-testid="player-placement-current">
 					{msg.player_placement_current({
 						place: page.placement.current ?? '—',
 						total: page.placement.total
 					})}
 				</p>
-				<p>{msg.player_placement_best({ place: page.placement.best })}</p>
-				<p>{msg.player_placement_safe({ place: page.placement.worst })}</p>
+				<p data-testid="player-placement-best">
+					{msg.player_placement_best({ place: page.placement.best })}
+				</p>
+				<p data-testid="player-placement-safe">
+					{msg.player_placement_safe({ place: page.placement.worst })}
+				</p>
 				{#if page.placement.rankCanStillChange}
 					<p class="hint">{msg.player_placement_can_still_change()}</p>
 				{/if}

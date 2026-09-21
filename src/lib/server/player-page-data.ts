@@ -313,7 +313,8 @@ export async function fetchPlayerPageData(token: string) {
 					completedRounds: completedByRound.slice(0, Math.max(0, currentRound - 1)),
 					courtSizes,
 					tourney,
-					useSnapshot: false
+					useSnapshot: false,
+					includeUnscored: true
 				})
 			: null;
 
@@ -484,7 +485,8 @@ export async function fetchPlayerPageData(token: string) {
 				completedRounds: completedByRound.slice(0, Math.max(0, rotation.roundNumber - 1)),
 				courtSizes,
 				tourney,
-				useSnapshot: hasStandingsSnapshot(rotation)
+				useSnapshot: hasStandingsSnapshot(rotation),
+				includeUnscored: rotation.roundNumber === currentRound
 			});
 			if (explained.standings.length === 0) continue;
 			const sorted = [...explained.standings].sort((a, b) => a.rank - b.rank);

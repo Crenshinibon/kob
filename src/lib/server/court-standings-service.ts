@@ -301,6 +301,7 @@ export function resolveRotationStandings(opts: {
 	courtSizes: readonly number[];
 	tourney: typeof tournament.$inferSelect;
 	useSnapshot: boolean;
+	includeUnscored?: boolean;
 }): ResolveRotationStandingsResult {
 	const {
 		rotation,
@@ -344,7 +345,7 @@ export function resolveRotationStandings(opts: {
 		};
 	}
 
-	if (!matchData.some((m) => m.teamAScore !== null)) {
+	if (!matchData.some((m) => m.teamAScore !== null) && !opts.includeUnscored) {
 		return {
 			standings: [],
 			diceRolls: { ...(rotation.diceRolls ?? {}) },
