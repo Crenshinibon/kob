@@ -65,6 +65,7 @@ test.describe('Player page (098)', () => {
 		await expect(playerPage.locator('[data-testid^="match-form-"]').first()).toBeVisible();
 		await expect(playerPage.getByTestId('player-placement')).toContainText('16');
 		await expect(playerPage.getByTestId('player-placement')).toContainText('1');
+		await expect(playerPage.getByTestId('group-standings')).toBeVisible();
 		await expect(playerPage.getByRole('link', { name: /open court/i })).toHaveCount(0);
 		await anon.close();
 
@@ -89,6 +90,7 @@ test.describe('Player page (098)', () => {
 		expect(matchId).toBeTruthy();
 		await expect(playerPage.getByTestId('player-history')).toBeVisible();
 		await expect(playerPage.getByTestId('player-history')).toContainText('21');
+		await expect(playerPage.getByTestId('group-standings')).toBeVisible();
 		await expect(playerPage.locator(`[data-testid="team-a-score-${matchId}"]`)).toHaveCount(0);
 		await anon.close();
 	});
@@ -113,6 +115,7 @@ test.describe('Player page (098)', () => {
 		await playerPage.goto(target.url);
 		await expect(playerPage.getByTestId('player-page')).toBeVisible({ timeout: 15000 });
 		await expect(playerPage.getByTestId('player-history')).toContainText('21', { timeout: 15000 });
+		await expect(playerPage.getByTestId('group-standings')).toBeVisible();
 		await anon.close();
 	});
 

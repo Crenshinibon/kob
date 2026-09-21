@@ -88,7 +88,6 @@
 					<input
 						data-testid="scoring-win-by-1"
 						type="radio"
-						name="scoring-win-by-{tab}"
 						value="1"
 						checked={current.winBy === 1}
 						{disabled}
@@ -100,7 +99,6 @@
 					<input
 						data-testid="scoring-win-by-2"
 						type="radio"
-						name="scoring-win-by-{tab}"
 						value="2"
 						checked={current.winBy !== 1}
 						{disabled}
@@ -117,7 +115,6 @@
 					<input
 						data-testid="scoring-sets-1"
 						type="radio"
-						name="scoring-sets-{tab}"
 						value="1"
 						checked={current.setsToWin <= 1}
 						{disabled}
@@ -129,7 +126,6 @@
 					<input
 						data-testid="scoring-sets-2"
 						type="radio"
-						name="scoring-sets-{tab}"
 						value="2"
 						checked={current.setsToWin > 1}
 						{disabled}

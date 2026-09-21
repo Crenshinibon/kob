@@ -328,6 +328,7 @@ test.describe('Manage page (096)', () => {
 		await expect(page.getByTestId('scoring-deciding')).toHaveCount(0);
 		await expect(page.getByTestId('rules-tab')).toContainText('4-player courts');
 		await expect(page.getByTestId('rules-tab').getByTestId('num-rounds')).toHaveCount(0);
+		await expect(page.getByTestId('tie-break-editor')).toBeVisible();
 
 		await page.getByTestId('scoring-sets-2').check();
 		await expect(page.getByTestId('scoring-deciding')).toHaveValue('15');
