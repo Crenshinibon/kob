@@ -101,9 +101,13 @@ test.describe('Setup and start (099)', () => {
 		names.push(name);
 		const id = await createSetupTournament(page, name, 8, 2);
 		await page.goto(`/tournament/${id}/manage`);
+		await page.getByTestId('tab-tournament').click();
+		await expect(page.getByTestId('tournament-tab')).toBeVisible();
+		await expect(page.getByTestId('num-rounds')).toBeEnabled();
+		await expect(page.locator('text=locked')).toHaveCount(0);
 		await page.getByTestId('tab-rules').click();
 		await expect(page.getByTestId('rules-tab')).toBeVisible();
-		await expect(page.getByTestId('num-rounds')).toBeEnabled();
+		await expect(page.getByTestId('scoring-size-tabs')).toBeVisible();
 		await expect(page.locator('text=locked')).toHaveCount(0);
 	});
 

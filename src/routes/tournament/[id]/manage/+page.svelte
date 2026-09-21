@@ -16,6 +16,7 @@
 	} from '$lib/manage-logic';
 	import {
 		SCORING_COURT_SIZES,
+		clampCourtScoringRules,
 		scoringDraftFromConfig,
 		type CourtScoringRules,
 		type ScoringCourtSize,
@@ -251,21 +252,6 @@
 		};
 	}
 
-	function clampPoints(value: number, fallback: number): number {
-		const rounded = Math.round(value);
-		if (!Number.isFinite(rounded)) return fallback;
-		return Math.min(30, Math.max(6, rounded));
-	}
-
-	function clampRules(rules: CourtScoringRules): CourtScoringRules {
-		return {
-			pointsToWin: clampPoints(rules.pointsToWin, 21),
-			winBy: rules.winBy === 1 ? 1 : 2,
-			setsToWin: rules.setsToWin >= 2 ? 2 : 1,
-			decidingSetPoints: clampPoints(rules.decidingSetPoints, 15)
-		};
-	}
-
 	function saveScoring(): void {
 		const draft = scoringDraft;
 		const four = draft?.['4'];
@@ -273,7 +259,7 @@
 		const five = draft?.['5'];
 		const six = draft?.['6'];
 		if (!four || !three || !five || !six) return;
-		const clampedFour = clampRules(four);
+		const clampedFour = clampCourtScoringRules(four);
 		run(() =>
 			updateScoringRules({
 				tournamentId: data.tournamentId,
@@ -282,9 +268,9 @@
 				setsToWin: clampedFour.setsToWin,
 				decidingSetPoints: clampedFour.decidingSetPoints,
 				scoringOverrides: {
-					'3': clampRules(three),
-					'5': clampRules(five),
-					'6': clampRules(six)
+					'3': clampCourtScoringRules(three),
+					'5': clampCourtScoringRules(five),
+					'6': clampCourtScoringRules(six)
 				}
 			})
 		);

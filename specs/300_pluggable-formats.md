@@ -433,7 +433,7 @@ When mixing 3-player and 4-player courts:
 - ❌ Allow extra touches (4-5) for single player
 - ❌ Shorten the court for single player
 - ❌ Give single player consecutive touch exceptions
-- ❌ Modify scoring rules (win by 2, max 50, etc.)
+- ❌ Modify scoring rules (win by 2, points target, etc.)
 
 **What We DO**:
 

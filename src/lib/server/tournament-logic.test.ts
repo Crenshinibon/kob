@@ -40,6 +40,8 @@ import {
 	getScoringLabel,
 	getEffectiveScoring,
 	inferScoringMode,
+	clampCourtScoringRules,
+	clampPointsPerSet,
 	displayedScoringForCourt,
 	scoringDraftFromConfig,
 	recalculateCourtConfigAfterRetirement,
@@ -3031,6 +3033,39 @@ describe('Scoring logic', () => {
 			expect(draft['3'].decidingSetPoints).toBe(11);
 			expect(draft['5'].pointsToWin).toBe(15);
 			expect(draft['6'].pointsToWin).toBe(15);
+		});
+	});
+
+	describe('clampPointsPerSet and clampCourtScoringRules', () => {
+		it('clamps points to 6–30', () => {
+			expect(clampPointsPerSet(21, 21)).toBe(21);
+			expect(clampPointsPerSet(5, 21)).toBe(6);
+			expect(clampPointsPerSet(50, 21)).toBe(30);
+			expect(clampPointsPerSet(Number.NaN, 21)).toBe(21);
+		});
+
+		it('rounds fractional points before clamping', () => {
+			expect(clampPointsPerSet(20.6, 21)).toBe(21);
+		});
+
+		it('normalizes win-by and sets-to-win to the radio options', () => {
+			const clamped = clampCourtScoringRules({
+				pointsToWin: 50,
+				winBy: 3,
+				setsToWin: 4,
+				decidingSetPoints: 2
+			});
+			expect(clamped).toEqual({
+				pointsToWin: 30,
+				winBy: 2,
+				setsToWin: 2,
+				decidingSetPoints: 6
+			});
+		});
+
+		it('keeps valid radio selections unchanged', () => {
+			const rules = { pointsToWin: 12, winBy: 1, setsToWin: 1, decidingSetPoints: 9 };
+			expect(clampCourtScoringRules(rules)).toEqual(rules);
 		});
 	});
 });

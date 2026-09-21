@@ -2214,6 +2214,24 @@ export function scoringDraftFromConfig(
 	return draft;
 }
 
+export const MIN_POINTS_PER_SET = 6;
+export const MAX_POINTS_PER_SET = 30;
+
+export function clampPointsPerSet(value: number, fallback: number): number {
+	const rounded = Math.round(value);
+	if (!Number.isFinite(rounded)) return fallback;
+	return Math.min(MAX_POINTS_PER_SET, Math.max(MIN_POINTS_PER_SET, rounded));
+}
+
+export function clampCourtScoringRules(rules: CourtScoringRules): CourtScoringRules {
+	return {
+		pointsToWin: clampPointsPerSet(rules.pointsToWin, 21),
+		winBy: rules.winBy === 1 ? 1 : 2,
+		setsToWin: rules.setsToWin >= 2 ? 2 : 1,
+		decidingSetPoints: clampPointsPerSet(rules.decidingSetPoints, 15)
+	};
+}
+
 export function isDecidingSet(setNumber: number, setsToWin: number): boolean {
 	return setsToWin >= 2 && setNumber === setsToWin * 2 - 1;
 }

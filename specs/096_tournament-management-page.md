@@ -27,10 +27,10 @@ The operations view (`/tournament/[id]`) mixes running the round with configurin
 1. New organizer-only page **`/tournament/[id]/manage`** with four sections: **Players**, **Courts**, **Rules**, **Tournament**.
 2. Roster: add, remove (no-show), rename, edit seed points, retire, report injury, undo, replacement — in one place.
 3. Court assignments for the **current round**: **drag-and-drop** player tiles between courts (and reorder within a court). Reset to computed, reshuffle round 1, **refill** to a canonical layout (only the bottom court non-standard).
-4. Rules editable after creation with explicit **locking rules** (whole-round: any score locks assignments and scoring-mode edits).
+4. Rules editable after creation with explicit **locking rules** (whole-round: any score locks assignments and scoring edits).
 5. **Finish tournament early** — when the current round has scores, always cancel-and-average; no "discard scored round" option.
 6. **Reopen the last closed round** — blocked while the current round has any scores; the organizer clears those scores one by one first. Then scores of the previous round become editable again; the next round is discarded. Also undoes finish-early / accidental finalize.
-7. Slim the operations view down to running the round (court QRs stay). Retirement, injury, scoring mode, and delete live here.
+7. Slim the operations view down to running the round (court QRs stay). Retirement, injury, scoring rules, and delete live here.
 8. Pre-play roster is independent of check-in: in `setup` add/remove players; after start and before any score, **remove** and **drag players between courts**.
 
 ## Non-Goals
@@ -362,7 +362,7 @@ Reused unchanged from `tournament-actions.remote.ts`: `retirePlayer`, `reportInj
 
 Added: **`ops-nav`** chip links — Manage, Check-in (097), View Standings — with gap and tap targets so they do not run together. Setup panel and post-start schedule expose **rounds** and **physical courts**. **adjusted** badge on court cards with `manualAdjustedAt`.
 
-Kept on operations (not yet moved exclusively to Manage): scoring-override editor, retire form, injury form, delete. Manage also has delete (danger zone), scoring-mode rules, finish early, and reopen. Round stepper, court cards **with court QR + labels** and the **Open court page** link (stable `court.token`, 1045), manual tie-break dialog, and close round / finalize stay here.
+Kept on operations (not yet moved exclusively to Manage): scoring-override editor, retire form, injury form, delete. Manage also has delete (danger zone), court-size scoring rules, finish early, and reopen. Round stepper, court cards **with court QR + labels** and the **Open court page** link (stable `court.token`, 1045), manual tie-break dialog, and close round / finalize stay here.
 
 In `setup` ([099](./099_tournament-setup-and-start.md)) this page shows the start panel instead of court cards.
 
