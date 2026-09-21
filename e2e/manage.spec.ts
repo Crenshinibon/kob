@@ -242,6 +242,7 @@ test.describe('Manage page (096)', () => {
 		await expect(page.getByTestId('setup-physical-courts')).toHaveValue('2');
 		await fillNumericLocator(page.getByTestId('setup-num-rounds'), 4);
 		await expect(page.getByTestId('setup-num-rounds')).toHaveValue('4', { timeout: 10000 });
+		await expect(page.getByTestId('setup-num-rounds-value')).toHaveText('4 rounds');
 		await startTournamentFromSetup(page);
 		await expect(page.locator('.round-stepper')).toContainText('Round 4');
 		await expect(page.getByTestId('ops-physical-courts')).toHaveValue('2');
