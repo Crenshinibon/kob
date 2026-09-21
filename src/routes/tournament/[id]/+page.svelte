@@ -303,17 +303,17 @@
 				<nav class="ops-nav" data-testid="ops-nav" aria-label={m.ops_nav_label()}>
 					<a
 						href={localizeHref(resolve('/tournament/[id]/manage', { id: String(tournament.id) }))}
-						class="ops-nav-link">{m.manage_title()}</a
+						class="btn-secondary">{m.manage_title()}</a
 					>
 					<a
 						href={localizeHref(resolve('/tournament/[id]/check-in', { id: String(tournament.id) }))}
-						class="ops-nav-link">{m.checkin_title()}</a
+						class="btn-secondary">{m.checkin_title()}</a
 					>
 					<a
 						href={localizeHref(
 							resolve('/tournament/[id]/standings', { id: String(tournament.id) })
 						)}
-						class="ops-nav-link">{m.view_standings()}</a
+						class="btn-secondary">{m.view_standings()}</a
 					>
 				</nav>
 			</header>
@@ -674,9 +674,7 @@
 								{isFinalRound ? m.finalize_tournament() : m.close_round()}
 							</button>
 						{:else}
-							<button type="button" disabled class="btn-primary btn-disabled"
-								>{m.waiting_scores()}</button
-							>
+							<button type="button" disabled class="btn-primary">{m.waiting_scores()}</button>
 						{/if}
 					</form>
 				{/if}
@@ -1092,31 +1090,6 @@
 		color: var(--accent-primary);
 	}
 
-	.btn-primary {
-		background-color: var(--accent-primary);
-		color: var(--bg-primary);
-		padding: var(--spacing-sm) var(--spacing-lg);
-		border: 2px solid var(--accent-primary);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-base);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		cursor: pointer;
-		transition: all var(--transition-fast);
-	}
-
-	.btn-primary:hover:not(:disabled) {
-		background-color: var(--accent-primary-hover);
-		border-color: var(--accent-primary-hover);
-	}
-
-	.btn-primary:disabled,
-	.btn-disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
 	.scheduling-info {
 		background-color: var(--bg-card);
 		border: 2px solid var(--border-default);
@@ -1156,26 +1129,6 @@
 		margin: var(--spacing-sm) 0 var(--spacing-md);
 	}
 
-	.ops-nav-link {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: var(--spacing-xs) var(--spacing-md);
-		min-height: 44px;
-		border: 2px solid var(--border-default);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
-		color: var(--accent-info);
-		text-decoration: none;
-		background: var(--bg-secondary);
-	}
-
-	.ops-nav-link:hover {
-		border-color: var(--accent-info);
-		color: var(--text-primary);
-		text-decoration: none;
-	}
-
 	.status-completed {
 		color: var(--accent-success);
 		font-weight: 600;
@@ -1200,21 +1153,6 @@
 		50% {
 			opacity: 0.5;
 		}
-	}
-
-	.btn-secondary {
-		background-color: transparent;
-		color: var(--text-secondary);
-		padding: var(--spacing-xs) var(--spacing-md);
-		border: 2px solid var(--border-default);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
-		cursor: pointer;
-	}
-
-	.btn-secondary:hover {
-		border-color: var(--border-strong);
-		color: var(--text-primary);
 	}
 
 	.player.retired {
@@ -1340,30 +1278,6 @@
 		border: 1px solid var(--accent-info);
 		border-radius: var(--radius-sm);
 		font-size: var(--font-size-sm);
-	}
-
-	.btn-link {
-		background: none;
-		border: none;
-		color: var(--accent-info);
-		cursor: pointer;
-		font-weight: 600;
-		text-decoration: underline;
-	}
-
-	.btn-small {
-		padding: 2px 8px;
-		font-size: var(--font-size-xs);
-		border: 1px solid var(--border-color);
-		border-radius: var(--radius-sm);
-		background: var(--bg-primary);
-		color: var(--text-primary);
-		cursor: pointer;
-	}
-
-	.btn-small:disabled {
-		opacity: 0.4;
-		cursor: not-allowed;
 	}
 
 	.btn-manual-tie {

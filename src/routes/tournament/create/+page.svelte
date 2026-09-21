@@ -535,23 +535,6 @@
 		flex-wrap: wrap;
 	}
 
-	.btn-small {
-		background-color: var(--bg-secondary);
-		color: var(--text-secondary);
-		border: 1px solid var(--border-strong);
-		border-radius: var(--radius-sm);
-		padding: var(--spacing-xs) var(--spacing-sm);
-		font-size: var(--font-size-sm);
-		font-weight: 600;
-		cursor: pointer;
-		transition: all var(--transition-fast);
-	}
-
-	.btn-small:hover {
-		border-color: var(--border-focus);
-		color: var(--text-primary);
-	}
-
 	.info-text {
 		font-size: var(--font-size-base);
 		color: var(--text-muted);
@@ -619,33 +602,6 @@
 
 	.radio-label:has(input:checked) .radio-content small {
 		color: var(--text-secondary);
-	}
-
-	.btn-primary {
-		background-color: var(--accent-primary);
-		color: var(--bg-primary);
-		padding: var(--spacing-sm) var(--spacing-lg);
-		border: 2px solid var(--accent-primary);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-base);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		cursor: pointer;
-		transition: all var(--transition-base);
-		text-decoration: none;
-	}
-
-	.btn-primary:hover:not(:disabled) {
-		background-color: var(--accent-primary-hover);
-		box-shadow: var(--glow-primary);
-	}
-
-	.btn-primary:disabled {
-		background-color: var(--bg-secondary);
-		color: var(--text-muted);
-		border-color: var(--border-default);
-		cursor: not-allowed;
 	}
 
 	.warn {

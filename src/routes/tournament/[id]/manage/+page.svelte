@@ -1212,27 +1212,8 @@
 	}
 
 	.row-actions .btn-compact {
-		min-height: 0;
-		height: auto;
-		padding: 0.15rem 0.4rem;
-		font-size: var(--font-size-xs);
-		font-weight: 600;
-		letter-spacing: 0.02em;
-		line-height: 1.2;
-		background: var(--bg-secondary);
-		color: var(--text-primary);
-		border: 1px solid var(--border-default);
-	}
-
-	.row-actions .btn-compact.btn-danger {
-		color: var(--accent-error);
-		border-color: var(--accent-error);
-	}
-
-	.row-actions .btn-compact.btn-primary {
-		background: var(--accent-primary);
-		color: #111;
-		border-color: var(--accent-primary);
+		min-height: 28px;
+		padding: 0.15rem 0.45rem;
 	}
 
 	.row-actions .btn-compact.is-busy {

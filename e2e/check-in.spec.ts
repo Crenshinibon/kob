@@ -30,6 +30,18 @@ test.describe('Player check-in (097)', () => {
 		const id = await createSetupTournament(page, name, 16, 2);
 		await page.goto(`/tournament/${id}/check-in`);
 		await expect(page.getByTestId('checkin-progress')).toContainText('0');
+		const print = page.getByTestId('checkin-print-link');
+		const close = page.getByTestId('close-checkin');
+		await expect(print).toBeVisible();
+		await expect(close).toBeVisible();
+		for (const prop of ['font-weight', 'font-size', 'letter-spacing', 'text-transform'] as const) {
+			expect(await print.evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop)).toBe(
+				await close.evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop)
+			);
+		}
+		expect(
+			Number.parseFloat(await print.evaluate((el) => getComputedStyle(el).minHeight))
+		).toBeGreaterThanOrEqual(44);
 		await expect(page.locator('[data-testid^="checkin-row-"]')).toHaveCount(16);
 
 		await page.goto(`/tournament/${id}/check-in/print`);

@@ -135,22 +135,6 @@
 		gap: var(--spacing-xs);
 	}
 
-	.btn-small {
-		min-height: 36px;
-		padding: 0 0.6rem;
-		font-size: var(--font-size-xs);
-		background: var(--bg-secondary);
-		color: var(--text-primary);
-		border: 1px solid var(--border-default);
-		border-radius: var(--radius-sm);
-		cursor: pointer;
-	}
-
-	.btn-small:disabled {
-		opacity: 0.45;
-		cursor: not-allowed;
-	}
-
 	.tie-break-finals {
 		border: none;
 		margin: var(--spacing-md) 0 0;

@@ -677,7 +677,7 @@ Do **not** fall back to closed-round-only current place — live including this 
 - Closed-round copy on the court page: "This round is closed. Check with the organizer for your next court — or open your personal player page if you have one."
 - Score UI becomes `ScoreEntry.svelte`; court-token `saveScore` / `saveSetScore` keep working and share `$lib/server/save-score.ts` with the player forms.
 - Pause-on-focus polling (above) is applied here too. Pause while `document.hidden` as well.
-- Court page **keeps Edit / Clear** after save (correction path for write-once player-page scores). **Clear** is a smaller danger control (`btn-clear`), visually separated from Edit. v1: anyone with the court token, same as today (095).
+- Court page **keeps Edit / Clear** after save (correction path for write-once player-page scores). **Clear** is a compact danger control (`btn-compact btn-danger`), visually separated from Edit (`btn-compact btn-secondary`). v1: anyone with the court token, same as today (095).
 - Existing E2E that scores via `/court/[token]` stays the court-QR path; new player-page E2E covers the optional personal path. A mixed test saves on one surface and asserts the other updates (player save → court shows it; court edit → player shows it read-only).
 
 ## i18n Keys (new)

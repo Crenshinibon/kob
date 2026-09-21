@@ -226,7 +226,7 @@
 									>{m.retire_undo_seconds({ name: rp.name, seconds: secondsLeft })}</span
 								>
 								<button
-									class="btn-undo"
+									class="btn-compact btn-secondary"
 									onclick={async () => {
 										await undoRetirement({ tournamentId, playerId: rp.id });
 										await onDone();
@@ -344,7 +344,7 @@
 								>{m.injury_undo_hint({ name: ui.name, seconds: secondsLeft })}</span
 							>
 							<button
-								class="btn-undo"
+								class="btn-compact btn-secondary"
 								onclick={async () => {
 									await undoInjury({ tournamentId, playerId: ui.id });
 									await onDone();
@@ -442,14 +442,6 @@
 
 	.btn-danger {
 		align-self: flex-start;
-		background: var(--accent-error);
-		color: var(--bg-primary);
-		border: none;
-		border-radius: var(--radius-sm);
-		min-height: 44px;
-		padding: 0 var(--spacing-md);
-		font-weight: 700;
-		cursor: pointer;
 	}
 
 	.undo-list,
@@ -458,15 +450,5 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--spacing-sm);
-	}
-
-	.btn-undo {
-		min-height: 36px;
-		padding: 0 0.7rem;
-		border: 1px solid var(--accent-primary);
-		background: transparent;
-		color: var(--accent-primary);
-		border-radius: var(--radius-sm);
-		cursor: pointer;
 	}
 </style>

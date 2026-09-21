@@ -640,7 +640,7 @@
 													{#if data.isEditable}
 														<div class="completed-actions">
 															<button
-																class="btn-edit"
+																class="btn-compact btn-secondary"
 																onclick={() =>
 																	(editingMatches = new Set([...editingMatches, setMatch.id]))}
 															>
@@ -658,7 +658,7 @@
 																<input type="hidden" name="matchId" value={setMatch.id} />
 																<button
 																	type="submit"
-																	class="btn-clear"
+																	class="btn-compact btn-danger"
 																	data-testid="clear-score-{setMatch.id}"
 																	>{msg.court_clear_score()}</button
 																>
@@ -730,7 +730,7 @@
 												{#if data.isEditable}
 													<div class="completed-actions">
 														<button
-															class="btn-edit"
+															class="btn-compact btn-secondary"
 															onclick={() =>
 																(editingMatches = new Set([...editingMatches, match.id]))}
 														>
@@ -748,7 +748,7 @@
 															<input type="hidden" name="matchId" value={match.id} />
 															<button
 																type="submit"
-																class="btn-clear"
+																class="btn-compact btn-danger"
 																data-testid="clear-score-{match.id}"
 																>{msg.court_clear_score()}</button
 															>
@@ -813,7 +813,7 @@
 									{#if data.isEditable}
 										<div class="completed-actions">
 											<button
-												class="btn-edit"
+												class="btn-compact btn-secondary"
 												onclick={() => (editingMatches = new Set([...editingMatches, match.id]))}
 											>
 												{msg.edit_btn()}
@@ -828,8 +828,10 @@
 											>
 												<input type="hidden" name="token" value={page.params.token} />
 												<input type="hidden" name="matchId" value={match.id} />
-												<button type="submit" class="btn-clear" data-testid="clear-score-{match.id}"
-													>{msg.court_clear_score()}</button
+												<button
+													type="submit"
+													class="btn-compact btn-danger"
+													data-testid="clear-score-{match.id}">{msg.court_clear_score()}</button
 												>
 											</form>
 										</div>
@@ -1291,37 +1293,6 @@
 		font-weight: 700;
 	}
 
-	.btn-edit {
-		background-color: var(--accent-warning);
-		color: var(--bg-primary);
-		padding: var(--spacing-xs) var(--spacing-sm);
-		border: none;
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-xs);
-		font-weight: 600;
-		cursor: pointer;
-		margin-left: var(--spacing-sm);
-		transition: background-color var(--transition-fast);
-	}
-
-	.btn-clear {
-		background: transparent;
-		color: var(--accent-error);
-		border: 1px solid var(--accent-error);
-		border-radius: var(--radius-sm);
-		font-size: 0.65rem;
-		font-weight: 700;
-		padding: 0.15rem 0.45rem;
-		min-height: 26px;
-		cursor: pointer;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-	}
-
-	.btn-clear:hover {
-		background: rgba(255, 51, 51, 0.12);
-	}
-
 	.completed-actions {
 		display: flex;
 		align-items: center;
@@ -1333,27 +1304,6 @@
 	.inline-clear {
 		display: inline-flex;
 		margin: 0;
-	}
-
-	.btn-secondary {
-		background-color: var(--text-muted);
-		color: var(--bg-primary);
-		padding: var(--spacing-sm) var(--spacing-md);
-		border: none;
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
-		font-weight: 600;
-		cursor: pointer;
-		transition: background-color var(--transition-fast);
-	}
-
-	.btn-secondary:hover:not(:disabled) {
-		background-color: var(--text-secondary);
-	}
-
-	.btn-secondary:disabled {
-		background-color: var(--border-default);
-		cursor: not-allowed;
 	}
 
 	.form-actions {
@@ -1423,40 +1373,6 @@
 		color: var(--text-muted);
 		font-size: var(--font-size-sm);
 		text-transform: uppercase;
-	}
-
-	.btn-primary {
-		background-color: var(--accent-primary);
-		color: var(--bg-primary);
-		padding: var(--spacing-sm) var(--spacing-md);
-		border: 2px solid var(--accent-primary);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		cursor: pointer;
-		align-self: center;
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		transition: all var(--transition-base);
-	}
-
-	.btn-primary:hover:not(:disabled) {
-		background-color: var(--accent-primary-hover);
-		box-shadow: var(--glow-primary);
-	}
-
-	.btn-primary:active:not(:disabled) {
-		transform: scale(0.95);
-	}
-
-	.btn-primary:disabled {
-		background-color: var(--bg-secondary);
-		border-color: var(--border-default);
-		color: var(--text-muted);
-		cursor: not-allowed;
 	}
 
 	.spinner {

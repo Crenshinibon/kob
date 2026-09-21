@@ -121,31 +121,9 @@
 		font-weight: 500;
 	}
 
-	.btn-primary {
-		background-color: var(--accent-primary);
-		color: var(--bg-primary);
-		padding: var(--spacing-sm) var(--spacing-md);
-		border: 2px solid var(--accent-primary);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-base);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		cursor: pointer;
+	.auth-container .btn-primary {
 		margin-top: var(--spacing-sm);
-		transition: all var(--transition-base);
-	}
-
-	.btn-primary:hover:not(:disabled) {
-		background-color: var(--accent-primary-hover);
-		box-shadow: var(--glow-primary);
-	}
-
-	.btn-primary:disabled {
-		background-color: var(--bg-secondary);
-		color: var(--text-muted);
-		border-color: var(--border-default);
-		cursor: not-allowed;
+		width: 100%;
 	}
 
 	.error {

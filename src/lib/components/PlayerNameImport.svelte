@@ -205,15 +205,8 @@
 	}
 
 	.csv-upload-btn {
-		display: inline-block;
 		cursor: pointer;
-		background-color: var(--bg-secondary);
-		color: var(--text-secondary);
-		border: 1px solid var(--border-strong);
-		border-radius: var(--radius-sm);
-		padding: var(--spacing-xs) var(--spacing-sm);
-		font-size: var(--font-size-sm);
-		font-weight: 600;
+		width: fit-content;
 	}
 
 	.csv-file-input {

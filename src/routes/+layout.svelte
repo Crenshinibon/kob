@@ -63,7 +63,9 @@
 		<LanguageSwitcher />
 		{#if data?.user}
 			<span class="user-email">{data.user.email}</span>
-			<button type="button" onclick={handleSignOut} class="btn-signout">{m.sign_out()}</button>
+			<button type="button" onclick={handleSignOut} class="btn-compact btn-danger"
+				>{m.sign_out()}</button
+			>
 		{/if}
 	</nav>
 
@@ -162,23 +164,6 @@
 	.user-email {
 		font-size: var(--font-size-sm);
 		color: var(--text-secondary);
-	}
-
-	.btn-signout {
-		background: transparent;
-		color: var(--accent-error);
-		border: 2px solid var(--accent-error);
-		padding: 0.4rem 0.75rem;
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
-		font-weight: 600;
-		cursor: pointer;
-		transition: all var(--transition-base);
-	}
-
-	.btn-signout:hover {
-		background-color: var(--accent-error);
-		color: var(--bg-primary);
 	}
 
 	main {

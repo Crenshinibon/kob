@@ -60,6 +60,18 @@ Special high-contrast dark theme optimized for bright sunlight conditions. Essen
 
 ### Buttons
 
+All actions share one layout (44px min height, uppercase, `letter-spacing: 0.06em`, 3px border). `<a>` and `<button>` with a `btn-*` kind look the same. Differentiate **kind** only:
+
+| Kind      | Class           | Use                                                                                                           |
+| --------- | --------------- | ------------------------------------------------------------------------------------------------------------- |
+| Default   | `btn-secondary` | Ordinary actions and button-styled navigation (Print sheet, Manage, Cancel, QR)                               |
+| Highlight | `btn-primary`   | The most important action on this screen (Save score, Start, Close check-in when it is still the main action) |
+| Danger    | `btn-danger`    | Destructive confirms (Delete, Retire). Compact danger is outline (Clear)                                      |
+| Link      | `btn-link`      | Text actions that should not be a chip (Back to current round)                                                |
+| Inactive  | `btn-inactive`  | Clickable but not highlighted (Close check-in after round 1 has scores)                                       |
+
+Sizes: default; `btn-compact` for row actions; `btn-small` for inline tweaks. Defined in `static/global.css`.
+
 ```css
 .btn-primary {
 	background: #ff6b35;
@@ -67,18 +79,19 @@ Special high-contrast dark theme optimized for bright sunlight conditions. Essen
 	border: 3px solid #ff6b35;
 	font-weight: 700;
 	text-transform: uppercase;
-	letter-spacing: 0.5px;
-}
-
-.btn-primary:hover {
-	background: #ff8555;
-	box-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
+	letter-spacing: 0.06em;
 }
 
 .btn-secondary {
-	background: transparent;
-	color: #00ccff;
-	border: 3px solid #00ccff;
+	background: #1a1a1a;
+	color: #e8e8e8;
+	border: 3px solid #808080;
+}
+
+.btn-danger {
+	background: #ff3333;
+	color: #0a0a0a;
+	border: 3px solid #ff3333;
 }
 ```
 

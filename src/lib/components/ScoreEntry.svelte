@@ -145,7 +145,7 @@
 			{#if showClear}
 				<button
 					type="button"
-					class="btn-clear"
+					class="btn-compact btn-danger"
 					data-testid="clear-score-{matchId}"
 					onclick={onclear}
 					disabled={busy}
@@ -246,24 +246,6 @@
 
 	.error p {
 		margin: 0;
-	}
-
-	.btn-clear {
-		background: transparent;
-		color: var(--accent-error);
-		border: 1px solid var(--accent-error);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-xs);
-		font-weight: 700;
-		padding: 0.2rem 0.5rem;
-		min-height: 28px;
-		cursor: pointer;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-	}
-
-	.btn-clear:hover:not(:disabled) {
-		background: rgba(255, 51, 51, 0.12);
 	}
 
 	.spinner {

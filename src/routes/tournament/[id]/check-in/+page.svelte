@@ -121,6 +121,7 @@
 		/>
 		<a
 			class="btn-secondary"
+			data-testid="checkin-print-link"
 			href={localizeHref(
 				resolve('/tournament/[id]/check-in/print', { id: String(data.tournamentId) })
 			)}>{m.checkin_print()}</a
@@ -181,6 +182,7 @@
 			})}
 		</p>
 		<a
+			class="btn-link"
 			href={localizeHref(
 				resolve('/tournament/[id]/manage', { id: String(data.tournamentId) }) + '#players'
 			)}
@@ -321,6 +323,10 @@
 		text-align: left;
 		padding: var(--spacing-sm) 0;
 		cursor: pointer;
+		text-transform: none;
+		letter-spacing: normal;
+		font-weight: 600;
+		min-height: 44px;
 	}
 
 	.list li.checked .name {
@@ -372,56 +378,5 @@
 		background: var(--bg-secondary);
 		padding: var(--spacing-sm);
 		border-radius: var(--radius-sm);
-	}
-
-	button.btn-primary {
-		background-color: var(--accent-primary);
-		color: var(--bg-primary);
-		border: var(--border-thickness) solid var(--accent-primary);
-		border-radius: var(--radius-sm);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		cursor: pointer;
-	}
-
-	button.btn-primary:hover:not(:disabled) {
-		background-color: var(--accent-primary-hover);
-		border-color: var(--accent-primary-hover);
-	}
-
-	button.btn-secondary,
-	a.btn-secondary {
-		background-color: transparent;
-		color: var(--text-secondary);
-		border: var(--border-thickness) solid var(--border-default);
-		border-radius: var(--radius-sm);
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	button.btn-secondary:hover,
-	a.btn-secondary:hover {
-		border-color: var(--border-strong);
-		color: var(--text-primary);
-	}
-
-	/* Muted on purpose: closing is not a primary action once round 1 has scores. */
-	button.btn-inactive {
-		background-color: var(--bg-secondary);
-		color: var(--text-muted);
-		border: var(--border-thickness) solid var(--border-default);
-		border-radius: var(--radius-sm);
-		font-weight: 600;
-		box-shadow: none;
-		cursor: default;
-	}
-
-	button.btn-inactive:hover {
-		background-color: var(--bg-secondary);
-		border-color: var(--border-default);
-		color: var(--text-muted);
 	}
 </style>

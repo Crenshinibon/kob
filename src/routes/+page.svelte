@@ -195,24 +195,6 @@
 		letter-spacing: -1px;
 	}
 
-	.btn-primary {
-		background-color: var(--accent-primary);
-		color: var(--bg-primary);
-		padding: var(--spacing-sm) var(--spacing-md);
-		border-radius: var(--radius-sm);
-		text-decoration: none;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		border: 2px solid var(--accent-primary);
-		transition: all var(--transition-base);
-	}
-
-	.btn-primary:hover {
-		background-color: var(--accent-primary-hover);
-		box-shadow: var(--glow-primary);
-	}
-
 	.login-prompt,
 	.empty {
 		text-align: center;
