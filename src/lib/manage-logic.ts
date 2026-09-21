@@ -18,6 +18,34 @@ export function deriveLockState(matches: readonly { teamAScore: number | null }[
 	return { roundHasScores: matches.some((m) => m.teamAScore != null) };
 }
 
+/** Seed order, add/remove, and seed points: setup, or round 1 with no scores. */
+export function canEditRound1Roster(input: {
+	status: string;
+	currentRound: number;
+	roundHasScores: boolean;
+}): boolean {
+	if (input.status === 'setup') return true;
+	return input.status === 'active' && input.currentRound === 1 && !input.roundHasScores;
+}
+
+export function remoteErrorMessage(err: unknown): string {
+	const raw = err instanceof Error ? err.message : String(err);
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (
+			parsed &&
+			typeof parsed === 'object' &&
+			'message' in parsed &&
+			typeof (parsed as { message: unknown }).message === 'string'
+		) {
+			return (parsed as { message: string }).message;
+		}
+	} catch {
+		/* keep raw */
+	}
+	return raw;
+}
+
 export function minRoundCount(currentRound: number, roundHasScores: boolean): number {
 	if (currentRound <= 0) return 1;
 	return roundHasScores ? currentRound + 1 : currentRound;

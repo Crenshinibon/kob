@@ -795,7 +795,7 @@
 	"player_record_vs_below": "En dessous : {name}",
 	"player_score_could_not_save": "Enregistrement impossible",
 	"ops_back_office_hint": "Règles, départage, forfait et blessure se gèrent dans Gérer :",
-	"manage_order_locked": "L’ordre des joueurs ne peut pas être modifié tant que ce tour a des scores.",
+	"manage_order_locked": "L’ordre des joueurs ne peut être modifié qu’en préparation ou au tour 1 sans scores.",
 	"manage_courts_locked": "Les joueurs ne peuvent pas être déplacés entre terrains tant que ce tour a des scores.",
 	"landing_meta_title": "KoB Tracker — tournois de beach-volley King of the Beach",
 	"landing_meta_description": "Organisez un tournoi King of the Beach depuis le téléphone. Partenaires qui tournent, scores par QR, classement par terrain — pas par points totaux.",

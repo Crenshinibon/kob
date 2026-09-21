@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
 	applyAssignment,
+	canEditRound1Roster,
 	deriveLockState,
+	remoteErrorMessage,
 	isValidPlayerMove,
 	minRoundCount,
 	proposedMove,
@@ -25,6 +27,33 @@ describe('deriveLockState / minRoundCount', () => {
 		expect(minRoundCount(2, false)).toBe(2);
 		expect(minRoundCount(2, true)).toBe(3);
 		expect(minRoundCount(0, false)).toBe(1);
+	});
+
+	it('canEditRound1Roster is setup or round 1 without scores', () => {
+		expect(canEditRound1Roster({ status: 'setup', currentRound: 0, roundHasScores: false })).toBe(
+			true
+		);
+		expect(canEditRound1Roster({ status: 'active', currentRound: 1, roundHasScores: false })).toBe(
+			true
+		);
+		expect(canEditRound1Roster({ status: 'active', currentRound: 1, roundHasScores: true })).toBe(
+			false
+		);
+		expect(canEditRound1Roster({ status: 'active', currentRound: 2, roundHasScores: false })).toBe(
+			false
+		);
+		expect(
+			canEditRound1Roster({ status: 'completed', currentRound: 2, roundHasScores: true })
+		).toBe(false);
+	});
+
+	it('remoteErrorMessage unwraps SvelteKit JSON bodies', () => {
+		expect(remoteErrorMessage(new Error('plain'))).toBe('plain');
+		expect(
+			remoteErrorMessage(
+				new Error('{"message":"Players can only be added in setup or in round 1 before scores."}')
+			)
+		).toBe('Players can only be added in setup or in round 1 before scores.');
 	});
 });
 

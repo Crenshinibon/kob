@@ -128,7 +128,7 @@ Add many players
 [Add players]
 ```
 
-For **random seed**, list order is the Seeding tie-break (094). The Players tab shows that order as **list position** (1-based `seedRank` under the hood). Order is editable via the **top / up / down / bottom** buttons while assignments are unlocked. When the round has scores, those buttons are hidden and a short hint says player order cannot be changed. A new player is appended (`seedRank = n+1`).
+For **random seed**, list order is the Seeding tie-break (094). The Players tab shows that order as **list position** (1-based `seedRank` under the hood). Order is editable via the **top / up / down / bottom** buttons in **setup** or **round 1 with no scores**. After round 1 — even if the current round has no scores yet — those buttons are hidden and a short hint says player order can only be changed in setup or round 1. A new player is appended (`seedRank = n+1`).
 
 | Phase                                                | Behaviour                                                                                                                                                                                                                                                                                                                                        |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

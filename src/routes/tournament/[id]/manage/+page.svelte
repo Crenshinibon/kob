@@ -10,10 +10,12 @@
 	import TieBreakRulesFields from '$lib/components/TieBreakRulesFields.svelte';
 	import RosterStatusActions from './RosterStatusActions.svelte';
 	import {
+		canEditRound1Roster,
 		isValidPlayerMove,
 		movePlayerInOrder,
 		orderPlayersByIds,
 		proposedMove,
+		remoteErrorMessage,
 		sortCourts,
 		sortPlayersBySeed,
 		type ManualAssignmentCourt,
@@ -146,6 +148,14 @@
 	const uncheckedCount = $derived(
 		(page?.players ?? []).filter((p) => !p.retiredAt && !p.checkedInAt).length
 	);
+	const rosterEditable = $derived(
+		!!page &&
+			canEditRound1Roster({
+				status: page.tournament.status,
+				currentRound: page.tournament.currentRound,
+				roundHasScores: page.lock.roundHasScores
+			})
+	);
 	const sortedCourts = $derived(sortCourts(pendingCourts ?? page?.courts ?? []));
 	const validDropCourts = $derived.by(() => {
 		const ids = new Set<number>();
@@ -171,7 +181,7 @@
 			await fn();
 			await query.refresh();
 		} catch (err) {
-			errorMsg = err instanceof Error ? err.message : String(err);
+			errorMsg = remoteErrorMessage(err);
 		}
 	}
 
@@ -293,7 +303,7 @@
 			await query.refresh();
 		} catch (err) {
 			if (gen === orderGen) {
-				errorMsg = err instanceof Error ? err.message : String(err);
+				errorMsg = remoteErrorMessage(err);
 			}
 		} finally {
 			if (gen === orderGen) pendingOrderIds = null;
@@ -420,7 +430,7 @@
 				regenDoneIds = regenDoneIds.filter((id) => id !== playerId);
 			}, REGEN_COOLDOWN_MS);
 		} catch (err) {
-			errorMsg = err instanceof Error ? err.message : String(err);
+			errorMsg = remoteErrorMessage(err);
 			regenBusyIds = regenBusyIds.filter((id) => id !== playerId);
 		}
 	}
@@ -511,45 +521,47 @@
 				/>
 			</div>
 
-			<div class="panel add-one-panel" data-testid="add-one-panel">
-				<h2>{m.manage_add_one_heading()}</h2>
-				<form
-					class="stack-form"
-					onsubmit={(e) => {
-						e.preventDefault();
-						run(() =>
-							addPlayer({
-								tournamentId: data.tournamentId,
-								name: addName,
-								seedPoints: addPoints ? Number(addPoints) : null
-							})
-						).then(() => {
-							addName = '';
-							addPoints = '';
-						});
-					}}
-				>
-					<label>
-						{m.manage_add_player()}
-						<input
-							name="name"
-							bind:value={addName}
-							placeholder={m.manage_add_player()}
-							data-testid="add-player-name"
-							required
-						/>
-					</label>
-					{#if page.tournament.formatType === 'preseed'}
-						<label>
-							{m.manage_seed_points()}
-							<input name="seed" bind:value={addPoints} placeholder={m.manage_seed_points()} />
-						</label>
-					{/if}
-					<button type="submit" class="btn-primary" data-testid="add-player"
-						>{m.manage_add_player()}</button
+			{#if rosterEditable}
+				<div class="panel add-one-panel" data-testid="add-one-panel">
+					<h2>{m.manage_add_one_heading()}</h2>
+					<form
+						class="stack-form"
+						onsubmit={(e) => {
+							e.preventDefault();
+							run(() =>
+								addPlayer({
+									tournamentId: data.tournamentId,
+									name: addName,
+									seedPoints: addPoints ? Number(addPoints) : null
+								})
+							).then(() => {
+								addName = '';
+								addPoints = '';
+							});
+						}}
 					>
-				</form>
-			</div>
+						<label>
+							{m.manage_add_player()}
+							<input
+								name="name"
+								bind:value={addName}
+								placeholder={m.manage_add_player()}
+								data-testid="add-player-name"
+								required
+							/>
+						</label>
+						{#if page.tournament.formatType === 'preseed'}
+							<label>
+								{m.manage_seed_points()}
+								<input name="seed" bind:value={addPoints} placeholder={m.manage_seed_points()} />
+							</label>
+						{/if}
+						<button type="submit" class="btn-primary" data-testid="add-player"
+							>{m.manage_add_player()}</button
+						>
+					</form>
+				</div>
+			{/if}
 
 			{#if page.tournament.status === 'setup'}
 				<div class="panel add-many-panel" data-testid="add-many-panel">
@@ -573,7 +585,7 @@
 				</div>
 			{/if}
 
-			{#if page.checkInUsed}
+			{#if page.checkInUsed && rosterEditable}
 				<button
 					type="button"
 					class="btn-danger"
@@ -586,7 +598,7 @@
 				</button>
 			{/if}
 
-			{#if page.tournament.formatType === 'random-seed' && (page.lock.roundHasScores || page.tournament.status === 'completed')}
+			{#if page.tournament.formatType === 'random-seed' && !rosterEditable}
 				<p class="hint" data-testid="order-locked">{m.manage_order_locked()}</p>
 			{/if}
 			<ul class="roster">
@@ -594,7 +606,7 @@
 					{@const orderIndex = orderedActiveIds.indexOf(p.id)}
 					{@const canReorder =
 						page.tournament.formatType === 'random-seed' &&
-						!page.lock.roundHasScores &&
+						rosterEditable &&
 						!p.retiredAt &&
 						orderIndex >= 0}
 					<li
@@ -633,7 +645,7 @@
 										}}>{m.manage_rename()}</button
 									>
 								{/if}
-								{#if page.tournament.formatType === 'preseed' && !page.lock.roundHasScores}
+								{#if page.tournament.formatType === 'preseed' && rosterEditable}
 									<input
 										class="seed-compact"
 										type="number"
@@ -649,7 +661,7 @@
 											)}
 									/>
 								{/if}
-								{#if !p.retiredAt && (page.tournament.status === 'setup' || (!page.lock.roundHasScores && page.tournament.currentRound === 1))}
+								{#if !p.retiredAt && rosterEditable}
 									<button
 										type="button"
 										class="btn-compact btn-danger"

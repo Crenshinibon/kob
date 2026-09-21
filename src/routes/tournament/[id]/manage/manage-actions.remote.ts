@@ -105,7 +105,7 @@ export const updatePlayerOrder = command(
 	async ({ tournamentId, playerIds }) => {
 		const { tourney } = await requireOrganizerTournament(tournamentId);
 		if (tourney.status === 'active') {
-			if ((tourney.currentRound || 0) !== 1) error(400, m.err_add_player_phase());
+			if ((tourney.currentRound || 0) !== 1) error(400, m.manage_order_locked());
 			await assertRoundUnlocked(tourney.id, 1);
 		}
 		const ranks = new Map<number, number>();

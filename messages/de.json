@@ -795,7 +795,7 @@
 	"player_record_vs_below": "Darunter: {name}",
 	"player_score_could_not_save": "Speichern fehlgeschlagen",
 	"ops_back_office_hint": "Satzregeln, Tie-Break, Rücktritt und Verletzungsmeldung sind unter Verwalten:",
-	"manage_order_locked": "Die Reihenfolge lässt sich nicht ändern, solange diese Runde Ergebnisse hat.",
+	"manage_order_locked": "Die Reihenfolge lässt sich nur in der Vorbereitung oder in Runde 1 ohne Ergebnisse ändern.",
 	"manage_courts_locked": "Spieler können nicht zwischen Plätzen verschoben werden, solange diese Runde Ergebnisse hat.",
 	"landing_meta_title": "KoB Tracker — King of the Beach Volleyball-Turniere",
 	"landing_meta_description": "KoB-Turnier vom Handy aus leiten. Partner rotieren, Punkte per QR eintragen, Rang nach Platz — nicht nach Gesamtpunkten.",

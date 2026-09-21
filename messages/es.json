@@ -795,7 +795,7 @@
 	"player_record_vs_below": "Abajo: {name}",
 	"player_score_could_not_save": "No se pudo guardar",
 	"ops_back_office_hint": "Puntuación, desempate, bajas y lesiones están en Gestionar:",
-	"manage_order_locked": "No se puede cambiar el orden de los jugadores mientras esta ronda tenga marcadores.",
+	"manage_order_locked": "El orden de los jugadores solo se puede cambiar en preparación o en la ronda 1 sin marcadores.",
 	"manage_courts_locked": "No se puede mover a los jugadores entre pistas mientras esta ronda tenga marcadores.",
 	"landing_meta_title": "KoB Tracker — torneos de vóley playa King of the Beach",
 	"landing_meta_description": "Dirige un torneo King of the Beach desde el móvil. Parejas que rotan, marcador por QR y ranking por pista, no por puntos totales.",

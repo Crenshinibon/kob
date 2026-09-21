@@ -138,6 +138,27 @@ test.describe('Manage page (096)', () => {
 		await expect(page.locator('.order-btn')).toHaveCount(0);
 	});
 
+	test('round 2 hides seed-order buttons even before scores', async ({ page }) => {
+		test.setTimeout(90000);
+		const name = `ManageR2Order ${Date.now()}`;
+		names.push(name);
+		const id = await createRandomSeedTournament(page, name, 8, 2);
+		await scoreAllOpenMatches(page);
+		await page.goto(`/tournament/${id}`);
+		await expect(page.locator('button:has-text("Close Round")')).toBeEnabled({ timeout: 20000 });
+		await closeRoundOrFetch(page, id);
+		await expect(page.getByText('Round 2 of 2')).toBeVisible({ timeout: 30000 });
+
+		await page.goto(`/tournament/${id}/manage#players`);
+		await page.getByTestId('tab-players').click();
+		await expect(page.getByTestId('players-tab')).toBeVisible();
+		await expect(page.getByTestId('lock-indicator')).toContainText(/round 2/i);
+		await expect(page.locator('.order-btn')).toHaveCount(0);
+		await expect(page.getByTestId('order-locked')).toBeVisible();
+		await expect(page.getByTestId('add-one-panel')).toHaveCount(0);
+		await expect(page.getByTestId('add-player')).toHaveCount(0);
+	});
+
 	test('4-player tournament is one court on the courts tab', async ({ page }) => {
 		const name = `ManageFour ${Date.now()}`;
 		names.push(name);

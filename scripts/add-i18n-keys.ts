@@ -307,10 +307,10 @@ const keys: Record<string, { en: string; de: string; fr: string; es: string }> =
 	manage_win_by_1: { en: '1 point', de: '1 Punkt', fr: '1 point', es: '1 punto' },
 	manage_win_by_2: { en: '2 points', de: '2 Punkte', fr: '2 points', es: '2 puntos' },
 	manage_order_locked: {
-		en: 'Player order cannot be changed while this round has scores.',
-		de: 'Die Reihenfolge lässt sich nicht ändern, solange diese Runde Ergebnisse hat.',
-		fr: 'L’ordre des joueurs ne peut pas être modifié tant que ce tour a des scores.',
-		es: 'No se puede cambiar el orden de los jugadores mientras esta ronda tenga marcadores.'
+		en: 'Player order can only be changed in setup or in round 1 before scores.',
+		de: 'Die Reihenfolge lässt sich nur in der Vorbereitung oder in Runde 1 ohne Ergebnisse ändern.',
+		fr: 'L’ordre des joueurs ne peut être modifié qu’en préparation ou au tour 1 sans scores.',
+		es: 'El orden de los jugadores solo se puede cambiar en preparación o en la ronda 1 sin marcadores.'
 	},
 	manage_courts_locked: {
 		en: 'Players cannot be moved between courts while this round has scores.',
