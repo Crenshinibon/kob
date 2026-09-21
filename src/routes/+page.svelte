@@ -292,7 +292,7 @@
 	.imprint {
 		max-width: 800px;
 		margin: var(--spacing-xl) auto 0;
-		padding: 0 var(--spacing-md);
+		padding: 0 var(--spacing-md) 6rem;
 		border-top: 1px solid var(--border-default);
 		padding-top: var(--spacing-lg);
 	}

@@ -139,7 +139,7 @@
 	.landing {
 		max-width: 800px;
 		margin: 0 auto;
-		padding: var(--spacing-xl) var(--spacing-md) var(--spacing-lg);
+		padding: var(--spacing-xl) var(--spacing-md) 6rem;
 	}
 
 	.hero,
