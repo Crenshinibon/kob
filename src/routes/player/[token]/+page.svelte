@@ -215,10 +215,6 @@
 		{/if}
 	</header>
 
-	{#if page.tournament.checkInOpen && roundState !== 'not_started'}
-		<p class="banner" data-testid="checkin-open-banner">{msg.player_checkin_open_note()}</p>
-	{/if}
-
 	{#if roundState === 'not_started'}
 		<section class="hero" data-testid="player-not-started">
 			<h2>{msg.player_not_started({ name: page.tournament.name })}</h2>
@@ -664,7 +660,6 @@
 		margin: 0;
 	}
 
-	.banner,
 	.hero,
 	.placement,
 	.record,

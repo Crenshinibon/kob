@@ -775,7 +775,6 @@
 	"player_history_solo": "(solo)",
 	"player_history_canceled": "annulé — non compté",
 	"player_history_sub": "rempl.",
-	"player_checkin_open_note": "Enregistrement encore ouvert — ton terrain peut encore changer.",
 	"player_movement_up": "monte depuis le terrain {court}",
 	"player_movement_down": "descend depuis le terrain {court}",
 	"player_movement_same": "même terrain",

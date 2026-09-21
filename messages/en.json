@@ -775,7 +775,6 @@
 	"player_history_solo": "(solo)",
 	"player_history_canceled": "canceled — not counted",
 	"player_history_sub": "sub",
-	"player_checkin_open_note": "Check-in still open — your court may change until the organizer closes check-in.",
 	"player_movement_up": "up from Court {court}",
 	"player_movement_down": "down from Court {court}",
 	"player_movement_same": "same court",

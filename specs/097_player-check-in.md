@@ -52,7 +52,7 @@ Check-in path (optional)
 
 Check-in **before start** is available, not required ([099](./099_tournament-setup-and-start.md)). Courts do not exist yet in `setup`, so a player page opened early shows `not_started` until start.
 
-The reshuffle banner ("your court may change") only appears if check-in is still open **after** the tournament has started (rare: reopen check-in). Closing check-in after start may still remove no-shows and rebuild round 1 if it has no scores (096). Check-in can be reopened. Skipping check-in entirely leaves `checkedInAt` null on every player; start uses the full roster.
+The player page does **not** warn that the court may change while check-in is still open — closing check-in is optional, so that copy would stay up after start and confuse players. Closing check-in after start may still remove no-shows and rebuild round 1 if it has no scores (096). Check-in can be reopened. Skipping check-in entirely leaves `checkedInAt` null on every player; start uses the full roster.
 
 ## UI
 
@@ -207,14 +207,14 @@ All organizer-only (same guard as the operations view). `regeneratePlayerToken` 
 4. Organizer un-checks that player → reload the player page → stays ○ (source stays `org`).
 5. In `setup`, check in 12 of 16 → Close check-in → Start with checked-in only → 12 players, round 1 generated, removed tokens 404.
 6. After start, save one score from a **player page** in round 1 → close-check-in dialog offers only "Keep".
-7. Reopen check-in after start → banner appears on player page (098).
+7. Check-in used, start without closing check-in → player page has no "check-in still open" / court-may-change banner (098).
 8. Skip check-in entirely → Start with all 16 → operations view shows court QRs; scores via `/court/[token]` work; player pages still exist if a URL is opened.
 9. Visit Manage then Setup, check in 3 of 8, go back: Manage **Remove all not checked in (5)** and Setup **3 of 8 checked in** appear within 3 s (not a stale cached count).
 
 ## Decisions (from review)
 
 1. **Self check-in on scan stays.** Opening `/player/[token]` checks the player in when the organizer has not touched that row.
-2. **Closing check-in is not required** before start or before scores. Soft banner only if check-in was opened and is still open after start.
+2. **Closing check-in is not required** before start or before scores. The player page does not show a check-in-open / court-may-change banner.
 3. **Print layout: 3-column cards** on A4/Letter.
 4. **Regenerate player link** is in v1 (096 ⋯ menu + QR modal).
 5. Check-in list does **not** show round-1 court. After start, the player page is the place for "which court".
@@ -228,7 +228,7 @@ None remaining for this spec. Court-page vs organizer-only score correction is i
 - [095_org-player-experience-index.md](./095_org-player-experience-index.md)
 - [096_tournament-management-page.md](./096_tournament-management-page.md) — `removeUncheckedPlayers`, `regeneratePlayerToken`, badges
 - [099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md) — start does not require check-in; "checked-in only" is an optional start option
-- [098_player-page.md](./098_player-page.md) — landing page after scan: current game, score entry, upcoming; `not_started` + banner
+- [098_player-page.md](./098_player-page.md) — landing page after scan: current game, score entry, upcoming; `not_started`
 - [060_court-operations.md](./060_court-operations.md) — court QRs remain; `qrcode` package shared via `QrCode.svelte`
 - [030_auth-and-users.md](./030_auth-and-users.md) — anonymous player access model
 

@@ -266,7 +266,6 @@ const keys: Record<string, { en: string; de: string; fr: string; es: string }> =
 	player_history_solo: { en: '(solo)', de: '(solo)', fr: '(solo)', es: '(solo)' },
 	player_history_canceled: { en: 'canceled — not counted', de: 'abgebrochen — zählt nicht', fr: 'annulé — non compté', es: 'cancelado — no cuenta' },
 	player_history_sub: { en: 'sub', de: 'Ersatz', fr: 'rempl.', es: 'sust.' },
-	player_checkin_open_note: { en: 'Check-in still open — your court may change until the organizer closes check-in.', de: 'Check-in noch offen — dein Platz kann sich noch ändern.', fr: 'Enregistrement encore ouvert — ton terrain peut encore changer.', es: 'El registro sigue abierto — tu pista puede cambiar.' },
 	player_movement_up: { en: 'up from Court {court}', de: 'hoch von Platz {court}', fr: 'monte depuis le terrain {court}', es: 'sube desde pista {court}' },
 	player_movement_down: { en: 'down from Court {court}', de: 'runter von Platz {court}', fr: 'descend depuis le terrain {court}', es: 'baja desde pista {court}' },
 	player_movement_same: { en: 'same court', de: 'gleicher Platz', fr: 'même terrain', es: 'misma pista' },

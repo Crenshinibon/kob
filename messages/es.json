@@ -775,7 +775,6 @@
 	"player_history_solo": "(solo)",
 	"player_history_canceled": "cancelado — no cuenta",
 	"player_history_sub": "sust.",
-	"player_checkin_open_note": "El registro sigue abierto — tu pista puede cambiar.",
 	"player_movement_up": "sube desde pista {court}",
 	"player_movement_down": "baja desde pista {court}",
 	"player_movement_same": "misma pista",

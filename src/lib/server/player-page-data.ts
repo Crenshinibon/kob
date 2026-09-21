@@ -113,7 +113,6 @@ export async function fetchPlayerPageData(token: string) {
 	const players = await db.select().from(player).where(eq(player.tournamentId, tourney.id));
 	const names = new Map(players.map((p) => [p.id, p.name]));
 	const checkInUsed = checkInWasUsed(players, tourney.checkInClosedAt);
-	const checkInOpen = checkInUsed && !tourney.checkInClosedAt && tourney.status === 'active';
 
 	const rotations = await db
 		.select()
@@ -586,7 +585,6 @@ export async function fetchPlayerPageData(token: string) {
 			currentRound,
 			numRounds: tourney.numRounds,
 			formatType: tourney.formatType,
-			checkInOpen,
 			checkInUsed,
 			finishedEarly: tourney.finishedEarly,
 			physicalCourtCount: physical

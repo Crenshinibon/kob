@@ -47,7 +47,7 @@ Players have no personal view of the tournament. The court QR (060) is still a v
 | `active`      | Player on a current-round rotation, matches open, shift is playing                                     |
 | `not_started` | `tournament.status === 'setup'` (or `currentRound === 0`) — [099](./099_tournament-setup-and-start.md) |
 
-Plus two orthogonal flags: `checkInOpen` (097 banner — only when check-in has actually been used) and `movement: 'up' | 'down' | 'same' | null` (court number vs. previous round).
+Plus one orthogonal flag: `movement: 'up' | 'down' | 'same' | null` (court number vs. previous round).
 
 `injured` still shows the [Current game](#current-game) block so the substitute's court can be scored from this token; a SUBST notice sits on the matchup. Terminal states (`completed` / `retired` / `eliminated` / `frozen` with court done) have no score entry.
 
@@ -188,7 +188,7 @@ Placement hidden. Polling continues so the court appears at start without reload
 
 ### Banners (any state)
 
-- `checkInOpen` and tournament already started: "Check-in still open — your court may change until the organizer closes check-in." (097). Hidden in `not_started`. Hidden entirely when check-in was never used (no `checkedInAt` / `checkInSource` on any player and `checkInClosedAt` is null).
+- No check-in-open / "your court may change" warning. Closing check-in is optional (097), so that copy would stay up after start and confuse players.
 - Poll failure: small "Last updated 12:04 · retry" line; the page never blanks out on a failed refresh.
 
 ### Below the main card
@@ -532,7 +532,7 @@ type PlayerPageData = {
 		currentRound;
 		numRounds;
 		formatType;
-		checkInOpen: boolean;
+		checkInUsed: boolean;
 		finishedEarly: boolean;
 		physicalCourtCount;
 	};
@@ -667,7 +667,7 @@ Do **not** fall back to closed-round-only current place — live including this 
 
 ## i18n Keys (new)
 
-`player_title`, `player_round_of`, `player_now`, `player_court_now`, `player_physical_court`, `player_players_scoring` (`{size} players · {scoring}`), `player_shift_now`, `player_shift_wait` (`Be at court at {time}`), `player_shift_wait_now` (`Be at the court now`), `player_shift_next_now` (`Your shift is next — be at the court now`), `player_you`, `player_vs`, `player_sit_out`, `player_sit_out_now`, `player_on_court_now`, `player_also_on_court`, `player_up_next`, `player_waiting_scores_locked`, `player_canceled`, `player_substitute_note`, `player_court_standings`, `player_court_done`, `player_finished_rank`, `player_waiting_courts` (`{done} of {total}`), `player_next_appears`, `player_next_hint_up`, `player_next_hint_down`, `player_next_hint_same`, `player_next_hint_winners`, `player_next_hint_losers`, `player_frozen`, `player_eliminated`, `player_retired`, `player_retired_injury`, `player_replaced_by`, `player_final_place`, `player_finished_early`, `player_placement_heading`, `player_placement_current` (`Currently {place} of {total}`), `player_placement_best` (`Best achievable place: {place}`), `player_placement_safe` (`Safe place: {place}`), `player_placement_final`, `player_placement_can_still_change`, `player_not_started`, `player_not_started_registered`, `player_history`, `player_record`, `player_record_seed` (`Seed {rank} of {total}`), `player_record_seed_points`, `player_record_random` (`Random seed · started on Court {court}`), `player_record_totals` (`Points {points} · Diff {diff} · {matches} matches`), `player_record_averages_note`, `player_history_finished_rank`, `player_history_from_to`, `player_history_why_ladder_up`, `player_history_why_ladder_down`, `player_history_why_ladder_stay_top`, `player_history_why_ladder_stay_bottom`, `player_history_why_vertical`, `player_history_why_preseed_winners`, `player_history_why_preseed_losers`, `player_history_why_frozen`, `player_history_why_manual`, `player_history_why_joined`, `player_history_how_heading`, `player_history_how_random`, `player_history_how_preseed`, `player_history_sit_out`, `player_history_solo`, `player_history_canceled`, `player_history_sub`, `player_checkin_open_note`, `player_movement_up`, `player_movement_down`, `player_movement_same`, `player_last_updated`, `player_refresh`, `player_not_found`, `player_score_read_only_hint`, `err_score_already_saved`, `court_closed_see_organizer_or_player_page` (extends the current closed-round hint). Reuse existing `court_save_score` / validation keys inside `ScoreEntry.svelte` (court page keeps `court_update_score` for edits).
+`player_title`, `player_round_of`, `player_now`, `player_court_now`, `player_physical_court`, `player_players_scoring` (`{size} players · {scoring}`), `player_shift_now`, `player_shift_wait` (`Be at court at {time}`), `player_shift_wait_now` (`Be at the court now`), `player_shift_next_now` (`Your shift is next — be at the court now`), `player_you`, `player_vs`, `player_sit_out`, `player_sit_out_now`, `player_on_court_now`, `player_also_on_court`, `player_up_next`, `player_waiting_scores_locked`, `player_canceled`, `player_substitute_note`, `player_court_standings`, `player_court_done`, `player_finished_rank`, `player_waiting_courts` (`{done} of {total}`), `player_next_appears`, `player_next_hint_up`, `player_next_hint_down`, `player_next_hint_same`, `player_next_hint_winners`, `player_next_hint_losers`, `player_frozen`, `player_eliminated`, `player_retired`, `player_retired_injury`, `player_replaced_by`, `player_final_place`, `player_finished_early`, `player_placement_heading`, `player_placement_current` (`Currently {place} of {total}`), `player_placement_best` (`Best achievable place: {place}`), `player_placement_safe` (`Safe place: {place}`), `player_placement_final`, `player_placement_can_still_change`, `player_not_started`, `player_not_started_registered`, `player_history`, `player_record`, `player_record_seed` (`Seed {rank} of {total}`), `player_record_seed_points`, `player_record_random` (`Random seed · started on Court {court}`), `player_record_totals` (`Points {points} · Diff {diff} · {matches} matches`), `player_record_averages_note`, `player_history_finished_rank`, `player_history_from_to`, `player_history_why_ladder_up`, `player_history_why_ladder_down`, `player_history_why_ladder_stay_top`, `player_history_why_ladder_stay_bottom`, `player_history_why_vertical`, `player_history_why_preseed_winners`, `player_history_why_preseed_losers`, `player_history_why_frozen`, `player_history_why_manual`, `player_history_why_joined`, `player_history_how_heading`, `player_history_how_random`, `player_history_how_preseed`, `player_history_sit_out`, `player_history_solo`, `player_history_canceled`, `player_history_sub`, `player_movement_up`, `player_movement_down`, `player_movement_same`, `player_last_updated`, `player_refresh`, `player_not_found`, `player_score_read_only_hint`, `err_score_already_saved`, `court_closed_see_organizer_or_player_page` (extends the current closed-round hint). Reuse existing `court_save_score` / validation keys inside `ScoreEntry.svelte` (court page keeps `court_update_score` for edits).
 
 ## Testing
 
@@ -715,7 +715,7 @@ Do **not** fall back to closed-round-only current place — live including this 
 8. Retire the player → `retired` state with final place.
 9. Complete the tournament → final place shown; standings link works.
 10. Unknown token → 404 page, no stack trace.
-11. Check-in banner visible before close check-in, gone after (097).
+11. After start with check-in used and not closed, the player page has no check-in-open / court-may-change banner (097).
 12. Save a score on `/court/[token]` (court QR path) → the player page picks it up read-only. Save from the player page → the court page picks it up. Operations view still shows the court QR. Edit on the court page after a player save updates the player page; the player still cannot edit.
 13. 5p sit-out: sitting player's page has no score fields for the parallel game; court page can save it.
 14. Waiting shift: page shows a clock time ("Be at court at …"), not a minute count. Polling stops while the tab is hidden and resumes on focus.
@@ -741,7 +741,7 @@ None remaining for this spec.
 ## Related Specs
 
 - [095_org-player-experience-index.md](./095_org-player-experience-index.md)
-- [097_player-check-in.md](./097_player-check-in.md) — optional personal QRs, self check-in, banner
+- [097_player-check-in.md](./097_player-check-in.md) — optional personal QRs, self check-in
 - [096_tournament-management-page.md](./096_tournament-management-page.md) — moves, late joins, reopen; pre-play remove/swap/move; court QRs stay on operations
 - [099_tournament-setup-and-start.md](./099_tournament-setup-and-start.md) — `not_started` state; start does not require check-in
 - [060_court-operations.md](./060_court-operations.md) — court page and court QRs remain; `ScoreEntry` extract shared with this page

@@ -70,6 +70,7 @@ test.describe('Player page (098)', () => {
 		await expect(playerPage.getByTestId('group-standings')).toBeVisible();
 		await expect(playerPage.getByTestId('player-record-rounds')).toBeVisible();
 		await expect(playerPage.getByRole('link', { name: /open court/i })).toHaveCount(0);
+		await expect(playerPage.getByTestId('checkin-open-banner')).toHaveCount(0);
 		await anon.close();
 
 		await page.goto(links[0].url);

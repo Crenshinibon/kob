@@ -775,7 +775,6 @@
 	"player_history_solo": "(solo)",
 	"player_history_canceled": "abgebrochen — zählt nicht",
 	"player_history_sub": "Ersatz",
-	"player_checkin_open_note": "Check-in noch offen — dein Platz kann sich noch ändern.",
 	"player_movement_up": "hoch von Platz {court}",
 	"player_movement_down": "runter von Platz {court}",
 	"player_movement_same": "gleicher Platz",

@@ -6,7 +6,8 @@ import {
 	getCourtLinks,
 	getPlayerLinks,
 	login,
-	scoreAllMatchesOnCourt
+	scoreAllMatchesOnCourt,
+	startTournamentFromSetup
 } from './helpers';
 
 test.describe('Player check-in (097)', () => {
@@ -183,6 +184,32 @@ test.describe('Player check-in (097)', () => {
 		await expect(page.getByTestId('setup-checked-in-count')).toContainText('3 of 8', {
 			timeout: 3000
 		});
+	});
+
+	test('player page has no check-in-open banner after start', async ({ page, browser }) => {
+		const name = `CheckinNoBanner ${Date.now()}`;
+		names.push(name);
+		const id = await createSetupTournament(page, name, 8, 2);
+		await page.goto(`/tournament/${id}/check-in`);
+		const firstId = await page
+			.locator('[data-testid^="checkin-row-"]')
+			.first()
+			.getAttribute('data-testid');
+		expect(firstId).toBeTruthy();
+		await page.getByTestId(firstId!).click();
+		await expect(page.getByTestId('checkin-progress')).toContainText('1', { timeout: 10000 });
+
+		await page.goto(`/tournament/${id}`);
+		await startTournamentFromSetup(page);
+
+		const links = await getPlayerLinks(page, id);
+		const anon = await browser.newContext();
+		const playerPage = await anon.newPage();
+		await playerPage.goto(links[0].url);
+		await expect(playerPage.getByTestId('player-now')).toBeVisible({ timeout: 15000 });
+		await expect(playerPage.getByTestId('checkin-open-banner')).toHaveCount(0);
+		await expect(playerPage.getByText(/check-in still open/i)).toHaveCount(0);
+		await anon.close();
 	});
 
 	test('close check-in is not a primary action after round 1 scores', async ({ page }) => {
