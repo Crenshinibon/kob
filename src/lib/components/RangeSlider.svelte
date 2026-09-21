@@ -80,7 +80,7 @@
 
 	.range-current {
 		text-align: center;
-		font-weight: 600;
-		color: var(--text-secondary);
+		font-weight: 700;
+		color: var(--text-primary);
 	}
 </style>

@@ -23,6 +23,7 @@ import {
 	derivePlayerRoundState,
 	movementFor,
 	movementWhy,
+	neighborSeparatingFactor,
 	nextHintFor,
 	playerMatchesView,
 	reachableFinalPlaceRange,
@@ -86,6 +87,19 @@ function groupsComplete(
 			)
 		)
 	);
+}
+
+function courtSizesFromRotations(
+	rotations: readonly { courtNumber: number; courtSize: number }[],
+	fallback: readonly number[]
+): number[] {
+	const count = Math.max(fallback.length, ...rotations.map((r) => r.courtNumber), 1);
+	const sizes: number[] = [];
+	for (let i = 0; i < count; i++) {
+		const rotation = rotations.find((r) => r.courtNumber === i + 1);
+		sizes.push(rotation?.courtSize ?? fallback[i] ?? 4);
+	}
+	return sizes;
 }
 
 export async function fetchPlayerPageData(token: string) {
@@ -248,44 +262,61 @@ export async function fetchPlayerPageData(token: string) {
 			})
 		: null;
 
+	const liveRank =
+		myStanding?.roundHistory.find((h) => h.round === currentRound)?.rankOnCourt ??
+		ranks?.bestRank ??
+		null;
+
 	const liveResults =
 		currentRotations.length > 0 && liveStandings
-			? currentRotations.map((r) => ({
-					courtNumber: r.courtNumber,
-					standings: rotationPlayerIds(r).map((pid, i) => {
-						const s = liveStandings.find((st) => st.playerId === pid);
-						const hist = s?.roundHistory.find((h) => h.round === currentRound);
-						return {
-							playerId: pid,
-							rank: hist?.rankOnCourt ?? i + 1,
-							points: hist?.points ?? 0,
-							diff: hist?.diff ?? 0,
-							matchCount: s?.matchesPlayed ?? 0
-						};
-					})
-				}))
+			? currentRotations.map((r) => {
+					const rows = matchesByRotation.get(r.id) ?? [];
+					const hasScores = rows.some((m) => m.teamAScore != null);
+					return {
+						courtNumber: r.courtNumber,
+						standings: rotationPlayerIds(r).map((pid, i) => {
+							const s = liveStandings.find((st) => st.playerId === pid);
+							const hist = s?.roundHistory.find((h) => h.round === currentRound);
+							return {
+								playerId: pid,
+								rank: hasScores ? (hist?.rankOnCourt ?? i + 1) : i + 1,
+								points: hasScores ? (hist?.points ?? 0) : 0,
+								diff: hasScores ? (hist?.diff ?? 0) : 0,
+								matchCount: hasScores ? 1 : 0
+							};
+						})
+					};
+				})
 			: null;
 
+	const placementSizes =
+		currentRotations.length > 0
+			? courtSizesFromRotations(currentRotations, courtSizes)
+			: courtSizes;
+
 	const range =
-		myRotation && courtSizes.length > 0
+		myRotation && placementSizes.length > 0
 			? reachableFinalPlaceRange({
 					formatType: tourney.formatType as 'preseed' | 'random-seed',
 					currentRound,
 					numRounds: tourney.numRounds,
 					courtNumber: myRotation.courtNumber,
-					courtSizes,
+					courtSizes: placementSizes,
 					bestRankOnCourt: ranks?.bestRank ?? null,
 					safeRankOnCourt: ranks?.safeRank ?? null,
+					liveRankOnCourt: liveRank,
 					liveRoundResults: liveResults,
 					frozenCourtNumbers: frozenNumbers,
 					playerId: row.id
 				})
-			: { best: 1, worst: Math.max(1, activeTotal), minCourt: 1, maxCourt: courtSizes.length || 1 };
+			: {
+					best: 1,
+					worst: Math.max(1, activeTotal),
+					minCourt: 1,
+					maxCourt: courtSizes.length || 1,
+					current: null
+				};
 
-	const liveRank =
-		myStanding?.roundHistory.find((h) => h.round === currentRound)?.rankOnCourt ??
-		ranks?.bestRank ??
-		null;
 	const hint =
 		myRotation && liveRank
 			? nextHintFor(
@@ -505,15 +536,15 @@ export async function fetchPlayerPageData(token: string) {
 				above: above
 					? {
 							name: above.name,
-							decidingFactor: above.decidingFactor ?? self.decidingFactor,
-							decidingOutcome: above.decidingOutcome
+							decidingFactor: neighborSeparatingFactor(above, self),
+							decidingOutcome: 'lost'
 						}
 					: null,
 				below: below
 					? {
 							name: below.name,
-							decidingFactor: self.decidingFactor ?? below.decidingFactor,
-							decidingOutcome: self.decidingOutcome
+							decidingFactor: neighborSeparatingFactor(self, below),
+							decidingOutcome: 'won'
 						}
 					: null
 			});
@@ -607,7 +638,7 @@ export async function fetchPlayerPageData(token: string) {
 			rounds: recordRounds
 		},
 		placement: {
-			current: myStanding?.overallRank ?? null,
+			current: range.current ?? myStanding?.overallRank ?? null,
 			total: activeTotal,
 			best: range.best,
 			worst: range.worst,

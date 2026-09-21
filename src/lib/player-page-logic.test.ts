@@ -13,6 +13,8 @@ import {
 	reachableRanksOnCourt,
 	reachableFinalPlaceRange,
 	verticalTierCourtRange,
+	verticalTierPlaceRange,
+	neighborSeparatingFactor,
 	shouldAutoCheckIn,
 	checkInWasUsed,
 	type NumberedMatch
@@ -318,6 +320,8 @@ describe('reachable ranks and range', () => {
 		expect(verticalTierCourtRange(3, Array(8).fill(4))).toEqual({ lo: 5, hi: 6 });
 		expect(verticalTierCourtRange(4, Array(8).fill(4))).toEqual({ lo: 7, hi: 8 });
 		expect(verticalTierCourtRange(4, [5, 4, 4, 4, 4, 4, 4, 3])).toEqual({ lo: 6, hi: 8 });
+		expect(verticalTierPlaceRange(4, Array(8).fill(4))).toEqual({ best: 25, worst: 32 });
+		expect(verticalTierPlaceRange(4, [5, 4, 4, 4, 4, 4, 4, 3])).toEqual({ best: 25, worst: 31 });
 	});
 
 	it('random-seed round 1 court-done 4th is the 4ths band, not dummy slot order', () => {
@@ -329,7 +333,7 @@ describe('reachable ranks and range', () => {
 				rank: i === 0 ? rank : j + 1,
 				points: i === 0 ? [15, 13, 12, 12][j]! : 0,
 				diff: i === 0 ? [4, 1, -1, -1][j]! : 0,
-				matchCount: i === 0 ? 3 : 0
+				matchCount: 3
 			}))
 		}));
 		const range = reachableFinalPlaceRange({
@@ -340,14 +344,68 @@ describe('reachable ranks and range', () => {
 			courtSizes: sizes,
 			bestRankOnCourt: 4,
 			safeRankOnCourt: 4,
+			liveRankOnCourt: 4,
 			liveRoundResults: dummyResults,
 			frozenCourtNumbers: new Set(),
 			playerId: 4
 		});
+		expect(range.current).toBe(25);
 		expect(range.best).toBe(17);
 		expect(range.worst).toBe(32);
 		expect(range.minCourt).toBe(5);
 		expect(range.maxCourt).toBe(8);
+	});
+
+	it('random-seed round 1 5p court-done 4th uses mixed court sizes', () => {
+		const sizes = [5, 4, 4, 4, 4, 4, 4, 3];
+		const dummyResults = sizes.map((size, i) => ({
+			courtNumber: i + 1,
+			standings: Array.from({ length: size }, (_, j) => ({
+				playerId: 100 * (i + 1) + j + 1,
+				rank: j + 1,
+				points: i === 0 ? [15, 13.33, 12.33, 12.33, 11.75][j]! : 0,
+				diff: i === 0 ? [4, 1, -1, -1, -2.25][j]! : 0,
+				matchCount: 3
+			}))
+		}));
+		const range = reachableFinalPlaceRange({
+			formatType: 'random-seed',
+			currentRound: 1,
+			numRounds: 4,
+			courtNumber: 1,
+			courtSizes: sizes,
+			bestRankOnCourt: 4,
+			safeRankOnCourt: 4,
+			liveRankOnCourt: 4,
+			liveRoundResults: dummyResults,
+			frozenCourtNumbers: new Set(),
+			playerId: 104
+		});
+		expect(range.current).toBe(25);
+		expect(range.best).toBe(14);
+		expect(range.worst).toBe(32);
+		expect(range.minCourt).toBe(4);
+		expect(range.maxCourt).toBe(8);
+	});
+});
+
+describe('neighborSeparatingFactor', () => {
+	it('uses points when the player below has fewer points, not seed', () => {
+		expect(
+			neighborSeparatingFactor(
+				{ points: 12.33, diff: -1, decidingFactor: 'initial_order' },
+				{ points: 11.75, diff: -2.25, decidingFactor: 'round_points' }
+			)
+		).toBe('round_points');
+	});
+
+	it('uses the shared deciding factor when points and diff match', () => {
+		expect(
+			neighborSeparatingFactor(
+				{ points: 12.33, diff: -1, decidingFactor: 'initial_order' },
+				{ points: 12.33, diff: -1, decidingFactor: 'initial_order' }
+			)
+		).toBe('initial_order');
 	});
 });
 

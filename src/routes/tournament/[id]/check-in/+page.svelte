@@ -50,6 +50,7 @@
 
 	const unchecked = $derived(page?.players.filter((p) => !p.checkedInAt) ?? []);
 	const canShare = $derived(browser && typeof navigator.share === 'function');
+	const scoresBlockRemove = $derived(!!page?.round1HasScores && page.tournament.status !== 'setup');
 
 	async function toggle(id: number, currentlyChecked: boolean) {
 		await setPlayerCheckIn({ playerId: id, checkedIn: !currentlyChecked });
@@ -65,12 +66,12 @@
 		await navigator.share?.({ title: name, url: playerUrl(token) });
 	}
 
-	async function confirmClose() {
+	async function confirmClose(removeUnchecked?: boolean) {
 		const startAfter = page?.tournament.status === 'setup';
-		const removeUnchecked = closeMode === 'checked';
+		const remove = removeUnchecked ?? closeMode === 'checked';
 		await closeCheckIn({
 			tournamentId: data.tournamentId,
-			removeUnchecked,
+			removeUnchecked: remove,
 			startAfter
 		});
 		showClose = false;
@@ -127,7 +128,7 @@
 		{#if !page?.tournament.checkInClosedAt}
 			<button
 				type="button"
-				class="btn-primary"
+				class={scoresBlockRemove ? 'btn-secondary' : 'btn-primary'}
 				data-testid="close-checkin"
 				onclick={() => (showClose = true)}
 			>
@@ -253,14 +254,25 @@
 				<button type="button" class="btn-secondary" onclick={() => (showClose = false)}
 					>Cancel</button
 				>
-				<button
-					type="button"
-					class="btn-primary"
-					data-testid="confirm-close-checkin"
-					onclick={confirmClose}
-				>
-					{page.tournament.status === 'setup' ? m.setup_start_button() : m.checkin_close()}
-				</button>
+				{#if page.round1HasScores && page.tournament.status !== 'setup'}
+					<button
+						type="button"
+						class="btn-secondary"
+						data-testid="confirm-close-checkin"
+						onclick={() => confirmClose(false)}
+					>
+						{m.checkin_close_keep_option()}
+					</button>
+				{:else}
+					<button
+						type="button"
+						class="btn-primary"
+						data-testid="confirm-close-checkin"
+						onclick={() => confirmClose()}
+					>
+						{page.tournament.status === 'setup' ? m.setup_start_button() : m.checkin_close()}
+					</button>
+				{/if}
 			</div>
 		</div>
 	</div>

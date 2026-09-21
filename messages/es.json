@@ -790,7 +790,7 @@
 	"manage_win_by_1": "1 punto",
 	"manage_win_by_2": "2 puntos",
 	"range_courts_value": "{count} pistas",
-	"range_rounds_value": "{count}",
+	"range_rounds_value": "{count} rondas",
 	"player_record_round": "Ronda {round} · Pista {court} · {rank}",
 	"player_record_vs_above": "Arriba: {name}",
 	"player_record_vs_below": "Abajo: {name}",

@@ -790,7 +790,7 @@
 	"manage_win_by_1": "1 Punkt",
 	"manage_win_by_2": "2 Punkte",
 	"range_courts_value": "{count} Plätze",
-	"range_rounds_value": "{count}",
+	"range_rounds_value": "{count} Runden",
 	"player_record_round": "Runde {round} · Platz {court} · {rank}",
 	"player_record_vs_above": "Darüber: {name}",
 	"player_record_vs_below": "Darunter: {name}",

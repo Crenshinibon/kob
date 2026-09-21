@@ -115,7 +115,7 @@ Close check-in?
 [Close check-in]  [Cancel]
 ```
 
-- "Remove" delegates to `removeUncheckedPlayers` (096) and is only offered while round 1 has no scores; otherwise the dialog says "Round 1 already has scores — use Retire on the manage page" and only "Keep" is available.
+- "Remove" delegates to `removeUncheckedPlayers` (096) and is only offered while round 1 has no scores; otherwise the dialog says "Round 1 already has scores — use Retire on the manage page" and **does not show a primary/active Close check-in control**. Keep is a secondary action (`checkin_close_keep_option`) that only sets `checkInClosedAt`. The toolbar Close check-in chip is `btn-secondary` in that state so it does not look available as a destructive action.
 - Sets `tournament.checkInClosedAt = now()`.
 
 ### Print sheet `/tournament/[id]/check-in/print`
