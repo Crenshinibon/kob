@@ -112,43 +112,46 @@ async function validateDecidingSetAllowed(
 	return teamAWins >= 1 && teamBWins >= 1;
 }
 
-type IssueBag = {
-	teamAScore: (msg: string) => unknown;
-	teamBScore?: (msg: string) => unknown;
-	setNumber?: (msg: string) => unknown;
+type InvalidArg = Parameters<typeof invalid>[0];
+
+export type IssueBag = ((message: string) => InvalidArg) & {
+	teamAScore?: (msg: string) => InvalidArg;
+	teamBScore?: (msg: string) => InvalidArg;
+	setNumber?: (msg: string) => InvalidArg;
 };
 
 export async function saveMatchScore(input: SaveScoreInput, issue: IssueBag) {
+	const teamAIssue = issue.teamAScore ?? issue;
 	const resolved = await resolveRotationByToken(input.token);
-	if (!resolved?.rotation) return invalid(issue.teamAScore(m.err_invalid_match()));
+	if (!resolved?.rotation) return invalid(teamAIssue(m.err_invalid_match()));
 
 	const { rotation, courtRecord, playerRecord } = resolved;
 	if (input.mode === 'court' && (!courtRecord || !courtRecord.isActive)) {
-		return invalid(issue.teamAScore(m.err_court_not_active()));
+		return invalid(teamAIssue(m.err_court_not_active()));
 	}
 
 	const [matchRecord] = await db.select().from(match).where(eq(match.id, input.matchId));
-	if (!matchRecord) return invalid(issue.teamAScore(m.err_invalid_match()));
+	if (!matchRecord) return invalid(teamAIssue(m.err_invalid_match()));
 	if (matchRecord.courtRotationId !== rotation.id) {
-		return invalid(issue.teamAScore(m.err_invalid_match()));
+		return invalid(teamAIssue(m.err_invalid_match()));
 	}
-	if (matchRecord.isCanceled) return invalid(issue.teamAScore(m.err_match_canceled()));
+	if (matchRecord.isCanceled) return invalid(teamAIssue(m.err_match_canceled()));
 
 	const [tourney] = await db
 		.select()
 		.from(tournament)
 		.where(eq(tournament.id, rotation.tournamentId));
-	if (!tourney) return invalid(issue.teamAScore(m.tournament_not_found()));
+	if (!tourney) return invalid(teamAIssue(m.tournament_not_found()));
 
 	const currentRound = tourney.currentRound || 0;
 	if (rotation.roundNumber !== currentRound || tourney.status !== 'active') {
-		return invalid(issue.teamAScore(m.err_court_read_only()));
+		return invalid(teamAIssue(m.err_court_read_only()));
 	}
 
 	if (input.mode === 'player') {
-		if (!playerRecord) return invalid(issue.teamAScore(m.player_not_found()));
+		if (!playerRecord) return invalid(teamAIssue(m.player_not_found()));
 		if (!matchInvolvesPlayer(matchRecord, playerRecord.id)) {
-			return invalid(issue.teamAScore(m.err_invalid_match()));
+			return invalid(teamAIssue(m.err_invalid_match()));
 		}
 		const alreadySaved =
 			matchRecord.teamAScore != null ||
@@ -157,13 +160,13 @@ export async function saveMatchScore(input: SaveScoreInput, issue: IssueBag) {
 				matchRecord.setNumber === input.setNumber &&
 				matchRecord.teamAScore != null);
 		if (alreadySaved && !input.clear) {
-			return invalid(issue.teamAScore(m.err_score_already_saved()));
+			return invalid(teamAIssue(m.err_score_already_saved()));
 		}
 	}
 
 	if (input.clear) {
 		if (input.mode !== 'court') {
-			return invalid(issue.teamAScore(m.err_score_already_saved()));
+			return invalid(teamAIssue(m.err_score_already_saved()));
 		}
 		await db
 			.update(match)
@@ -201,7 +204,7 @@ export async function saveMatchScore(input: SaveScoreInput, issue: IssueBag) {
 		const maxSets = getMaxSets(effective.setsToWin);
 		if (input.setNumber < 1 || input.setNumber > maxSets) {
 			return invalid(
-				(issue.setNumber ?? issue.teamAScore)(
+				(issue.setNumber ?? teamAIssue)(
 					m.err_score_invalid({ minPoints: 1, winBy: effective.winBy })
 				)
 			);
@@ -215,7 +218,7 @@ export async function saveMatchScore(input: SaveScoreInput, issue: IssueBag) {
 			))
 		) {
 			return invalid(
-				(issue.setNumber ?? issue.teamAScore)(
+				(issue.setNumber ?? teamAIssue)(
 					m.err_score_invalid({ minPoints: 1, winBy: effective.winBy })
 				)
 			);
@@ -233,19 +236,17 @@ export async function saveMatchScore(input: SaveScoreInput, issue: IssueBag) {
 
 	if (!isValidFinalScore(winner, loser, minPoints, effective.winBy)) {
 		if (teamAScore > teamBScore) {
-			return invalid(issue.teamAScore(m.err_score_invalid({ minPoints, winBy: effective.winBy })));
+			return invalid(teamAIssue(m.err_score_invalid({ minPoints, winBy: effective.winBy })));
 		}
 		return invalid(
-			(issue.teamBScore ?? issue.teamAScore)(
-				m.err_score_invalid({ minPoints, winBy: effective.winBy })
-			)
+			(issue.teamBScore ?? teamAIssue)(m.err_score_invalid({ minPoints, winBy: effective.winBy }))
 		);
 	}
 
 	if (input.mode === 'player') {
 		const [existing] = await db.select().from(match).where(eq(match.id, input.matchId));
 		if (existing && (existing.teamAScore != null || existing.teamBScore != null)) {
-			return invalid(issue.teamAScore(m.err_score_already_saved()));
+			return invalid(teamAIssue(m.err_score_already_saved()));
 		}
 	}
 
@@ -266,7 +267,7 @@ export async function saveMatchScore(input: SaveScoreInput, issue: IssueBag) {
 			input.mode === 'player' &&
 			(existingSet.teamAScore != null || existingSet.teamBScore != null)
 		) {
-			return invalid(issue.teamAScore(m.err_score_already_saved()));
+			return invalid(teamAIssue(m.err_score_already_saved()));
 		}
 		await db.update(match).set({ teamAScore, teamBScore }).where(eq(match.id, existingSet.id));
 	} else {

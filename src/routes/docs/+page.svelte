@@ -11,7 +11,7 @@
 		<p class="lead">{m.docs_lead()}</p>
 	</header>
 
-	<nav class="toc" aria-label="{m.docs_toc_label()}">
+	<nav class="toc" aria-label={m.docs_toc_label()}>
 		<ul>
 			<li><a href="#how-kob-works">{m.docs_how_kob_works()}</a></li>
 			<li><a href="#tournament-formats">{m.docs_tournament_formats()}</a></li>

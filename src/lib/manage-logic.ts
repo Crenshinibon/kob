@@ -4,6 +4,7 @@ export type ManualAssignmentCourt = {
 	courtNumber: number;
 	playerIds: number[];
 	isFrozen?: boolean;
+	manualAdjustedAt?: Date | string | null;
 };
 
 export type AssignmentValidation = {
@@ -15,6 +16,34 @@ export function deriveLockState(matches: readonly { teamAScore: number | null }[
 	roundHasScores: boolean;
 } {
 	return { roundHasScores: matches.some((m) => m.teamAScore != null) };
+}
+
+/** Seed order, add/remove, and seed points: setup, or round 1 with no scores. */
+export function canEditRound1Roster(input: {
+	status: string;
+	currentRound: number;
+	roundHasScores: boolean;
+}): boolean {
+	if (input.status === 'setup') return true;
+	return input.status === 'active' && input.currentRound === 1 && !input.roundHasScores;
+}
+
+export function remoteErrorMessage(err: unknown): string {
+	const raw = err instanceof Error ? err.message : String(err);
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (
+			parsed &&
+			typeof parsed === 'object' &&
+			'message' in parsed &&
+			typeof (parsed as { message: unknown }).message === 'string'
+		) {
+			return (parsed as { message: string }).message;
+		}
+	} catch {
+		/* keep raw */
+	}
+	return raw;
 }
 
 export function minRoundCount(currentRound: number, roundHasScores: boolean): number {
@@ -142,7 +171,40 @@ export function applyAssignment(
 		after,
 		...opts
 	});
-	return { ...validation, resultingCourts: [...after] };
+	return { ...validation, resultingCourts: sortCourts(after) };
+}
+
+export function sortCourts<T extends { courtNumber: number }>(courts: readonly T[]): T[] {
+	return [...courts].sort((a, b) => a.courtNumber - b.courtNumber);
+}
+
+export function proposedMove(
+	courts: readonly ManualAssignmentCourt[],
+	playerId: number,
+	toCourt: number
+): ManualAssignmentCourt[] {
+	const next = courts.map((c) => ({
+		courtNumber: c.courtNumber,
+		playerIds: c.playerIds.filter((id) => id !== playerId),
+		isFrozen: c.isFrozen,
+		manualAdjustedAt: c.manualAdjustedAt
+	}));
+	const target = next.find((c) => c.courtNumber === toCourt);
+	if (target) target.playerIds = [...target.playerIds, playerId];
+	return sortCourts(next);
+}
+
+export function isValidPlayerMove(
+	courts: readonly ManualAssignmentCourt[],
+	playerId: number,
+	toCourt: number
+): boolean {
+	const from = courts.find((c) => c.playerIds.includes(playerId));
+	if (!from || from.courtNumber === toCourt) return false;
+	const to = courts.find((c) => c.courtNumber === toCourt);
+	if (!to || to.isFrozen || from.isFrozen) return false;
+	const after = proposedMove(courts, playerId, toCourt);
+	return after.every((c) => c.playerIds.length >= 3 && c.playerIds.length <= 6);
 }
 
 export function renumberSeedOrder(
@@ -156,4 +218,55 @@ export function renumberSeedOrder(
 	const ranks = new Map<number, number>();
 	without.forEach((id, i) => ranks.set(id, i + 1));
 	return ranks;
+}
+
+export type SeedOrderMove = 'up' | 'down' | 'top' | 'bottom';
+
+export function sortPlayersBySeed<T extends { id: number; seedRank: number | null }>(
+	players: readonly T[]
+): T[] {
+	return [...players].sort((a, b) => {
+		const ar = a.seedRank ?? a.id;
+		const br = b.seedRank ?? b.id;
+		if (ar !== br) return ar - br;
+		return a.id - b.id;
+	});
+}
+
+export function movePlayerInOrder(
+	playerIds: readonly number[],
+	movedId: number,
+	move: SeedOrderMove
+): number[] {
+	const ids = [...playerIds];
+	const from = ids.indexOf(movedId);
+	if (from < 0) return ids;
+	ids.splice(from, 1);
+	let to: number;
+	if (move === 'up') to = Math.max(0, from - 1);
+	else if (move === 'down') to = Math.min(ids.length, from + 1);
+	else if (move === 'top') to = 0;
+	else to = ids.length;
+	ids.splice(to, 0, movedId);
+	return ids;
+}
+
+export function orderPlayersByIds<T extends { id: number }>(
+	players: readonly T[],
+	orderedIds: readonly number[]
+): T[] {
+	const byId = new Map(players.map((p) => [p.id, p]));
+	const seen = new Set<number>();
+	const result: T[] = [];
+	for (const id of orderedIds) {
+		const player = byId.get(id);
+		if (player) {
+			result.push(player);
+			seen.add(id);
+		}
+	}
+	for (const player of players) {
+		if (!seen.has(player.id)) result.push(player);
+	}
+	return result;
 }

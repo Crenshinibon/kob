@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { ensureTournamentStarted } from './helpers';
+import { ensureTournamentStarted, fillNumericControl } from './helpers';
 
 test.describe('Tournament Format Selection', () => {
 	const testTournamentNames: string[] = [];
@@ -77,8 +77,13 @@ test.describe('Tournament Format Selection', () => {
 			await page.click('text=+ New Tournament');
 
 			const roundsInput = page.locator('input[name="n:numRounds"]');
+			await expect(page.getByTestId('create-num-rounds')).toBeVisible();
+			await expect(page.getByTestId('create-num-rounds-value')).toHaveText('3 rounds');
+			await expect(page.locator('label[for="numRounds"]')).toContainText('Rounds: 3 rounds');
 			await roundsInput.fill('5');
 			await expect(roundsInput).toHaveValue('5');
+			await expect(page.getByTestId('create-num-rounds-value')).toHaveText('5 rounds');
+			await expect(page.locator('label[for="numRounds"]')).toContainText('Rounds: 5 rounds');
 		});
 
 		test('Random format with 32 players creates 8 courts', async ({ page }) => {
@@ -89,7 +94,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.fill('input[name="name"]', tournamentName);
 
 			// Set rounds using the number input
-			await page.locator('#numRounds').fill('2');
+			await fillNumericControl(page, '#numRounds', 2);
 
 			// Enter players on the create page
 			const players = Array.from({ length: 32 }, (_, i) => `Player${i + 1}`);
@@ -317,7 +322,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.waitForURL('/tournament/create');
 
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '1');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 1);
 
 			// Enter 11 players on the create page
 			const players = Array.from({ length: 11 }, (_, i) => `Player${i + 1}`);
@@ -354,7 +359,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.waitForURL('/tournament/create');
 
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '1');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 1);
 
 			// Enter 21 players on the create page
 			const players = Array.from({ length: 21 }, (_, i) => `Player${i + 1}`);
@@ -391,7 +396,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.waitForURL('/tournament/create');
 
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '1');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 1);
 
 			// Enter 22 players on the create page
 			const players = Array.from({ length: 22 }, (_, i) => `Player${i + 1}`);
@@ -430,7 +435,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.waitForURL('/tournament/create');
 
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '1');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 1);
 
 			// Enter 8 players on the create page
 			const players = Array.from({ length: 8 }, (_, i) => `Player${i + 1}`);
@@ -482,7 +487,7 @@ test.describe('Tournament Format Selection', () => {
 			await page.waitForURL('/tournament/create');
 
 			await page.fill('input[name="name"]', tournamentName);
-			await page.fill('input[name="n:numRounds"]', '1');
+			await fillNumericControl(page, 'input[name="n:numRounds"]', 1);
 
 			// Enter 64 players on the create page
 			const players = Array.from({ length: 64 }, (_, i) => `Player${i + 1}`);

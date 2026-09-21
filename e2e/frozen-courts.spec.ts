@@ -82,9 +82,9 @@ test.describe('Preseed Frozen Courts (20 players, 5 courts)', () => {
 		await page.goto(`/tournament/${tid}`);
 		await page.waitForSelector('.qr-link a');
 		await page.waitForTimeout(1000);
-		return page.locator('.qr-link a').evaluateAll(
-			(els) => els.map((el) => (el as HTMLAnchorElement).href).filter(Boolean)
-		);
+		return page
+			.locator('.qr-link a')
+			.evaluateAll((els) => els.map((el) => (el as HTMLAnchorElement).href).filter(Boolean));
 	}
 
 	async function scoreCourt(
@@ -95,9 +95,13 @@ test.describe('Preseed Frozen Courts (20 players, 5 courts)', () => {
 	): Promise<void> {
 		await page.goto(url);
 		await page.waitForSelector('[data-testid^="match-form-"]');
-		const ids = await page.locator('[data-testid^="match-form-"]').evaluateAll(
-			(els) => els.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '').filter(Boolean)
-		);
+		const ids = await page
+			.locator('[data-testid^="match-form-"]')
+			.evaluateAll((els) =>
+				els
+					.map((el) => el.getAttribute('data-testid')?.replace('match-form-', '') ?? '')
+					.filter(Boolean)
+			);
 		for (const id of ids) {
 			await page.fill(`[data-testid="team-a-score-${id}"]`, String(aScore));
 			await page.fill(`[data-testid="team-b-score-${id}"]`, String(bScore));

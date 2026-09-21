@@ -53,18 +53,18 @@ This compiles `src/lib/paraglide/messages.js` to include the new functions.
 
 ## Files requiring no changes
 
-| File | Reason |
-|------|--------|
-| `src/hooks.server.ts` | Paraglide middleware already integrated |
-| `vite.config.ts` | Paraglide plugin already configured |
-| `project.inlang/settings.json` | Languages already defined |
-| `src/routes/+layout.svelte` | Already imports `* as m` and uses LanguageSwitcher |
-| `src/lib/components/LanguageSwitcher.svelte` | Already implemented |
-| `src/routes/docs/+page.svelte` | Already uses `m.docs_*()` — just keys missing |
-| `src/routes/faq/+page.svelte` | Already uses `m.faq_*()` — just keys missing |
-| All other `.svelte` files | Already use `m.*()` and all keys exist in message files |
-| All `+page.server.ts` files | No UI strings |
-| All API routes | No UI strings |
+| File                                         | Reason                                                  |
+| -------------------------------------------- | ------------------------------------------------------- |
+| `src/hooks.server.ts`                        | Paraglide middleware already integrated                 |
+| `vite.config.ts`                             | Paraglide plugin already configured                     |
+| `project.inlang/settings.json`               | Languages already defined                               |
+| `src/routes/+layout.svelte`                  | Already imports `* as m` and uses LanguageSwitcher      |
+| `src/lib/components/LanguageSwitcher.svelte` | Already implemented                                     |
+| `src/routes/docs/+page.svelte`               | Already uses `m.docs_*()` — just keys missing           |
+| `src/routes/faq/+page.svelte`                | Already uses `m.faq_*()` — just keys missing            |
+| All other `.svelte` files                    | Already use `m.*()` and all keys exist in message files |
+| All `+page.server.ts` files                  | No UI strings                                           |
+| All API routes                               | No UI strings                                           |
 
 ## Missing key inventory (to be extracted verbatim)
 

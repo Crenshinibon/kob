@@ -12,7 +12,7 @@ The core concept is to manage individual rankings within a 2v2 format. Players r
 - **Players per Court:** 3, 4, 5, or 6. Four is the standard court; leftovers use 3/5/6. A 4–6 player tournament is a single court.
 - **Platform:** Mobile-web optimized (users will access via smartphones on the beach).
 - **Formats:**
-  - **Random Seed**: Flexible round count, ladder redistribution.
+  - **Random Seed**: Flexible round count (1–10), ladder redistribution.
   - **Preseed**: Fixed rounds (3 for 16p, 4 for 32p), tiered binary redistribution based on seed points.
 
 ## 3. User Roles

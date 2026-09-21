@@ -2,7 +2,9 @@
 
 ## Status
 
-**IMPLEMENTED.** Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Reverses the "no draft state" decision in [050](./050_tournament-management.md) deliberately: creation and start become two distinct events.
+**IMPLEMENTED** (2026-09). Part of [095_org-player-experience-index.md](./095_org-player-experience-index.md). Reverses the "no draft state" decision in [050](./050_tournament-management.md) deliberately: creation and start become two distinct events.
+
+**As shipped:** the setup panel (and, after start, the operations schedule) lets the organizer edit **rounds** and **physical courts** without opening Manage. Preseed can set rounds in `setup`; after start those rounds stay derived from court count.
 
 ## Problem
 
@@ -51,7 +53,7 @@ Today `createTournamentForm` does everything at once: it needs ≥ 8 player name
 The existing form, with the player section made optional:
 
 - Name, format, scoring mode, custom scoring, tie-break, preseed retirement policy, physical courts, timing — unchanged.
-- **Players** textarea / CSV upload: optional. The court-layout preview, duration estimate and rounds input keep updating live from the pasted count; with 0 names they show "Add players to see the court layout". **The order of names is the seeding** when no points are entered (first name = seed 1). Omitted or tied seed points keep that list order. The same `seedRank` is the default last tie-break (`initial_order`, [094](./094_configurable-tie-breaking.md)). For random-seed the same order is editable later as **Order** on the manage Players tab (096).
+- **Players** textarea / CSV upload: optional. The court-layout preview, duration estimate and rounds input keep updating live from the pasted count; with 0 names they show "Add players to see the court layout". **The order of names is the seeding** when no points are entered (first name = seed 1). Omitted or tied seed points keep that list order. The same `seedRank` is the default last tie-break (`initial_order`, [094](./094_configurable-tie-breaking.md)). For random-seed the same order is editable later with **up / down / to-top / to-bottom** on the manage Players tab (096).
 - `numRounds` (random seed) **defaults to `min(courtCount, 4)`**, live from the pasted roster (`4` courts → 4 rounds, `2` courts → 2, `5+` courts → 4). One court (4–6 players) → **1**. The organizer can overwrite (1–10). If they edit the field, that stored value is kept even if the roster later changes, except it is still **forced to 1** when there is only one court. For preseed, rounds are derived at **start** (depends on court count); the form shows "computed at start".
 - One submit button: **Create** → `status = 'setup'`, players inserted with tokens (097), redirect to `/tournament/[id]` (setup view, below). **No "Create & start".**
 
@@ -81,9 +83,11 @@ The operations view renders a **start panel** instead of court cards:
 ```
 
 - Court layout, rounds and duration come from the existing pure functions (`getCourtConfiguration`, `calculateRoundCount`, `estimateTournamentDuration`) on the current roster count. **One court (4–6 players) → one round.** Random-seed rounds default to **`min(courtCount, 4)`** unless the organizer already overwrote `numRounds`.
+- **Rounds** and **physical courts** are the same **range sliders** as Create (`RangeSlider`; `setup-num-rounds` min 1 max 10, `setup-physical-courts` min 1 max 16). Rounds field label is **Rounds: {n} rounds**; the selected count sits **above the track** as `"{n} rounds"` (`range_rounds_value`), matching Create. Physical courts use `"{n} courts"` (`range_courts_value`) the same way. Operations after start keeps `ops-physical-courts`. Same values as Manage → Tournament (not Rules).
 - "Checked-in only" option appears **only** when check-in has at least one check-in and at least one player is not checked in. It **removes** the unchecked players (hard delete, same as 096 Remove) before starting. If check-in was never used, Start uses the full roster.
 - The Start button is disabled below 4 (or below 4 checked-in when that option is selected) with the reason shown.
 - Round stepper and close round are hidden in `setup`. Court QRs appear after start on the operations view. Personal QRs live on the optional check-in page (097).
+- Check-in counts on this panel refresh on navigate and `visibilitychange`, and poll every **2 s** while `status = 'setup'` (5 s after start) so a laptop left on Setup tracks desk check-ins without a 5-second lag.
 
 ## Start
 
@@ -101,27 +105,27 @@ This is the second half of today's `createTournamentForm`, extracted into `start
 
 `MIN_TOURNAMENT_PLAYERS` becomes **4**. `getCourtConfiguration` / `calculateCourtSizes` must accept 4–7 (today they throw below 8):
 
-| Players | Courts   | Rounds                                                                 |
-| ------- | -------- | ---------------------------------------------------------------------- |
-| 4       | `[4]`    | 1 (final = that court)                                                 |
-| 5       | `[5]`    | 1                                                                      |
-| 6       | `[6]`    | 1                                                                      |
+| Players | Courts   | Rounds                                                                   |
+| ------- | -------- | ------------------------------------------------------------------------ |
+| 4       | `[4]`    | 1 (final = that court)                                                   |
+| 5       | `[5]`    | 1                                                                        |
+| 6       | `[6]`    | 1                                                                        |
 | 7       | `[4, 3]` | preseed: 2; random-seed **default 2** (`min(2, 4)`), organizer can raise |
-| 8–16    | 2–4      | preseed: as today; random-seed **default = court count** (max 4)       |
-| 17–64   | 5–16     | preseed: as today; random-seed **default 4**, organizer can raise      |
+| 8–16    | 2–4      | preseed: as today; random-seed **default = court count** (max 4)         |
+| 17–64   | 5–16     | preseed: as today; random-seed **default 4**, organizer can raise        |
 
 ## Effects on Other Pages and Specs
 
-| Area                                                         | Change                                                                                                                                                                                                                                                                                                                                     |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Dashboard** (`/`)                                          | New **Setup** section listing `status = 'setup'` tournaments with player count and "Start" hint. (Replaces the empty "Draft" section that was removed earlier.)                                                                                                                                                                            |
-| **Manage page** ([096](./096_tournament-management-page.md)) | New `setup` row in the locking matrix: add / remove / rename / re-seed / paste list / CSV import are plain roster edits (no rebuild); Courts tab shows "Tournament not started"; Rules fully editable including scoring mode and rounds; Tournament tab offers Start (same panel) and Delete. Retire/injury/swap/move/finish-early hidden. |
-| **Check-in** ([097](./097_player-check-in.md))               | **Optional.** When used before start, "Close check-in" can offer **Start tournament** (with the checked-in-only option). Start from this panel never requires check-in. The reshuffle banner on the player page only appears if check-in was opened and is still open after start.                                                         |
-| **Player page** ([098](./098_player-page.md))                | `not_started` becomes a real state: "Tournament has not started yet · 14 players registered · You are checked in ✓" (checked-in line hidden if check-in unused). Placement and score entry hidden. Polling continues so NOW appears at start without reload.                                                                               |
-| **Court pages**                                              | No `court` rows exist in `setup` — court URLs 404. After start, court QRs on the operations view work as today. Players may score there **or** on `/player/[token]` (098).                                                                                                                                                                 |
-| **Cleanup cron** ([1010](./archive/1010_cleanup-cronjob.md)) | Stale rule (no activity for 31 days) already covers `setup` tournaments that were never started; no change.                                                                                                                                                                                                                                |
-| **050 / 030**                                                | "No draft state" note and the dashboard description are updated when this lands.                                                                                                                                                                                                                                                           |
-| **610 / 670**                                                | Start minimum 4 does **not** change mid-tournament retirement floors (670 can continue down to 3). 610's "cancel below 8" is the older incomplete-roster note — not the start rule.                                                                                                                                                        |
+| Area                                                         | Change                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard** (`/`)                                          | New **Setup** section listing `status = 'setup'` tournaments with player count and "Start" hint. (Replaces the empty "Draft" section that was removed earlier.)                                                                                                                                                                                     |
+| **Manage page** ([096](./096_tournament-management-page.md)) | New `setup` row in the locking matrix: add / remove / rename / re-seed / paste list / CSV import are plain roster edits (no rebuild); Courts tab shows "Tournament not started"; Rules (scoring) and Tournament (courts & rounds) fully editable; Tournament tab offers Start (same panel) and Delete. Retire/injury/swap/move/finish-early hidden. |
+| **Check-in** ([097](./097_player-check-in.md))               | **Optional.** When used before start, "Close check-in" can offer **Start tournament** (with the checked-in-only option). Start from this panel never requires check-in. The player page does not show a check-in-open banner.                                                                                                                       |
+| **Player page** ([098](./098_player-page.md))                | `not_started` becomes a real state: "Tournament has not started yet · 14 players registered · You are checked in ✓" (checked-in line hidden if check-in unused). Placement and score entry hidden. Polling continues so NOW appears at start without reload.                                                                                        |
+| **Court pages**                                              | No `court` rows exist in `setup` — court URLs 404. After start, court QRs on the operations view work as today. Players may score there **or** on `/player/[token]` (098).                                                                                                                                                                          |
+| **Cleanup cron** ([1010](./archive/1010_cleanup-cronjob.md)) | Stale rule (no activity for 31 days) already covers `setup` tournaments that were never started; no change.                                                                                                                                                                                                                                         |
+| **050 / 030**                                                | "No draft state" note and the dashboard description are updated when this lands.                                                                                                                                                                                                                                                                    |
+| **610 / 670**                                                | Start minimum 4 does **not** change mid-tournament retirement floors (670 can continue down to 3). 610's "cancel below 8" is the older incomplete-roster note — not the start rule.                                                                                                                                                                 |
 
 ## Data Layer
 
@@ -167,7 +171,7 @@ Remote functions:
 4. Check-in 12 of 16 in `setup` → Close check-in → Start with checked-in only → 12 players, `[4,4,4]`, removed players' tokens 404.
 5. Player page opened in `setup` → "not started" → after Start, page shows court + first matchup + score inputs within one poll.
 6. Preseed: rounds shown as "computed at start"; after start `numRounds` matches `calculateRoundCount` (1 for a 4-player tournament).
-7. Rules (scoring mode, rounds) editable in `setup` without any lock message.
+7. Rules (scoring) and Tournament (courts & rounds) editable in `setup` without any lock message.
 8. After start, no scores: swap two players on Manage → both court pages and both player pages show the new roster. Court QR URLs unchanged.
 9. Create 4 names → Start → one court, `numRounds = 1`, Finalize after that round.
 
@@ -189,7 +193,7 @@ None remaining for this spec.
 ## Related Specs
 
 - [095_org-player-experience-index.md](./095_org-player-experience-index.md)
-- [050_tournament-management.md](./050_tournament-management.md) — current create-and-start flow (to be updated)
+- [050_tournament-management.md](./050_tournament-management.md) — create → start two-step flow
 - [030_auth-and-users.md](./030_auth-and-users.md) — dashboard sections
 - [096](./096_tournament-management-page.md) — setup row in the locking matrix
 - [097](./097_player-check-in.md) — optional check-in; start does not require it

@@ -1,14 +1,26 @@
 <script lang="ts">
 	import * as msg from '$lib/paraglide/messages';
 
+	type ScoreIssue = { message: string };
+
+	type ScoreSubmitForm = {
+		submit: () => Promise<unknown>;
+		element?: HTMLFormElement;
+		fields: { allIssues(): ScoreIssue[] | undefined };
+	};
+
+	type ScoreField = {
+		as: (type: string, value?: string | number) => Record<string, unknown>;
+	};
+
 	type ScoreFields = {
-		enhance(
-			cb: (fi: { submit: () => Promise<unknown> }) => void | Promise<void>
-		): Record<string, unknown>;
+		enhance(cb: (fi: ScoreSubmitForm) => void | Promise<void>): Record<string, unknown>;
 		fields: {
-			teamAScore: Record<string, unknown>;
-			teamBScore: Record<string, unknown>;
+			teamAScore: ScoreField;
+			teamBScore: ScoreField;
+			allIssues(): ScoreIssue[] | undefined;
 		};
+		pending?: number;
 	};
 
 	let {
@@ -27,6 +39,7 @@
 		editing = false,
 		showClear = false,
 		youOnTeam = undefined,
+		extraErrors = [],
 		onsubmit,
 		onclear,
 		oncancel,
@@ -48,12 +61,19 @@
 		editing?: boolean;
 		showClear?: boolean;
 		youOnTeam?: 'a' | 'b';
-		onsubmit?: (form: { submit: () => Promise<unknown> }) => void | Promise<void>;
+		extraErrors?: string[];
+		onsubmit?: (form: ScoreSubmitForm) => void | Promise<void>;
 		onclear?: () => void;
 		oncancel?: () => void;
 		onfocus?: () => void;
 		onblur?: () => void;
 	} = $props();
+
+	const fieldIssues = $derived((formObj?.fields.allIssues() ?? []).map((issue) => issue.message));
+	const visibleErrors = $derived([...new Set([...extraErrors, ...fieldIssues])]);
+	const busy = $derived(saving || (formObj?.pending ?? 0) > 0);
+	const prefillA = $derived(editing && savedA != null ? String(savedA) : undefined);
+	const prefillB = $derived(editing && savedB != null ? String(savedB) : undefined);
 </script>
 
 {#if readOnly}
@@ -65,10 +85,15 @@
 	</div>
 {:else if formObj}
 	<form
+		novalidate
 		data-testid="{formTestId}-form-{matchId}"
 		class:compact
 		{...formObj.enhance(async (form) => {
-			await onsubmit?.(form);
+			if (onsubmit) {
+				await onsubmit(form);
+				return;
+			}
+			await form.submit();
 		})}
 	>
 		<input type="hidden" name="token" value={token} />
@@ -79,19 +104,25 @@
 		{#if youOnTeam}
 			<input type="hidden" name="youOnTeam" value={youOnTeam} />
 		{/if}
+		{#if visibleErrors.length > 0 && !busy}
+			<div class="error" data-testid="score-error-{matchId}" role="alert">
+				{#each visibleErrors as message, ei (ei)}
+					<p>{message}</p>
+				{/each}
+			</div>
+		{/if}
 		<div class="teams">
 			<div class="team">
 				<p>{teamALabel}</p>
 				<input
 					data-testid="team-a-score-{matchId}"
-					type="number"
-					name="teamAScore"
 					min="0"
 					required
-					disabled={saving}
+					disabled={busy}
 					{onfocus}
 					{onblur}
-					{...formObj.fields.teamAScore}
+					{...formObj.fields.teamAScore.as('text', prefillA)}
+					type="number"
 				/>
 			</div>
 			<div class="vs">{msg.court_vs()}</div>
@@ -99,41 +130,35 @@
 				<p>{teamBLabel}</p>
 				<input
 					data-testid="team-b-score-{matchId}"
-					type="number"
-					name="teamBScore"
 					min="0"
 					required
-					disabled={saving}
+					disabled={busy}
 					{onfocus}
 					{onblur}
-					{...formObj.fields.teamBScore}
+					{...formObj.fields.teamBScore.as('text', prefillB)}
+					type="number"
 				/>
 			</div>
 		</div>
 		<div class="form-actions">
 			{#if editing}
-				<button type="button" class="btn-secondary" onclick={oncancel} disabled={saving}>
+				<button type="button" class="btn-secondary" onclick={oncancel} disabled={busy}>
 					{msg.court_cancel_btn()}
 				</button>
 			{/if}
 			{#if showClear}
 				<button
 					type="button"
-					class="btn-secondary"
+					class="btn-compact btn-danger"
 					data-testid="clear-score-{matchId}"
 					onclick={onclear}
-					disabled={saving}
+					disabled={busy}
 				>
 					{msg.court_clear_score()}
 				</button>
 			{/if}
-			<button
-				data-testid="save-score-{matchId}"
-				type="submit"
-				class="btn-primary"
-				disabled={saving}
-			>
-				{#if saving}
+			<button data-testid="save-score-{matchId}" type="submit" class="btn-primary" disabled={busy}>
+				{#if busy}
 					<span class="spinner"></span>
 					{editing ? msg.court_updating() : msg.court_saving()}
 				{:else}
@@ -146,27 +171,58 @@
 
 <style>
 	.teams {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+		align-items: end;
+		gap: var(--spacing-md);
 	}
 
 	.team {
-		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+	}
+
+	.team p {
+		margin: 0;
+		font-size: var(--font-size-sm);
+		font-weight: 600;
 	}
 
 	.team input {
 		width: 100%;
+		min-height: 48px;
+		box-sizing: border-box;
+		transform: none;
+	}
+
+	.team input:focus {
+		transform: none;
 	}
 
 	.vs {
 		font-weight: 700;
+		padding-bottom: 0.85rem;
+	}
+
+	form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
+		margin: var(--spacing-sm) 0;
 	}
 
 	.form-actions {
 		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
 		gap: var(--spacing-sm);
-		margin-top: var(--spacing-sm);
+		margin-top: var(--spacing-xs);
+	}
+
+	.form-actions .btn-primary {
+		flex: 1 1 100%;
 	}
 
 	.compact .teams,
@@ -181,5 +237,36 @@
 
 	.saved {
 		color: var(--accent-success, #3c3);
+	}
+
+	.error {
+		background-color: rgba(255, 51, 51, 0.1);
+		color: var(--accent-error);
+		border: 1px solid var(--accent-error);
+		border-radius: var(--radius-sm);
+		padding: var(--spacing-sm);
+		font-size: var(--font-size-sm);
+	}
+
+	.error p {
+		margin: 0;
+	}
+
+	.spinner {
+		display: inline-block;
+		width: 14px;
+		height: 14px;
+		border: 2px solid var(--bg-primary);
+		border-top-color: transparent;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+		vertical-align: middle;
+		margin-right: var(--spacing-xs);
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 </style>

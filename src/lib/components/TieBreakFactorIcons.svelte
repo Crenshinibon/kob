@@ -35,14 +35,10 @@
 				class:deciding-won={isDeciding && decidingOutcome === 'won'}
 				class:deciding-middle={isDeciding && decidingOutcome === 'middle'}
 				class:deciding-lost={isDeciding && decidingOutcome === 'lost'}
-				style={isDeciding && decidingColor
-					? `--deciding-color: ${decidingColor}`
-					: undefined}
-				title={isDeciding
-					? getLabel(factor)
-					: `${getLabel(factor)} (=)`}
-				aria-label={getLabel(factor)}
-			>{TIE_BREAK_FACTOR_GLYPHS[factor]}</span>
+				style={isDeciding && decidingColor ? `--deciding-color: ${decidingColor}` : undefined}
+				title={isDeciding ? getLabel(factor) : `${getLabel(factor)} (=)`}
+				aria-label={getLabel(factor)}>{TIE_BREAK_FACTOR_GLYPHS[factor]}</span
+			>
 		{/each}
 	</span>
 {/if}

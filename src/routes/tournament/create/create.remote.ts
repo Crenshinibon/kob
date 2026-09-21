@@ -6,6 +6,11 @@ import { form, getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
 import { tournament, player } from '$lib/server/db/schema';
 import { assignSeedRanks, type FormatType } from '$lib/server/tournament-logic';
+import {
+	clampCourtScoringRules,
+	inferScoringMode,
+	type ScoringOverrides
+} from '$lib/tournament-logic';
 import { newPlayerToken } from '$lib/server/tournament-orchestration';
 import { parsePlayerLine, type ParsedPlayer } from '$lib/parse-players';
 
@@ -15,11 +20,12 @@ export const createTournamentForm = form(
 		formatType: v.picklist(['random-seed', 'preseed']),
 		names: v.optional(v.string(), ''),
 		physicalCourts: v.pipe(v.number(), v.minValue(1), v.maxValue(16)),
-		scoringMode: v.picklist(['single-21', 'best-of-3', 'custom']),
-		pointsToWin: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(50))),
-		winBy: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(10))),
-		setsToWin: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(5))),
-		decidingSetPoints: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(50))),
+		scoringMode: v.optional(v.picklist(['single-21', 'best-of-3', 'custom'])),
+		pointsToWin: v.optional(v.pipe(v.number(), v.minValue(6), v.maxValue(30))),
+		winBy: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(2))),
+		setsToWin: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(2))),
+		decidingSetPoints: v.optional(v.pipe(v.number(), v.minValue(6), v.maxValue(30))),
+		scoringOverridesJson: v.optional(v.string()),
 		numRounds: v.pipe(v.number(), v.minValue(1), v.maxValue(10)),
 		preseedRetirementPolicy: v.optional(v.picklist(['shrink', 'cascade']))
 	}),
@@ -28,11 +34,12 @@ export const createTournamentForm = form(
 		formatType,
 		names: namesText,
 		physicalCourts: physicalCourtCount,
-		scoringMode,
+		scoringMode: scoringModeRaw,
 		pointsToWin: pointsToWinRaw,
 		winBy: winByRaw,
 		setsToWin: setsToWinRaw,
 		decidingSetPoints: decidingSetPointsRaw,
+		scoringOverridesJson,
 		numRounds: submittedNumRounds,
 		preseedRetirementPolicy
 	}) => {
@@ -40,26 +47,37 @@ export const createTournamentForm = form(
 		const user = event.locals.user;
 		if (!user) error(401, m.unauthorized());
 
-		let pointsToWin: number;
-		let winBy: number;
-		let setsToWin: number;
-		let decidingSetPoints: number;
+		const four = clampCourtScoringRules({
+			pointsToWin: pointsToWinRaw ?? 21,
+			winBy: winByRaw ?? 2,
+			setsToWin: setsToWinRaw ?? 1,
+			decidingSetPoints: decidingSetPointsRaw ?? 15
+		});
+		const pointsToWin = four.pointsToWin;
+		const winBy = four.winBy;
+		const setsToWin = four.setsToWin;
+		const decidingSetPoints = four.decidingSetPoints;
+		const scoringMode = scoringModeRaw ?? inferScoringMode(four);
 
-		if (scoringMode === 'single-21') {
-			pointsToWin = 21;
-			winBy = 2;
-			setsToWin = 1;
-			decidingSetPoints = 15;
-		} else if (scoringMode === 'best-of-3') {
-			pointsToWin = 21;
-			winBy = 2;
-			setsToWin = 2;
-			decidingSetPoints = 15;
-		} else {
-			pointsToWin = pointsToWinRaw ?? 21;
-			winBy = winByRaw ?? 2;
-			setsToWin = setsToWinRaw ?? 1;
-			decidingSetPoints = decidingSetPointsRaw ?? 15;
+		let scoringOverrides: ScoringOverrides | null = null;
+		if (scoringOverridesJson) {
+			try {
+				const parsed = JSON.parse(scoringOverridesJson) as ScoringOverrides;
+				const cleaned: ScoringOverrides = {};
+				for (const key of ['3', '5', '6'] as const) {
+					const rules = parsed[key];
+					if (!rules) continue;
+					cleaned[key] = clampCourtScoringRules({
+						pointsToWin: rules.pointsToWin ?? 21,
+						winBy: rules.winBy ?? 2,
+						setsToWin: rules.setsToWin ?? 1,
+						decidingSetPoints: rules.decidingSetPoints ?? 15
+					});
+				}
+				if (Object.keys(cleaned).length > 0) scoringOverrides = cleaned;
+			} catch {
+				scoringOverrides = null;
+			}
 		}
 
 		const lines: string[] = (namesText ?? '')
@@ -95,6 +113,7 @@ export const createTournamentForm = form(
 				winBy,
 				setsToWin,
 				decidingSetPoints,
+				scoringOverrides,
 				schedulingMode: 'batch',
 				playerCount,
 				preseedRetirementPolicy:

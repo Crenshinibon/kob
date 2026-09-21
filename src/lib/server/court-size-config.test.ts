@@ -7,9 +7,9 @@ describe('court-size-config', () => {
 	});
 
 	it('parseStoredCourtSizes uses stored courtSizes when present', () => {
-		expect(
-			parseStoredCourtSizes({ courtSizes: JSON.stringify([4, 3]), playerCount: 7 })
-		).toEqual([4, 3]);
+		expect(parseStoredCourtSizes({ courtSizes: JSON.stringify([4, 3]), playerCount: 7 })).toEqual([
+			4, 3
+		]);
 	});
 
 	it('bracketCourtSizes does not throw for shrunken tournaments', () => {

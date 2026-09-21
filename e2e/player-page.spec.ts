@@ -63,10 +63,19 @@ test.describe('Player page (098)', () => {
 		await expect(playerPage.getByTestId('player-now')).toBeVisible({ timeout: 15000 });
 		await expect(playerPage.getByTestId('player-now')).toContainText('NOW');
 		await expect(playerPage.locator('[data-testid^="match-form-"]').first()).toBeVisible();
-		await expect(playerPage.getByTestId('player-placement')).toContainText('16');
-		await expect(playerPage.getByTestId('player-placement')).toContainText('1');
+		await expect(playerPage.getByTestId('player-placement-best')).toHaveText(
+			'Best achievable place: 1'
+		);
+		await expect(playerPage.getByTestId('player-placement-safe')).toHaveText('Safe place: 16');
+		await expect(playerPage.getByTestId('group-standings')).toBeVisible();
+		await expect(playerPage.getByTestId('player-record-rounds')).toBeVisible();
 		await expect(playerPage.getByRole('link', { name: /open court/i })).toHaveCount(0);
+		await expect(playerPage.getByTestId('checkin-open-banner')).toHaveCount(0);
 		await anon.close();
+
+		await page.goto(links[0].url);
+		await expect(page.getByTestId('player-now')).toBeVisible({ timeout: 15000 });
+		await expect(page.getByTestId('player-page-lang')).toHaveCount(0);
 	});
 
 	test('write-once save appears in history and is read-only for the player', async ({
@@ -85,6 +94,7 @@ test.describe('Player page (098)', () => {
 		expect(matchId).toBeTruthy();
 		await expect(playerPage.getByTestId('player-history')).toBeVisible();
 		await expect(playerPage.getByTestId('player-history')).toContainText('21');
+		await expect(playerPage.getByTestId('group-standings')).toBeVisible();
 		await expect(playerPage.locator(`[data-testid="team-a-score-${matchId}"]`)).toHaveCount(0);
 		await anon.close();
 	});
@@ -109,6 +119,88 @@ test.describe('Player page (098)', () => {
 		await playerPage.goto(target.url);
 		await expect(playerPage.getByTestId('player-page')).toBeVisible({ timeout: 15000 });
 		await expect(playerPage.getByTestId('player-history')).toContainText('21', { timeout: 15000 });
+		await expect(playerPage.getByTestId('group-standings')).toBeVisible();
+		await anon.close();
+	});
+
+	test('round-1 court-done 4th projects the 4ths band, not seed-court place', async ({
+		page,
+		browser
+	}) => {
+		test.setTimeout(120000);
+		const name = `PlayerPlace ${Date.now()}`;
+		names.push(name);
+		const id = await createRandomSeedTournament(page, name, 32, 4);
+		const courtLinks = await getCourtLinks(page);
+		await scoreAllMatchesOnCourt(page, courtLinks[0]);
+		await expect(page.getByTestId('group-standings')).toBeVisible({ timeout: 15000 });
+		const fourthName = (
+			await page
+				.locator('[data-testid="group-standings"] tbody tr')
+				.nth(3)
+				.locator('td')
+				.nth(1)
+				.innerText()
+		).trim();
+		expect(fourthName.length).toBeGreaterThan(0);
+
+		const links = await getPlayerLinks(page, id);
+		const target = links.find((l) => l.name === fourthName);
+		expect(target).toBeTruthy();
+
+		const anon = await browser.newContext();
+		const playerPage = await anon.newPage();
+		await playerPage.goto(target!.url);
+		await expect(playerPage.getByTestId('player-placement-current')).toHaveText(
+			'Currently 25 of 32',
+			{ timeout: 20000 }
+		);
+		await expect(playerPage.getByTestId('player-placement-best')).toHaveText(
+			'Best achievable place: 13'
+		);
+		await expect(playerPage.getByTestId('player-placement-safe')).toHaveText('Safe place: 32');
+		await expect(playerPage.getByTestId('player-record-rounds')).toBeVisible();
+		await anon.close();
+	});
+
+	test('round-1 court-done 1st on last court is 1sts band, not seed-court 29th', async ({
+		page,
+		browser
+	}) => {
+		test.setTimeout(120000);
+		const name = `PlayerFirst ${Date.now()}`;
+		names.push(name);
+		const id = await createRandomSeedTournament(page, name, 32, 4);
+		const courtLinks = await getCourtLinks(page);
+		const lastCourt = courtLinks[courtLinks.length - 1];
+		await scoreAllMatchesOnCourt(page, courtLinks[0]);
+		await scoreAllMatchesOnCourt(page, lastCourt);
+		await expect(page.getByTestId('group-standings')).toBeVisible({ timeout: 15000 });
+		const firstName = (
+			await page
+				.locator('[data-testid="group-standings"] tbody tr')
+				.first()
+				.locator('td')
+				.nth(1)
+				.innerText()
+		).trim();
+		expect(firstName.length).toBeGreaterThan(0);
+
+		const links = await getPlayerLinks(page, id);
+		const target = links.find((l) => l.name === firstName);
+		expect(target).toBeTruthy();
+
+		const anon = await browser.newContext();
+		const playerPage = await anon.newPage();
+		await playerPage.goto(target!.url);
+		await expect(playerPage.getByTestId('player-placement-current')).toHaveText(
+			'Currently 1 of 32',
+			{ timeout: 20000 }
+		);
+		await expect(playerPage.getByTestId('player-placement-best')).toHaveText(
+			'Best achievable place: 1'
+		);
+		await expect(playerPage.getByTestId('player-placement-safe')).toHaveText('Safe place: 20');
 		await anon.close();
 	});
 

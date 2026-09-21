@@ -28,5 +28,5 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	const playerPageData = await fetchPlayerPageData(params.token);
-	return { token: params.token, playerPageData };
+	return { token: params.token, playerPageData, user: locals.user ?? null };
 };

@@ -64,9 +64,7 @@ async function listBranches(): Promise<NeonBranch[]> {
 	do {
 		const params = new URLSearchParams({ limit: '100', sort_by: 'created_at', sort_order: 'asc' });
 		if (cursor) params.set('cursor', cursor);
-		const data = await neonFetch<ListBranchesResponse>(
-			`/projects/${projectId}/branches?${params}`
-		);
+		const data = await neonFetch<ListBranchesResponse>(`/projects/${projectId}/branches?${params}`);
 		branches.push(...data.branches);
 		cursor = data.pagination?.next;
 	} while (cursor);

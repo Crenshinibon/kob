@@ -2,7 +2,6 @@ import crypto from 'crypto';
 import {
 	assignSeedRanks,
 	calculateCourtSizes,
-	calculateRoundCount,
 	MIN_TOURNAMENT_PLAYERS,
 	type FormatType
 } from '$lib/tournament-logic';
@@ -43,8 +42,6 @@ export function planTournamentStart(opts: {
 	let numRounds: number;
 	if (courtCount === 1) {
 		numRounds = 1;
-	} else if (opts.formatType === 'preseed') {
-		numRounds = calculateRoundCount(courtCount, 'preseed');
 	} else {
 		numRounds = Math.min(10, Math.max(1, opts.storedNumRounds));
 	}

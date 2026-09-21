@@ -101,7 +101,10 @@ async function fetchTournamentData(
 
 	if (!tourney) error(404, m.tournament_not_found());
 
-	const dbPlayersEarly = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
+	const dbPlayersEarly = await db
+		.select()
+		.from(player)
+		.where(eq(player.tournamentId, tournamentId));
 	const checkedInCount = dbPlayersEarly.filter((p) => p.checkedInAt).length;
 	const checkInUsed =
 		!!tourney.checkInClosedAt ||
@@ -136,8 +139,7 @@ async function fetchTournamentData(
 	const currentRound = tourney.currentRound || 0;
 	let courtSizes: number[] = parseStoredCourtSizes(tourney);
 	const totalRounds = tourney.numRounds;
-	const maxViewableRound =
-		tourney.status === 'completed' ? totalRounds : Math.max(currentRound, 1);
+	const maxViewableRound = tourney.status === 'completed' ? totalRounds : Math.max(currentRound, 1);
 	const viewRound = Math.min(
 		Math.max(viewRoundInput ?? (currentRound === 0 ? 1 : currentRound), 1),
 		maxViewableRound
@@ -168,10 +170,7 @@ async function fetchTournamentData(
 
 	// Mid-round injury keeps original court layout until close round; only recalculate when
 	// retirePlayer has already updated playerCount away from the stored court configuration.
-	if (
-		activePlayerCount !== tourney.playerCount &&
-		storedCourtSizeSum !== tourney.playerCount
-	) {
+	if (activePlayerCount !== tourney.playerCount && storedCourtSizeSum !== tourney.playerCount) {
 		courtSizes = recalculateCourtConfigAfterRetirement(activePlayerCount).courtSizes;
 	}
 
@@ -318,18 +317,15 @@ async function fetchTournamentData(
 			manualRankOrder: rotation.manualRankOrder ?? undefined,
 			mutableDiceRolls: standingsResult.diceRolls
 		});
-		const manualTieGroups =
-			matchData.some((m) => m.teamAScore !== null)
-				? getManualTieGroups(playerIds, tieBreakConfig, tbContext.context)
-				: [];
+		const manualTieGroups = matchData.some((m) => m.teamAScore !== null)
+			? getManualTieGroups(playerIds, tieBreakConfig, tbContext.context)
+			: [];
 
 		courts.push({
 			courtNumber: rotation.courtNumber,
 			courtSize: size,
 			matches,
-			token: isViewingPastRound
-				? (rotation.token ?? null)
-				: (access[0]?.token ?? null),
+			token: isViewingPastRound ? (rotation.token ?? null) : (access[0]?.token ?? null),
 			label: access[0]?.label ?? null,
 			courtId: access[0]?.id ?? rotation.courtId,
 			rotationId: rotation.id,
@@ -415,6 +411,9 @@ const tournamentDataInputSchema = v.object({
 	viewRound: v.optional(v.number())
 });
 
-export const getTournamentData = query(tournamentDataInputSchema, async ({ tournamentId, viewRound }) => {
-	return fetchTournamentData(tournamentId, viewRound);
-});
+export const getTournamentData = query(
+	tournamentDataInputSchema,
+	async ({ tournamentId, viewRound }) => {
+		return fetchTournamentData(tournamentId, viewRound);
+	}
+);

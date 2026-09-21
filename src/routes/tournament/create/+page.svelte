@@ -1,95 +1,40 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import { localizeHref } from '$lib/paraglide/runtime';
+	import * as m from '$lib/paraglide/messages';
+	import PlayerNameImport from '$lib/components/PlayerNameImport.svelte';
+	import RangeSlider from '$lib/components/RangeSlider.svelte';
+	import ScoringRulesFields from '$lib/components/ScoringRulesFields.svelte';
+	import { parsePlayerLine } from '$lib/parse-players';
 	import {
 		calculateCourtSizes,
 		calculateRoundCount,
 		estimateTournamentDuration,
 		estimateRoundDurationMinutes,
-		type DurationConfig
+		inferScoringMode,
+		scoringDraftFromConfig,
+		type CourtScoringRules,
+		type DurationConfig,
+		type ScoringCourtSize
 	} from '$lib/tournament-logic';
-	import * as m from '$lib/paraglide/messages';
-	import { resolve } from '$app/paths';
-	import { localizeHref } from '$lib/paraglide/runtime';
-	import { parsePastedText, parseCsvText, parsePlayerLine } from '$lib/parse-players';
 	import { createTournamentForm } from './create.remote';
 
 	let createError = $state('');
-	let csvUploadError = $state('');
 
 	let tournamentName = $state('');
 	let formatType = $state<'random-seed' | 'preseed'>('random-seed');
 	let playerNames = $state('');
 	let physicalCourts = $state(4);
-	let scoringMode = $state<'single-21' | 'best-of-3' | 'custom'>('single-21');
-	let setsToWin = $state('1');
-	let pointsToWin = $state(21);
-	let winBy = $state('2');
-	let decidingSetPoints = $state(15);
+	let scoringTab = $state<ScoringCourtSize>(4);
+	let scoringDraft = $state<Record<string, CourtScoringRules>>(scoringDraftFromConfig(null, null));
 	let numRounds = $state(3);
 	let preseedRetirementPolicy = $state<'cascade' | 'shrink'>('cascade');
-	let textareaEl: HTMLTextAreaElement | undefined = $state();
-
 	const minPlayers = 4;
 	const maxPlayers = 64;
 	let roundsTouched = $state(false);
 
 	const computedPlayerCount = $derived(playerNames.split('\n').filter((n) => n.trim()).length);
 	const leftoverCount = $derived(computedPlayerCount % 4);
-
-	function handlePaste(e: ClipboardEvent) {
-		const pastedText = e.clipboardData?.getData('text') || '';
-		if (!textareaEl || !pastedText) return;
-
-		const needsProcessing = /[,;\t]/.test(pastedText);
-		if (!needsProcessing) return;
-
-		e.preventDefault();
-
-		const names = parsePastedText(pastedText);
-		const formattedNames = names.join('\n');
-
-		const start = textareaEl.selectionStart;
-		const end = textareaEl.selectionEnd;
-		const before = playerNames.substring(0, start);
-		const after = playerNames.substring(end);
-
-		playerNames = before + formattedNames + (after ? '\n' + after : '');
-
-		setTimeout(() => {
-			if (textareaEl)
-				textareaEl.selectionStart = textareaEl.selectionEnd = start + formattedNames.length;
-		}, 0);
-	}
-
-	function handleCsvUpload(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
-
-		csvUploadError = '';
-		const reader = new FileReader();
-		reader.onload = () => {
-			const text = reader.result as string;
-			const result = parseCsvText(text);
-			if (!result.ok) {
-				csvUploadError = m.create_csv_no_spieler1();
-				return;
-			}
-			if (result.lines.length === 0) {
-				csvUploadError = m.create_csv_error();
-				return;
-			}
-			const newNames = result.lines.join('\n');
-			playerNames = playerNames.trim() ? playerNames.trim() + '\n' + newNames : newNames;
-			if (result.hasWvvPoints) {
-				formatType = 'preseed';
-			}
-		};
-		reader.onerror = () => {
-			csvUploadError = m.create_csv_error();
-		};
-		reader.readAsText(file);
-		input.value = '';
-	}
 
 	function removeLastPlayers() {
 		const lines = playerNames.split('\n');
@@ -174,10 +119,20 @@
 			: Math.max(1, numRounds)
 	);
 
-	const basePtTarget = $derived(scoringMode === 'custom' ? pointsToWin : 21);
-	const effectiveSetsToWin = $derived(
-		scoringMode === 'custom' ? parseInt(setsToWin) : scoringMode !== 'single-21' ? 2 : 1
-	);
+	const fourScoring = $derived(scoringDraft['4']);
+	const basePtTarget = $derived(fourScoring?.pointsToWin ?? 21);
+	const effectiveSetsToWin = $derived(fourScoring?.setsToWin ?? 1);
+	const scoringMode = $derived(fourScoring ? inferScoringMode(fourScoring) : 'single-21');
+
+	function patchScoring(
+		size: ScoringCourtSize,
+		field: keyof CourtScoringRules,
+		value: number
+	): void {
+		const current = scoringDraft[String(size)];
+		if (!current || !Number.isFinite(value)) return;
+		scoringDraft = { ...scoringDraft, [String(size)]: { ...current, [field]: value } };
+	}
 
 	const defaultDurationConfig: DurationConfig = {
 		setupTimeMinutes: 15,
@@ -305,152 +260,24 @@
 		{/if}
 
 		<div class="field">
-			<span class="label">{m.create_scoring_mode()}</span>
-			<div class="radio-group">
-				<label class="radio-label">
-					<div class="radio-wrapper">
-						<input type="radio" name="scoringMode" value="single-21" bind:group={scoringMode} />
-					</div>
-					<span class="radio-content">
-						<strong>{m.scoring_single_set()}</strong>
-						<small>{m.create_desc_single()}</small>
-					</span>
-				</label>
-				<label class="radio-label">
-					<div class="radio-wrapper">
-						<input type="radio" name="scoringMode" value="best-of-3" bind:group={scoringMode} />
-					</div>
-					<span class="radio-content">
-						<strong>{m.scoring_best_of_3()}</strong>
-						<small>{m.create_desc_bestof3()}</small>
-					</span>
-				</label>
-				<label class="radio-label">
-					<div class="radio-wrapper">
-						<input type="radio" name="scoringMode" value="custom" bind:group={scoringMode} />
-					</div>
-					<span class="radio-content">
-						<strong>{m.create_custom()}</strong>
-						<small>{m.create_desc_custom()}</small>
-					</span>
-				</label>
-			</div>
-		</div>
-
-		<div class="advanced-section" class:hidden={scoringMode !== 'custom'}>
-			<div class="field">
-				<span class="label">{m.create_match_format_label()}</span>
-				<div class="radio-group">
-					<label class="radio-label">
-						<input type="radio" name="n:setsToWin" value="1" bind:group={setsToWin} />
-						<span class="radio-text">{m.create_single_set_label()}</span>
-					</label>
-					<label class="radio-label">
-						<input type="radio" name="n:setsToWin" value="2" bind:group={setsToWin} />
-						<span class="radio-text">{m.create_best_of_3_label()}</span>
-					</label>
-				</div>
-			</div>
-			<div class="field">
-				<span class="label">Win By</span>
-				<div class="radio-group">
-					<label class="radio-label">
-						<input type="radio" name="n:winBy" value="2" bind:group={winBy} />
-						<span class="radio-text">2 points (deuce possible)</span>
-					</label>
-					<label class="radio-label">
-						<input type="radio" name="n:winBy" value="1" bind:group={winBy} />
-						<span class="radio-text">1 point (first to N wins)</span>
-					</label>
-				</div>
-				<p class="field-hint">
-					Points difference required to win a set (e.g., 21-19 with win-by-2)
-				</p>
-			</div>
-			{#if setsToWin === '1'}
-				<div class="field">
-					<label for="pointsToWin">{m.create_points_to_win()}</label>
-					<input
-						type="number"
-						id="pointsToWin"
-						name="n:pointsToWin"
-						min="9"
-						max="21"
-						bind:value={pointsToWin}
-						disabled={scoringMode !== 'custom'}
-					/>
-				</div>
-			{:else}
-				<div class="field">
-					<label for="pointsToWin">{m.create_regular_set_points()}</label>
-					<input
-						type="number"
-						id="pointsToWin"
-						name="n:pointsToWin"
-						min="9"
-						max="21"
-						bind:value={pointsToWin}
-						disabled={scoringMode !== 'custom'}
-					/>
-				</div>
-				<div class="field">
-					<label for="decidingSetPoints">{m.create_deciding_set_points()}</label>
-					<input
-						type="number"
-						id="decidingSetPoints"
-						name="n:decidingSetPoints"
-						min="9"
-						max="21"
-						bind:value={decidingSetPoints}
-						disabled={scoringMode !== 'custom'}
-					/>
-				</div>
-			{/if}
+			<span class="label">{m.manage_scoring_heading()}</span>
+			<ScoringRulesFields
+				bind:tab={scoringTab}
+				draft={scoringDraft}
+				submitHidden={true}
+				onPatch={patchScoring}
+			/>
 		</div>
 
 		<div class="field">
 			<label for="names">{m.create_player_names()}</label>
-			<textarea
-				id="names"
-				name="names"
-				bind:value={playerNames}
-				bind:this={textareaEl}
-				onpaste={handlePaste}
-				rows="10"
-				placeholder={formatType === 'preseed'
-					? m.create_names_placeholder_preseed()
-					: m.create_names_placeholder_random()}></textarea>
-			<p class="hint">{m.create_players_optional_hint()}</p>
-			<p class="hint">
-				{#if formatType === 'preseed'}
-					{m.create_names_seed_order_hint_preseed()}<br />
-					<code>{m.create_player_example()}</code>
-				{:else}
-					{m.create_names_seed_order_hint_random()}
-				{/if}
-			</p>
-			<details class="import-tip">
-				<summary class="import-tip-summary">{m.create_wvv_summary()}</summary>
-				<p class="import-tip-text">
-					{m.create_wvv_tip()}
-				</p>
-				<div class="csv-upload">
-					<label class="btn-small csv-upload-btn" for="csv-upload">
-						{m.create_csv_upload()}
-					</label>
-					<input
-						id="csv-upload"
-						type="file"
-						accept=".csv,.txt"
-						onchange={handleCsvUpload}
-						class="csv-file-input"
-					/>
-				</div>
-				{#if csvUploadError}
-					<p class="info warn">{csvUploadError}</p>
-				{/if}
-			</details>
-			<p class="count">{m.create_names_entered({ count: computedPlayerCount })}</p>
+			<PlayerNameImport
+				bind:names={playerNames}
+				{formatType}
+				textareaName="names"
+				textareaId="names"
+				onHasWvvPoints={() => (formatType = 'preseed')}
+			/>
 			{#if computedPlayerCount === 0}
 				<p class="info">{m.create_add_players_to_see_layout()}</p>
 			{:else if computedPlayerCount > 0 && computedPlayerCount < minPlayers}
@@ -492,22 +319,15 @@
 
 		<div class="field">
 			<label for="physicalCourts">{m.create_physical_courts()}: {physicalCourts}</label>
-			<div class="range-container">
-				<input
-					type="range"
-					id="physicalCourts"
-					name="n:physicalCourts"
-					bind:value={physicalCourts}
-					min={1}
-					max={16}
-					step={1}
-				/>
-				<div class="range-labels">
-					<span>1</span>
-					<span class="range-current">{physicalCourts} courts</span>
-					<span>16</span>
-				</div>
-			</div>
+			<RangeSlider
+				id="physicalCourts"
+				name="n:physicalCourts"
+				bind:value={physicalCourts}
+				min={1}
+				max={16}
+				currentLabel={m.range_courts_value({ count: physicalCourts })}
+				formatCurrent={(n) => m.range_courts_value({ count: n })}
+			/>
 			{#if physicalCourts < Math.ceil(computedPlayerCount / 4)}
 				<p class="info">
 					{m.create_virtual_courts_desc({
@@ -519,7 +339,9 @@
 		</div>
 
 		<div class="field">
-			<span class="label">Number of Rounds</span>
+			<label for="numRounds"
+				>{m.manage_rounds_label()}: {m.range_rounds_value({ count: numRounds })}</label
+			>
 			{#if formatType === 'preseed'}
 				<span class="info-text">{m.create_rounds_computed_at_start()}</span>
 				<input type="hidden" name="n:numRounds" value={effectiveRounds} />
@@ -528,15 +350,16 @@
 					{#if courtSizes.length === 1}
 						<input type="hidden" name="n:numRounds" value="1" />
 					{/if}
-					<input
-						type="number"
+					<RangeSlider
 						id="numRounds"
-						name="n:numRounds"
+						name={courtSizes.length === 1 ? undefined : 'n:numRounds'}
 						bind:value={numRounds}
-						min="1"
-						max="10"
-						class="rounds-input"
+						min={1}
+						max={10}
 						disabled={courtSizes.length === 1}
+						testId="create-num-rounds"
+						currentLabel={m.range_rounds_value({ count: numRounds })}
+						formatCurrent={(n) => m.range_rounds_value({ count: n })}
 						oninput={() => (roundsTouched = true)}
 					/>
 					<span class="rounds-hint">{m.create_rounds_flexible()}</span>
@@ -691,112 +514,11 @@
 		transform: scale(1.02);
 	}
 
-	.range-container {
-		display: grid;
-		grid-template-columns: 1fr;
-	}
-
-	.range-container input[type='range'] {
-		width: 100%;
-		accent-color: var(--accent-primary);
-		margin: var(--spacing-sm) 0;
-		grid-row: 1;
-	}
-
-	.range-labels {
-		display: flex;
-		justify-content: space-between;
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
-		grid-row: 2;
-	}
-
-	.range-current {
-		text-align: center;
-		font-weight: 600;
-		color: var(--text-secondary);
-	}
-
-	textarea {
-		padding: var(--spacing-sm);
-		font-size: var(--font-size-base);
-		background-color: var(--bg-input);
-		color: var(--text-input);
-		border: var(--border-thickness) solid var(--border-strong);
-		border-radius: var(--radius-sm);
-		font-family: inherit;
-		min-height: 150px;
-		resize: vertical;
-		font-weight: 500;
-	}
-
-	textarea:focus {
-		outline: none;
-		border-color: var(--border-focus);
-		box-shadow: var(--shadow-focus);
-		transform: scale(1.02);
-	}
-
-	.count {
-		margin: 0;
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
-		font-weight: 600;
-	}
-
 	.info {
 		font-size: var(--font-size-sm);
 		color: var(--text-muted);
 		font-style: italic;
 		margin-top: var(--spacing-xs);
-	}
-
-	.hint {
-		margin: var(--spacing-xs) 0 0 0;
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
-		line-height: 1.5;
-	}
-
-	.hint code {
-		background-color: var(--bg-secondary);
-		padding: 1px 6px;
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
-	}
-
-	.import-tip {
-		margin-top: var(--spacing-xs);
-	}
-
-	.import-tip-summary {
-		font-size: var(--font-size-sm);
-		color: var(--accent-primary);
-		cursor: pointer;
-		font-weight: 500;
-	}
-
-	.import-tip-text {
-		margin: var(--spacing-xs) 0 0 0;
-		padding: var(--spacing-sm);
-		background-color: var(--bg-secondary);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-		line-height: 1.5;
-	}
-
-	.csv-upload {
-		margin-top: var(--spacing-sm);
-	}
-
-	.csv-upload-btn {
-		display: inline-block;
-		cursor: pointer;
-	}
-
-	.csv-file-input {
-		display: none;
 	}
 
 	.field-hint {
@@ -811,23 +533,6 @@
 		gap: var(--spacing-sm);
 		margin-top: var(--spacing-sm);
 		flex-wrap: wrap;
-	}
-
-	.btn-small {
-		background-color: var(--bg-secondary);
-		color: var(--text-secondary);
-		border: 1px solid var(--border-strong);
-		border-radius: var(--radius-sm);
-		padding: var(--spacing-xs) var(--spacing-sm);
-		font-size: var(--font-size-sm);
-		font-weight: 600;
-		cursor: pointer;
-		transition: all var(--transition-fast);
-	}
-
-	.btn-small:hover {
-		border-color: var(--border-focus);
-		color: var(--text-primary);
 	}
 
 	.info-text {
@@ -851,16 +556,6 @@
 		border: var(--border-thickness) solid var(--border-strong);
 		border-radius: var(--radius-sm);
 		cursor: pointer;
-	}
-
-	.radio-text {
-		color: var(--text-input);
-		font-weight: 500;
-	}
-
-	.radio-label:has(input:checked) .radio-text {
-		color: #ffffff;
-		font-weight: 600;
 	}
 
 	.radio-wrapper {
@@ -907,33 +602,6 @@
 
 	.radio-label:has(input:checked) .radio-content small {
 		color: var(--text-secondary);
-	}
-
-	.btn-primary {
-		background-color: var(--accent-primary);
-		color: var(--bg-primary);
-		padding: var(--spacing-sm) var(--spacing-lg);
-		border: 2px solid var(--accent-primary);
-		border-radius: var(--radius-sm);
-		font-size: var(--font-size-base);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.5px;
-		cursor: pointer;
-		transition: all var(--transition-base);
-		text-decoration: none;
-	}
-
-	.btn-primary:hover:not(:disabled) {
-		background-color: var(--accent-primary-hover);
-		box-shadow: var(--glow-primary);
-	}
-
-	.btn-primary:disabled {
-		background-color: var(--bg-secondary);
-		color: var(--text-muted);
-		border-color: var(--border-default);
-		cursor: not-allowed;
 	}
 
 	.warn {
@@ -999,44 +667,6 @@
 		font-weight: 500;
 	}
 
-	.advanced-section {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-sm);
-		padding: var(--spacing-md);
-		border: 2px dashed var(--border-strong);
-		border-radius: var(--radius-md);
-		background-color: var(--bg-secondary);
-		overflow: hidden;
-	}
-
-	.advanced-section.hidden {
-		display: none;
-	}
-
-	.advanced-section .field {
-		gap: var(--spacing-xs);
-	}
-
-	.advanced-section input[type='number'] {
-		width: 80px;
-		min-height: 40px;
-		padding: var(--spacing-xs) var(--spacing-sm);
-		font-size: var(--font-size-base);
-		background-color: var(--bg-input);
-		color: var(--text-input);
-		border: var(--border-thickness) solid var(--border-strong);
-		border-radius: var(--radius-sm);
-		font-weight: 500;
-		text-align: center;
-	}
-
-	.advanced-section input[type='number']:focus {
-		outline: none;
-		border-color: var(--border-focus);
-		box-shadow: var(--shadow-focus);
-	}
-
 	.duration-estimate {
 		margin-top: var(--spacing-sm);
 	}
@@ -1065,7 +695,8 @@
 
 	.rounds-config {
 		display: flex;
-		align-items: center;
+		flex-direction: column;
+		align-items: stretch;
 		gap: var(--spacing-sm);
 	}
 

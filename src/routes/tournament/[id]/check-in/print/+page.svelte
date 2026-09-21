@@ -34,8 +34,15 @@
 				data-player-name={p.name}
 				data-player-url={`/player/${p.token}`}
 			>
-				<h2>{p.name}</h2>
-				<QrCode url={playerUrl(p.token)} alt={p.name} hint={m.checkin_print_hint()} width={160} />
+				<h2 data-testid="print-player-name">{p.name}</h2>
+				<QrCode
+					url={playerUrl(p.token)}
+					alt={p.name}
+					hint={m.checkin_print_hint()}
+					width={160}
+					--qr-bg="#ffffff"
+					--qr-fg="#111111"
+				/>
 				<p class="tourney">{data.tournamentName}</p>
 			</article>
 		{/each}
@@ -57,26 +64,71 @@
 		border: 1px solid #ccc;
 		padding: 8px;
 		text-align: center;
-		page-break-inside: avoid;
+		background: #fff;
+		color: #111;
 		break-inside: avoid;
+		page-break-inside: avoid;
+		-webkit-column-break-inside: avoid;
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
 	}
 
 	.card h2 {
 		font-size: 14pt;
 		margin: 0 0 8px;
+		color: #111;
 	}
 
 	.tourney {
 		font-size: 10pt;
 		margin: 4px 0 0;
+		color: #111;
 	}
 
 	@media print {
-		.no-print {
-			display: none;
+		:global(.v1-banner),
+		:global(.top-nav),
+		:global(.site-footer),
+		:global(.cookie-notice) {
+			display: none !important;
 		}
+
+		:global(.app-container),
+		:global(body),
+		:global(html) {
+			background: #fff !important;
+			color: #000 !important;
+		}
+
+		:global(.site-footer) {
+			position: static !important;
+		}
+
+		.no-print {
+			display: none !important;
+		}
+
+		main {
+			padding: 0;
+		}
+
 		.grid {
 			gap: 8px;
+		}
+
+		.card {
+			background: #fff !important;
+			color: #000 !important;
+			break-inside: avoid;
+			page-break-inside: avoid;
+			-webkit-column-break-inside: avoid;
+			-webkit-print-color-adjust: exact;
+			print-color-adjust: exact;
+		}
+
+		.card h2,
+		.tourney {
+			color: #000 !important;
 		}
 	}
 </style>

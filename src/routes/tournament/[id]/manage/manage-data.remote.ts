@@ -2,11 +2,17 @@ import { query } from '$app/server';
 import * as v from 'valibot';
 import { db } from '$lib/server/db';
 import { player, court, courtRotation, match } from '$lib/server/db/schema';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
+import { deriveLockState, minRoundCount, sortCourts } from '$lib/manage-logic';
 import { requireOrganizerTournament } from '$lib/server/org-guard';
-import { deriveLockState, minRoundCount } from '$lib/manage-logic';
 import { checkInWasUsed } from '$lib/player-page-logic';
-import { getFrozenCourts, getBracketGroups, type FormatType } from '$lib/tournament-logic';
+import {
+	getFrozenCourts,
+	getBracketGroups,
+	isMatchComplete,
+	matchCountForCourtSize,
+	type FormatType
+} from '$lib/tournament-logic';
 import { parseStoredCourtSizes, bracketCourtSizes } from '$lib/server/court-size-config';
 import { rotationPlayerIds } from '$lib/server/manage-orchestration';
 
@@ -30,6 +36,7 @@ export const getManageData = query(idSchema, async ({ tournamentId }) => {
 							eq(courtRotation.roundNumber, currentRound)
 						)
 					)
+					.orderBy(asc(courtRotation.courtNumber))
 			: [];
 	const rotIds = rotations.map((r) => r.id);
 	const matches =
@@ -64,6 +71,27 @@ export const getManageData = query(idSchema, async ({ tournamentId }) => {
 		const list = matchesByRotation.get(row.courtRotationId) ?? [];
 		list.push(row);
 		matchesByRotation.set(row.courtRotationId, list);
+	}
+
+	function rotationComplete(rotMatches: typeof matches, courtSize: number): boolean {
+		const groups = new Map<number, typeof matches>();
+		for (const row of rotMatches) {
+			const list = groups.get(row.matchNumber) ?? [];
+			list.push(row);
+			groups.set(row.matchNumber, list);
+		}
+		return (
+			groups.size >= matchCountForCourtSize(courtSize) &&
+			[...groups.values()].every((g) =>
+				isMatchComplete(
+					g.map((s) => ({
+						teamAScore: s.teamAScore,
+						teamBScore: s.teamBScore,
+						isCanceled: s.isCanceled ?? false
+					}))
+				)
+			)
+		);
 	}
 
 	return {
@@ -136,22 +164,30 @@ export const getManageData = query(idSchema, async ({ tournamentId }) => {
 				canUndoUntil
 			};
 		}),
-		courts: rotations.map((rotation) => {
-			const rotMatches = matchesByRotation.get(rotation.id) ?? [];
-			const group = groups.find((g) => g.includes(rotation.courtNumber));
-			return {
-				courtNumber: rotation.courtNumber,
-				label: courts.find((c) => c.id === rotation.courtId)?.label ?? null,
-				courtId: rotation.courtId,
-				rotationId: rotation.id,
-				courtSize: rotation.courtSize,
-				hasScores: rotMatches.some((x) => x.teamAScore != null),
-				isFrozen: frozenNumbers.has(rotation.courtNumber),
-				bracketRole: group ? `courts ${Math.min(...group)}–${Math.max(...group)}` : null,
-				manualAdjustedAt: rotation.manualAdjustedAt,
-				playerIds: rotationPlayerIds(rotation),
-				token: courts.find((c) => c.id === rotation.courtId)?.token ?? null
-			};
-		})
+		courts: sortCourts(
+			rotations.map((rotation) => {
+				const rotMatches = matchesByRotation.get(rotation.id) ?? [];
+				const group = groups.find((g) => g.includes(rotation.courtNumber));
+				return {
+					courtNumber: rotation.courtNumber,
+					label: courts.find((c) => c.id === rotation.courtId)?.label ?? null,
+					courtId: rotation.courtId,
+					rotationId: rotation.id,
+					courtSize: rotation.courtSize,
+					hasScores: rotMatches.some((x) => x.teamAScore != null),
+					isComplete: rotationComplete(rotMatches, rotation.courtSize),
+					matches: rotMatches.map((row) => ({
+						teamAScore: row.teamAScore,
+						isCanceled: row.isCanceled ?? false,
+						injuredPlayerIds: row.injuredPlayerIds ?? []
+					})),
+					isFrozen: frozenNumbers.has(rotation.courtNumber),
+					bracketRole: group ? `courts ${Math.min(...group)}–${Math.max(...group)}` : null,
+					manualAdjustedAt: rotation.manualAdjustedAt,
+					playerIds: rotationPlayerIds(rotation),
+					token: courts.find((c) => c.id === rotation.courtId)?.token ?? null
+				};
+			})
+		)
 	};
 });

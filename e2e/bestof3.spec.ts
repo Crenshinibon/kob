@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { ensureTournamentStarted } from './helpers';
+import { ensureTournamentStarted, fillNumericControl, selectBestOf3Scoring } from './helpers';
 
 async function enterSingleSet(
 	page: Page,
@@ -110,8 +110,8 @@ test.describe('Best-of-3 Round Transition', () => {
 		await page.waitForSelector('text=+ New Tournament');
 		await page.click('text=+ New Tournament');
 		await page.fill('input[name="name"]', tournamentName);
-		await page.click('input[value="best-of-3"]');
-		await page.fill('#numRounds', '2');
+		await selectBestOf3Scoring(page);
+		await fillNumericControl(page, '#numRounds', 2);
 
 		const players = Array.from({ length: 16 }, (_, i) => `Player${i + 1}`);
 		await page.fill('textarea[name="names"]', players.join('\n'));

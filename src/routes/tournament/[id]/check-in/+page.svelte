@@ -12,7 +12,6 @@
 
 	const query = $derived(getCheckInData({ tournamentId: data.tournamentId }));
 	let search = $state('');
-	let sortAlpha = $state(false);
 	let qrPlayer = $state<{ id: number; name: string; token: string } | null>(null);
 	let copied = $state(false);
 	let showClose = $state(false);
@@ -41,21 +40,17 @@
 		if (!page) return [];
 		const q = search.trim().toLowerCase();
 		let list = page.players.filter((p) => !q || p.name.toLowerCase().includes(q));
-		if (!sortAlpha) {
-			list = [...list].sort((a, b) => {
-				const ac = a.checkedInAt ? 1 : 0;
-				const bc = b.checkedInAt ? 1 : 0;
-				if (ac !== bc) return ac - bc;
-				return a.name.localeCompare(b.name);
-			});
-		} else {
-			list = [...list].sort((a, b) => a.name.localeCompare(b.name));
-		}
-		return list;
+		return [...list].sort((a, b) => {
+			const ac = a.checkedInAt ? 1 : 0;
+			const bc = b.checkedInAt ? 1 : 0;
+			if (ac !== bc) return ac - bc;
+			return a.name.localeCompare(b.name);
+		});
 	});
 
 	const unchecked = $derived(page?.players.filter((p) => !p.checkedInAt) ?? []);
 	const canShare = $derived(browser && typeof navigator.share === 'function');
+	const scoresBlockRemove = $derived(!!page?.round1HasScores && page.tournament.status !== 'setup');
 
 	async function toggle(id: number, currentlyChecked: boolean) {
 		await setPlayerCheckIn({ playerId: id, checkedIn: !currentlyChecked });
@@ -71,12 +66,12 @@
 		await navigator.share?.({ title: name, url: playerUrl(token) });
 	}
 
-	async function confirmClose() {
+	async function confirmClose(removeUnchecked?: boolean) {
 		const startAfter = page?.tournament.status === 'setup';
-		const removeUnchecked = closeMode === 'checked';
+		const remove = removeUnchecked ?? closeMode === 'checked';
 		await closeCheckIn({
 			tournamentId: data.tournamentId,
-			removeUnchecked,
+			removeUnchecked: remove,
 			startAfter
 		});
 		showClose = false;
@@ -124,11 +119,9 @@
 			bind:value={search}
 			data-testid="checkin-search"
 		/>
-		<button type="button" class="btn-secondary" onclick={() => (sortAlpha = !sortAlpha)}>
-			{sortAlpha ? m.checkin_sort_status() : m.checkin_sort_alpha()}
-		</button>
 		<a
 			class="btn-secondary"
+			data-testid="checkin-print-link"
 			href={localizeHref(
 				resolve('/tournament/[id]/check-in/print', { id: String(data.tournamentId) })
 			)}>{m.checkin_print()}</a
@@ -136,7 +129,7 @@
 		{#if !page?.tournament.checkInClosedAt}
 			<button
 				type="button"
-				class="btn-primary"
+				class={scoresBlockRemove ? 'btn-inactive' : 'btn-primary'}
 				data-testid="close-checkin"
 				onclick={() => (showClose = true)}
 			>
@@ -168,7 +161,7 @@
 				</button>
 				<button
 					type="button"
-					class="btn-secondary"
+					class="btn-compact btn-secondary"
 					data-testid="checkin-qr-{p.id}"
 					data-player-id={p.id}
 					data-player-name={p.name}
@@ -189,6 +182,7 @@
 			})}
 		</p>
 		<a
+			class="btn-link"
 			href={localizeHref(
 				resolve('/tournament/[id]/manage', { id: String(data.tournamentId) }) + '#players'
 			)}
@@ -262,14 +256,25 @@
 				<button type="button" class="btn-secondary" onclick={() => (showClose = false)}
 					>Cancel</button
 				>
-				<button
-					type="button"
-					class="btn-primary"
-					data-testid="confirm-close-checkin"
-					onclick={confirmClose}
-				>
-					{page.tournament.status === 'setup' ? m.setup_start_button() : m.checkin_close()}
-				</button>
+				{#if scoresBlockRemove}
+					<button
+						type="button"
+						class="btn-inactive"
+						data-testid="confirm-close-checkin"
+						onclick={() => confirmClose(false)}
+					>
+						{m.checkin_close_keep_option()}
+					</button>
+				{:else}
+					<button
+						type="button"
+						class="btn-primary"
+						data-testid="confirm-close-checkin"
+						onclick={() => confirmClose()}
+					>
+						{page.tournament.status === 'setup' ? m.setup_start_button() : m.checkin_close()}
+					</button>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -318,6 +323,18 @@
 		text-align: left;
 		padding: var(--spacing-sm) 0;
 		cursor: pointer;
+		text-transform: none;
+		letter-spacing: normal;
+		font-weight: 600;
+		min-height: 44px;
+	}
+
+	.list li.checked .name {
+		color: var(--text-muted);
+	}
+
+	.list li.checked .row {
+		color: var(--text-muted);
 	}
 
 	.mark {

@@ -39,6 +39,12 @@ import {
 	getMinPointsForSet,
 	getScoringLabel,
 	getEffectiveScoring,
+	inferScoringMode,
+	clampCourtScoringRules,
+	clampPointsPerSet,
+	displayedScoringForCourt,
+	scoringDraftFromConfig,
+	scoringPayloadFromDraft,
 	recalculateCourtConfigAfterRetirement,
 	computeRetirementFinalStanding,
 	buildRedistributionFromResults,
@@ -2985,6 +2991,102 @@ describe('Scoring logic', () => {
 			expect(getScoringLabel(baseConfig, 4)).toBe('1 set to 21');
 		});
 	});
+
+	describe('inferScoringMode', () => {
+		it('maps default 4p rules to single-21', () => {
+			expect(
+				inferScoringMode({ pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 })
+			).toBe('single-21');
+		});
+		it('maps first-to-two with 21/15 to best-of-3', () => {
+			expect(
+				inferScoringMode({ pointsToWin: 21, winBy: 2, setsToWin: 2, decidingSetPoints: 15 })
+			).toBe('best-of-3');
+		});
+		it('everything else is custom', () => {
+			expect(
+				inferScoringMode({ pointsToWin: 15, winBy: 2, setsToWin: 1, decidingSetPoints: 15 })
+			).toBe('custom');
+			expect(
+				inferScoringMode({ pointsToWin: 21, winBy: 1, setsToWin: 1, decidingSetPoints: 15 })
+			).toBe('custom');
+		});
+	});
+
+	describe('displayedScoringForCourt and scoringDraftFromConfig', () => {
+		const base = { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 };
+
+		it('shows 15 points on 5p/6p when 4p is 21 with no override', () => {
+			expect(displayedScoringForCourt(5, base).pointsToWin).toBe(15);
+			expect(displayedScoringForCourt(6, base).pointsToWin).toBe(15);
+			expect(displayedScoringForCourt(3, base).pointsToWin).toBe(21);
+			expect(displayedScoringForCourt(4, base).pointsToWin).toBe(21);
+		});
+
+		it('uses an explicit 5p override', () => {
+			expect(displayedScoringForCourt(5, base, { '5': { pointsToWin: 12 } }).pointsToWin).toBe(12);
+		});
+
+		it('builds a 4/3/5/6 draft from 4p plus overrides', () => {
+			const draft = scoringDraftFromConfig(base, { '3': { setsToWin: 2, decidingSetPoints: 11 } });
+			expect(draft['4'].setsToWin).toBe(1);
+			expect(draft['3'].setsToWin).toBe(2);
+			expect(draft['3'].decidingSetPoints).toBe(11);
+			expect(draft['5'].pointsToWin).toBe(15);
+			expect(draft['6'].pointsToWin).toBe(15);
+		});
+
+		it('clamps a scoring draft into a 4p payload plus 3/5/6 overrides', () => {
+			const payload = scoringPayloadFromDraft({
+				'4': { pointsToWin: 50, winBy: 3, setsToWin: 9, decidingSetPoints: 2 },
+				'3': { pointsToWin: 12, winBy: 1, setsToWin: 1, decidingSetPoints: 9 },
+				'5': { pointsToWin: 5, winBy: 2, setsToWin: 2, decidingSetPoints: 11 },
+				'6': { pointsToWin: 21, winBy: 2, setsToWin: 1, decidingSetPoints: 15 }
+			});
+			expect(payload.four).toEqual({
+				pointsToWin: 30,
+				winBy: 2,
+				setsToWin: 2,
+				decidingSetPoints: 6
+			});
+			expect(payload.scoringOverrides['3']?.pointsToWin).toBe(12);
+			expect(payload.scoringOverrides['5']?.pointsToWin).toBe(6);
+			expect(payload.scoringOverrides['6']?.pointsToWin).toBe(21);
+		});
+	});
+
+	describe('clampPointsPerSet and clampCourtScoringRules', () => {
+		it('clamps points to 6–30', () => {
+			expect(clampPointsPerSet(21, 21)).toBe(21);
+			expect(clampPointsPerSet(5, 21)).toBe(6);
+			expect(clampPointsPerSet(50, 21)).toBe(30);
+			expect(clampPointsPerSet(Number.NaN, 21)).toBe(21);
+		});
+
+		it('rounds fractional points before clamping', () => {
+			expect(clampPointsPerSet(20.6, 21)).toBe(21);
+		});
+
+		it('normalizes win-by and sets-to-win to the radio options', () => {
+			const clamped = clampCourtScoringRules({
+				pointsToWin: 50,
+				winBy: 3,
+				setsToWin: 4,
+				decidingSetPoints: 2
+			});
+			expect(clamped).toEqual({
+				pointsToWin: 30,
+				winBy: 2,
+				setsToWin: 2,
+				decidingSetPoints: 6
+			});
+		});
+
+		it('keeps valid radio selections unchanged', () => {
+			const rules = { pointsToWin: 12, winBy: 1, setsToWin: 1, decidingSetPoints: 9 };
+			expect(clampCourtScoringRules(rules)).toEqual(rules);
+		});
+	});
 });
 
 // ============================================================================
@@ -5077,9 +5179,9 @@ describe('tie-break ranking', () => {
 
 	it('initial_order uses assignSeedRanks list order when points are absent', () => {
 		const roster = [
-			{ id: 30, name: 'First', seedPoints: null, seedRank: null },
-			{ id: 10, name: 'Second', seedPoints: null, seedRank: null },
-			{ id: 20, name: 'Third', seedPoints: null, seedRank: null }
+			{ id: 30, name: 'First', seedPoints: null },
+			{ id: 10, name: 'Second', seedPoints: null },
+			{ id: 20, name: 'Third', seedPoints: null }
 		];
 		const ranked = assignSeedRanks(roster);
 		const sorted = sortPlayersByTieBreak([20, 10, 30], only('initial_order'), { players: ranked });
@@ -5088,9 +5190,9 @@ describe('tie-break ranking', () => {
 
 	it('initial_order keeps name-list order among equal seed points', () => {
 		const roster = [
-			{ id: 9, name: 'A', seedPoints: 100, seedRank: null },
-			{ id: 1, name: 'B', seedPoints: 100, seedRank: null },
-			{ id: 5, name: 'C', seedPoints: 50, seedRank: null }
+			{ id: 9, name: 'A', seedPoints: 100 },
+			{ id: 1, name: 'B', seedPoints: 100 },
+			{ id: 5, name: 'C', seedPoints: 50 }
 		];
 		const ranked = assignSeedRanks(roster);
 		expect(ranked.map((p) => p.id)).toEqual([9, 1, 5]);

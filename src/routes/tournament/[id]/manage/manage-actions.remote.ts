@@ -2,15 +2,13 @@ import { command } from '$app/server';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { db } from '$lib/server/db';
-import { player, tournament, match, courtRotation } from '$lib/server/db/schema';
-import { and, eq, inArray } from 'drizzle-orm';
+import { player, tournament, match } from '$lib/server/db/schema';
+import { eq, inArray } from 'drizzle-orm';
 import * as m from '$lib/paraglide/messages';
 import { requireOrganizerTournament } from '$lib/server/org-guard';
 import {
 	assignSeedRanks,
-	calculateCourtSizes,
-	getMaxSets,
-	getEffectiveScoring,
+	inferScoringMode,
 	type CourtAssignment,
 	type FormatType,
 	type ScoringOverrides
@@ -20,9 +18,10 @@ import {
 	minRoundCount,
 	refillToCanonical,
 	renumberSeedOrder,
+	sortCourts,
 	type ManualAssignmentCourt
 } from '$lib/manage-logic';
-import { parsePlayerLine } from '$lib/parse-players';
+import { parsePastedText, parsePlayerLine } from '$lib/parse-players';
 import { newPlayerToken } from '$lib/server/tournament-orchestration';
 import {
 	applyAssignmentInPlace,
@@ -106,7 +105,7 @@ export const updatePlayerOrder = command(
 	async ({ tournamentId, playerIds }) => {
 		const { tourney } = await requireOrganizerTournament(tournamentId);
 		if (tourney.status === 'active') {
-			if ((tourney.currentRound || 0) !== 1) error(400, m.err_add_player_phase());
+			if ((tourney.currentRound || 0) !== 1) error(400, m.manage_order_locked());
 			await assertRoundUnlocked(tourney.id, 1);
 		}
 		const ranks = new Map<number, number>();
@@ -187,10 +186,7 @@ export const addPlayersBulk = command(
 		if (tourney.status !== 'setup') error(400, m.err_add_player_phase());
 		const existing = await db.select().from(player).where(eq(player.tournamentId, tournamentId));
 		const taken = new Set(existing.filter((p) => !p.retiredAt).map((p) => p.name.toLowerCase()));
-		const lines = names
-			.split('\n')
-			.map((l) => l.trim())
-			.filter(Boolean);
+		const lines = parsePastedText(names);
 		for (const line of lines) {
 			const parsed = parsePlayerLine(line, tourney.formatType as FormatType);
 			if (taken.has(parsed.name.toLowerCase())) continue;
@@ -273,7 +269,7 @@ export const applyAssignmentCommand = command(
 			courtNumber: r.courtNumber,
 			playerIds: rotationPlayerIds(r)
 		}));
-		const after: ManualAssignmentCourt[] = courts;
+		const after: ManualAssignmentCourt[] = sortCourts(courts);
 		const result = applyAssignment(before, after, {
 			roundHasScores: false,
 			isFinalRound: currentRound >= tourney.numRounds,
@@ -319,7 +315,7 @@ export const previewAssignmentChange = command(
 			courtNumber: r.courtNumber,
 			playerIds: rotationPlayerIds(r)
 		}));
-		return applyAssignment(before, courts, {
+		return applyAssignment(before, sortCourts(courts), {
 			roundHasScores: matches.some((x) => x.teamAScore != null),
 			isFinalRound: currentRound >= tourney.numRounds,
 			formatType: tourney.formatType as FormatType,
@@ -416,25 +412,49 @@ export const updateTournamentSettings = command(
 export const updateScoringRules = command(
 	v.object({
 		tournamentId: v.pipe(v.number(), v.minValue(1)),
-		scoringMode: v.picklist(['single-21', 'best-of-3', 'custom']),
-		pointsToWin: v.pipe(v.number(), v.minValue(1)),
-		winBy: v.pipe(v.number(), v.minValue(1)),
-		setsToWin: v.pipe(v.number(), v.minValue(1)),
-		decidingSetPoints: v.pipe(v.number(), v.minValue(1))
+		pointsToWin: v.pipe(v.number(), v.minValue(6), v.maxValue(30)),
+		winBy: v.pipe(v.number(), v.minValue(1), v.maxValue(2)),
+		setsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(2)),
+		decidingSetPoints: v.pipe(v.number(), v.minValue(6), v.maxValue(30)),
+		scoringOverrides: v.optional(
+			v.record(
+				v.string(),
+				v.object({
+					pointsToWin: v.pipe(v.number(), v.minValue(6), v.maxValue(30)),
+					winBy: v.pipe(v.number(), v.minValue(1), v.maxValue(2)),
+					setsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(2)),
+					decidingSetPoints: v.pipe(v.number(), v.minValue(6), v.maxValue(30))
+				})
+			)
+		)
 	}),
 	async (input) => {
 		const { tourney } = await requireOrganizerTournament(input.tournamentId);
 		if (tourney.status === 'active') {
 			await assertRoundUnlocked(tourney.id, tourney.currentRound || 0);
 		}
+		const four = {
+			pointsToWin: input.pointsToWin,
+			winBy: input.winBy,
+			setsToWin: input.setsToWin,
+			decidingSetPoints: input.decidingSetPoints
+		};
+		const scoringMode = inferScoringMode(four);
+		const scoringOverrides: ScoringOverrides = {
+			...(input.scoringOverrides !== undefined
+				? input.scoringOverrides
+				: ((tourney.scoringOverrides as ScoringOverrides | null) ?? {}))
+		};
+		delete scoringOverrides['4'];
 		await db
 			.update(tournament)
 			.set({
-				scoringMode: input.scoringMode,
+				scoringMode,
 				pointsToWin: input.pointsToWin,
 				winBy: input.winBy,
 				setsToWin: input.setsToWin,
 				decidingSetPoints: input.decidingSetPoints,
+				scoringOverrides,
 				lastActivityAt: new Date()
 			})
 			.where(eq(tournament.id, tourney.id));
@@ -444,7 +464,6 @@ export const updateScoringRules = command(
 				courtNumber: r.courtNumber,
 				playerIds: rotationPlayerIds(r)
 			}));
-			const updated = { ...tourney, ...input };
 			const ids = rotations.map((r) => r.id);
 			if (ids.length > 0) {
 				await db.delete(match).where(inArray(match.courtRotationId, ids));
@@ -456,18 +475,11 @@ export const updateScoringRules = command(
 					assignment,
 					assignments.map((a) => a.playerIds.length),
 					rotation.id,
-					{
-						pointsToWin: input.pointsToWin,
-						setsToWin: input.setsToWin,
-						decidingSetPoints: input.decidingSetPoints,
-						winBy: input.winBy
-					},
-					updated.scoringOverrides as ScoringOverrides | null
+					four,
+					scoringOverrides
 				);
 				if (rows.length > 0) await db.insert(match).values(rows);
 			}
-			void getMaxSets;
-			void getEffectiveScoring;
 		}
 		await refreshAll(tourney.id);
 		return { success: true };
@@ -481,7 +493,9 @@ export const updateRoundCount = command(
 	}),
 	async ({ tournamentId, numRounds }) => {
 		const { tourney } = await requireOrganizerTournament(tournamentId);
-		if (tourney.formatType === 'preseed') error(400, m.manage_rounds_preseed_fixed());
+		if (tourney.formatType === 'preseed' && tourney.status !== 'setup') {
+			error(400, m.manage_rounds_preseed_fixed());
+		}
 		const { matches } = await currentRoundMatches(tournamentId, tourney.currentRound || 0);
 		const min = minRoundCount(
 			tourney.currentRound || 0,

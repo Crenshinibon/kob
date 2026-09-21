@@ -55,7 +55,7 @@
 	.qr-code {
 		margin-bottom: var(--spacing-md);
 		padding: var(--spacing-sm);
-		background-color: var(--bg-secondary);
+		background-color: var(--qr-bg, var(--bg-secondary));
 		border-radius: var(--radius-sm);
 		display: flex;
 		flex-direction: column;
@@ -71,7 +71,7 @@
 	.qr-loading,
 	.qr-error {
 		padding: var(--spacing-sm);
-		color: var(--text-secondary);
+		color: var(--qr-fg, var(--text-secondary));
 		font-size: 0.875rem;
 		text-align: center;
 	}
@@ -84,6 +84,20 @@
 		margin-top: var(--spacing-xs);
 		margin-bottom: 0;
 		font-size: 0.75rem;
-		color: var(--text-secondary);
+		color: var(--qr-fg, var(--text-secondary));
+	}
+
+	@media print {
+		.qr-code {
+			background-color: #fff;
+			-webkit-print-color-adjust: exact;
+			print-color-adjust: exact;
+		}
+
+		.qr-loading,
+		.qr-error,
+		.qr-hint {
+			color: #111;
+		}
 	}
 </style>

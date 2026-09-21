@@ -62,7 +62,7 @@ describe('planTournamentStart', () => {
 		expect(sixteen.numRounds).toBe(3);
 	});
 
-	it('preseed derives rounds from court count', () => {
+	it('preseed uses stored rounds except one-court force-1', () => {
 		const four = planTournamentStart({
 			formatType: 'preseed',
 			players: players(4),
@@ -73,9 +73,10 @@ describe('planTournamentStart', () => {
 		const sixteen = planTournamentStart({
 			formatType: 'preseed',
 			players: players(16),
-			storedNumRounds: 9
+			storedNumRounds: 2
 		});
-		expect(sixteen.numRounds).toBe(calculateRoundCount(4, 'preseed'));
+		expect(sixteen.numRounds).toBe(2);
+		expect(calculateRoundCount(4, 'preseed')).toBeGreaterThan(0);
 	});
 
 	it('assigns seedRank by points then list order', () => {

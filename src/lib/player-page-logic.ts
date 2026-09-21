@@ -1,14 +1,13 @@
 import {
 	calculateCourtStandings,
 	getBracketGroups,
-	getFrozenCourts,
 	isMatchComplete,
-	matchInvolvesPlayer,
 	verticalSeeding,
 	type CourtResult,
 	type FormatType,
 	type MatchData,
-	type MatchSetScore
+	type MatchSetScore,
+	type TieBreakFactorId
 } from '$lib/tournament-logic';
 
 export type PlayerRoundState =
@@ -444,9 +443,12 @@ export type ReachableFinalPlaceContext = {
 	courtSizes: readonly number[];
 	bestRankOnCourt: number | null;
 	safeRankOnCourt: number | null;
+	liveRankOnCourt?: number | null;
 	liveRoundResults: CourtResult[] | null;
 	frozenCourtNumbers: ReadonlySet<number>;
 	playerId?: number;
+	/** Courts in this round that already have a complete result. */
+	scoredCourtCount?: number;
 };
 
 function remainingTransitions(currentRound: number, numRounds: number): number {
@@ -479,6 +481,118 @@ function walkSafeLadder(
 	return { court: dest, rank: last };
 }
 
+function walkSafeLadderSteps(
+	courtNumber: number,
+	rank: number,
+	steps: number,
+	courtCount: number,
+	courtSizes: readonly number[]
+): { court: number; rank: number } {
+	let k = courtNumber;
+	let r = rank;
+	for (let i = 0; i < steps; i++) {
+		k = ladderDestination(k, r, courtCount);
+		r = courtSizes[k - 1] ?? 4;
+	}
+	return { court: k, rank: r };
+}
+
+function courtLooksUnplayed(court: CourtResult): boolean {
+	return court.standings.every((s) => s.points === 0 && s.diff === 0);
+}
+
+function otherCourtsUnscored(live: CourtResult[] | null, myCourt: number): boolean {
+	if (!live || live.length === 0) return true;
+	const others = live.filter((c) => c.courtNumber !== myCourt);
+	if (others.length === 0) return true;
+	return others.some((c) => courtLooksUnplayed(c));
+}
+
+/** R1 vertical seeding is not real until every court has a complete result. */
+function round1SeedingPending(ctx: ReachableFinalPlaceContext): boolean {
+	const n = ctx.courtSizes.length;
+	if (n <= 1) return false;
+	if (ctx.scoredCourtCount != null) return ctx.scoredCourtCount < n;
+	return otherCourtsUnscored(ctx.liveRoundResults, ctx.courtNumber);
+}
+
+/** Courts that finishers of `rank` (1-based) occupy after R1 vertical seeding. */
+export function verticalTierCourtRange(
+	rank: number,
+	courtSizes: readonly number[]
+): { lo: number; hi: number } {
+	if (courtSizes.length === 0) return { lo: 1, hi: 1 };
+	const r = Math.max(1, rank);
+	let before = 0;
+	for (let tier = 1; tier < r; tier++) {
+		before += courtSizes.filter((size) => size >= tier).length;
+	}
+	const inTier = courtSizes.filter((size) => size >= r).length;
+	if (inTier <= 0) {
+		return { lo: courtSizes.length, hi: courtSizes.length };
+	}
+	const from = before;
+	const to = before + inTier;
+	let idx = 0;
+	let lo = courtSizes.length;
+	let hi = 1;
+	for (let c = 0; c < courtSizes.length; c++) {
+		const start = idx;
+		const end = idx + (courtSizes[c] ?? 4);
+		if (end > from && start < to) {
+			lo = Math.min(lo, c + 1);
+			hi = Math.max(hi, c + 1);
+		}
+		idx = end;
+	}
+	return { lo, hi };
+}
+
+/** 1-based tournament places occupied by finishers of `rank` after R1 vertical seeding. */
+export function verticalTierPlaceRange(
+	rank: number,
+	courtSizes: readonly number[]
+): { best: number; worst: number } {
+	if (courtSizes.length === 0) return { best: 1, worst: 1 };
+	const r = Math.max(1, rank);
+	let before = 0;
+	for (let tier = 1; tier < r; tier++) {
+		before += courtSizes.filter((size) => size >= tier).length;
+	}
+	const inTier = courtSizes.filter((size) => size >= r).length;
+	if (inTier <= 0) {
+		const lastCourt = courtSizes.length;
+		const last = placeForCourtRank(courtSizes, lastCourt, courtSizes[lastCourt - 1] ?? 4);
+		return { best: last, worst: last };
+	}
+	return { best: before + 1, worst: before + inTier };
+}
+
+export type NeighborStanding = {
+	points: number;
+	diff: number;
+	decidingFactor: TieBreakFactorId | null;
+	rawPoints?: number;
+	rawDiff?: number;
+};
+
+export function neighborSeparatingFactor(
+	better: NeighborStanding,
+	worse: NeighborStanding
+): TieBreakFactorId | null {
+	const betterPoints = better.rawPoints ?? better.points;
+	const worsePoints = worse.rawPoints ?? worse.points;
+	if (better.points !== worse.points || betterPoints !== worsePoints) return 'round_points';
+	const betterDiff = better.rawDiff ?? better.diff;
+	const worseDiff = worse.rawDiff ?? worse.diff;
+	if (better.diff !== worse.diff || betterDiff !== worseDiff) return 'round_diff';
+	// Group icons (seed vs the player above) are not the factor that split this pair.
+	if (worse.decidingFactor && worse.decidingFactor !== better.decidingFactor) {
+		return worse.decidingFactor;
+	}
+	return better.decidingFactor ?? worse.decidingFactor;
+}
+
 function preseedGroupRange(
 	courtNumber: number,
 	courtSizes: readonly number[],
@@ -501,11 +615,17 @@ export function reachableFinalPlaceRange(ctx: ReachableFinalPlaceContext): {
 	worst: number;
 	minCourt: number;
 	maxCourt: number;
+	current: number | null;
 } {
 	const courtCount = ctx.courtSizes.length;
 	const size = ctx.courtSizes[ctx.courtNumber - 1] ?? 4;
 	const bestRank = ctx.bestRankOnCourt ?? 1;
 	const safeRank = ctx.safeRankOnCourt ?? size;
+	const liveRank =
+		ctx.liveRankOnCourt ??
+		(ctx.bestRankOnCourt === ctx.safeRankOnCourt ? ctx.bestRankOnCourt : null);
+	const placeNow =
+		liveRank != null ? placeForCourtRank(ctx.courtSizes, ctx.courtNumber, liveRank) : null;
 	const t = remainingTransitions(ctx.currentRound, ctx.numRounds);
 
 	if (ctx.frozenCourtNumbers.has(ctx.courtNumber)) {
@@ -515,14 +635,21 @@ export function reachableFinalPlaceRange(ctx: ReachableFinalPlaceContext): {
 			best: Math.min(place, safePlace),
 			worst: Math.max(place, safePlace),
 			minCourt: ctx.courtNumber,
-			maxCourt: ctx.courtNumber
+			maxCourt: ctx.courtNumber,
+			current: placeNow ?? place
 		};
 	}
 
 	if (t === 0) {
 		const best = placeForCourtRank(ctx.courtSizes, ctx.courtNumber, bestRank);
 		const worst = placeForCourtRank(ctx.courtSizes, ctx.courtNumber, safeRank);
-		return { best, worst, minCourt: ctx.courtNumber, maxCourt: ctx.courtNumber };
+		return {
+			best,
+			worst,
+			minCourt: ctx.courtNumber,
+			maxCourt: ctx.courtNumber,
+			current: placeNow ?? best
+		};
 	}
 
 	if (ctx.formatType === 'preseed') {
@@ -532,7 +659,8 @@ export function reachableFinalPlaceRange(ctx: ReachableFinalPlaceContext): {
 				best: group.minPlace,
 				worst: group.maxPlace,
 				minCourt: group.lo,
-				maxCourt: group.hi
+				maxCourt: group.hi,
+				current: null
 			};
 		}
 		const winners = bestRank <= Math.ceil(size / 2);
@@ -544,7 +672,8 @@ export function reachableFinalPlaceRange(ctx: ReachableFinalPlaceContext): {
 				best: placeForCourtRank(ctx.courtSizes, group.lo, 1),
 				worst: placeForCourtRank(ctx.courtSizes, hi, ctx.courtSizes[hi - 1] ?? 4),
 				minCourt: group.lo,
-				maxCourt: hi
+				maxCourt: hi,
+				current: placeForCourtRank(ctx.courtSizes, group.lo, 1)
 			};
 		}
 		if (!winners && losers) {
@@ -553,52 +682,201 @@ export function reachableFinalPlaceRange(ctx: ReachableFinalPlaceContext): {
 				best: placeForCourtRank(ctx.courtSizes, split, 1),
 				worst: group.maxPlace,
 				minCourt: split,
-				maxCourt: group.hi
+				maxCourt: group.hi,
+				current: placeForCourtRank(ctx.courtSizes, split, 1)
 			};
 		}
-		return { best: group.minPlace, worst: group.maxPlace, minCourt: group.lo, maxCourt: group.hi };
+		return {
+			best: group.minPlace,
+			worst: group.maxPlace,
+			minCourt: group.lo,
+			maxCourt: group.hi,
+			current: group.minPlace
+		};
 	}
 
-	if (
-		ctx.formatType === 'random-seed' &&
-		ctx.currentRound === 1 &&
-		ctx.liveRoundResults &&
-		ctx.playerId
-	) {
-		const nextFromVertical = (rank: number): number => {
-			const results: CourtResult[] = ctx.liveRoundResults!.map((c) => {
-				if (c.courtNumber !== ctx.courtNumber) return c;
-				const standings = c.standings.map((s) =>
-					s.playerId === ctx.playerId ? { ...s, rank } : s
+	const isRandomR1 = ctx.formatType !== 'preseed' && ctx.currentRound === 1;
+	if (isRandomR1) {
+		const lastPlace = placeForCourtRank(
+			ctx.courtSizes,
+			courtCount,
+			ctx.courtSizes[courtCount - 1] ?? 4
+		);
+		if (ctx.bestRankOnCourt == null && ctx.safeRankOnCourt == null) {
+			return { best: 1, worst: lastPlace, minCourt: 1, maxCourt: courtCount, current: null };
+		}
+		// Remaining rounds after this one — a court-8 1st can still be relegated `t` times
+		// from the bottom of the 1sts band (court 2 → 5 last = 20th in a 4-round 8×4).
+		const remainingAfterVertical = t;
+		const seedingPending = round1SeedingPending(ctx);
+		const bestBand = verticalTierCourtRange(bestRank, ctx.courtSizes);
+		const safeBand = verticalTierCourtRange(safeRank, ctx.courtSizes);
+		const rankForCurrent = liveRank ?? safeRank;
+		const nextFromVertical = (rank: number): { court: number; rank: number } | null => {
+			if (!ctx.liveRoundResults || !ctx.playerId) return null;
+			const results: CourtResult[] = ctx.liveRoundResults.map((c) => {
+				const standings = [...c.standings].map((s) =>
+					c.courtNumber === ctx.courtNumber && s.playerId === ctx.playerId ? { ...s, rank } : s
 				);
+				standings.sort((a, b) => a.rank - b.rank);
 				return { courtNumber: c.courtNumber, standings };
 			});
 			const assignments = verticalSeeding(results, courtCount, ctx.courtSizes);
-			const found = assignments.find((a) => a.playerIds.includes(ctx.playerId!));
-			return found?.courtNumber ?? ctx.courtNumber;
+			const assignment = assignments.find((a) => a.playerIds.includes(ctx.playerId!));
+			if (!assignment) return null;
+			return {
+				court: assignment.courtNumber,
+				rank: assignment.playerIds.indexOf(ctx.playerId!) + 1
+			};
 		};
-		const bestCourt = nextFromVertical(bestRank);
-		const safeCourt = nextFromVertical(safeRank);
-		const bestRest = walkBestLadder(bestCourt, 1, t - 1, courtCount);
+		let bestCourt = bestBand.lo;
+		let safeCourt = safeBand.hi;
+		const landed = seedingPending ? null : nextFromVertical(rankForCurrent);
+		if (!seedingPending) {
+			bestCourt = nextFromVertical(bestRank)?.court ?? bestCourt;
+			safeCourt = nextFromVertical(safeRank)?.court ?? safeCourt;
+		}
+		if (ctx.bestRankOnCourt == null || ctx.bestRankOnCourt === 1) {
+			bestCourt = 1;
+		}
+		const bestRest = walkBestLadder(bestCourt, 1, remainingAfterVertical, courtCount);
+		const safeLast = ctx.courtSizes[safeCourt - 1] ?? 4;
+		const safeRest = walkSafeLadderSteps(
+			safeCourt,
+			safeLast,
+			remainingAfterVertical,
+			courtCount,
+			ctx.courtSizes
+		);
+		const bandCurrent = verticalTierPlaceRange(rankForCurrent, ctx.courtSizes).best;
+		const seedCourtPlace = placeForCourtRank(ctx.courtSizes, ctx.courtNumber, rankForCurrent);
+		let current = landed
+			? placeForCourtRank(ctx.courtSizes, landed.court, landed.rank)
+			: bandCurrent;
+		// Seed-court slot (court 8 rank 1 = 29th) is not a tournament place during R1.
+		if (seedingPending || current === seedCourtPlace) {
+			current = bandCurrent;
+		}
 		return {
 			best: placeForCourtRank(ctx.courtSizes, bestRest.court, 1),
-			worst: placeForCourtRank(ctx.courtSizes, safeCourt, ctx.courtSizes[safeCourt - 1] ?? 4),
+			worst: placeForCourtRank(ctx.courtSizes, safeRest.court, safeRest.rank),
 			minCourt: bestRest.court,
-			maxCourt: safeCourt
+			maxCourt: safeRest.court,
+			current
 		};
 	}
 
 	const bestEnd = walkBestLadder(ctx.courtNumber, bestRank, t, courtCount);
-	const safeEnd =
-		t <= 1
-			? walkSafeLadder(ctx.courtNumber, safeRank, courtCount, ctx.courtSizes)
-			: walkSafeLadder(ctx.courtNumber, safeRank, courtCount, ctx.courtSizes);
+	const safeEnd = walkSafeLadder(ctx.courtNumber, safeRank, courtCount, ctx.courtSizes);
 
 	return {
 		best: placeForCourtRank(ctx.courtSizes, bestEnd.court, bestEnd.rank),
 		worst: placeForCourtRank(ctx.courtSizes, safeEnd.court, safeEnd.rank),
 		minCourt: bestEnd.court,
-		maxCourt: safeEnd.court
+		maxCourt: safeEnd.court,
+		current: placeNow
+	};
+}
+
+export type PlayerPlacementInput = {
+	formatType: FormatType;
+	tournamentStatus: string;
+	currentRound: number;
+	numRounds: number;
+	roundState: PlayerRoundState;
+	courtNumber: number | null;
+	courtSizes: readonly number[];
+	courtComplete: boolean;
+	courtsDone: number;
+	courtsTotal: number;
+	bestRankOnCourt: number | null;
+	safeRankOnCourt: number | null;
+	liveRankOnCourt: number | null;
+	liveRoundResults: CourtResult[] | null;
+	frozenCourtNumbers: ReadonlySet<number>;
+	playerId?: number;
+	/** Standings-page overall rank. Used only after the round is closed. */
+	overallRank: number | null;
+	totalPlayers: number;
+};
+
+export type PlayerPlacement = {
+	current: number | null;
+	total: number;
+	best: number;
+	worst: number;
+	isFinal: boolean;
+	minCourt: number;
+	maxCourt: number;
+	rankCanStillChange: boolean;
+};
+
+function placementIsFinal(roundState: PlayerRoundState, courtComplete: boolean): boolean {
+	return (
+		roundState === 'completed' ||
+		roundState === 'retired' ||
+		roundState === 'eliminated' ||
+		(roundState === 'frozen' && courtComplete)
+	);
+}
+
+/**
+ * Currently / Best / Safe on the player page. The data layer must not recompute these.
+ * Round-1 random current is the vertical-tier first place while the round is still
+ * open — never seed-court slot or standings `overallRank` (court-then-rank).
+ */
+export function playerPlacement(input: PlayerPlacementInput): PlayerPlacement {
+	const isFinal = placementIsFinal(input.roundState, input.courtComplete);
+	const rankCanStillChange = !input.courtComplete && input.roundState === 'active';
+	const total = input.totalPlayers;
+	const roundOpen =
+		input.tournamentStatus === 'active' &&
+		input.courtsTotal > 0 &&
+		input.courtsDone < input.courtsTotal;
+
+	if (input.courtNumber == null || input.courtSizes.length === 0) {
+		return {
+			current: input.roundState === 'not_started' || roundOpen ? null : input.overallRank,
+			total,
+			best: 1,
+			worst: Math.max(1, total),
+			isFinal,
+			minCourt: 1,
+			maxCourt: input.courtSizes.length || 1,
+			rankCanStillChange
+		};
+	}
+
+	const range = reachableFinalPlaceRange({
+		formatType: input.formatType,
+		currentRound: input.currentRound,
+		numRounds: input.numRounds,
+		courtNumber: input.courtNumber,
+		courtSizes: input.courtSizes,
+		bestRankOnCourt: input.bestRankOnCourt,
+		safeRankOnCourt: input.safeRankOnCourt,
+		liveRankOnCourt: input.liveRankOnCourt,
+		liveRoundResults: input.liveRoundResults,
+		frozenCourtNumbers: input.frozenCourtNumbers,
+		playerId: input.playerId,
+		scoredCourtCount: input.courtsDone
+	});
+
+	const r1Open = input.formatType !== 'preseed' && input.currentRound === 1 && roundOpen;
+	const current =
+		r1Open && input.liveRankOnCourt != null
+			? verticalTierPlaceRange(input.liveRankOnCourt, input.courtSizes).best
+			: (range.current ?? (roundOpen ? null : input.overallRank));
+
+	return {
+		current,
+		total,
+		best: range.best,
+		worst: range.worst,
+		isFinal,
+		minCourt: range.minCourt,
+		maxCourt: range.maxCourt,
+		rankCanStillChange
 	};
 }
 
