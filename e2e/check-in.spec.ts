@@ -155,6 +155,9 @@ test.describe('Player check-in (097)', () => {
 
 		await page.getByRole('link', { name: 'Check-in' }).click();
 		await expect(page.getByTestId('checkin-page')).toBeVisible();
+		await expect(page.locator('[data-testid^="checkin-row-"]')).toHaveCount(8, {
+			timeout: 15000
+		});
 		const rowIds = await page
 			.locator('[data-testid^="checkin-row-"]')
 			.evaluateAll((els) =>
