@@ -12,6 +12,7 @@ import {
 	placeForCourtRank,
 	reachableRanksOnCourt,
 	reachableFinalPlaceRange,
+	verticalTierCourtRange,
 	shouldAutoCheckIn,
 	checkInWasUsed,
 	type NumberedMatch
@@ -308,7 +309,45 @@ describe('reachable ranks and range', () => {
 			playerId: 17
 		});
 		expect(range.best).toBe(1);
-		expect(range.worst).toBeGreaterThanOrEqual(21);
+		expect(range.worst).toBe(32);
+	});
+
+	it('maps 4ths on 8×4 into courts 7–8 after vertical seeding', () => {
+		expect(verticalTierCourtRange(1, Array(8).fill(4))).toEqual({ lo: 1, hi: 2 });
+		expect(verticalTierCourtRange(2, Array(8).fill(4))).toEqual({ lo: 3, hi: 4 });
+		expect(verticalTierCourtRange(3, Array(8).fill(4))).toEqual({ lo: 5, hi: 6 });
+		expect(verticalTierCourtRange(4, Array(8).fill(4))).toEqual({ lo: 7, hi: 8 });
+		expect(verticalTierCourtRange(4, [5, 4, 4, 4, 4, 4, 4, 3])).toEqual({ lo: 6, hi: 8 });
+	});
+
+	it('random-seed round 1 court-done 4th is the 4ths band, not dummy slot order', () => {
+		const sizes = Array(8).fill(4);
+		const dummyResults = sizes.map((_, i) => ({
+			courtNumber: i + 1,
+			standings: [1, 2, 3, 4].map((rank, j) => ({
+				playerId: i * 4 + j + 1,
+				rank: i === 0 ? rank : j + 1,
+				points: i === 0 ? [15, 13, 12, 12][j]! : 0,
+				diff: i === 0 ? [4, 1, -1, -1][j]! : 0,
+				matchCount: i === 0 ? 3 : 0
+			}))
+		}));
+		const range = reachableFinalPlaceRange({
+			formatType: 'random-seed',
+			currentRound: 1,
+			numRounds: 4,
+			courtNumber: 1,
+			courtSizes: sizes,
+			bestRankOnCourt: 4,
+			safeRankOnCourt: 4,
+			liveRoundResults: dummyResults,
+			frozenCourtNumbers: new Set(),
+			playerId: 4
+		});
+		expect(range.best).toBe(17);
+		expect(range.worst).toBe(32);
+		expect(range.minCourt).toBe(5);
+		expect(range.maxCourt).toBe(8);
 	});
 });
 

@@ -427,7 +427,7 @@ reachableFinalPlaceRange(ctx: {
 - **Best path:** from `bestRankOnCourt`, each remaining step takes the **best legal destination** (ladder: up if rank ≤ 2, otherwise the forced down; then assume rank 1 on that court for further steps so they keep promoting). Finish **rank 1** on the court they land on. Last round (`t = 0`): `place(k, bestRankOnCourt)`.
 - **Safe path:** from `safeRankOnCourt`, each remaining step takes the **worst legal destination** (ladder: down if rank ≥ 3, otherwise the forced stay/up; then assume last on that court for further steps). Finish **last** on the court they land on. Last round: `place(k, safeRankOnCourt)`.
 - **Preseed:** best path = winners' half each time that rank still qualifies (≤ half the court); otherwise the forced losers' half, then winners' from there. Safe path is the mirror.
-- **Round 1 random (vertical seeding):** best path uses the 1sts tier (or the best tier `bestRank` still allows) in `verticalSeeding` on live results of other courts; safe path uses the worst still-possible tier. Other courts stay live (unplayed = 0); jumping as they report is a feature.
+- **Round 1 random (vertical seeding):** finishers of rank _ρ_ occupy a **tier band** of next courts (`verticalTierCourtRange` — on 8×4, 4ths → courts 7–8). Best starts at the top of that band (then remaining promotes); safe starts at the bottom (then remaining relegations, last on that court). Do **not** run `verticalSeeding` on dummy 0–0 / slot-order standings from unfinished courts — that pinned a court-1 4th to court 7 last (**Safe 28**) instead of court 8 last (**Safe 32**). Once every other court has real scores, use live `verticalSeeding` (jumping as they report is still a feature).
 - When this court has **no scores yet**, `bestRank = 1` and `safeRank = courtSize` (full court). Do not pretend a 0–0 ranking is a result.
 
 `bestPlace(k) = place(k, 1)`, `worstPlace(k) = place(k, courtSizes[k])`. The two paths yield `minCourt` / `maxCourt` and the two place numbers.
@@ -446,6 +446,7 @@ reachableFinalPlaceRange(ctx: {
 | ----- | ----- | -------------------- | ----------------- | ------------------------------ | ------------- |
 | 1     | 3     | 1–4 (no scores)      | → Court 1 rank 1  | → Court 4 last                 | 1st – 16th    |
 | 1     | 3     | 1–4 (1 match saved)  | 1sts tier → C1    | 4ths tier → C4                 | 1st – 16th    |
+| 1     | 1     | 4 only (court done, other courts unfinished, 32p / 4 rounds) | 4ths band C7 then promote to C5 | 4ths band C8 last | 17th – 32nd |
 | 2     | 3     | 1–4                  | C2 then C1 rank 1 | C4 last                        | 1st – 16th    |
 | 2     | 3     | 1–2 only             | C2 then C1 rank 1 | C2 last (forced up, then last) | 1st – 8th     |
 | 2     | 3     | 3–4 only             | C4 then C3 rank 1 | C4 last                        | 9th – 16th    |
