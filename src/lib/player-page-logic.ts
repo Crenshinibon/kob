@@ -447,6 +447,8 @@ export type ReachableFinalPlaceContext = {
 	liveRoundResults: CourtResult[] | null;
 	frozenCourtNumbers: ReadonlySet<number>;
 	playerId?: number;
+	/** Courts in this round that already have a complete result. */
+	scoredCourtCount?: number;
 };
 
 function remainingTransitions(currentRound: number, numRounds: number): number {
@@ -504,6 +506,14 @@ function otherCourtsUnscored(live: CourtResult[] | null, myCourt: number): boole
 	const others = live.filter((c) => c.courtNumber !== myCourt);
 	if (others.length === 0) return true;
 	return others.some((c) => courtLooksUnplayed(c));
+}
+
+/** R1 vertical seeding is not real until every court has a complete result. */
+function round1SeedingPending(ctx: ReachableFinalPlaceContext): boolean {
+	const n = ctx.courtSizes.length;
+	if (n <= 1) return false;
+	if (ctx.scoredCourtCount != null) return ctx.scoredCourtCount < n;
+	return otherCourtsUnscored(ctx.liveRoundResults, ctx.courtNumber);
 }
 
 /** Courts that finishers of `rank` (1-based) occupy after R1 vertical seeding. */
@@ -685,7 +695,8 @@ export function reachableFinalPlaceRange(ctx: ReachableFinalPlaceContext): {
 		};
 	}
 
-	if (ctx.formatType === 'random-seed' && ctx.currentRound === 1) {
+	const isRandomR1 = ctx.formatType !== 'preseed' && ctx.currentRound === 1;
+	if (isRandomR1) {
 		const lastPlace = placeForCourtRank(
 			ctx.courtSizes,
 			courtCount,
@@ -694,8 +705,10 @@ export function reachableFinalPlaceRange(ctx: ReachableFinalPlaceContext): {
 		if (ctx.bestRankOnCourt == null && ctx.safeRankOnCourt == null) {
 			return { best: 1, worst: lastPlace, minCourt: 1, maxCourt: courtCount, current: null };
 		}
+		// Remaining rounds after this one — a court-8 1st can still be relegated `t` times
+		// from the bottom of the 1sts band (court 2 → 5 last = 20th in a 4-round 8×4).
 		const remainingAfterVertical = t;
-		const dummyOthers = otherCourtsUnscored(ctx.liveRoundResults, ctx.courtNumber);
+		const seedingPending = round1SeedingPending(ctx);
 		const bestBand = verticalTierCourtRange(bestRank, ctx.courtSizes);
 		const safeBand = verticalTierCourtRange(safeRank, ctx.courtSizes);
 		const rankForCurrent = liveRank ?? safeRank;
@@ -718,8 +731,8 @@ export function reachableFinalPlaceRange(ctx: ReachableFinalPlaceContext): {
 		};
 		let bestCourt = bestBand.lo;
 		let safeCourt = safeBand.hi;
-		const landed = dummyOthers ? null : nextFromVertical(rankForCurrent);
-		if (!dummyOthers) {
+		const landed = seedingPending ? null : nextFromVertical(rankForCurrent);
+		if (!seedingPending) {
 			bestCourt = nextFromVertical(bestRank)?.court ?? bestCourt;
 			safeCourt = nextFromVertical(safeRank)?.court ?? safeCourt;
 		}
@@ -735,9 +748,15 @@ export function reachableFinalPlaceRange(ctx: ReachableFinalPlaceContext): {
 			courtCount,
 			ctx.courtSizes
 		);
-		const current = landed
+		const bandCurrent = verticalTierPlaceRange(rankForCurrent, ctx.courtSizes).best;
+		const seedCourtPlace = placeForCourtRank(ctx.courtSizes, ctx.courtNumber, rankForCurrent);
+		let current = landed
 			? placeForCourtRank(ctx.courtSizes, landed.court, landed.rank)
-			: verticalTierPlaceRange(rankForCurrent, ctx.courtSizes).best;
+			: bandCurrent;
+		// Seed-court slot (court 8 rank 1 = 29th) is not a tournament place during R1.
+		if (seedingPending || current === seedCourtPlace) {
+			current = bandCurrent;
+		}
 		return {
 			best: placeForCourtRank(ctx.courtSizes, bestRest.court, 1),
 			worst: placeForCourtRank(ctx.courtSizes, safeRest.court, safeRest.rank),

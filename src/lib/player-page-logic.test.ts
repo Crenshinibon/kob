@@ -422,6 +422,39 @@ describe('reachable ranks and range', () => {
 		expect(range.minCourt).toBe(1);
 		expect(range.maxCourt).toBe(5);
 	});
+
+	it('court-8 1st stays in the 1sts band when dummy courts leak points but only 2 of 8 are done', () => {
+		const sizes = Array(8).fill(4);
+		const dummyResults = sizes.map((_, i) => ({
+			courtNumber: i + 1,
+			standings: [1, 2, 3, 4].map((rank, j) => ({
+				playerId: i * 4 + j + 1,
+				rank,
+				points: i === 7 ? [60, 53, 53, 40][j]! : i === 0 ? [55, 50, 48, 42][j]! : 10,
+				diff: i === 7 ? [17, 3, 3, -23][j]! : i === 0 ? [10, 4, 0, -14][j]! : 0,
+				matchCount: 3
+			}))
+		}));
+		const range = reachableFinalPlaceRange({
+			formatType: 'random-seed',
+			currentRound: 1,
+			numRounds: 4,
+			courtNumber: 8,
+			courtSizes: sizes,
+			bestRankOnCourt: 1,
+			safeRankOnCourt: 1,
+			liveRankOnCourt: 1,
+			liveRoundResults: dummyResults,
+			frozenCourtNumbers: new Set(),
+			playerId: 29,
+			scoredCourtCount: 2
+		});
+		expect(range.current).toBe(1);
+		expect(range.best).toBe(1);
+		expect(range.worst).toBe(20);
+		expect(range.minCourt).toBe(1);
+		expect(range.maxCourt).toBe(5);
+	});
 });
 
 describe('neighborSeparatingFactor', () => {

@@ -29,6 +29,7 @@ import {
 	reachableFinalPlaceRange,
 	reachableRanksOnCourt,
 	splitPlayerMatches,
+	verticalTierPlaceRange,
 	waitClock,
 	type PlayerRoundState
 } from '$lib/player-page-logic';
@@ -315,6 +316,10 @@ export async function fetchPlayerPageData(token: string) {
 			? courtSizesFromRotations(currentRotations, courtSizes)
 			: courtSizes;
 
+	const courtsDone = currentRotations.filter((r) =>
+		groupsComplete(matchesByRotation.get(r.id) ?? [], r.courtSize)
+	).length;
+
 	const range =
 		myRotation && placementSizes.length > 0
 			? reachableFinalPlaceRange({
@@ -328,7 +333,8 @@ export async function fetchPlayerPageData(token: string) {
 					liveRankOnCourt: ranks ? (liveRank ?? youCourtRank) : null,
 					liveRoundResults: liveResults,
 					frozenCourtNumbers: frozenNumbers,
-					playerId: row.id
+					playerId: row.id,
+					scoredCourtCount: courtsDone
 				})
 			: {
 					best: 1,
@@ -337,6 +343,16 @@ export async function fetchPlayerPageData(token: string) {
 					maxCourt: courtSizes.length || 1,
 					current: null
 				};
+
+	const roundOpen =
+		tourney.status === 'active' &&
+		currentRotations.length > 0 &&
+		courtsDone < currentRotations.length;
+	const r1Open = tourney.formatType !== 'preseed' && currentRound === 1 && roundOpen;
+	const placementCurrent =
+		r1Open && liveRank != null
+			? verticalTierPlaceRange(liveRank, placementSizes).best
+			: (range.current ?? (roundOpen ? null : (myStanding?.overallRank ?? null)));
 
 	const hint =
 		myRotation && liveRank
@@ -349,10 +365,6 @@ export async function fetchPlayerPageData(token: string) {
 					myRotation.courtSize
 				)
 			: null;
-
-	const courtsDone = currentRotations.filter((r) =>
-		groupsComplete(matchesByRotation.get(r.id) ?? [], r.courtSize)
-	).length;
 
 	const courtStandings =
 		explainedNow && explainedNow.standings.length > 0
@@ -652,11 +664,7 @@ export async function fetchPlayerPageData(token: string) {
 			rounds: recordRounds
 		},
 		placement: {
-			current:
-				range.current ??
-				(tourney.formatType === 'random-seed' && currentRound === 1
-					? null
-					: (myStanding?.overallRank ?? null)),
+			current: placementCurrent,
 			total: activeTotal,
 			best: range.best,
 			worst: range.worst,
