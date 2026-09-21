@@ -128,7 +128,7 @@
 		{#if !page?.tournament.checkInClosedAt}
 			<button
 				type="button"
-				class={scoresBlockRemove ? 'btn-secondary' : 'btn-primary'}
+				class={scoresBlockRemove ? 'btn-inactive' : 'btn-primary'}
 				data-testid="close-checkin"
 				onclick={() => (showClose = true)}
 			>
@@ -254,10 +254,10 @@
 				<button type="button" class="btn-secondary" onclick={() => (showClose = false)}
 					>Cancel</button
 				>
-				{#if page.round1HasScores && page.tournament.status !== 'setup'}
+				{#if scoresBlockRemove}
 					<button
 						type="button"
-						class="btn-secondary"
+						class="btn-inactive"
 						data-testid="confirm-close-checkin"
 						onclick={() => confirmClose(false)}
 					>
@@ -372,5 +372,56 @@
 		background: var(--bg-secondary);
 		padding: var(--spacing-sm);
 		border-radius: var(--radius-sm);
+	}
+
+	button.btn-primary {
+		background-color: var(--accent-primary);
+		color: var(--bg-primary);
+		border: var(--border-thickness) solid var(--accent-primary);
+		border-radius: var(--radius-sm);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		cursor: pointer;
+	}
+
+	button.btn-primary:hover:not(:disabled) {
+		background-color: var(--accent-primary-hover);
+		border-color: var(--accent-primary-hover);
+	}
+
+	button.btn-secondary,
+	a.btn-secondary {
+		background-color: transparent;
+		color: var(--text-secondary);
+		border: var(--border-thickness) solid var(--border-default);
+		border-radius: var(--radius-sm);
+		text-decoration: none;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	button.btn-secondary:hover,
+	a.btn-secondary:hover {
+		border-color: var(--border-strong);
+		color: var(--text-primary);
+	}
+
+	/* Muted on purpose: closing is not a primary action once round 1 has scores. */
+	button.btn-inactive {
+		background-color: var(--bg-secondary);
+		color: var(--text-muted);
+		border: var(--border-thickness) solid var(--border-default);
+		border-radius: var(--radius-sm);
+		font-weight: 600;
+		box-shadow: none;
+		cursor: default;
+	}
+
+	button.btn-inactive:hover {
+		background-color: var(--bg-secondary);
+		border-color: var(--border-default);
+		color: var(--text-muted);
 	}
 </style>

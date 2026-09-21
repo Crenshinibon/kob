@@ -193,12 +193,20 @@ test.describe('Player check-in (097)', () => {
 		await scoreAllMatchesOnCourt(page, courtLinks[0]);
 		await page.goto(`/tournament/${id}/check-in`);
 		await expect(page.getByTestId('checkin-page')).toBeVisible();
-		await expect(page.getByTestId('close-checkin')).toHaveClass(/btn-secondary/);
+		await expect(page.getByTestId('close-checkin')).toHaveClass(/btn-inactive/);
+		await expect(page.getByTestId('close-checkin')).not.toHaveClass(/btn-primary/);
+		await expect(page.getByTestId('close-checkin')).toHaveCSS(
+			'background-color',
+			'rgb(26, 26, 26)'
+		);
 		await page.getByTestId('close-checkin').click();
 		await expect(page.getByTestId('close-checkin-dialog')).toContainText(
 			'Round 1 already has scores'
 		);
-		await expect(page.getByTestId('confirm-close-checkin')).toHaveClass(/btn-secondary/);
-		await expect(page.getByTestId('confirm-close-checkin')).not.toHaveClass(/btn-primary/);
+		const confirm = page.getByTestId('confirm-close-checkin');
+		await expect(confirm).toHaveClass(/btn-inactive/);
+		await expect(confirm).not.toHaveClass(/btn-primary/);
+		await expect(confirm).not.toHaveText(/close check-in/i);
+		await expect(confirm).toHaveCSS('background-color', 'rgb(26, 26, 26)');
 	});
 });

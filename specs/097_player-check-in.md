@@ -112,10 +112,21 @@ Close check-in?
 (•) Remove them and rebuild round 1  (16 → 12 players)   // only if round 1 has no scores
 ( ) Keep them on the roster
 
-[Close check-in]  [Cancel]
+[Close check-in]  [Cancel]   // Close is primary only when Remove is available
 ```
 
-- "Remove" delegates to `removeUncheckedPlayers` (096) and is only offered while round 1 has no scores; otherwise the dialog says "Round 1 already has scores — use Retire on the manage page" and **does not show a primary/active Close check-in control**. Keep is a secondary action (`checkin_close_keep_option`) that only sets `checkInClosedAt`. The toolbar Close check-in chip is `btn-secondary` in that state so it does not look available as a destructive action.
+When round 1 already has scores:
+
+```
+Close check-in
+Not checked in (4): Carla Ruiz, Dan Weber, Eva Lang, Finn Berg
+
+Round 1 already has scores — use Retire on the manage page
+
+[Cancel]  [Keep them on the roster]
+```
+
+- "Remove" delegates to `removeUncheckedPlayers` (096) and is only offered while round 1 has no scores; otherwise the dialog says "Round 1 already has scores — use Retire on the manage page" and **does not show a primary/active Close check-in control**. Keep is a muted `btn-inactive` action (`checkin_close_keep_option`) that only sets `checkInClosedAt` — dark fill (`--bg-secondary`), muted text, no orange. The toolbar Close check-in chip uses the same inactive style in that state (not orange `btn-primary`) so it does not look available as a destructive action. Check-in page defines `button.btn-primary` / `button.btn-secondary` / `button.btn-inactive` locally — those classes have no global stylesheet, so class-only swaps without local CSS look identical.
 - Sets `tournament.checkInClosedAt = now()`.
 
 ### Print sheet `/tournament/[id]/check-in/print`
