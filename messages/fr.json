@@ -784,5 +784,9 @@
 	"player_score_read_only_hint": "Enregistré — l’organisateur peut corriger sur la page terrain.",
 	"player_checked_in_line": "Tu es enregistré ✓",
 	"court_clear_score": "Effacer",
-	"court_closed_see_organizer_or_player_page": "Ce tour est fermé. Demande à l’organisateur ton prochain terrain — ou ouvre ta page personnelle."
+	"court_closed_see_organizer_or_player_page": "Ce tour est fermé. Demande à l’organisateur ton prochain terrain — ou ouvre ta page personnelle.",
+	"manage_sets_one": "Un set",
+	"manage_sets_best_of_3": "Meilleur des 3",
+	"manage_win_by_1": "1 point",
+	"manage_win_by_2": "2 points"
 }

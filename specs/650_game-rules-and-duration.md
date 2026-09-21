@@ -64,7 +64,7 @@ Organizer can adjust:
 
 **Inference rule**: Special court rules are derived from the standard 4p rules unless explicitly overridden by the organizer.
 
-**Org override**: The organizer can override scoring for 3p, 5p and 6p courts on **Manage → Rules** (tabs next to 4p), even in `setup` before those court sizes exist. Each tab has Points per Set, Win by, Sets to Win, and Points for Deciding Set (when sets to win > 1). There is no scoring-mode preset on that page.
+**Org override**: The organizer can override scoring for 3p, 5p and 6p courts on **Manage → Rules** (tabs next to 4p), even in `setup` before those court sizes exist. Each tab has Points per Set (6–30), Win by (radio: 1 / 2), Sets to Win (radio: One Set / Best of 3), and Points for Deciding Set (6–30, when Best of 3). There is no scoring-mode preset on that page. Courts & rounds (`numRounds`, `physicalCourtCount`) live on **Manage → Tournament**, not Rules.
 
 #### 3-Player Courts
 

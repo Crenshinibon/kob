@@ -224,8 +224,8 @@ test.describe('Manage page (096)', () => {
 		names.push(name);
 		const id = await createSetupTournament(page, name, 16, 2);
 		await page.goto(`/tournament/${id}/manage`);
-		await page.getByTestId('tab-rules').click();
-		await expect(page.getByTestId('rules-tab')).toBeVisible();
+		await page.getByTestId('tab-tournament').click();
+		await expect(page.getByTestId('tournament-tab')).toBeVisible();
 		await expect(page.getByTestId('num-rounds')).toBeVisible({ timeout: 15000 });
 		await page.getByTestId('num-rounds').fill('3');
 		await page.getByTestId('num-rounds').blur();
@@ -326,22 +326,33 @@ test.describe('Manage page (096)', () => {
 		await expect(page.getByTestId('scoring-tab-5')).toBeVisible();
 		await expect(page.getByTestId('scoring-tab-6')).toBeVisible();
 		await expect(page.getByTestId('scoring-points')).toHaveValue('21');
-		await expect(page.getByTestId('scoring-win-by')).toHaveValue('2');
-		await expect(page.getByTestId('scoring-sets')).toHaveValue('1');
+		await expect(page.getByTestId('scoring-win-by-2')).toBeChecked();
+		await expect(page.getByTestId('scoring-sets-1')).toBeChecked();
 		await expect(page.getByTestId('scoring-deciding')).toHaveCount(0);
 		await expect(page.getByTestId('rules-tab')).toContainText('4-player courts');
+		await expect(page.getByTestId('rules-tab').getByTestId('num-rounds')).toHaveCount(0);
 
-		await page.getByTestId('scoring-sets').fill('2');
+		await page.getByTestId('scoring-sets-2').check();
 		await expect(page.getByTestId('scoring-deciding')).toHaveValue('15');
+
+		await page.getByTestId('scoring-win-by-1').check();
+		await expect(page.getByTestId('scoring-win-by-1')).toBeChecked();
+		await page.getByTestId('scoring-win-by-2').check();
+		await expect(page.getByTestId('scoring-win-by-2')).toBeChecked();
 
 		await page.getByTestId('scoring-tab-5').click();
 		await expect(page.getByTestId('scoring-points')).toHaveValue('15');
 		await page.getByTestId('scoring-points').fill('12');
 		await page.getByTestId('save-scoring').click();
 		await page.getByTestId('scoring-tab-4').click();
-		await expect(page.getByTestId('scoring-sets')).toHaveValue('2');
+		await expect(page.getByTestId('scoring-sets-2')).toBeChecked();
 		await page.getByTestId('scoring-tab-5').click();
 		await expect(page.getByTestId('scoring-points')).toHaveValue('12', { timeout: 10000 });
+
+		await page.getByTestId('tab-tournament').click();
+		await expect(page.getByTestId('tournament-tab')).toBeVisible();
+		await expect(page.getByTestId('num-rounds')).toBeVisible();
+		await expect(page.getByTestId('physical-courts')).toBeVisible();
 	});
 
 	test('roster is seed order and move buttons reorder players', async ({ page }) => {

@@ -784,5 +784,9 @@
 	"player_score_read_only_hint": "Guardado — el organizador puede corregirlo en la página de pista.",
 	"player_checked_in_line": "Estás registrado ✓",
 	"court_clear_score": "Borrar",
-	"court_closed_see_organizer_or_player_page": "Esta ronda está cerrada. Pregunta al organizador tu siguiente pista — o abre tu página personal."
+	"court_closed_see_organizer_or_player_page": "Esta ronda está cerrada. Pregunta al organizador tu siguiente pista — o abre tu página personal.",
+	"manage_sets_one": "Un set",
+	"manage_sets_best_of_3": "Mejor de 3",
+	"manage_win_by_1": "1 punto",
+	"manage_win_by_2": "2 puntos"
 }

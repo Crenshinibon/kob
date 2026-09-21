@@ -784,5 +784,9 @@
 	"player_score_read_only_hint": "Gespeichert — Korrektur über die Platzseite.",
 	"player_checked_in_line": "Du bist eingecheckt ✓",
 	"court_clear_score": "Löschen",
-	"court_closed_see_organizer_or_player_page": "Diese Runde ist geschlossen. Frag den Organisator nach deinem nächsten Platz — oder öffne deine persönliche Seite."
+	"court_closed_see_organizer_or_player_page": "Diese Runde ist geschlossen. Frag den Organisator nach deinem nächsten Platz — oder öffne deine persönliche Seite.",
+	"manage_sets_one": "Ein Satz",
+	"manage_sets_best_of_3": "Best of 3",
+	"manage_win_by_1": "1 Punkt",
+	"manage_win_by_2": "2 Punkte"
 }

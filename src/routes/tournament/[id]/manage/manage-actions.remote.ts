@@ -412,18 +412,18 @@ export const updateTournamentSettings = command(
 export const updateScoringRules = command(
 	v.object({
 		tournamentId: v.pipe(v.number(), v.minValue(1)),
-		pointsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(50)),
-		winBy: v.pipe(v.number(), v.minValue(1), v.maxValue(10)),
-		setsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(5)),
-		decidingSetPoints: v.pipe(v.number(), v.minValue(1), v.maxValue(50)),
+		pointsToWin: v.pipe(v.number(), v.minValue(6), v.maxValue(30)),
+		winBy: v.pipe(v.number(), v.minValue(1), v.maxValue(2)),
+		setsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(2)),
+		decidingSetPoints: v.pipe(v.number(), v.minValue(6), v.maxValue(30)),
 		scoringOverrides: v.optional(
 			v.record(
 				v.string(),
 				v.object({
-					pointsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(50)),
-					winBy: v.pipe(v.number(), v.minValue(1), v.maxValue(10)),
-					setsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(5)),
-					decidingSetPoints: v.pipe(v.number(), v.minValue(1), v.maxValue(50))
+					pointsToWin: v.pipe(v.number(), v.minValue(6), v.maxValue(30)),
+					winBy: v.pipe(v.number(), v.minValue(1), v.maxValue(2)),
+					setsToWin: v.pipe(v.number(), v.minValue(1), v.maxValue(2)),
+					decidingSetPoints: v.pipe(v.number(), v.minValue(6), v.maxValue(30))
 				})
 			)
 		)

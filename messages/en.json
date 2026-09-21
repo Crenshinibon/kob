@@ -784,5 +784,9 @@
 	"player_score_read_only_hint": "Saved — the organizer can correct this on the court page.",
 	"player_checked_in_line": "You are checked in ✓",
 	"court_clear_score": "Clear",
-	"court_closed_see_organizer_or_player_page": "This round is closed. Check with the organizer for your next court — or open your personal player page if you have one."
+	"court_closed_see_organizer_or_player_page": "This round is closed. Check with the organizer for your next court — or open your personal player page if you have one.",
+	"manage_sets_one": "One Set",
+	"manage_sets_best_of_3": "Best of 3",
+	"manage_win_by_1": "1 point",
+	"manage_win_by_2": "2 points"
 }

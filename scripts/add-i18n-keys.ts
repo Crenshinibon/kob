@@ -302,7 +302,11 @@ const keys: Record<string, { en: string; de: string; fr: string; es: string }> =
 		de: 'Punkte im Entscheidungssatz',
 		fr: 'Points du set décisif',
 		es: 'Puntos del set decisivo'
-	}
+	},
+	manage_sets_one: { en: 'One Set', de: 'Ein Satz', fr: 'Un set', es: 'Un set' },
+	manage_sets_best_of_3: { en: 'Best of 3', de: 'Best of 3', fr: 'Meilleur des 3', es: 'Mejor de 3' },
+	manage_win_by_1: { en: '1 point', de: '1 Punkt', fr: '1 point', es: '1 punto' },
+	manage_win_by_2: { en: '2 points', de: '2 Punkte', fr: '2 points', es: '2 puntos' }
 };
 
 const locales = ['en', 'de', 'fr', 'es'] as const;

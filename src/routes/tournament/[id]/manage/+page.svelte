@@ -251,6 +251,21 @@
 		};
 	}
 
+	function clampPoints(value: number, fallback: number): number {
+		const rounded = Math.round(value);
+		if (!Number.isFinite(rounded)) return fallback;
+		return Math.min(30, Math.max(6, rounded));
+	}
+
+	function clampRules(rules: CourtScoringRules): CourtScoringRules {
+		return {
+			pointsToWin: clampPoints(rules.pointsToWin, 21),
+			winBy: rules.winBy === 1 ? 1 : 2,
+			setsToWin: rules.setsToWin >= 2 ? 2 : 1,
+			decidingSetPoints: clampPoints(rules.decidingSetPoints, 15)
+		};
+	}
+
 	function saveScoring(): void {
 		const draft = scoringDraft;
 		const four = draft?.['4'];
@@ -258,17 +273,18 @@
 		const five = draft?.['5'];
 		const six = draft?.['6'];
 		if (!four || !three || !five || !six) return;
+		const clampedFour = clampRules(four);
 		run(() =>
 			updateScoringRules({
 				tournamentId: data.tournamentId,
-				pointsToWin: four.pointsToWin,
-				winBy: four.winBy,
-				setsToWin: four.setsToWin,
-				decidingSetPoints: four.decidingSetPoints,
+				pointsToWin: clampedFour.pointsToWin,
+				winBy: clampedFour.winBy,
+				setsToWin: clampedFour.setsToWin,
+				decidingSetPoints: clampedFour.decidingSetPoints,
 				scoringOverrides: {
-					'3': three,
-					'5': five,
-					'6': six
+					'3': clampRules(three),
+					'5': clampRules(five),
+					'6': clampRules(six)
 				}
 			})
 		);
@@ -761,8 +777,8 @@
 								<input
 									data-testid="scoring-points"
 									type="number"
-									min="9"
-									max="50"
+									min="6"
+									max="30"
 									value={currentScoring.pointsToWin}
 									disabled={page.lock.roundHasScores}
 									oninput={(e) =>
@@ -773,49 +789,72 @@
 										)}
 								/></label
 							>
-							<label
-								>{m.manage_win_by()}
-								<input
-									data-testid="scoring-win-by"
-									type="number"
-									min="1"
-									max="10"
-									value={currentScoring.winBy}
-									disabled={page.lock.roundHasScores}
-									oninput={(e) =>
-										patchScoring(
-											scoringTab,
-											'winBy',
-											Number((e.currentTarget as HTMLInputElement).value)
-										)}
-								/></label
-							>
-							<label
-								>{m.manage_sets_to_win()}
-								<input
-									data-testid="scoring-sets"
-									type="number"
-									min="1"
-									max="5"
-									value={currentScoring.setsToWin}
-									disabled={page.lock.roundHasScores}
-									oninput={(e) =>
-										patchScoring(
-											scoringTab,
-											'setsToWin',
-											Number((e.currentTarget as HTMLInputElement).value)
-										)}
-								/>
-								<span class="hint">{m.manage_sets_to_win_hint()}</span>
-							</label>
+							<fieldset class="radio-field">
+								<legend>{m.manage_win_by()}</legend>
+								<div class="radio-row">
+									<label class="radio-option">
+										<input
+											data-testid="scoring-win-by-1"
+											type="radio"
+											name="scoring-win-by"
+											value="1"
+											checked={currentScoring.winBy === 1}
+											disabled={page.lock.roundHasScores}
+											onchange={() => patchScoring(scoringTab, 'winBy', 1)}
+										/>
+										{m.manage_win_by_1()}
+									</label>
+									<label class="radio-option">
+										<input
+											data-testid="scoring-win-by-2"
+											type="radio"
+											name="scoring-win-by"
+											value="2"
+											checked={currentScoring.winBy !== 1}
+											disabled={page.lock.roundHasScores}
+											onchange={() => patchScoring(scoringTab, 'winBy', 2)}
+										/>
+										{m.manage_win_by_2()}
+									</label>
+								</div>
+							</fieldset>
+							<fieldset class="radio-field">
+								<legend>{m.manage_sets_to_win()}</legend>
+								<div class="radio-row">
+									<label class="radio-option">
+										<input
+											data-testid="scoring-sets-1"
+											type="radio"
+											name="scoring-sets"
+											value="1"
+											checked={currentScoring.setsToWin <= 1}
+											disabled={page.lock.roundHasScores}
+											onchange={() => patchScoring(scoringTab, 'setsToWin', 1)}
+										/>
+										{m.manage_sets_one()}
+									</label>
+									<label class="radio-option">
+										<input
+											data-testid="scoring-sets-2"
+											type="radio"
+											name="scoring-sets"
+											value="2"
+											checked={currentScoring.setsToWin > 1}
+											disabled={page.lock.roundHasScores}
+											onchange={() => patchScoring(scoringTab, 'setsToWin', 2)}
+										/>
+										{m.manage_sets_best_of_3()}
+									</label>
+								</div>
+							</fieldset>
 							{#if currentScoring.setsToWin > 1}
 								<label
 									>{m.manage_deciding_set_points()}
 									<input
 										data-testid="scoring-deciding"
 										type="number"
-										min="9"
-										max="50"
+										min="6"
+										max="30"
 										value={currentScoring.decidingSetPoints}
 										disabled={page.lock.roundHasScores}
 										oninput={(e) =>
@@ -837,6 +876,25 @@
 					</form>
 				{/if}
 			</div>
+		</section>
+	{/if}
+
+	{#if page && tab === 'tournament'}
+		<section data-testid="tournament-tab" class="stack">
+			<label class="full-label">
+				Name
+				<input
+					value={page.tournament.name}
+					data-testid="rename-tournament"
+					onchange={(e) =>
+						run(() =>
+							updateTournamentSettings({
+								tournamentId: data.tournamentId,
+								name: (e.currentTarget as HTMLInputElement).value
+							})
+						)}
+				/>
+			</label>
 			<div class="panel">
 				<h2>{m.manage_layout_heading()}</h2>
 				<div class="layout-grid">
@@ -889,25 +947,6 @@
 					{/if}
 				</div>
 			</div>
-		</section>
-	{/if}
-
-	{#if page && tab === 'tournament'}
-		<section data-testid="tournament-tab" class="stack">
-			<label class="full-label">
-				Name
-				<input
-					value={page.tournament.name}
-					data-testid="rename-tournament"
-					onchange={(e) =>
-						run(() =>
-							updateTournamentSettings({
-								tournamentId: data.tournamentId,
-								name: (e.currentTarget as HTMLInputElement).value
-							})
-						)}
-				/>
-			</label>
 			{#if page.tournament.status === 'active' && page.tournament.currentRound >= 2}
 				<button
 					type="button"
@@ -1059,6 +1098,49 @@
 
 	.scoring-save {
 		width: 100%;
+	}
+
+	.radio-field {
+		border: none;
+		margin: 0;
+		padding: 0;
+		min-width: 0;
+	}
+
+	.radio-field legend {
+		font-size: var(--font-size-sm);
+		font-weight: 700;
+		padding: 0;
+		margin-bottom: var(--spacing-xs);
+	}
+
+	.radio-row {
+		display: flex;
+		gap: var(--spacing-md);
+		flex-wrap: wrap;
+	}
+
+	.radio-row label {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--spacing-xs);
+		min-height: 44px;
+		cursor: pointer;
+	}
+
+	.radio-row .radio-option {
+		display: inline-flex;
+		flex-direction: row;
+		align-items: center;
+		color: var(--text-primary);
+	}
+
+	.radio-row input[type='radio'] {
+		width: 1.25rem;
+		height: 1.25rem;
+		min-height: 0;
+		flex-shrink: 0;
+		accent-color: var(--accent-primary);
 	}
 
 	@media (min-width: 700px) {
