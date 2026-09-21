@@ -317,6 +317,234 @@ const keys: Record<string, { en: string; de: string; fr: string; es: string }> =
 		de: 'Spieler können nicht zwischen Plätzen verschoben werden, solange diese Runde Ergebnisse hat.',
 		fr: 'Les joueurs ne peuvent pas être déplacés entre terrains tant que ce tour a des scores.',
 		es: 'No se puede mover a los jugadores entre pistas mientras esta ronda tenga marcadores.'
+	},
+	landing_meta_title: {
+		en: 'KoB Tracker — King of the Beach volleyball tournaments',
+		de: 'KoB Tracker — King of the Beach Volleyball-Turniere',
+		fr: 'KoB Tracker — tournois de beach-volley King of the Beach',
+		es: 'KoB Tracker — torneos de vóley playa King of the Beach'
+	},
+	landing_meta_description: {
+		en: 'Run a King of the Beach tournament from your phone. Rotate partners, enter scores by QR code, and rank players by court — not by total points.',
+		de: 'KoB-Turnier vom Handy aus leiten. Partner rotieren, Punkte per QR eintragen, Rang nach Platz — nicht nach Gesamtpunkten.',
+		fr: 'Organisez un tournoi King of the Beach depuis le téléphone. Partenaires qui tournent, scores par QR, classement par terrain — pas par points totaux.',
+		es: 'Dirige un torneo King of the Beach desde el móvil. Parejas que rotan, marcador por QR y ranking por pista, no por puntos totales.'
+	},
+	dashboard_meta_title: {
+		en: 'KoB Tracker',
+		de: 'KoB Tracker',
+		fr: 'KoB Tracker',
+		es: 'KoB Tracker'
+	},
+	landing_eyebrow: {
+		en: 'KoB Tracker',
+		de: 'KoB Tracker',
+		fr: 'KoB Tracker',
+		es: 'KoB Tracker'
+	},
+	landing_title: {
+		en: 'King of the Beach',
+		de: 'King of the Beach',
+		fr: 'King of the Beach',
+		es: 'King of the Beach'
+	},
+	landing_tagline: {
+		en: 'Individual rankings. Rotating partners. The king is whoever finishes on court 1.',
+		de: 'Individuelle Rangliste. Wechselnde Partner. König ist, wer auf Platz 1 landet.',
+		fr: 'Classement individuel. Partenaires qui tournent. Le roi est celui qui finit sur le terrain 1.',
+		es: 'Ranking individual. Parejas que rotan. Rey es quien termina en la pista 1.'
+	},
+	landing_lead: {
+		en: 'Set up a beach volleyball tournament on your phone, share a QR code for every court, and let players enter scores while they play.',
+		de: 'Lege ein Beachvolleyball-Turnier am Handy an, teile einen QR-Code für jeden Platz und lass die Spieler die Punkte eintragen, während sie spielen.',
+		fr: 'Créez un tournoi de beach-volley depuis le téléphone, partagez un QR par terrain, et laissez les joueurs saisir les scores pendant qu’ils jouent.',
+		es: 'Monta un torneo de vóley playa desde el móvil, comparte un QR por pista y deja que los jugadores apunten el marcador mientras juegan.'
+	},
+	landing_cta_signup: {
+		en: 'Create an account',
+		de: 'Konto erstellen',
+		fr: 'Créer un compte',
+		es: 'Crear una cuenta'
+	},
+	landing_cta_docs: {
+		en: 'How KoB works',
+		de: 'So funktioniert KoB',
+		fr: 'Comment marche KoB',
+		es: 'Cómo funciona KoB'
+	},
+	landing_stat_players: {
+		en: '4–64 players',
+		de: '4–64 Spieler',
+		fr: '4–64 joueurs',
+		es: '4–64 jugadores'
+	},
+	landing_stat_formats: {
+		en: 'Random seed or preseed',
+		de: 'Zufalls- oder Preseed',
+		fr: 'Tirage ou pré-seed',
+		es: 'Sorteo o preseed'
+	},
+	landing_stat_qr: {
+		en: 'Scores from a QR code',
+		de: 'Punkte per QR-Code',
+		fr: 'Scores via un QR',
+		es: 'Marcador por QR'
+	},
+	landing_stat_langs: {
+		en: 'EN · DE · FR · ES',
+		de: 'EN · DE · FR · ES',
+		fr: 'EN · DE · FR · ES',
+		es: 'EN · DE · FR · ES'
+	},
+	landing_how_title: {
+		en: 'How a round works',
+		de: 'So läuft eine Runde',
+		fr: 'Comment se joue un tour',
+		es: 'Cómo funciona una ronda'
+	},
+	landing_how_lead: {
+		en: 'Four players on a court rotate through three matches so everyone partners with everyone once.',
+		de: 'Vier Spieler auf einem Platz spielen drei Spiele, sodass jeder einmal mit jedem zusammenspielt.',
+		fr: 'Quatre joueurs sur un terrain jouent trois matchs, pour que chacun soit partenaire de chacun une fois.',
+		es: 'Cuatro jugadores en una pista rotan tres partidos para que todos sean pareja de todos una vez.'
+	},
+	landing_how_then: {
+		en: 'After the round, finish position — not total points — decides who moves.',
+		de: 'Nach der Runde entscheidet die Platzierung — nicht die Gesamtpunkte — wer wechselt.',
+		fr: 'Après le tour, c’est la place — pas le total de points — qui décide qui bouge.',
+		es: 'Tras la ronda, el puesto — no los puntos totales — decide quién se mueve.'
+	},
+	landing_how_up: {
+		en: 'Top two move up a court',
+		de: 'Die besten zwei rücken einen Platz hoch',
+		fr: 'Les deux premiers montent d’un terrain',
+		es: 'Los dos primeros suben una pista'
+	},
+	landing_how_down: {
+		en: 'Bottom two move down a court',
+		de: 'Die hinteren zwei rücken einen Platz runter',
+		fr: 'Les deux derniers descendent d’un terrain',
+		es: 'Los dos últimos bajan una pista'
+	},
+	landing_how_king: {
+		en: 'Finish on court 1 and you are King of the Beach.',
+		de: 'Wer auf Platz 1 endet, ist King of the Beach.',
+		fr: 'Finir sur le terrain 1, c’est être King of the Beach.',
+		es: 'Terminar en la pista 1 es ser King of the Beach.'
+	},
+	landing_court: {
+		en: 'Court {n}',
+		de: 'Platz {n}',
+		fr: 'Terrain {n}',
+		es: 'Pista {n}'
+	},
+	landing_formats_title: {
+		en: 'Two tournament formats',
+		de: 'Zwei Turnierformate',
+		fr: 'Deux formats de tournoi',
+		es: 'Dos formatos de torneo'
+	},
+	landing_format_random_body: {
+		en: 'Shuffle round 1, then a ladder: two up, two down. You pick how many rounds. Best for a casual day on the beach.',
+		de: 'Runde 1 wird gemischt, danach Leiter: zwei hoch, zwei runter. Du wählst die Rundenzahl. Gut für einen lockeren Tag am Strand.',
+		fr: 'Le tour 1 est mélangé, puis une échelle : deux montent, deux descendent. Vous choisissez le nombre de tours. Idéal pour une journée tranquille.',
+		es: 'La ronda 1 se baraja, luego escalera: dos suben, dos bajan. Eliges cuántas rondas. Ideal para un día informal en la playa.'
+	},
+	landing_format_preseed_body: {
+		en: 'Seed by rating (or name order). A fixed bracket splits winners and losers each round. Best when you want a structured, competitive draw.',
+		de: 'Setzen nach Wertung (oder Namensreihenfolge). Ein fester Baum teilt Sieger und Verlierer. Gut, wenn du eine klare, sportliche Auslosung willst.',
+		fr: 'Têtes de série selon le classement (ou l’ordre des noms). Un tableau fixe sépare vainqueurs et perdants. Idéal pour un tirage structuré.',
+		es: 'Siembra por ranking (o por orden de nombres). Un cuadro fijo parte ganadores y perdedores. Ideal si quieres un sorteo competitivo.'
+	},
+	landing_features_title: {
+		en: 'Built for the organizer on the sand',
+		de: 'Für den Organisator im Sand',
+		fr: 'Pensé pour l’organisateur sur le sable',
+		es: 'Hecho para el organizador en la arena'
+	},
+	landing_feat_qr_title: {
+		en: 'Court QR codes',
+		de: 'QR-Codes am Platz',
+		fr: 'QR de terrain',
+		es: 'QR de pista'
+	},
+	landing_feat_qr_body: {
+		en: 'Tape a code on the net post. Anyone on that court can enter and correct scores — no player account needed.',
+		de: 'Code an den Pfosten. Jeder auf dem Platz kann Punkte eintragen und korrigieren — ohne Spieler-Konto.',
+		fr: 'Collez un code au poteau. Quiconque sur le terrain saisit et corrige les scores — sans compte joueur.',
+		es: 'Pega un código en el poste. Quien esté en la pista apunta y corrige el marcador — sin cuenta de jugador.'
+	},
+	landing_feat_player_title: {
+		en: 'Personal player pages',
+		de: 'Persönliche Spielerseiten',
+		fr: 'Pages joueur personnelles',
+		es: 'Páginas personales'
+	},
+	landing_feat_player_body: {
+		en: 'Each player can get a private link: current game, what’s next, live place, and a write-once score field.',
+		de: 'Jeder Spieler kann einen privaten Link bekommen: aktuelles Spiel, als Nächstes, Platzierung und ein einmaliges Punktefeld.',
+		fr: 'Chaque joueur peut avoir un lien privé : match en cours, à venir, place en direct, et une saisie de score unique.',
+		es: 'Cada jugador puede tener un enlace privado: partido actual, lo que sigue, puesto en vivo y un marcador de una sola escritura.'
+	},
+	landing_feat_checkin_title: {
+		en: 'Optional check-in',
+		de: 'Check-in optional',
+		fr: 'Enregistrement optionnel',
+		es: 'Registro opcional'
+	},
+	landing_feat_checkin_body: {
+		en: 'Print a sheet, scan players in, and drop no-shows before you start.',
+		de: 'Liste drucken, Spieler einscannen, No-Shows vor dem Start streichen.',
+		fr: 'Imprimez une feuille, scannez les joueurs, et retirez les absents avant le départ.',
+		es: 'Imprime una hoja, registra jugadores y quita ausencias antes de empezar.'
+	},
+	landing_feat_courts_title: {
+		en: 'Odd numbers work',
+		de: 'Ungerade Zahlen gehen',
+		fr: 'Les effectifs impairs marchent',
+		es: 'Los impares también valen'
+	},
+	landing_feat_courts_body: {
+		en: 'Standard courts have four players. Leftovers become 3-, 5-, or 6-player groups with the right rotation.',
+		de: 'Standard sind vier Spieler. Reste werden 3er-, 5er- oder 6er-Gruppen mit passender Rotation.',
+		fr: 'Les terrains standards ont quatre joueurs. Le reste forme des groupes de 3, 5 ou 6 avec la bonne rotation.',
+		es: 'Las pistas normales son de cuatro. Los restantes forman grupos de 3, 5 o 6 con su rotación.'
+	},
+	landing_feat_scoring_title: {
+		en: 'Scoring your way',
+		de: 'Wertung nach deinen Regeln',
+		fr: 'Le scoring à votre façon',
+		es: 'Puntuación a tu manera'
+	},
+	landing_feat_scoring_body: {
+		en: 'Single set or best of 3, win-by rules, and different targets for 3p / 5p / 6p courts.',
+		de: 'Ein Satz oder Best of 3, Gewinnabstand, und andere Ziele für 3er / 5er / 6er.',
+		fr: 'Un set ou meilleur des 3, écart pour gagner, et cibles différentes pour 3 / 5 / 6 joueurs.',
+		es: 'Un set o al mejor de 3, ventaja para ganar, y objetivos distintos para 3p / 5p / 6p.'
+	},
+	landing_feat_sun_title: {
+		en: 'Readable in the sun',
+		de: 'Lesbar in der Sonne',
+		fr: 'Lisible au soleil',
+		es: 'Legible al sol'
+	},
+	landing_feat_sun_body: {
+		en: 'High-contrast dark theme, large tap targets, and live standings that update on every phone.',
+		de: 'Dunkles High-Contrast-Theme, große Tippsflächen, Live-Rangliste auf jedem Handy.',
+		fr: 'Thème sombre très contrasté, grandes zones de tap, classements live sur chaque téléphone.',
+		es: 'Tema oscuro de alto contraste, botones grandes y clasificación en vivo en cada móvil.'
+	},
+	landing_close_title: {
+		en: 'Ready to run a tournament?',
+		de: 'Bereit fürs Turnier?',
+		fr: 'Prêt à lancer un tournoi ?',
+		es: '¿Listo para el torneo?'
+	},
+	landing_close_body: {
+		en: 'Create a free account, paste a player list, and start when at least four people are there.',
+		de: 'Kostenloses Konto, Spielerliste einfügen, starten sobald mindestens vier da sind.',
+		fr: 'Créez un compte gratuit, collez une liste de joueurs, et démarrez dès que quatre personnes sont là.',
+		es: 'Crea una cuenta gratis, pega la lista de jugadores y empieza cuando haya al menos cuatro.'
 	}
 };
 

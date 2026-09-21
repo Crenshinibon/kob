@@ -66,6 +66,8 @@
 			<button type="button" onclick={handleSignOut} class="btn-compact btn-danger"
 				>{m.sign_out()}</button
 			>
+		{:else}
+			<a href={localizeHref('/login')} class="nav-auth">{m.login()}</a>
 		{/if}
 	</nav>
 
@@ -164,6 +166,20 @@
 	.user-email {
 		font-size: var(--font-size-sm);
 		color: var(--text-secondary);
+	}
+
+	.nav-auth {
+		padding: 0.25rem 0.5rem;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--text-muted);
+		text-decoration: none;
+		border-radius: 4px;
+	}
+
+	.nav-auth:hover {
+		background: var(--bg-hover);
+		color: var(--text-primary);
 	}
 
 	main {

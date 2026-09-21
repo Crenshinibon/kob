@@ -36,6 +36,7 @@
 
 <main>
 	<div class="auth-container">
+		<a href={localizeHref(resolve('/'))} class="btn-link">{m.back()}</a>
 		<h1>{m.login()}</h1>
 
 		{#if error}
@@ -88,6 +89,12 @@
 		margin-bottom: var(--spacing-xl);
 		color: var(--text-primary);
 		font-size: var(--font-size-2xl);
+	}
+
+	.auth-container > .btn-link {
+		justify-content: flex-start;
+		padding-left: 0;
+		margin-bottom: var(--spacing-md);
 	}
 
 	form {

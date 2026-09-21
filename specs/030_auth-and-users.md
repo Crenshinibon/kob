@@ -35,18 +35,23 @@ Note: Auth pages are at root level, not under `/auth/` namespace, to avoid confl
 
 **Protected Routes** (redirect to `/login` if not authenticated):
 
-- `/` - Dashboard (shows setup, active, finished, archived tournaments — setup: [099](./099_tournament-setup-and-start.md))
 - `/tournament/create` - Create tournament
-- `/tournament/[id]/*` - Tournament management
+- `/tournament/[id]/*` - Tournament management (except public court/player URLs)
 
 **Public Routes**:
 
+- `/` - Guest **landing page** (format + features + sign-up / log-in). Authenticated users see the organizer dashboard (setup, active, finished, archived — setup: [099](./099_tournament-setup-and-start.md)).
+- `/login` - Login form (email + password)
+- `/signup` - Signup form (email + password, min 10 chars)
+- `/docs`, `/faq`, `/privacy` - Public documentation
 - `/court/[token]` - Court score entry (no login needed)
-- `/player/[token]` - Personal player page: current game + score entry (proposed, [098](./098_player-page.md))
+- `/player/[token]` - Personal player page: current game + score entry ([098](./098_player-page.md))
 
 ## Flow
 
-1. User visits `/signup`
+Guests visiting `/` see the public landing page (format, features, create-account / log-in). Organizers sign up or log in from there.
+
+1. User visits `/signup` (or `/login`)
 2. Enters email and password (min 10 characters)
 3. Submits form → POST to `/auth/sign-up/email`
 4. On success, redirects to `/` (dashboard)
