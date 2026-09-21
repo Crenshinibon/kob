@@ -358,6 +358,51 @@ test.describe('Manage page (096)', () => {
 		await expect(page.getByTestId('physical-courts')).toBeVisible();
 	});
 
+	test('tie-break, retire, and injury live on Manage, not operations', async ({ page }) => {
+		const name = `ManageBackOffice ${Date.now()}`;
+		names.push(name);
+		const id = await createRandomSeedTournament(page, name, 8, 2);
+
+		await page.goto(`/tournament/${id}`);
+		await expect(page.getByTestId('ops-back-office')).toBeVisible({ timeout: 15000 });
+		await expect(page.getByTestId('ops-back-office')).toContainText('Manage');
+		await expect(page.getByTestId('tie-break-editor')).toHaveCount(0);
+		await expect(page.locator('.retire-form')).toHaveCount(0);
+		await expect(page.locator('.injury-form')).toHaveCount(0);
+		await expect(page.getByRole('button', { name: /delete tournament/i })).toHaveCount(0);
+		await expect(page.getByRole('button', { name: /waiting for all scores/i })).toBeVisible();
+
+		await page.goto(`/tournament/${id}/manage#rules`);
+		await page.getByTestId('tab-rules').click();
+		await expect(page.getByTestId('rules-tab')).toBeVisible();
+		await expect(page.getByTestId('tie-break-editor')).toBeVisible();
+
+		await page.getByTestId('tab-players').click();
+		await expect(page.getByTestId('players-tab')).toBeVisible();
+		await page.locator('summary:has-text("Retire a Player")').click();
+		await expect(page.locator('.retire-form')).toBeVisible();
+
+		const courtLinks = await getCourtLinks(page);
+		await page.goto(courtLinks[0]);
+		const matchIds = await extractMatchIds(page);
+		expect(matchIds.length).toBeGreaterThan(0);
+		await page.fill(`[data-testid="team-a-score-${matchIds[0]}"]`, '21');
+		await page.fill(`[data-testid="team-b-score-${matchIds[0]}"]`, '19');
+		await page.click(`[data-testid="save-score-${matchIds[0]}"]`);
+		await expect(page.locator(`[data-testid="saved-${matchIds[0]}"]`)).toBeVisible({
+			timeout: 15000
+		});
+
+		await page.goto(`/tournament/${id}/manage#players`);
+		await page.getByTestId('tab-players').click();
+		await expect(page.getByTestId('players-tab')).toBeVisible();
+		await page.locator('summary:has-text("Report Injury")').click();
+		await expect(page.locator('.injury-form')).toBeVisible();
+
+		await page.getByTestId('tab-tournament').click();
+		await expect(page.getByRole('button', { name: /delete tournament/i })).toBeVisible();
+	});
+
 	test('roster is seed order and move buttons reorder players', async ({ page }) => {
 		const name = `ManageOrder ${Date.now()}`;
 		names.push(name);
