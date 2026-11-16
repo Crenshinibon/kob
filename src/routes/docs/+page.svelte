@@ -14,6 +14,7 @@
 	<nav class="toc" aria-label={m.docs_toc_label()}>
 		<ul>
 			<li><a href="#how-kob-works">{m.docs_how_kob_works()}</a></li>
+			<li><a href="#personal-pages">{m.docs_personal_pages()}</a></li>
 			<li><a href="#tournament-formats">{m.docs_tournament_formats()}</a></li>
 			<li><a href="#scoring-modes">{m.docs_scoring_modes()}</a></li>
 			<li><a href="#tie-breaking">{m.docs_tie_breaking()}</a></li>
@@ -48,7 +49,32 @@
 				<li>{m.docs_principle_individual_ranking()}</li>
 				<li>{m.docs_principle_court_position()}</li>
 				<li>{m.docs_principle_stable_tokens()}</li>
+				<li>{m.docs_principle_personal_page()}</li>
 			</ul>
+		</section>
+
+		<section id="personal-pages">
+			<h2>{m.docs_personal_pages()}</h2>
+			<p>{m.docs_personal_pages_p1()}</p>
+			<p>{m.docs_personal_pages_p2()}</p>
+
+			<h3>{m.docs_personal_shows()}</h3>
+			<ul>
+				<li>{m.docs_personal_show_now()}</li>
+				<li>{m.docs_personal_show_score()}</li>
+				<li>{m.docs_personal_show_standings()}</li>
+				<li>{m.docs_personal_show_places()}</li>
+				<li>{m.docs_personal_show_history()}</li>
+			</ul>
+
+			<h3>{m.docs_personal_wait_title()}</h3>
+			<p>{m.docs_personal_wait_p1()}</p>
+
+			<h3>{m.docs_personal_handout()}</h3>
+			<p>{m.docs_personal_handout_p1()}</p>
+
+			<h3>{m.docs_personal_follows()}</h3>
+			<p>{m.docs_personal_follows_p1()}</p>
 		</section>
 
 		<section id="tournament-formats">

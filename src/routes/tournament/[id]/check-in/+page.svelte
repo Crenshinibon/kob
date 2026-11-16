@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { PageData } from './$types';
 	import { browser } from '$app/environment';
 	import * as m from '$lib/paraglide/messages';
 	import { localizeHref } from '$lib/paraglide/runtime';
@@ -6,9 +7,7 @@
 	import QrCode from '$lib/components/QrCode.svelte';
 	import { getCheckInData, setPlayerCheckIn, closeCheckIn, reopenCheckIn } from './check-in.remote';
 
-	let { data } = $props<{
-		data: { tournamentId: number; tournamentName: string };
-	}>();
+	let { data }: { data: PageData } = $props();
 
 	const query = $derived(getCheckInData({ tournamentId: data.tournamentId }));
 	let search = $state('');

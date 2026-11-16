@@ -695,7 +695,7 @@ export function reachableFinalPlaceRange(ctx: ReachableFinalPlaceContext): {
 		};
 	}
 
-	const isRandomR1 = ctx.formatType !== 'preseed' && ctx.currentRound === 1;
+	const isRandomR1 = ctx.currentRound === 1;
 	if (isRandomR1) {
 		const lastPlace = placeForCourtRank(
 			ctx.courtSizes,

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import type { RemoteFormField } from '@sveltejs/kit';
+	import { textFieldProps } from '$lib/form-fields';
+	import type { PageData } from './$types';
 	import { slide } from 'svelte/transition';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { browser } from '$app/environment';
@@ -8,14 +11,8 @@
 
 	import { saveScore, saveSetScore, clearScore } from './scores.remote';
 	import { getCourtData } from './court-data.remote';
-	import type { CourtPageData } from '$lib/server/court-page-data';
 	import { createScoreSchema, createSetScoreSchema } from './scoreSchema';
-	import {
-		isDecidingSet,
-		getEffectiveScoring,
-		type TieBreakFactorId,
-		type TieBreakDecidingOutcome
-	} from '$lib/tournament-logic';
+	import { isDecidingSet, getEffectiveScoring } from '$lib/tournament-logic';
 	import CourtStandingsTable from '$lib/components/CourtStandingsTable.svelte';
 
 	interface MatchRow {
@@ -33,40 +30,6 @@
 		injuredPlayerIds: number[] | null;
 	}
 
-	interface StandingRow {
-		playerId: number;
-		rank: number;
-		points: number;
-		diff: number;
-		matchCount: number;
-		id: number;
-		name: string;
-		avgPoints?: number;
-		matchesPlayed: number;
-		tiedFactors: TieBreakFactorId[];
-		decidingFactor: TieBreakFactorId | null;
-		decidingOutcome: TieBreakDecidingOutcome;
-	}
-
-	interface CourtInfo {
-		tournamentName: string;
-		courtNumber: number;
-		roundNumber: number;
-		courtSize: number;
-		playerNames: Record<number, string>;
-		minPoints: number;
-		scoringLabel: string;
-		winBy: number;
-		setsToWin: number;
-		pointsToWin: number;
-		decidingSetPoints: number;
-		label: string | null;
-		scoringOverrides: Record<
-			string,
-			{ pointsToWin?: number; winBy?: number; setsToWin?: number; decidingSetPoints?: number }
-		> | null;
-	}
-
 	interface ScoreSubmitForm {
 		submit(): Promise<boolean>;
 		readonly element: HTMLFormElement;
@@ -75,12 +38,7 @@
 		};
 	}
 
-	let { data: routeData } = $props<{
-		data: {
-			token: string;
-			courtPageData: CourtPageData;
-		};
-	}>();
+	let { data: routeData }: { data: PageData } = $props();
 
 	const courtQuery = $derived(getCourtData({ token: routeData.token }));
 
@@ -413,8 +371,8 @@
 	formObj: {
 		enhance(cb: (fi: ScoreSubmitForm) => void | Promise<void>): Record<string, unknown>;
 		fields: ScoreSubmitForm['fields'] & {
-			teamAScore: { as: (type: string, value?: string | number) => Record<string, unknown> };
-			teamBScore: { as: (type: string, value?: string | number) => Record<string, unknown> };
+			teamAScore: RemoteFormField<string>;
+			teamBScore: RemoteFormField<string>;
 		};
 	},
 	match: MatchRow,
@@ -444,7 +402,7 @@
 					disabled={savingMatches.has(matchId)}
 					onfocus={() => (scoreFocused = true)}
 					onblur={() => (scoreFocused = false)}
-					{...formObj.fields.teamAScore.as('text', scorePrefill(match, editing, 'a'))}
+					{...textFieldProps(formObj.fields.teamAScore, scorePrefill(match, editing, 'a'))}
 					type="number"
 				/>
 			</div>
@@ -458,7 +416,7 @@
 					disabled={savingMatches.has(matchId)}
 					onfocus={() => (scoreFocused = true)}
 					onblur={() => (scoreFocused = false)}
-					{...formObj.fields.teamBScore.as('text', scorePrefill(match, editing, 'b'))}
+					{...textFieldProps(formObj.fields.teamBScore, scorePrefill(match, editing, 'b'))}
 					type="number"
 				/>
 			</div>

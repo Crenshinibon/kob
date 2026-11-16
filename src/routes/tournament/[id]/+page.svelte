@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { PageData } from './$types';
+	import { SvelteMap } from 'svelte/reactivity';
 	import { getTournamentData, type CourtDisplayData } from './tournament-data.remote';
 	import { afterNavigate } from '$app/navigation';
 	import * as m from '$lib/paraglide/messages';
@@ -26,25 +28,9 @@
 	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
 	import { TIE_BREAK_OUTCOME_COLORS } from '$lib/court-colors';
 	import { formatDiff, formatPoints } from '$lib/i18n/format';
+	import { tieBreakFactorLabel } from '$lib/i18n/tie-break-label';
 
-	let { data } = $props<{
-		data: {
-			tournamentId: number;
-			tournament: {
-				id: number;
-				name: string;
-				status: string;
-				numRounds: number;
-				pointsToWin?: number;
-				setsToWin?: number;
-				decidingSetPoints?: number;
-				scoringOverrides?: Record<
-					string,
-					{ pointsToWin?: number; setsToWin?: number; decidingSetPoints?: number }
-				> | null;
-			};
-		};
-	}>();
+	let { data }: { data: PageData } = $props();
 
 	let viewRound = $state<number | null>(null);
 	let closingRound = $state(false);
@@ -80,19 +66,6 @@
 		}, ms);
 		return () => clearInterval(interval);
 	});
-
-	function tieBreakFactorLabel(id: TieBreakFactorId): string {
-		const labels: Record<TieBreakFactorId, () => string> = {
-			round_points: m.tie_break_factor_round_points,
-			round_diff: m.tie_break_factor_round_diff,
-			total_points: m.tie_break_factor_total_points,
-			total_diff: m.tie_break_factor_total_diff,
-			initial_order: m.tie_break_factor_initial_order,
-			dice: m.tie_break_factor_dice,
-			manual: m.tie_break_factor_manual
-		};
-		return labels[id]();
-	}
 
 	function courtHasTieBreakIcons(court: CourtDisplayData): boolean {
 		return court.standings.some((s) => s.tiedFactors.length > 0 || s.decidingFactor);
@@ -136,25 +109,20 @@
 
 	let manualTieDialogCourt = $state<CourtDisplayData | null>(null);
 	let manualTieDialogEl = $state<HTMLDialogElement | null>(null);
-	let draftManualRankOrders = $state(new Map<number, number[]>());
+	const draftManualRankOrders = new SvelteMap<number, number[]>();
 	let savingManualRankRotationId = $state<number | null>(null);
 	let manualRankError = $state<string | null>(null);
 
 	function openManualTieDialog(court: CourtDisplayData) {
 		manualRankError = null;
 		manualTieDialogCourt = court;
-		draftManualRankOrders = new Map(draftManualRankOrders).set(
-			court.rotationId,
-			getServerManualRankOrder(court)
-		);
+		draftManualRankOrders.set(court.rotationId, getServerManualRankOrder(court));
 		manualTieDialogEl?.showModal();
 	}
 
 	function closeManualTieDialog() {
 		if (manualTieDialogCourt) {
-			const next = new Map(draftManualRankOrders);
-			next.delete(manualTieDialogCourt.rotationId);
-			draftManualRankOrders = next;
+			draftManualRankOrders.delete(manualTieDialogCourt.rotationId);
 		}
 		manualTieDialogCourt = null;
 		manualRankError = null;
@@ -175,7 +143,7 @@
 		if (!group.playerIds.includes(order[next])) return;
 
 		[order[idx], order[next]] = [order[next], order[idx]];
-		draftManualRankOrders = new Map(draftManualRankOrders).set(court.rotationId, order);
+		draftManualRankOrders.set(court.rotationId, order);
 	}
 
 	async function saveManualRankDraft() {
@@ -188,9 +156,7 @@
 
 		try {
 			await updateManualRankOrder({ rotationId: court.rotationId, playerIds: order });
-			const next = new Map(draftManualRankOrders);
-			next.delete(court.rotationId);
-			draftManualRankOrders = next;
+			draftManualRankOrders.delete(court.rotationId);
 			manualTieDialogCourt = null;
 			manualTieDialogEl?.close();
 			await tournamentQuery.refresh();
