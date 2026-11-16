@@ -16,6 +16,36 @@
 		{ id: 'm3', num: 3, a: 'A & D', b: 'B & C' }
 	]);
 
+	const shots = $derived([
+		{
+			id: 'player',
+			src: '/landing/player.png',
+			width: 780,
+			height: 1508,
+			title: m.landing_shot_player_title(),
+			caption: m.landing_shot_player_caption(),
+			alt: m.landing_shot_player_alt()
+		},
+		{
+			id: 'court',
+			src: '/landing/court.png',
+			width: 780,
+			height: 1348,
+			title: m.landing_shot_court_title(),
+			caption: m.landing_shot_court_caption(),
+			alt: m.landing_shot_court_alt()
+		},
+		{
+			id: 'standings',
+			src: '/landing/standings.png',
+			width: 780,
+			height: 1571,
+			title: m.landing_shot_standings_title(),
+			caption: m.landing_shot_standings_caption(),
+			alt: m.landing_shot_standings_alt()
+		}
+	]);
+
 	const features = $derived([
 		{ id: 'qr', title: m.landing_feat_qr_title(), body: m.landing_feat_qr_body() },
 		{ id: 'player', title: m.landing_feat_player_title(), body: m.landing_feat_player_body() },
@@ -26,38 +56,91 @@
 	]);
 </script>
 
+{#snippet featureIcon(id: string)}
+	<svg viewBox="0 0 32 32" aria-hidden="true">
+		{#if id === 'qr'}
+			<path d="M6 6h8v8H6zM18 6h8v8h-8zM6 18h8v8H6z" />
+			<path d="M18 18h3v3h-3zM23 18h3v3h-3zM18 23h3v3h-3zM23 23h3v3h-3z" />
+		{:else if id === 'player'}
+			<circle cx="16" cy="11" r="4" />
+			<path d="M8 25c1.5-4 4.2-6 8-6s6.5 2 8 6" />
+		{:else if id === 'checkin'}
+			<path d="M8 7h16v18H8z" />
+			<path d="M12 13h8M12 17h8M12 21h5" />
+		{:else if id === 'courts'}
+			<path d="M6 8h20v16H6zM16 8v16M6 16h20" />
+		{:else if id === 'scoring'}
+			<path d="M8 22V12M16 22V8M24 22v-6" />
+		{:else}
+			<circle cx="16" cy="16" r="5" />
+			<path
+				d="M16 4v3M16 25v3M4 16h3M25 16h3M7.5 7.5l2 2M22.5 22.5l2 2M24.5 7.5l-2 2M9.5 22.5l-2 2"
+			/>
+		{/if}
+	</svg>
+{/snippet}
+
 <div class="landing" data-testid="landing">
 	<section class="hero">
-		<div class="brand">
-			<img
-				src="/logo-200.jpg"
-				alt={m.alt_logo()}
-				class="logo"
-				width="80"
-				height="80"
-				srcset="/logo-100.jpg 100w, /logo-200.jpg 200w, /logo-400.jpg 400w"
-				sizes="80px"
-			/>
-			<div class="brand-copy">
-				<p class="eyebrow">{m.landing_eyebrow()}</p>
-				<h1>{m.landing_title()}</h1>
+		<div class="hero-copy">
+			<div class="brand">
+				<img
+					src="/logo-200.jpg"
+					alt={m.alt_logo()}
+					class="logo"
+					width="80"
+					height="80"
+					srcset="/logo-100.jpg 100w, /logo-200.jpg 200w, /logo-400.jpg 400w"
+					sizes="80px"
+				/>
+				<div class="brand-copy">
+					<p class="eyebrow">{m.landing_eyebrow()}</p>
+					<h1>{m.landing_title()}</h1>
+				</div>
 			</div>
+			<p class="tagline">{m.landing_tagline()}</p>
+			<p class="lead">{m.landing_lead()}</p>
+			<div class="hero-actions">
+				<a href={localizeHref(resolve('/signup'))} class="btn-primary" data-testid="landing-signup">
+					{m.landing_cta_signup()}
+				</a>
+				<a href={localizeHref(resolve('/login'))} class="btn-secondary" data-testid="landing-login">
+					{m.login()}
+				</a>
+			</div>
+			<ul class="stats">
+				{#each stats as stat (stat.id)}
+					<li>{stat.label}</li>
+				{/each}
+			</ul>
 		</div>
-		<p class="tagline">{m.landing_tagline()}</p>
-		<p class="lead">{m.landing_lead()}</p>
-		<div class="hero-actions">
-			<a href={localizeHref(resolve('/signup'))} class="btn-primary" data-testid="landing-signup">
-				{m.landing_cta_signup()}
-			</a>
-			<a href={localizeHref(resolve('/login'))} class="btn-secondary" data-testid="landing-login">
-				{m.login()}
-			</a>
-		</div>
-		<ul class="stats">
-			{#each stats as stat (stat.id)}
-				<li>{stat.label}</li>
+		<figure class="hero-photo">
+			<img
+				src="/landing/hero.jpg"
+				alt={m.landing_hero_alt()}
+				width="1280"
+				height="720"
+				fetchpriority="high"
+			/>
+		</figure>
+	</section>
+
+	<section class="block" aria-labelledby="gallery-heading">
+		<h2 id="gallery-heading">{m.landing_gallery_title()}</h2>
+		<p class="section-lead">{m.landing_gallery_lead()}</p>
+		<div class="shots">
+			{#each shots as shot (shot.id)}
+				<figure class="shot">
+					<div class="phone">
+						<img src={shot.src} alt={shot.alt} width={shot.width} height={shot.height} />
+					</div>
+					<figcaption>
+						<h3>{shot.title}</h3>
+						<p>{shot.caption}</p>
+					</figcaption>
+				</figure>
 			{/each}
-		</ul>
+		</div>
 	</section>
 
 	<section class="block" aria-labelledby="how-heading">
@@ -113,9 +196,12 @@
 		<h2 id="features-heading">{m.landing_features_title()}</h2>
 		<div class="feature-grid">
 			{#each features as feature (feature.id)}
-				<article class="card">
-					<h3>{feature.title}</h3>
-					<p>{feature.body}</p>
+				<article class="card feature">
+					<span class="feature-icon">{@render featureIcon(feature.id)}</span>
+					<div>
+						<h3>{feature.title}</h3>
+						<p>{feature.body}</p>
+					</div>
 				</article>
 			{/each}
 		</div>
@@ -137,15 +223,36 @@
 
 <style>
 	.landing {
-		max-width: 800px;
+		max-width: 1080px;
 		margin: 0 auto;
-		padding: var(--spacing-xl) var(--spacing-md) 6rem;
+		padding: var(--spacing-lg) var(--spacing-md) 6rem;
 	}
 
 	.hero,
 	.block,
 	.close {
 		margin-bottom: var(--spacing-xl);
+	}
+
+	.hero {
+		display: grid;
+		gap: var(--spacing-lg);
+	}
+
+	.hero-photo {
+		margin: 0;
+		order: -1;
+	}
+
+	.hero-photo img {
+		display: block;
+		width: 100%;
+		height: auto;
+		max-height: 280px;
+		object-fit: cover;
+		object-position: center 60%;
+		border-radius: var(--radius-lg);
+		border: 2px solid var(--border-default);
 	}
 
 	.brand {
@@ -191,7 +298,8 @@
 
 	.lead,
 	.section-lead,
-	.close p {
+	.close p,
+	.shot p {
 		margin: 0 0 var(--spacing-lg);
 		color: var(--text-secondary);
 		line-height: 1.55;
@@ -230,6 +338,42 @@
 	h2 {
 		margin: 0 0 var(--spacing-md);
 		font-size: var(--font-size-xl);
+	}
+
+	.shots {
+		display: grid;
+		gap: var(--spacing-lg);
+	}
+
+	.shot {
+		margin: 0;
+	}
+
+	.phone {
+		margin: 0 auto var(--spacing-md);
+		max-width: 280px;
+		padding: 10px;
+		background: #111;
+		border: 3px solid #3a3a3a;
+		border-radius: 28px;
+		box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+	}
+
+	.phone img {
+		display: block;
+		width: 100%;
+		height: auto;
+		border-radius: 18px;
+		background: var(--bg-primary);
+	}
+
+	.shot h3 {
+		margin: 0 0 var(--spacing-xs);
+		color: var(--accent-primary);
+	}
+
+	.shot p {
+		margin: 0;
 	}
 
 	.rotation {
@@ -347,6 +491,34 @@
 		line-height: 1.5;
 	}
 
+	.feature {
+		display: flex;
+		gap: var(--spacing-md);
+		align-items: flex-start;
+	}
+
+	.feature-icon {
+		flex: 0 0 auto;
+		display: grid;
+		place-items: center;
+		width: 44px;
+		height: 44px;
+		border-radius: var(--radius-md);
+		background: var(--bg-secondary);
+		border: 2px solid var(--accent-primary);
+		color: var(--accent-primary);
+	}
+
+	.feature-icon svg {
+		width: 26px;
+		height: 26px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
 	.close {
 		padding: var(--spacing-lg) var(--spacing-md);
 		background: var(--bg-card);
@@ -363,14 +535,29 @@
 		margin-bottom: 0;
 	}
 
-	@media (min-width: 640px) {
+	@media (min-width: 720px) {
 		h1 {
-			font-size: 2.25rem;
+			font-size: 2.4rem;
 		}
 
 		.logo {
 			width: 96px;
 			height: 96px;
+		}
+
+		.hero {
+			grid-template-columns: 1.15fr 0.85fr;
+			align-items: center;
+		}
+
+		.hero-photo {
+			order: 0;
+		}
+
+		.hero-photo img {
+			max-height: 420px;
+			height: 100%;
+			min-height: 280px;
 		}
 
 		.hero-actions {
@@ -393,9 +580,15 @@
 			justify-content: space-between;
 		}
 
+		.shots,
 		.format-grid,
 		.feature-grid {
 			grid-template-columns: 1fr 1fr;
+		}
+
+		.shots {
+			grid-template-columns: repeat(3, 1fr);
+			align-items: start;
 		}
 	}
 </style>

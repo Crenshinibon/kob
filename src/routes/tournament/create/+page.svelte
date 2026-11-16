@@ -201,7 +201,7 @@
 		</div>
 
 		<div class="field">
-			<span class="label">Format</span>
+			<span class="label">{m.create_format_label()}</span>
 			<div class="radio-group">
 				<label class="radio-label">
 					<div class="radio-wrapper">
@@ -369,32 +369,36 @@
 
 		{#if durationEstimate && computedPlayerCount >= minPlayers}
 			<div class="field duration-estimate">
-				<span class="label">Estimated Duration</span>
+				<span class="label">{m.create_estimated_duration()}</span>
 				<div class="duration-box">
 					<p class="duration-total">
 						{m.create_est_duration({
-							hours: Math.floor(durationEstimate!.total / 60),
-							minutes: durationEstimate!.total % 60
+							hours: Math.floor(durationEstimate.total / 60),
+							minutes: durationEstimate.total % 60
 						})}
 					</p>
 					<div class="duration-breakdown">
 						<span>{m.create_setup()}</span>
-						<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
-						{#each Array(effectiveRounds) as _, r (r)}
+						{#each { length: effectiveRounds }, r (r)}
 							<span
 								>{m.create_round_duration({
 									round: r + 1,
-									minutes: durationEstimate!.roundDur
+									minutes: durationEstimate.roundDur
 								})}</span
 							>
 						{/each}
 						<span
-							>Based on: {durationEstimate!.courts} courts, {computedPlayerCount} players, {scoringMode ===
-							'single-21'
-								? 'one set to 21'
-								: scoringMode === 'best-of-3'
-									? 'best of 3'
-									: 'custom'}, {formatType === 'preseed' ? 'preseed' : 'random'} format</span
+							>{m.create_duration_basis({
+								courts: durationEstimate.courts,
+								players: computedPlayerCount,
+								scoring:
+									scoringMode === 'single-21'
+										? m.scoring_single_set()
+										: scoringMode === 'best-of-3'
+											? m.scoring_best_of_3()
+											: m.create_custom(),
+								format: formatType === 'preseed' ? m.create_preseed() : m.create_random_seed()
+							})}</span
 						>
 					</div>
 				</div>

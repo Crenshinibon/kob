@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { RemoteFormField } from '@sveltejs/kit';
+	import { textFieldProps } from '$lib/form-fields';
 	import * as msg from '$lib/paraglide/messages';
 
 	type ScoreIssue = { message: string };
@@ -9,15 +11,11 @@
 		fields: { allIssues(): ScoreIssue[] | undefined };
 	};
 
-	type ScoreField = {
-		as: (type: string, value?: string | number) => Record<string, unknown>;
-	};
-
 	type ScoreFields = {
 		enhance(cb: (fi: ScoreSubmitForm) => void | Promise<void>): Record<string, unknown>;
 		fields: {
-			teamAScore: ScoreField;
-			teamBScore: ScoreField;
+			teamAScore: RemoteFormField<string>;
+			teamBScore: RemoteFormField<string>;
 			allIssues(): ScoreIssue[] | undefined;
 		};
 		pending?: number;
@@ -121,7 +119,7 @@
 					disabled={busy}
 					{onfocus}
 					{onblur}
-					{...formObj.fields.teamAScore.as('text', prefillA)}
+					{...textFieldProps(formObj.fields.teamAScore, prefillA)}
 					type="number"
 				/>
 			</div>
@@ -135,7 +133,7 @@
 					disabled={busy}
 					{onfocus}
 					{onblur}
-					{...formObj.fields.teamBScore.as('text', prefillB)}
+					{...textFieldProps(formObj.fields.teamBScore, prefillB)}
 					type="number"
 				/>
 			</div>

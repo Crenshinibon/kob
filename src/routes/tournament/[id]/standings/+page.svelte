@@ -1,13 +1,12 @@
 <script lang="ts">
+	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import * as m from '$lib/paraglide/messages';
 	import { localizeHref } from '$lib/paraglide/runtime';
 	import { formatDiff } from '$lib/i18n/format';
 	import { getStandingsData } from './standings-data.remote';
 
-	let { data } = $props<{
-		data: { tournamentId: number; tournament: { id: number; name: string } };
-	}>();
+	let { data }: { data: PageData } = $props();
 
 	const standingsQuery = $derived(getStandingsData(data.tournamentId));
 

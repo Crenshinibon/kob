@@ -48,6 +48,13 @@
 			</details>
 
 			<details>
+				<summary>{m.faq_q_personal_page()}</summary>
+				<div class="answer">
+					<p>{m.faq_a_personal_page()}</p>
+				</div>
+			</details>
+
+			<details>
 				<summary>{m.faq_q_how_to_create_tournament()}</summary>
 				<div class="answer">
 					<p>{m.faq_a_how_to_create_tournament()}</p>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { PageData } from './$types';
 	import { browser } from '$app/environment';
 	import { afterNavigate } from '$app/navigation';
 	import * as m from '$lib/paraglide/messages';
@@ -35,6 +36,7 @@
 		type TieBreakConfig,
 		type TieBreakFactorId
 	} from '$lib/tournament-logic';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { flip } from 'svelte/animate';
 	import { quintOut } from 'svelte/easing';
 	import { tick } from 'svelte';
@@ -61,9 +63,7 @@
 	} from './manage-actions.remote';
 	import { deleteTournamentForm, updateTieBreakConfig } from '../tournament-actions.remote';
 
-	let { data } = $props<{
-		data: { tournamentId: number; tournamentName: string };
-	}>();
+	let { data }: { data: PageData } = $props();
 
 	const query = $derived(getManageData({ tournamentId: data.tournamentId }));
 	let tab = $state('players');
@@ -158,7 +158,7 @@
 	);
 	const sortedCourts = $derived(sortCourts(pendingCourts ?? page?.courts ?? []));
 	const validDropCourts = $derived.by(() => {
-		const ids = new Set<number>();
+		const ids = new SvelteSet<number>();
 		const courts = pendingCourts ?? page?.courts ?? [];
 		if (!page || draggingId == null) return ids;
 		for (const court of courts) {

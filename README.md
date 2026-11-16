@@ -22,7 +22,7 @@ King of the Beach is a beach volleyball tournament format where:
   - Rules: per court size (3p/4p/5p/6p) scoring and the tie-break editor.
   - Tournament: name, rounds (1–10), physical courts, finish early, reopen, delete (with confirmation).
 - **Optional check-in** (`/tournament/[id]/check-in`): Personal QR per player, print sheet, self check-in. Court QRs stay even when check-in is used.
-- **Player page** (`/player/[token]`): Current game, write-once score entry, upcoming games, Currently / Best / Safe, wait clock, and history. The organizer corrects a saved score on the court page.
+- **Player page** (`/player/[token]`): Each player has one personal tournament page for the whole event. It shows the current game, write-once score entry, upcoming games, Currently / Best / Safe, a wait clock, and history. The organizer corrects a saved score on the court page. Court QRs stay available either way.
 - **Flexible player counts**: 4–64 at start, automatic court sizing. Standard courts have 4 players; one leftover court may hold 3, 5, or 6.
 - **Two formats**:
   - **Random Seed**: Flexible rounds (1–10) with ladder redistribution (2 up, 2 down)
@@ -38,6 +38,15 @@ King of the Beach is a beach volleyball tournament format where:
 - **Auto-cleanup**: Completed tournaments after 14 days, inactive tournaments after 31 days
 - **Internationalization**: English, German, Spanish, French
 - **Dark theme**: High-contrast UI for outdoor use
+
+## How players follow a tournament
+
+Players do not need accounts. There are two public links, and an organizer can use either or both:
+
+1. **Court page** (`/court/[token]`) — one QR per court, stable for the day. Anyone on that court can enter a score and correct one.
+2. **Personal tournament page** (`/player/[token]`) — one link per player for the whole tournament. It shows which court they are on, who they play, the games still to come, a score they can save once, where they stand, the best and safest place still open, and when to walk over if they are waiting on a later shift. Optional check-in prints these personal QRs. Opening the page counts as checked in.
+
+After a round closes, a player with a personal page sees the next court without asking the organizer. A player who only has the court QR keeps using that.
 
 ## Tech Stack
 

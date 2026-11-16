@@ -2,6 +2,7 @@
 	import * as msg from '$lib/paraglide/messages';
 	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
 	import { formatDiff, formatPoints } from '$lib/i18n/format';
+	import { tieBreakFactorLabel } from '$lib/i18n/tie-break-label';
 	import type { TieBreakDecidingOutcome, TieBreakFactorId } from '$lib/tournament-logic';
 
 	export type CourtStandingRow = {
@@ -36,19 +37,6 @@
 		standings.some((s) => s.tiedFactors.length > 0 || s.decidingFactor)
 	);
 	const showAvg = $derived(courtSize === 5 || courtSize === 6);
-
-	function tieBreakFactorLabel(id: TieBreakFactorId): string {
-		const labels: Record<TieBreakFactorId, () => string> = {
-			round_points: msg.tie_break_factor_round_points,
-			round_diff: msg.tie_break_factor_round_diff,
-			total_points: msg.tie_break_factor_total_points,
-			total_diff: msg.tie_break_factor_total_diff,
-			initial_order: msg.tie_break_factor_initial_order,
-			dice: msg.tie_break_factor_dice,
-			manual: msg.tie_break_factor_manual
-		};
-		return labels[id]();
-	}
 </script>
 
 {#if standings.length > 0}

@@ -6,11 +6,12 @@
 	import CourtStandingsTable from '$lib/components/CourtStandingsTable.svelte';
 	import TieBreakFactorIcons from '$lib/components/TieBreakFactorIcons.svelte';
 	import { formatDiff, formatPoints } from '$lib/i18n/format';
+	import { playerHistoryWhy } from '$lib/i18n/player-history-why';
+	import { tieBreakFactorLabel } from '$lib/i18n/tie-break-label';
 	import { getPlayerData, savePlayerScore, savePlayerSetScore } from './player-data.remote';
 	import { createScoreSchema, createSetScoreSchema } from '../../court/[token]/scoreSchema';
 	import type { PlayerPageData } from '$lib/server/player-page-data';
 	import type { OrientedMatchView } from '$lib/player-page-logic';
-	import type { TieBreakFactorId } from '$lib/tournament-logic';
 
 	type PlayerRouteData = {
 		data: {
@@ -71,41 +72,6 @@
 		if (view.opponentNames.length === 1)
 			return `${view.opponentNames[0]} ${msg.player_history_solo()}`;
 		return view.opponentNames.join(' + ');
-	}
-
-	function whyText(key: string | null, params: Record<string, string | number> | null): string {
-		if (!key) return '';
-		if (key === 'player_history_why_ladder_up') return msg.player_history_why_ladder_up();
-		if (key === 'player_history_why_ladder_down') return msg.player_history_why_ladder_down();
-		if (key === 'player_history_why_ladder_stay_top')
-			return msg.player_history_why_ladder_stay_top();
-		if (key === 'player_history_why_ladder_stay_bottom')
-			return msg.player_history_why_ladder_stay_bottom();
-		if (key === 'player_history_why_vertical') {
-			return msg.player_history_why_vertical({
-				nth: params?.nth ?? '',
-				court: params?.court ?? ''
-			});
-		}
-		if (key === 'player_history_why_preseed_winners') {
-			return msg.player_history_why_preseed_winners({
-				role: params?.role ?? '',
-				min: params?.min ?? '',
-				max: params?.max ?? ''
-			});
-		}
-		if (key === 'player_history_why_preseed_losers') {
-			return msg.player_history_why_preseed_losers({
-				role: params?.role ?? '',
-				min: params?.min ?? '',
-				max: params?.max ?? ''
-			});
-		}
-		if (key === 'player_history_why_frozen') return msg.player_history_why_frozen();
-		if (key === 'player_history_why_manual') return msg.player_history_why_manual();
-		if (key === 'player_history_why_joined')
-			return msg.player_history_why_joined({ n: params?.n ?? '' });
-		return '';
 	}
 
 	function waitLabel(iso: string | null | undefined): string {
@@ -177,19 +143,6 @@
 	);
 	const scoringSchema = $derived(createScoreSchema(courtScoring.pointsToWin, courtScoring.winBy));
 	const hasSession = $derived(!!(routeData.user ?? appPage.data.user));
-
-	function tieBreakFactorLabel(id: TieBreakFactorId): string {
-		const labels: Record<TieBreakFactorId, () => string> = {
-			round_points: msg.tie_break_factor_round_points,
-			round_diff: msg.tie_break_factor_round_diff,
-			total_points: msg.tie_break_factor_total_points,
-			total_diff: msg.tie_break_factor_total_diff,
-			initial_order: msg.tie_break_factor_initial_order,
-			dice: msg.tie_break_factor_dice,
-			manual: msg.tie_break_factor_manual
-		};
-		return labels[id]();
-	}
 </script>
 
 <svelte:document onvisibilitychange={onVisibilityChange} />
@@ -607,7 +560,7 @@
 						</div>
 						<p class="meta">{item.groupLabel}</p>
 						{#if item.showWhy && item.whyKey}
-							<p class="why">{whyText(item.whyKey, item.whyParams)}</p>
+							<p class="why">{playerHistoryWhy(item.whyKey, item.whyParams)}</p>
 						{/if}
 					</li>
 				{/each}

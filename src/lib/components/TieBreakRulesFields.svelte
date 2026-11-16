@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as m from '$lib/paraglide/messages';
+	import { tieBreakFactorLabel } from '$lib/i18n/tie-break-label';
 	import { TIE_BREAK_FINAL_FACTOR_IDS, type TieBreakFactorId } from '$lib/tournament-logic';
 
 	let {
@@ -13,19 +14,6 @@
 		disabled?: boolean;
 		onChange?: () => void;
 	} = $props();
-
-	function factorLabel(id: TieBreakFactorId): string {
-		const labels: Record<TieBreakFactorId, () => string> = {
-			round_points: m.tie_break_factor_round_points,
-			round_diff: m.tie_break_factor_round_diff,
-			total_points: m.tie_break_factor_total_points,
-			total_diff: m.tie_break_factor_total_diff,
-			initial_order: m.tie_break_factor_initial_order,
-			dice: m.tie_break_factor_dice,
-			manual: m.tie_break_factor_manual
-		};
-		return labels[id]();
-	}
 
 	function bump(index: number, direction: -1 | 1): void {
 		const next = index + direction;
@@ -59,7 +47,7 @@
 						{disabled}
 						onchange={(e) => setEnabled(fi, e.currentTarget.checked)}
 					/>
-					{factorLabel(factor.id)}
+					{tieBreakFactorLabel(factor.id)}
 				</label>
 				<div class="tie-break-actions">
 					<button
@@ -91,7 +79,7 @@
 					{disabled}
 					onchange={() => setFinal(finalId)}
 				/>
-				{factorLabel(finalId)}
+				{tieBreakFactorLabel(finalId)}
 			</label>
 		{/each}
 	</fieldset>
