@@ -349,10 +349,10 @@ const keys: Record<string, { en: string; de: string; fr: string; es: string }> =
 		es: 'King of the Beach'
 	},
 	landing_tagline: {
-		en: 'Individual rankings. Rotating partners. The king is whoever finishes on court 1.',
-		de: 'Individuelle Rangliste. Wechselnde Partner. König ist, wer auf Platz 1 landet.',
-		fr: 'Classement individuel. Partenaires qui tournent. Le roi est celui qui finit sur le terrain 1.',
-		es: 'Ranking individual. Parejas que rotan. Rey es quien termina en la pista 1.'
+		en: 'Individual rankings. Rotating partners. The king is whoever finishes first on court 1.',
+		de: 'Individuelle Rangliste. Wechselnde Partner. König ist, wer auf Platz 1 Erster wird.',
+		fr: 'Classement individuel. Partenaires qui tournent. Le roi est celui qui finit premier sur le terrain 1.',
+		es: 'Ranking individual. Parejas que rotan. Rey es quien termina primero en la pista 1.'
 	},
 	landing_lead: {
 		en: 'Set up a beach volleyball tournament on your phone, share a QR code for every court, and let players enter scores while they play.',
@@ -427,10 +427,10 @@ const keys: Record<string, { en: string; de: string; fr: string; es: string }> =
 		es: 'Los dos últimos bajan una pista'
 	},
 	landing_how_king: {
-		en: 'Finish on court 1 and you are King of the Beach.',
-		de: 'Wer auf Platz 1 endet, ist King of the Beach.',
-		fr: 'Finir sur le terrain 1, c’est être King of the Beach.',
-		es: 'Terminar en la pista 1 es ser King of the Beach.'
+		en: 'Finish first on court 1 and you are King of the Beach.',
+		de: 'Wer auf Platz 1 Erster wird, ist King of the Beach.',
+		fr: 'Finir premier sur le terrain 1, c’est être King of the Beach.',
+		es: 'Terminar primero en la pista 1 es ser King of the Beach.'
 	},
 	landing_court: {
 		en: 'Court {n}',
